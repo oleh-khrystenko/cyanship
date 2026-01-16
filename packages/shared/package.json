@@ -1,0 +1,13 @@
+{
+    "name": "@acw/shared",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc -b"
+    },
+    "license": "MIT",
+    "packageManager": "pnpm@10.12.1",
+    "devDependencies": {
+        "@types/node": "^24.9.2"
+    }
+}

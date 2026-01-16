@@ -1,0 +1,11 @@
+{
+    "name": "@acw/types",
+    "version": "1.0.0",
+    "types": "src/index.ts",
+    "scripts": {},
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "license": "MIT",
+    "packageManager": "pnpm@10.12.1"
+}

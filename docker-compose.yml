@@ -1,0 +1,30 @@
+services:
+    api:
+        build:
+            context: .
+            dockerfile: ./apps/api/Dockerfile
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - PORT=${API_PORT}
+            - MONGODB_URI=${MONGODB_URI}
+            - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+        ports:
+            - "${API_PORT}:${API_PORT}"
+
+
+    web:
+        build:
+            context: .
+            dockerfile: ./apps/web/Dockerfile
+            args:
+                NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+                NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - PORT=${WEB_PORT}
+            - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+            - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        ports:
+            - "${WEB_PORT}:${WEB_PORT}"
+        depends_on:
+            - api

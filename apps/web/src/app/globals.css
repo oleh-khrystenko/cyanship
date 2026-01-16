@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import '../shared/styles/themes.css';
+@import '../shared/styles/settings.css';
+@import '../shared/styles/scrollbar.css';
+@import '../shared/styles/custom-variants.css';

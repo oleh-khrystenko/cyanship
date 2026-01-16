@@ -1,0 +1,9 @@
+*::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--graphite);
+}

@@ -1,0 +1,71 @@
+services:
+    mongo:
+        image: mongo:7
+        restart: unless-stopped
+        ports:
+            - '27017:27017'
+        volumes:
+            - mongo_data_dev:/data/db
+
+    api:
+        image: node:20-alpine
+        working_dir: /app
+        command: >
+            sh -c "corepack enable &&
+            pnpm install --frozen-lockfile
+            --filter ./apps/api...
+            --filter ./packages/shared...
+            --filter ./packages/types... &&
+            pnpm --filter ./apps/api dev"
+        environment:
+            - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            - PNPM_STORE_DIR=/pnpm-store
+            - CI=true
+            - NODE_ENV=development
+            - PORT=${API_PORT}
+            - MONGODB_URI=mongodb://mongo:27017/${MONGODB_DB_NAME}
+            - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+            - TSC_WATCHFILE=UsePolling
+            - TSC_WATCHDIRECTORY=UsePolling
+        ports:
+            - '${API_PORT}:${API_PORT}'
+        volumes:
+            - ./:/app
+            - pnpm-store:/pnpm-store
+            - /app/node_modules
+        depends_on:
+            - mongo
+
+    web:
+        image: node:20-alpine
+        working_dir: /app
+        command: >
+            sh -c "corepack enable &&
+            pnpm install --frozen-lockfile
+            --filter ./apps/web...
+            --filter ./packages/shared...
+            --filter ./packages/types... &&
+            pnpm --filter ./apps/web dev"
+        environment:
+            - CI=true
+            - NODE_ENV=development
+            - NEXT_TELEMETRY_DISABLED=1
+            - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            - PNPM_STORE_DIR=/pnpm-store
+            - PORT=${WEB_PORT}
+            - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+            - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+            - WATCHPACK_POLLING=true
+            - CHOKIDAR_USEPOLLING=true
+        ports:
+            - '${WEB_PORT}:${WEB_PORT}'
+        volumes:
+            - ./:/app
+            - pnpm-store:/pnpm-store
+            - /app/node_modules
+        depends_on:
+            - api
+
+volumes:
+    mongo_data_dev:
+    pnpm-store:

@@ -1,0 +1,39 @@
+/* 🌞 Light theme — за замовчуванням */
+:root {
+    --onyx: #f9fafb;
+    --ash: #f3f4f6;
+    --graphite: #d1d5db;
+
+    --snow: #101820;
+
+    --ember: #e63921;
+
+    --ocean: #377dff;
+}
+
+/* 🌚 Темна тема через клас .dark */
+.dark,
+[data-theme='dark'] {
+    --onyx: #101820;
+    --ash: #1a2b34;
+    --graphite: #2b3a42;
+
+    --snow: #f8faf9;
+
+    --ember: #ff5e45;
+
+    --ocean: #5794ff;
+}
+
+/* 🎨 Прив’язка змінних до Tailwind токенів */
+@theme inline {
+    --color-onyx: var(--onyx);
+    --color-ash: var(--ash);
+    --color-graphite: var(--graphite);
+
+    --color-snow: var(--snow);
+
+    --color-ember: var(--ember);
+
+    --color-ocean: var(--ocean);
+}
