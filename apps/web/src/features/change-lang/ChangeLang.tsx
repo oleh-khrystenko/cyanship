@@ -12,7 +12,9 @@ const LANGS = [
     {
         label: (
             <div className="flex items-center gap-1.5">
-                <US title="United States" className="h-5 w-7" />
+                <span data-darkreader-ignore suppressHydrationWarning>
+                    <US title="United States" className="h-5 w-7" />
+                </span>
                 <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300">
                     Eng
                 </span>
@@ -23,7 +25,9 @@ const LANGS = [
     {
         label: (
             <div className="flex items-center gap-1.5">
-                <UA title="Ukraine" className="h-5 w-7" />
+                <span data-darkreader-ignore suppressHydrationWarning>
+                    <UA title="Ukraine" className="h-5 w-7" />
+                </span>
                 <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300">
                     Укр
                 </span>
