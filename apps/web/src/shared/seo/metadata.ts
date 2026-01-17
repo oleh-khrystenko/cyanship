@@ -2,26 +2,22 @@ import { Metadata } from 'next';
 import { IMetaProps } from '@/shared/types/settings';
 import { CLang } from '@acw/types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-
-if (!BASE_URL) {
-    throw new Error('❌ NEXT_PUBLIC_BASE_URL is not defined');
-}
-
 export async function fetchMetadata({
-    params,
+    locale,
     page,
     href,
     meta,
 }: IMetaProps): Promise<Metadata> {
-    let locale: string;
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-    try {
-        const resolved = await params;
-        locale = resolved?.locale;
-        if (!locale) throw new Error('Locale is missing in params');
-    } catch (error) {
-        console.error('❌ Failed to resolve locale from params:', error);
+    if (!BASE_URL) {
+        console.error('❌ NEXT_PUBLIC_BASE_URL is not defined');
+        // Do not throw to avoid crashing build if env missing (optional safe fallback?)
+        // throw new Error('❌ NEXT_PUBLIC_BASE_URL is not defined');
+    }
+
+    if (!locale) {
+        console.error('❌ Locale is missing in fetchMetadata');
         locale = CLang.UK;
     }
 
@@ -61,16 +57,17 @@ export async function fetchMetadata({
     }
 
     const path = href === 'welcome' ? '' : `/${href}`;
+    const baseUrl = BASE_URL || 'http://localhost:3000';
 
     return {
         title,
         description,
         alternates: {
-            canonical: `${BASE_URL}/${locale}${path}`,
+            canonical: `${baseUrl}/${locale}${path}`,
             languages: {
-                'x-default': `${BASE_URL}/uk${path}`,
-                'uk-ua': `${BASE_URL}/uk${path}`,
-                'en-ua': `${BASE_URL}/en${path}`,
+                'x-default': `${baseUrl}/uk${path}`,
+                'uk-ua': `${baseUrl}/uk${path}`,
+                'en-ua': `${baseUrl}/en${path}`,
             },
         },
     };

@@ -2,12 +2,15 @@ import { useTranslations } from 'next-intl';
 import { Metadata } from 'next';
 import ChangeLang from '@/features/change-lang';
 import { fetchMetadata } from '@/shared/seo/metadata';
-import { IMetaProps } from '@/shared/types/settings';
+import { IPageParams } from '@/shared/types/settings';
 import ChangeTheme from '@/features/change-theme';
 import UiLogo from '@/shared/ui/UiLogo';
 
-export async function generateMetadata(props: IMetaProps): Promise<Metadata> {
-    return await fetchMetadata({ ...props, page: 'welcome', href: 'welcome' });
+export async function generateMetadata({
+    params,
+}: IPageParams): Promise<Metadata> {
+    const { locale } = await params;
+    return await fetchMetadata({ locale, page: 'welcome', href: 'welcome' });
 }
 
 export default function HomePage() {

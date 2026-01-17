@@ -1,14 +1,5 @@
-import { TLang } from '@acw/types';
-
-export const CTheme = {
-    LIGHT: 'light',
-    DARK: 'dark',
-} as const;
-
-export type TTheme = (typeof CTheme)[keyof typeof CTheme];
-
 export interface IPageParams {
-    params: Promise<{ locale: TLang }>;
+    params: Promise<{ locale: string }>;
 }
 
 interface IMeta {
@@ -16,7 +7,8 @@ interface IMeta {
     description: string;
 }
 
-export interface IMetaProps extends IPageParams {
+export interface IMetaProps {
+    locale: string;
     page: string | null;
     href: string;
     meta?: IMeta;

@@ -5,21 +5,7 @@ import { routing } from '@/i18n/routing';
 import { Mulish } from 'next/font/google';
 import '@/app/globals.css';
 import { IPageParams } from '@/shared/types/settings';
-
-const setInitialTheme = `
-    (function() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.documentElement.classList.add(savedTheme);
-        } else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const defaultTheme = prefersDark ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', defaultTheme);
-            document.documentElement.classList.add(defaultTheme);
-        }
-    })();
-`;
+import ThemeProvider from '@/providers/ThemeProvider';
 
 const mulish = Mulish({
     subsets: ['cyrillic', 'latin'],
@@ -40,14 +26,22 @@ export default async function LocaleLayout({
     }
 
     return (
-        <html lang={locale}>
+        <html lang={locale} suppressHydrationWarning>
             <head>
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-                <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
             </head>
 
             <body className={`${mulish.className} bg-onyx text-snow`}>
-                <NextIntlClientProvider>{children}</NextIntlClientProvider>
+                <NextIntlClientProvider>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        {children}
+                    </ThemeProvider>
+                </NextIntlClientProvider>
             </body>
         </html>
     );

@@ -12,8 +12,7 @@
 }
 
 /* 🌚 Темна тема через клас .dark */
-.dark,
-[data-theme='dark'] {
+.dark {
     --onyx: #101820;
     --ash: #1a2b34;
     --graphite: #2b3a42;
