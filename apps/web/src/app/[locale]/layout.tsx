@@ -28,6 +28,8 @@ export default async function LocaleLayout({
     return (
         <html lang={locale} suppressHydrationWarning>
             <head>
+                <meta name="darkreader-lock" />
+                <meta name="color-scheme" content="light dark" />
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
             </head>
 
@@ -38,6 +40,7 @@ export default async function LocaleLayout({
                         defaultTheme="system"
                         enableSystem
                         disableTransitionOnChange
+                        themes={['light', 'dark']}
                     >
                         {children}
                     </ThemeProvider>
