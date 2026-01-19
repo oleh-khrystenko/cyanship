@@ -1,0 +1,2439 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.claude/
+  settings.local.json
+apps/
+  api/
+    src/
+      config/
+        env.ts
+      modules/
+        users/
+          users.controller.ts
+          users.module.ts
+          users.schema.ts
+          users.service.ts
+      app.controller.spec.ts
+      app.controller.ts
+      app.module.ts
+      app.service.ts
+      main.ts
+    test/
+      app.e2e-spec.ts
+      jest-e2e.json
+    Dockerfile
+    eslint.config.mjs
+    nest-cli.json
+    package.json
+    README.md
+    tsconfig.build.json
+    tsconfig.json
+  web/
+    messages/
+      en.json
+      uk.json
+    public/
+      favicon.svg
+    src/
+      app/
+        [locale]/
+          layout.tsx
+          page.tsx
+        globals.css
+      features/
+        change-lang/
+          ChangeLang.tsx
+          index.ts
+          types.ts
+        change-theme/
+          ChangeTheme.tsx
+          index.ts
+      i18n/
+        navigation.ts
+        request.ts
+        routing.ts
+      providers/
+        ThemeProvider.tsx
+      shared/
+        config/
+          env.ts
+        icons/
+          index.ts
+          MonitorIcon.tsx
+          MoonIcon.tsx
+          SunIcon.tsx
+          types.ts
+        seo/
+          metadata.ts
+        styles/
+          custom-variants.css
+          scrollbar.css
+          settings.css
+          themes.css
+        types/
+          settings.ts
+        ui/
+          UiLogo/
+            index.ts
+            UiLogo.tsx
+          UiSelect/
+            index.ts
+            types.ts
+            UiSelect.tsx
+          UiSwitch/
+            index.ts
+            types.ts
+            UiSwitch.tsx
+      middleware.ts
+    Dockerfile
+    eslint.config.mjs
+    next-env.d.ts
+    next.config.ts
+    package.json
+    postcss.config.mjs
+    README.md
+    tsconfig.json
+packages/
+  shared/
+    package.json
+    tsconfig.json
+  types/
+    src/
+      index.ts
+      settings.ts
+    package.json
+    tsconfig.json
+.gitignore
+.prettierignore
+.prettierrc
+.repomixignore
+AGENTS.md
+CLAUDE.md
+docker-compose.dev.yml
+docker-compose.yml
+package.json
+pnpm-workspace.yaml
+README.md
+tsconfig.json
+turbo.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".claude/settings.local.json">
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter ./apps/web lint:*)",
+      "Bash(pnpm exec next lint:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(timeout 20 pnpm --filter web dev:*)",
+      "Bash(pnpm build:*)",
+      "Bash(find .next -name *.css -exec grep -l onyx {})"
+    ]
+  }
+}
+</file>
+
+<file path=".repomixignore">
+# deps / build
+node_modules/
+dist/
+build/
+.next/
+coverage/
+.cache/
+
+# env/secrets
+.env
+.env.*
+**/*.pem
+**/*.key
+**/*secrets*
+**/*credentials*
+
+# logs & generated
+*.log
+*.map
+</file>
+
+<file path="apps/api/src/config/env.ts">
+const getEnvVar = (name: string, fallback?: string): string => {
+    const value = process.env[name];
+    if (!value && fallback === undefined) {
+        throw new Error(`❌ Environment variable "${name}" is not defined`);
+    }
+    return value ?? fallback!;
+};
+
+export const ENV = {
+    PORT: getEnvVar('PORT', '4000'),
+    MONGODB_URI: getEnvVar('MONGODB_URI'),
+    MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME'),
+};
+</file>
+
+<file path="apps/api/src/modules/users/users.controller.ts">
+import { Controller, Get, Param } from '@nestjs/common';
+import { UsersService } from './users.service';
+
+@Controller('users')
+export class UsersController {
+    constructor(private readonly usersService: UsersService) {}
+
+    @Get()
+    async getAll() {
+        return this.usersService.findAll();
+    }
+
+    @Get(':id')
+    async getById(@Param('id') id: string) {
+        return this.usersService.findById(id);
+    }
+}
+</file>
+
+<file path="apps/api/src/modules/users/users.module.ts">
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from './users.schema';
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
+
+@Module({
+    imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])],
+    controllers: [UsersController],
+    providers: [UsersService],
+})
+export class UsersModule {}
+</file>
+
+<file path="apps/api/src/modules/users/users.schema.ts">
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument } from 'mongoose';
+
+export type UserDocument = HydratedDocument<User>;
+
+@Schema({ collection: 'users', timestamps: true })
+export class User {
+    @Prop({ required: true, unique: true, lowercase: true, trim: true })
+    email!: string;
+
+    @Prop({ required: true })
+    passwordHash!: string;
+
+    @Prop({ trim: true })
+    firstName?: string;
+
+    @Prop({ trim: true })
+    lastName?: string;
+}
+
+export const UserSchema = SchemaFactory.createForClass(User);
+</file>
+
+<file path="apps/api/src/modules/users/users.service.ts">
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './users.schema';
+
+@Injectable()
+export class UsersService {
+    constructor(
+        @InjectModel(User.name) private readonly userModel: Model<UserDocument>
+    ) {}
+
+    findAll() {
+        return this.userModel
+            .find()
+            .select('-passwordHash')
+            .lean()
+            .exec();
+    }
+
+    findById(id: string) {
+        return this.userModel
+            .findById(id)
+            .select('-passwordHash')
+            .lean()
+            .exec();
+    }
+}
+</file>
+
+<file path="apps/api/src/app.controller.spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+    let appController: AppController;
+
+    beforeEach(async () => {
+        const app: TestingModule = await Test.createTestingModule({
+            controllers: [AppController],
+            providers: [AppService],
+        }).compile();
+
+        appController = app.get<AppController>(AppController);
+    });
+
+    describe('root', () => {
+        it('should return "Hello World!"', () => {
+            expect(appController.getHello()).toBe('Hello World!');
+        });
+    });
+});
+</file>
+
+<file path="apps/api/src/app.controller.ts">
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+    constructor(private readonly appService: AppService) {}
+
+    @Get()
+    getHello(): string {
+        return this.appService.getHello();
+    }
+}
+</file>
+
+<file path="apps/api/src/app.module.ts">
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ENV } from './config/env';
+import { UsersModule } from './modules/users/users.module';
+
+@Module({
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+        }),
+        MongooseModule.forRoot(ENV.MONGODB_URI, {
+            dbName: ENV.MONGODB_DB_NAME,
+        }),
+        UsersModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
+})
+export class AppModule {}
+</file>
+
+<file path="apps/api/src/app.service.ts">
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+    getHello(): string {
+        return 'Hello World!';
+    }
+}
+</file>
+
+<file path="apps/api/src/main.ts">
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ENV } from './config/env';
+
+async function bootstrap() {
+    const app = await NestFactory.create(AppModule);
+
+    app.enableCors({
+        origin: true,
+        credentials: true,
+    });
+
+    await app.listen(ENV.PORT, '0.0.0.0');
+}
+bootstrap().finally();
+</file>
+
+<file path="apps/api/test/app.e2e-spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
+
+describe('AppController (e2e)', () => {
+    let app: INestApplication<App>;
+
+    beforeEach(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+            imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();
+    });
+
+    it('/ (GET)', () => {
+        return request(app.getHttpServer())
+            .get('/')
+            .expect(200)
+            .expect('Hello World!');
+    });
+});
+</file>
+
+<file path="apps/api/test/jest-e2e.json">
+{
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": ".",
+    "testEnvironment": "node",
+    "testRegex": ".e2e-spec.ts$",
+    "transform": {
+        "^.+\\.(t|j)s$": "ts-jest"
+    }
+}
+</file>
+
+<file path="apps/api/Dockerfile">
+# syntax=docker/dockerfile:1.4
+
+# ---------- base ----------
+FROM node:20-alpine AS base
+WORKDIR /app
+ENV CI=true
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# ---------- deps ----------
+FROM base AS deps
+# Кеш-ефективно копіюємо маніфести
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY turbo.json tsconfig.json ./
+COPY packages/shared/package.json ./packages/shared/package.json
+COPY packages/types/package.json ./packages/types/package.json
+COPY apps/api/package.json ./apps/api/package.json
+# Встановлюємо тільки залежності, потрібні API та його workspace-пакетам
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile \
+    --filter ./apps/api... \
+    --filter ./packages/shared... \
+    --filter ./packages/types...
+
+# ---------- build ----------
+FROM deps AS build
+COPY . .
+# Збираємо тільки API
+RUN pnpm --filter ./apps/api build
+# Формуємо мінімальний деплой-пакет з прод-залежностями
+RUN pnpm deploy --filter ./apps/api --prod /out
+
+# ---------- runtime ----------
+FROM node:20-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3001
+RUN corepack enable
+
+# Копіюємо вже “обрізаний” пакет
+COPY --from=build /out ./
+
+# Якщо dist потрапив у deploy — готово.
+# Якщо deploy не переніс dist, додай окреме копіювання:
+# COPY --from=build /app/apps/api/dist ./apps/api/dist
+
+EXPOSE 3001
+CMD ["pnpm", "--filter", "./apps/api", "start"]
+</file>
+
+<file path="apps/api/eslint.config.mjs">
+// @ts-check
+import eslint from '@eslint/js';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+    {
+        ignores: ['eslint.config.mjs'],
+    },
+    eslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
+    eslintPluginPrettierRecommended,
+    {
+        languageOptions: {
+            globals: {
+                ...globals.node,
+                ...globals.jest,
+            },
+            sourceType: 'commonjs',
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+    },
+    {
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-floating-promises': 'warn',
+            '@typescript-eslint/no-unsafe-argument': 'warn',
+        },
+    }
+);
+</file>
+
+<file path="apps/api/nest-cli.json">
+{
+    "$schema": "https://json.schemastore.org/nest-cli",
+    "collection": "@nestjs/schematics",
+    "sourceRoot": "src",
+    "compilerOptions": {
+        "deleteOutDir": true
+    }
+}
+</file>
+
+<file path="apps/api/package.json">
+{
+    "name": "api",
+    "version": "0.0.1",
+    "description": "",
+    "author": "",
+    "private": true,
+    "license": "UNLICENSED",
+    "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "nest build",
+        "start": "nest start",
+        "start:dev": "nest start --watch",
+        "start:debug": "nest start --debug --watch",
+        "start:prod": "node dist/main",
+        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:cov": "jest --coverage",
+        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+        "test:e2e": "jest --config test/jest-e2e.json"
+    },
+    "dependencies": {
+        "@nestjs/common": "^11.1.8",
+        "@nestjs/config": "^4.0.2",
+        "@nestjs/core": "^11.1.8",
+        "@nestjs/mongoose": "^11.0.3",
+        "@nestjs/platform-express": "^11.1.8",
+        "mongoose": "^8.19.2",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.2"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.3.1",
+        "@eslint/js": "^9.38.0",
+        "@nestjs/cli": "^11.0.10",
+        "@nestjs/schematics": "^11.0.9",
+        "@nestjs/testing": "^11.1.8",
+        "@swc/cli": "^0.7.8",
+        "@swc/core": "^1.13.5",
+        "@types/express": "^5.0.5",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24.9.2",
+        "@types/supertest": "^6.0.3",
+        "eslint": "^9.38.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "globals": "^16.4.0",
+        "jest": "^30.2.0",
+        "prettier": "^3.6.2",
+        "source-map-support": "^0.5.21",
+        "supertest": "^7.1.4",
+        "ts-jest": "^29.4.5",
+        "ts-loader": "^9.5.4",
+        "ts-node": "^10.9.2",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.46.2"
+    },
+    "jest": {
+        "moduleFileExtensions": [
+            "js",
+            "json",
+            "ts"
+        ],
+        "rootDir": "src",
+        "testRegex": ".*\\.spec\\.ts$",
+        "transform": {
+            "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "collectCoverageFrom": [
+            "**/*.(t|j)s"
+        ],
+        "coverageDirectory": "../coverage",
+        "testEnvironment": "node"
+    }
+}
+</file>
+
+<file path="apps/api/README.md">
+# 🛠️ Бекенд (NestJS)
+
+Це застосунок бекенду, створений з використанням **NestJS 11** для побудови масштабованого серверного API.
+
+---
+
+## 📁 Структура
+
+<pre>
+api/
+├── dist/                                     # Зібрані файли (автоматично створюється після збірки)
+│
+├── src/                                      # Основна логіка застосунку
+│   ├── config/                               # Конфігурації, наприклад доступ до .env
+│   │   └── env.ts                            # Отримання змінних середовища
+│   │
+│   ├── app.controller.ts                     # Контролер для обробки HTTP-запитів
+│   ├── app.controller.spec.ts                # Тест для контролера
+│   ├── app.module.ts                         # Головний модуль застосунку
+│   ├── app.service.ts                        # Сервіс із бізнес-логікою
+│   └── main.ts                               # Точка входу у застосунок
+│
+├── test/                                     # E2E тести (інтеграційні)
+│   └── app.e2e-spec.ts                       # Тестовий приклад
+│
+├── eslint.config.mjs                         # Конфігурація ESLint
+├── nest-cli.json                             # Конфіг NestJS CLI
+├── package.json                              # Залежності та скрипти для api
+├── tsconfig.json                             # Загальний конфіг TypeScript
+└── tsconfig.build.json                       # Окремий конфіг для білду
+</pre>
+
+---
+
+## ⚙️ Скрипти
+
+| Команда           | Опис                             |
+| ----------------- | -------------------------------- |
+| `pnpm dev`        | Запуск у dev-режимі (watch mode) |
+| `pnpm build`      | Збірка проєкту                   |
+| `pnpm start`      | Запуск production-сервера        |
+| `pnpm lint`       | Лінтинг коду                     |
+| `pnpm format`     | Форматування з Prettier          |
+| `pnpm test`       | Юніт-тести                       |
+| `pnpm test:watch` | Тести в режимі спостереження     |
+| `pnpm test:cov`   | Покриття тестами                 |
+| `pnpm test:e2e`   | End-to-End тести                 |
+
+---
+
+## 🧰 Технології
+
+- 🟦 **NestJS** 11
+- ✨ **TypeScript**
+- 🧪 **Jest** — тестування (юнiт та E2E)
+- 🧹 **ESLint + Prettier** — перевірка стилю коду
+- ⚙️ **ts-node**, **SWC**, **tsconfig-paths** — зручність під час розробки
+
+---
+
+## 📁 Важливі папки
+
+- `src/` — уся основна логіка застосунку
+- `test/` — інтеграційні E2E тести
+</file>
+
+<file path="apps/api/tsconfig.build.json">
+{
+    "extends": "./tsconfig.json",
+    "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}
+</file>
+
+<file path="apps/api/tsconfig.json">
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "ES2023",
+        "sourceMap": true,
+        "outDir": "./dist",
+        "baseUrl": "./",
+        "paths": {
+            "@shared/*": ["../../packages/shared/*"]
+        },
+        "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "noFallthroughCasesInSwitch": false
+    }
+}
+</file>
+
+<file path="apps/web/messages/en.json">
+{
+    "all_pages": {
+        "slogan": "Make them feel it forever."
+    },
+    "welcome_page": {
+        "head": {
+            "title": "Lucid Kit — Make them feel it forever",
+            "description": "An online service for creating personalized wow greetings as beautiful web pages. No registration, no hassle — just pick an occasion, enter a name, and get an emotional greeting in seconds."
+        }
+    }
+}
+</file>
+
+<file path="apps/web/messages/uk.json">
+{
+    "all_pages": {
+        "slogan": "Створи відчуття, що не зникає."
+    },
+    "welcome_page": {
+        "head": {
+            "title": "Lucid Kit — Створи відчуття, що не зникає",
+            "description": "Онлайн-сервіс для створення персоналізованих wow-привітань у вигляді красивих сторінок. Без реєстрацій і зайвого — просто обери подію, введи ім’я та отримай емоційне привітання за кілька секунд."
+        }
+    }
+}
+</file>
+
+<file path="apps/web/public/favicon.svg">
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 512 512"
+    width="1em"
+    height="1em"
+    role="img"
+    aria-label="Icon"
+    focusable="false"
+    shape-rendering="geometricPrecision"
+>
+    <path
+        fill="#F5C542"
+        d="M151.4 1.9c-5.3 2.4-7.7 6.5-10.8 18.4C126 76.2 82.4 119.8 26.3 134.6c-5.4 1.4-11.3 3.5-13.1 4.7-6.9 4.6-9.4 15.2-5 21.7 3.6 5.2 6.4 6.7 18.8 10 38.9 10.5 71.2 34 93.2 68 9.6 14.7 16.4 30.6 20.9 48.4 3.2 12.6 8.2 17.8 17.4 17.8 8.8 0 14.3-5.3 17-16.4 2.4-10 8-25.9 11.7-33.2 19.3-38.6 54.3-69.5 92.3-81.3 5.5-1.8 13.3-4.2 17.4-5.5 6-1.8 8-3 10.4-6 5.6-7 4.4-17.7-2.5-22.8-1.6-1.2-7-3.3-11.9-4.6-4.8-1.3-13.2-4-18.6-6-48.2-17.8-85.5-59.8-98.3-110.7-2.6-9.9-5.2-14.1-10.6-16.7-5-2.5-8.7-2.5-14-.1z"
+    />
+    <path
+        fill="#E58EFF"
+        d="M393.6 165.5c-6.6 2.3-9.5 6.1-12.3 16.1-10.1 36.4-36.1 62.7-71.8 72.9-4.9 1.4-10.1 3.4-11.5 4.4-9.5 6.9-9.4 21.1.3 26.9 1.8 1.1 7.4 3.1 12.6 4.6 33.6 9.5 59.6 35.7 69.6 70.3 3.2 11 5.1 14.2 10.1 17 4.8 2.8 10.3 2.9 15.3.3 4.9-2.5 7.3-6.4 10.1-16.5 9.2-34.1 36.4-61.6 70.3-71.1 5-1.5 10.7-3.6 12.5-4.8 6.4-4 9.1-14 5.7-20.5-2.5-4.9-6.9-7.7-15.7-10.1-18.2-4.8-38.8-17.3-50.1-30.3-11.4-13.1-17.7-24.7-22.6-41.6-1.8-6.2-3.9-11.3-5.3-12.8-4.8-5.1-11.3-7-17.2-4.8z"
+    />
+    <path
+        fill="#66D2D6"
+        d="M192.4 337.7c-1.2.2-4 2-6.3 3.9-3.3 2.9-4.4 4.8-6.1 10.7-8.3 29-26.7 47.4-55.7 55.7-6 1.7-7.8 2.8-10.7 6.2-6.1 7.1-5.7 15.9 1 22.2 1.8 1.6 6.2 3.7 11.4 5.3 27 8.2 44.6 25.6 53 52.4 4 12.5 9.4 17.9 17.8 17.9 8.1-.1 14.4-6.6 17.2-17.5 3.4-13.5 13.5-28.9 25.3-38.5 6.8-5.6 19.3-12 27.2-14 14-3.5 20.5-13 16.1-23.4-2.3-5.5-6.4-8.5-15.6-11.3-14.5-4.4-25.7-11.1-34.5-20.4-9.4-10-13.7-17.4-18.4-31.9-4.8-14.6-10.8-19.5-21.7-17.3z"
+    />
+</svg>
+</file>
+
+<file path="apps/web/src/app/globals.css">
+@import 'tailwindcss';
+@import '../shared/styles/themes.css';
+@import '../shared/styles/settings.css';
+@import '../shared/styles/scrollbar.css';
+@import '../shared/styles/custom-variants.css';
+</file>
+
+<file path="apps/web/src/features/change-lang/index.ts">
+export { default } from './ChangeLang';
+</file>
+
+<file path="apps/web/src/features/change-lang/types.ts">
+export interface IProps {
+    withoutText?: boolean;
+    expandTop?: boolean;
+    selectHoverItemBg?: string;
+}
+</file>
+
+<file path="apps/web/src/features/change-theme/index.ts">
+export { default } from './ChangeTheme';
+</file>
+
+<file path="apps/web/src/i18n/navigation.ts">
+import { createNavigation } from 'next-intl/navigation';
+import { routing } from './routing';
+
+export const { Link, redirect, usePathname, useRouter, getPathname } =
+    createNavigation(routing);
+</file>
+
+<file path="apps/web/src/i18n/request.ts">
+import { getRequestConfig } from 'next-intl/server';
+import { hasLocale } from 'next-intl';
+import { routing } from './routing';
+
+export default getRequestConfig(async ({ requestLocale }) => {
+    const requested = await requestLocale;
+    const locale = hasLocale(routing.locales, requested)
+        ? requested
+        : routing.defaultLocale;
+
+    return {
+        locale,
+        messages: (await import(`../../messages/${locale}.json`)).default,
+    };
+});
+</file>
+
+<file path="apps/web/src/i18n/routing.ts">
+import { defineRouting } from 'next-intl/routing';
+import { CLang } from '@acw/types';
+
+export const routing = defineRouting({
+    locales: Object.values(CLang),
+
+    defaultLocale: CLang.UK,
+});
+</file>
+
+<file path="apps/web/src/providers/ThemeProvider.tsx">
+'use client';
+
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ComponentProps, FC } from 'react';
+
+const ThemeProvider: FC<ComponentProps<typeof NextThemesProvider>> = ({
+    children,
+    ...props
+}) => {
+    return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+};
+
+export default ThemeProvider;
+</file>
+
+<file path="apps/web/src/shared/config/env.ts">
+const getEnvVar = (name: string, fallback?: string): string => {
+    const value = process.env[name];
+    if (!value && fallback === undefined) {
+        throw new Error(`❌ Environment variable "${name}" is not defined`);
+    }
+    return value ?? fallback!;
+};
+
+export const ENV = {
+    BASE_URL: getEnvVar('NEXT_PUBLIC_BASE_URL'),
+};
+</file>
+
+<file path="apps/web/src/shared/icons/MonitorIcon.tsx">
+import { IIconProps } from '@/shared/icons/types';
+
+const MonitorIcon = ({ classes = 'h-5 w-5 stroke-ember' }: IIconProps) => {
+    return (
+        <svg
+            className={`${classes} transition-all duration-300 ease-in-out`}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <rect
+                x="2"
+                y="3"
+                width="20"
+                height="14"
+                rx="2"
+                strokeWidth="1.5"
+            ></rect>
+            <path d="M8 21H16" strokeWidth="1.5" strokeLinecap="round"></path>
+            <path d="M12 17V21" strokeWidth="1.5" strokeLinecap="round"></path>
+        </svg>
+    );
+};
+
+export default MonitorIcon;
+</file>
+
+<file path="apps/web/src/shared/icons/MoonIcon.tsx">
+import { IIconProps } from '@/shared/icons/types';
+
+const MoonIcon = ({ classes = 'h-5 w-5 fill-ocean' }: IIconProps) => {
+    return (
+        <svg
+            className={`${classes} transition-all duration-300 ease-in-out`}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 11.5373 21.3065 11.4608 21.0672 11.8568C19.9289 13.7406 17.8615 15 15.5 15C11.9101 15 9 12.0899 9 8.5C9 6.13845 10.2594 4.07105 12.1432 2.93276C12.5392 2.69347 12.4627 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"></path>
+        </svg>
+    );
+};
+
+export default MoonIcon;
+</file>
+
+<file path="apps/web/src/shared/icons/SunIcon.tsx">
+import { IIconProps } from '@/shared/icons/types';
+
+const SunIcon = ({ classes = 'h-5 w-5 stroke-ember' }: IIconProps) => {
+    return (
+        <svg
+            className={`${classes} transition-all duration-300 ease-in-out`}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <circle cx="12" cy="12" r="5" strokeWidth="1.5"></circle>
+            <path d="M12 2V4" strokeWidth="1.5" strokeLinecap="round"></path>
+            <path d="M12 20V22" strokeWidth="1.5" strokeLinecap="round"></path>
+            <path d="M4 12L2 12" strokeWidth="1.5" strokeLinecap="round"></path>
+            <path
+                d="M22 12L20 12"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            ></path>
+            <path
+                d="M19.7778 4.22266L17.5558 6.25424"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            ></path>
+            <path
+                d="M4.22217 4.22266L6.44418 6.25424"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            ></path>
+            <path
+                d="M6.44434 17.5557L4.22211 19.7779"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            ></path>
+            <path
+                d="M19.7778 19.7773L17.5558 17.5551"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            ></path>
+        </svg>
+    );
+};
+
+export default SunIcon;
+</file>
+
+<file path="apps/web/src/shared/icons/types.ts">
+import { SVGProps } from 'react';
+
+export interface IIconProps extends SVGProps<SVGSVGElement> {
+    classes?: string;
+}
+</file>
+
+<file path="apps/web/src/shared/styles/custom-variants.css">
+@custom-variant dark (&:where(.dark, .dark *));
+</file>
+
+<file path="apps/web/src/shared/styles/scrollbar.css">
+*::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--graphite);
+}
+</file>
+
+<file path="apps/web/src/shared/styles/settings.css">
+.container {
+    max-width: 1260px;
+    margin-left: auto;
+    margin-right: auto;
+}
+</file>
+
+<file path="apps/web/src/shared/ui/UiLogo/index.ts">
+export { default } from './UiLogo';
+</file>
+
+<file path="apps/web/src/shared/ui/UiSelect/index.ts">
+export { default } from './UiSelect';
+</file>
+
+<file path="apps/web/src/shared/ui/UiSelect/types.ts">
+import { ReactNode } from 'react';
+
+interface IOption {
+    label: ReactNode;
+    value: string;
+}
+
+export interface IProps {
+    options: IOption[];
+    label?: string;
+    value: IOption['value'];
+    onChange: (value: IOption['value']) => void;
+}
+</file>
+
+<file path="apps/web/src/shared/ui/UiSelect/UiSelect.tsx">
+'use client';
+
+import { FC } from 'react';
+import { IProps } from './types';
+import {
+    Listbox,
+    ListboxButton,
+    ListboxOption,
+    ListboxOptions,
+} from '@headlessui/react';
+
+const UiSelect: FC<IProps> = ({ options, label, value, onChange }) => {
+    const selected = options.find((o) => o.value === value) ?? options[0];
+
+    return (
+        <Listbox
+            value={selected?.value}
+            onChange={async (val: string) => {
+                await onChange(val);
+            }}
+        >
+            <div className="relative w-max">
+                <ListboxButton
+                    aria-label={label}
+                    className="bg-ash flex w-full items-center justify-between rounded-md px-2 py-1 text-sm font-medium text-zinc-800 dark:text-zinc-300"
+                >
+                    <div className="flex items-center gap-1.5">
+                        {selected?.label}
+                    </div>
+                </ListboxButton>
+
+                <ListboxOptions className="bg-ash absolute z-50 mt-1 w-max rounded-md shadow-lg ring-1 ring-black/10 focus:outline-none">
+                    {options.map((opt) => (
+                        <ListboxOption
+                            key={opt.value}
+                            value={opt.value}
+                            className="data-[focus]:bg-graphite/20 data-[selected]:bg-graphite/10 cursor-pointer px-2 py-1 text-sm text-zinc-800 select-none dark:text-zinc-300"
+                        >
+                            <div className="flex items-center gap-1.5">
+                                {opt.label}
+                            </div>
+                        </ListboxOption>
+                    ))}
+                </ListboxOptions>
+            </div>
+        </Listbox>
+    );
+};
+
+export default UiSelect;
+</file>
+
+<file path="apps/web/src/shared/ui/UiSwitch/index.ts">
+export { default } from './UiSwitch';
+</file>
+
+<file path="apps/web/src/shared/ui/UiSwitch/types.ts">
+import { ReactNode } from 'react';
+
+export interface IProps {
+    checked: boolean;
+    onChange?: (event: boolean) => void;
+    children?: ReactNode;
+}
+</file>
+
+<file path="apps/web/src/shared/ui/UiSwitch/UiSwitch.tsx">
+import { FC } from 'react';
+import { Switch } from '@headlessui/react';
+import { IProps } from '@/shared/ui/UiSwitch/types';
+
+const UiSwitch: FC<IProps> = ({ checked, onChange, children }) => {
+    return (
+        <Switch
+            style={{
+                boxShadow:
+                    'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2), inset 0 0 4px 2px rgba(0, 0, 0, 0.2)',
+            }}
+            className={`${checked ? 'before:left-1' : 'before:left-6'} bg-ash relative flex h-6 w-12 items-center justify-between gap-2 rounded-full px-1.5 py-1 transition-all duration-300 ease-in-out before:absolute before:top-1/2 before:h-5 before:w-5 before:-translate-y-1/2 before:rounded-full before:bg-gradient-to-b before:from-stone-500 before:to-stone-700 before:transition-all before:duration-300 before:ease-in-out dark:before:from-stone-700 dark:before:to-stone-900`}
+            checked={checked}
+            onChange={onChange}
+        >
+            {children}
+        </Switch>
+    );
+};
+
+export default UiSwitch;
+</file>
+
+<file path="apps/web/src/middleware.ts">
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
+
+export default createMiddleware(routing);
+
+export const config = {
+    matcher: '/((?!api|trpc|_next|_vercel|.*\\..*).*)',
+};
+</file>
+
+<file path="apps/web/Dockerfile">
+# syntax=docker/dockerfile:1.4
+
+# ---------- base ----------
+FROM node:20-alpine AS base
+WORKDIR /app
+ENV CI=true
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+
+# ---------- deps ----------
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY turbo.json tsconfig.json ./
+COPY packages/shared/package.json ./packages/shared/package.json
+COPY packages/types/package.json ./packages/types/package.json
+COPY apps/web/package.json ./apps/web/package.json
+# Встановлюємо тільки залежності, потрібні Next-додатку та спільним пакетам
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile \
+    --filter ./apps/web... \
+    --filter ./packages/shared... \
+    --filter ./packages/types...
+
+
+# ---------- build ----------
+FROM deps AS build
+# Приймаємо build-арги від compose
+ARG NEXT_PUBLIC_BASE_URL
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+COPY . .
+# Вимикаємо телеметрію і будуємо лише web
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter ./apps/web build
+
+
+# ---------- runtime ----------
+FROM node:20-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+RUN corepack enable
+
+
+COPY --from=build /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/public ./apps/web/public
+COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+
+
+EXPOSE 3000
+CMD ["node", "apps/web/server.js"]
+</file>
+
+<file path="apps/web/eslint.config.mjs">
+import nextConfig from 'eslint-config-next/core-web-vitals';
+
+const eslintConfig = [
+    { ignores: ['eslint.config.mjs'] },
+    ...nextConfig,
+];
+
+export default eslintConfig;
+</file>
+
+<file path="apps/web/next-env.d.ts">
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+import "./.next/dev/types/routes.d.ts";
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+</file>
+
+<file path="apps/web/next.config.ts">
+import type { NextConfig } from 'next';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const nextConfig: NextConfig = {
+    output: 'standalone',
+    reactStrictMode: true,
+};
+
+const withNextIntl = createNextIntlPlugin();
+
+export default withNextIntl(nextConfig);
+</file>
+
+<file path="apps/web/postcss.config.mjs">
+const config = {
+    plugins: ['@tailwindcss/postcss'],
+};
+
+export default config;
+</file>
+
+<file path="apps/web/README.md">
+# 🌐 Фронтенд (Next.js)
+
+Це застосунок фронтенду, розроблений з використанням **Next.js 16** у режимі **Turbopack**.
+
+---
+
+## 📁 Структура
+
+<pre>
+web/
+├── messages/                                      # JSON-файли з перекладами, які автоматично підтягуються next-intl
+│
+├── public/                                        # Публічні файли (зображення, шрифти, фавікони тощо)
+│
+├── src/                                           # Увесь вихідний код застосунку
+│   ├── app/                                       # Сторінки та маршрутизація (Next.js App Router)
+│   │   ├── [locale]/                              # Локалізовані маршрути (uk/en/...)
+│   │   └── globals.css                            # Глобальні стилі Tailwind CSS
+│   │
+│   ├── features/                                  # Функціональні модулі з логікою
+│   │   ├── change-lang/                           # Модуль перемикання мови
+│   │   └── change-theme/                          # Модуль перемикання теми
+│   │
+│   ├── i18n/                                      # Конфігурації локалізації
+│   │   ├── navigation.ts                          # Мапа локалізованих назв для навігації
+│   │   ├── request.ts                             # Отримання поточної мови з запиту
+│   │   └── routing.ts                             # Налаштування мовних маршрутів
+│   │
+│   ├── shared/                                    # Спільні компоненти, утиліти та конфіги
+│   │   ├── config/                                # Глобальні конфігурації (наприклад, змінні середовища)
+│   │   │   └── env.ts                             # Доступ до змінних середовища
+│   │   │
+│   │   ├── helpers/                               # Допоміжні функції
+│   │   │   └── hocs/                              # HOC компоненти (вищого порядку)
+│   │   │       └── OutsideClickHandler/           # HOC для відслідковування кліків поза елементом
+│   │   │
+│   │   ├── icons/                                 # SVG-іконки у вигляді React-компонентів
+│   │   │
+│   │   ├── seo/                                   # SEO-метадані для сторінок
+│   │   │   └── metadata.ts                        # Заголовки, описи тощо
+│   │   │
+│   │   ├── styles/                                # Глобальні стилі
+│   │   │   ├── custom-variants.css                # Кастомні варіанти Tailwind
+│   │   │   ├── scrollbar.css                      # Стилі для scrollbar
+│   │   │   ├── settings.css                       # Глобальні стилі
+│   │   │   └── themes.css                         # Змінні кольорів і підтримка світлої/темної тем
+│   │   │
+│   │   ├── types/                                 # Загальні типи
+│   │   │   └── settings.ts                        # Типи конфігурації/налаштувань
+│   │   │
+│   │   └── ui/                                    # Базові UI-компоненти
+│   │       ├── UiSelect/                          # Компонент випадаючого списку
+│   │       └── UiSwitch/                          # Компонент 
+│   │
+│   ├── stores/                                    # Глобальні Zustand-сховища для керування станом
+│   │   └── settings/                              # Слайс для збереження налаштувань
+│   │
+│   └── middleware.ts                              # Middleware для локалізованої маршрутизації (next-intl)
+│
+├── eslint.config.mjs                              # Налаштування ESLint
+├── next.config.ts                                 # Конфігурація Next.js
+├── next-env.d.ts                                  # Автогенерований файл типів середовища
+├── package.json                                   # Залежності та скрипти для web
+├── postcss.config.mjs                             # Конфігурація PostCSS для Tailwind
+└── tsconfig.json                                  # Конфігурація TypeScript
+
+</pre>
+
+---
+
+## ⚙️ Скрипти
+
+| Команда      | Опис                      |
+| ------------ | ------------------------- |
+| `pnpm dev`   | Запуск dev-сервера        |
+| `pnpm build` | Збірка фронтенду          |
+| `pnpm start` | Запуск production-сервера |
+| `pnpm lint`  | Перевірка ESLint          |
+
+---
+
+## 🧰 Технології
+
+- 🔷 **Next.js** 16 — SSR/SPA фреймворк
+- 🌐 **next-intl** — підтримка локалізації
+- 🎨 **Tailwind CSS** — утилітарна стилізація
+- ⚛️ **React 19**
+- ✨ **TypeScript**
+- 🧩 **PNPM Workspaces**
+- 🏁 **country-flag-icons**, **lodash.pick** та інші
+
+---
+
+## 📁 Важливі папки
+
+- `app/` — сторінки та маршрутизація (Next.js App Router)
+- `features/` — модулі з окремою логікою або функціональністю
+- `shared/` — спільні UI-компоненти, іконки, утиліти та конфігурації
+- `i18n/` — логіка та конфігурація локалізації
+- `messages/` — JSON-файли перекладів, які використовуються через next-intl
+</file>
+
+<file path="apps/web/tsconfig.json">
+{
+    "compilerOptions": {
+        "target": "ES2017",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "react-jsx",
+        "incremental": true,
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"],
+            "@shared/*": ["../../packages/shared/src/*"],
+            "@acw/types": ["../../packages/types/src/index.ts"]
+        }
+    },
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts",
+        "../../packages/shared/types/svg.d.ts",
+        ".next/dev/types/**/*.ts"
+    ],
+    "exclude": ["node_modules"]
+}
+</file>
+
+<file path="packages/shared/package.json">
+{
+    "name": "@acw/shared",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc -b"
+    },
+    "license": "MIT",
+    "packageManager": "pnpm@10.12.1",
+    "devDependencies": {
+        "@types/node": "^24.9.2"
+    }
+}
+</file>
+
+<file path="packages/shared/tsconfig.json">
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "emitDeclarationOnly": true,
+        "types": ["node"],
+        "outDir": "dist"
+    },
+    "include": ["src"]
+}
+</file>
+
+<file path="packages/types/src/index.ts">
+export * from './settings';
+</file>
+
+<file path="packages/types/src/settings.ts">
+export const CLang = {
+    UK: 'uk',
+    EN: 'en',
+} as const;
+
+export type TLang = (typeof CLang)[keyof typeof CLang];
+</file>
+
+<file path="packages/types/package.json">
+{
+    "name": "@acw/types",
+    "version": "1.0.0",
+    "types": "src/index.ts",
+    "scripts": {},
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "license": "MIT",
+    "packageManager": "pnpm@10.12.1"
+}
+</file>
+
+<file path="packages/types/tsconfig.json">
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "composite": false,
+        "declaration": false,
+        "noEmit": true
+    },
+    "include": ["src"]
+}
+</file>
+
+<file path=".gitignore">
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.pnp.*
+package-lock.json
+*.tsbuildinfo
+
+# --- Turbo / Monorepo ---
+.turbo/
+dist/
+build/
+out/
+.cache/
+.temp/
+.tmp/
+**/.next/
+**/.turbo/
+**/.vercel/
+**/.netlify/
+
+# --- Env Files ---
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+
+# --- Logs ---
+logs/
+*.log
+*.log.*
+log/
+pids/
+*.pid
+*.seed
+*.pid.lock
+npm-debug.log*
+lerna-debug.log*
+
+# --- Coverage & Testing ---
+coverage/
+*.lcov
+.nyc_output/
+jest-html-reporters-*.html
+
+# --- TypeScript ---
+*.tsbuildinfo
+*.d.ts.map
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+*.iml
+
+# --- Build outputs (Nest / Next / Packages) ---
+apps/api/dist/
+apps/web/.next/
+apps/web/out/
+apps/web/.cache/
+packages/*/dist/
+packages/*/.tsbuildinfo
+
+# --- Misc ---
+.DS_Store
+*.tgz
+
+# --- Lock & Workspace Files (keep pnpm workspace config) ---
+!pnpm-workspace.yaml
+
+# --- Optional: local tool configs ---
+*.local
+</file>
+
+<file path=".prettierignore">
+# Node / build artifacts
+node_modules
+dist
+build
+.out
+.next
+.cache
+coverage
+
+# Package managers
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Turborepo / workspace cache
+.turbo
+pnpm-workspace.yaml
+
+# Logs and temporary files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode
+.idea
+
+# Generated files
+*.min.js
+*.min.css
+
+# App-specific build outputs
+apps/**/.next
+apps/**/out
+apps/**/dist
+packages/**/dist
+
+# Test snapshots
+**/__snapshots__/**
+</file>
+
+<file path=".prettierrc">
+{
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "tabWidth": 4,
+    "semi": true,
+    "printWidth": 80,
+
+    "overrides": [
+        {
+            "files": ["apps/web/**/*.{js,jsx,ts,tsx}"],
+            "options": {
+                "plugins": ["prettier-plugin-tailwindcss"]
+            }
+        }
+    ]
+}
+</file>
+
+<file path="AGENTS.md">
+# Repository Guidelines
+
+## Project Structure & Module Organization
+This repo is a Turborepo monorepo with application code under `apps/` and shared packages under `packages/`. The main apps are `apps/web` (Next.js frontend) and `apps/api` (NestJS backend). Shared UI/components and types live in `packages/shared` and `packages/types`. Root-level configs include `turbo.json`, `tsconfig.json`, and Prettier settings in `.prettierrc`. Docker workflows are defined in `docker-compose.dev.yml` and `docker-compose.yml`.
+
+## Build, Test, and Development Commands
+- `pnpm dev` runs all dev servers via Turbo.
+- `pnpm build` builds all packages/apps.
+- `pnpm lint` runs lint tasks across the workspace.
+- `pnpm format` formats the repo with Prettier.
+App-specific examples:
+- `pnpm --filter web dev` runs the Next.js dev server.
+- `pnpm --filter api start:dev` runs the NestJS API in watch mode.
+Docker workflows:
+- `docker compose -f docker-compose.dev.yml up --build` starts local dev with Mongo.
+- `docker compose up --build -d` starts production-style containers.
+
+## Coding Style & Naming Conventions
+Prettier enforces 4-space indentation, single quotes, semicolons, and 80-column lines. Use `pnpm format` before pushing. ESLint runs in both apps. Tailwind class sorting is enabled for `apps/web` via `prettier-plugin-tailwindcss`. Use `.spec.ts` for unit tests and `.e2e-spec.ts` for end-to-end tests.
+
+## Testing Guidelines
+The API uses Jest (unit and e2e). Run:
+- `pnpm --filter api test` for unit tests.
+- `pnpm --filter api test:e2e` for end-to-end tests.
+No frontend test harness is configured yet; add one only if requirements emerge.
+
+## Commit & Pull Request Guidelines
+There is only an initial commit in history, so no formal commit convention exists. Keep messages short and imperative (e.g., “add api health check”). PRs should describe the change, include relevant commands run (e.g., `pnpm lint`), and add screenshots for UI changes. Link related issues when applicable.
+
+## Configuration Notes
+Create a root `.env` file for Docker runs (see `README.md` for example values). Do not commit secrets; keep environment-specific values local.
+</file>
+
+<file path="CLAUDE.md">
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Build & Development Commands
+
+**Root commands (Turborepo orchestration):**
+```bash
+pnpm dev              # Run all apps in development mode
+pnpm build            # Build all workspaces
+pnpm lint             # Lint all workspaces
+pnpm format           # Format code with Prettier
+```
+
+**Docker development (recommended):**
+```bash
+docker compose -f docker-compose.dev.yml up --build   # Starts web, api, and local MongoDB
+```
+
+**Filter to specific workspace:**
+```bash
+pnpm --filter ./apps/web dev
+pnpm --filter ./apps/api test
+pnpm --filter ./apps/api test:watch
+pnpm --filter ./apps/api test:e2e
+```
+
+## Architecture
+
+This is a pnpm monorepo with Turborepo orchestration containing:
+
+- **apps/web**: Next.js 16 frontend with React 19, Turbopack, next-intl for i18n (uk/en locales), next-themes for theming, Zustand for state, Tailwind CSS v4
+- **apps/api**: NestJS 11 backend with Mongoose/MongoDB, modular architecture (modules/controllers/services pattern)
+- **packages/types**: Shared TypeScript type definitions (@acw/types)
+- **packages/shared**: Shared utilities (@acw/shared)
+
+**Path aliases:**
+- Web: `@/*` → `./src/*`, `@shared/*` → `packages/shared`, `@acw/types`
+- API: `@shared/*` → `packages/shared`
+
+**Key patterns:**
+- App Router with dynamic `[locale]` segments for i18n routing
+- Feature-based organization in `apps/web/src/features/`
+- Shared UI components in `apps/web/src/shared/ui/`
+- Translation files in `apps/web/messages/{en,uk}.json`
+- NestJS modules in `apps/api/src/modules/` (e.g., users module)
+
+**Environment:**
+- `WEB_PORT` (default 3000), `API_PORT` (default 3001)
+- `MONGODB_URI`, `MONGODB_DB_NAME` for database
+- `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL` for frontend API calls
+
+## Code Style
+
+- 4-space indentation (configured in .prettierrc)
+- Single quotes, trailing commas (es5)
+- Tailwind class sorting via prettier-plugin-tailwindcss
+- ESLint: next/core-web-vitals for web, @typescript-eslint for api
+</file>
+
+<file path="docker-compose.dev.yml">
+services:
+    mongo:
+        image: mongo:7
+        restart: unless-stopped
+        ports:
+            - '27017:27017'
+        volumes:
+            - mongo_data_dev:/data/db
+
+    api:
+        image: node:20-alpine
+        working_dir: /app
+        command: >
+            sh -c "corepack enable &&
+            pnpm install --frozen-lockfile
+            --filter ./apps/api...
+            --filter ./packages/shared...
+            --filter ./packages/types... &&
+            pnpm --filter ./apps/api dev"
+        environment:
+            - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            - PNPM_STORE_DIR=/pnpm-store
+            - CI=true
+            - NODE_ENV=development
+            - PORT=${API_PORT}
+            - MONGODB_URI=mongodb://mongo:27017/${MONGODB_DB_NAME}
+            - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+            - TSC_WATCHFILE=UsePolling
+            - TSC_WATCHDIRECTORY=UsePolling
+        ports:
+            - '${API_PORT}:${API_PORT}'
+        volumes:
+            - ./:/app
+            - pnpm-store:/pnpm-store
+            - /app/node_modules
+        depends_on:
+            - mongo
+
+    web:
+        image: node:20-alpine
+        working_dir: /app
+        command: >
+            sh -c "corepack enable &&
+            pnpm install --frozen-lockfile
+            --filter ./apps/web...
+            --filter ./packages/shared...
+            --filter ./packages/types... &&
+            pnpm --filter ./apps/web dev"
+        environment:
+            - CI=true
+            - NODE_ENV=development
+            - NEXT_TELEMETRY_DISABLED=1
+            - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            - PNPM_STORE_DIR=/pnpm-store
+            - PORT=${WEB_PORT}
+            - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+            - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+            - WATCHPACK_POLLING=true
+            - CHOKIDAR_USEPOLLING=true
+        ports:
+            - '${WEB_PORT}:${WEB_PORT}'
+        volumes:
+            - ./:/app
+            - pnpm-store:/pnpm-store
+            - /app/node_modules
+        depends_on:
+            - api
+
+volumes:
+    mongo_data_dev:
+    pnpm-store:
+</file>
+
+<file path="docker-compose.yml">
+services:
+    api:
+        build:
+            context: .
+            dockerfile: ./apps/api/Dockerfile
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - PORT=${API_PORT}
+            - MONGODB_URI=${MONGODB_URI}
+            - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+        ports:
+            - "${API_PORT}:${API_PORT}"
+
+
+    web:
+        build:
+            context: .
+            dockerfile: ./apps/web/Dockerfile
+            args:
+                NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+                NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - PORT=${WEB_PORT}
+            - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+            - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        ports:
+            - "${WEB_PORT}:${WEB_PORT}"
+        depends_on:
+            - api
+</file>
+
+<file path="package.json">
+{
+    "name": "lucid-kit",
+    "version": "0.1.0",
+    "private": true,
+    "description": "",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "main": "index.js",
+    "scripts": {
+        "dev": "turbo run dev",
+        "build": "turbo run build",
+        "lint": "turbo run lint",
+        "format": "prettier --write ."
+    },
+    "keywords": [],
+    "author": "KhOlAn",
+    "license": "ISC",
+    "packageManager": "pnpm@10.20.0",
+    "devDependencies": {
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "prettier": "^3.6.2",
+        "prettier-plugin-tailwindcss": "^0.7.1",
+        "turbo": "^2.5.8",
+        "typescript": "^5.9.3"
+    }
+}
+</file>
+
+<file path="pnpm-workspace.yaml">
+packages:
+    - apps/*
+    - packages/*
+
+onlyBuiltDependencies:
+    - '@nestjs/core'
+    - '@swc/core'
+    - '@tailwindcss/oxide'
+    - sharp
+    - unrs-resolver
+</file>
+
+<file path="README.md">
+# Lucid Kit
+## The Clarity of Enterprise Architecture.
+<br>
+
+Цей репозиторій використовує **Turborepo** для організації монорепозиторію з фронтендом, бекендом і спільними пакетами.
+
+---
+
+## 📁 Структура проєкту
+
+<pre>
+lucid-kit/
+├── apps/                     # Основні застосунки
+│   ├── web/                  # Фронтенд (Next.js)
+│   └── api/                  # Бекенд (NestJS)
+│
+├── packages/                 # Спільні пакети
+│   ├── shared/               # Компоненти інтерфейсу
+│   └── types/                # Спільні типи TypeScript
+│
+├── .env                      # Змінні середовища
+│
+├── .gitignore                # Правила ігнорування для Git
+├── .prettierrc               # Конфіг Prettier
+├── .prettierignore           # Ігнор для Prettier
+│
+├── .dockerignore             # Ігнор для Docker
+├── docker-compose.dev.yml    # дев-середовище в Docker
+├── docker-compose.yml        # прод-середовище в Docker
+│
+├── package.json              # Скрипти та загальні залежності
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml       # Робоча область для монорепозиторію
+├── tsconfig.json             # Головний конфіг TypeScript з project references
+└── turbo.json                # Конфіг Turborepo
+</pre>
+
+---
+
+## ⚙️ Скрипти
+
+| Команда       | Опис                             |
+| ------------- | -------------------------------- |
+| `pnpm dev`    | Запуск dev-серверів              |
+| `pnpm build`  | Збірка всіх застосунків          |
+| `pnpm lint`   | Лінтинг коду                     |
+| `pnpm format` | Форматування коду через Prettier |
+
+---
+
+## 🧰 Технології
+
+- 🔷 **Next.js** — фронтенд
+- 🟦 **NestJS** — бекенд
+- ✨ **TypeScript** — типізація в усьому проєкті
+- 🚀 **Turborepo** — керування монорепозиторієм
+- 🧹 **Prettier + ESLint** — форматування та перевірка якості коду
+- 📦 **PNPM Workspaces** — керування залежностями
+
+---
+
+## 🚀 Швидкий старт
+
+### 1️⃣ Завантаження
+
+* Скачай архів цього репозиторію у будь-яку теку.
+* **Не роби `git clone`** — просто розпакуй архів.
+
+---
+
+### 2️⃣ Запуск Docker
+
+Переконайся, що встановлено:
+
+* **Docker**
+* **Docker Compose**
+
+---
+
+### 3️⃣ Створи файл `.env` у корені
+
+Приклад вмісту:
+
+```env
+NODE_ENV=production
+WEB_PORT=3000
+API_PORT=3001
+MONGODB_DB_NAME=myapp
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://api:3001
+```
+
+> У продакшні потрібно буде вказати реальний Atlas URI:
+>
+> ```
+> MONGODB_URI=mongodb+srv://user:pass@cluster.example.mongodb.net/myapp
+> ```
+
+---
+
+### 4️⃣ Запуск для розробки (з локальною Mongo)
+
+```bash
+  docker compose -f docker-compose.dev.yml up --build
+```
+
+* Frontend: [http://localhost:3000](http://localhost:3000)
+* Backend: [http://localhost:3001](http://localhost:3001)
+* MongoDB: порт 27017 (для перевірки, якщо потрібно)
+
+Зупинити:
+
+```bash
+  docker compose -f docker-compose.dev.yml down
+```
+
+---
+
+### 5️⃣ Запуск для продакшну (Atlas DB)
+
+1. У `.env` додай свій Atlas `MONGODB_URI`.
+2. Запусти:
+
+    ```bash
+    docker compose up --build -d
+    ```
+3. Відкрий:
+
+    * Frontend → [http://localhost:3000](http://localhost:3000)
+    * Backend → [http://localhost:3001](http://localhost:3001)
+
+Зупинити:
+
+```bash
+  docker compose down
+```
+
+---
+
+### 6️⃣ Все готово
+
+* Весь код (фронт, бек, спільні пакети) вже зв’язані через **Turborepo**.
+* Нічого додатково встановлювати локально не потрібно.
+* Всі залежності інсталюються всередині контейнерів.
+</file>
+
+<file path="tsconfig.json">
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "moduleResolution": "Node",
+        "module": "ESNext",
+        "isolatedModules": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true
+    },
+    "exclude": ["node_modules"],
+    "files": [],
+    "references": [
+        { "path": "packages/shared" },
+        { "path": "packages/types" },
+        { "path": "apps/web" },
+        { "path": "apps/api" }
+    ]
+}
+</file>
+
+<file path="turbo.json">
+{
+    "$schema": "https://turbo.build/schema.json",
+    "tasks": {
+        "dev": {
+            "cache": false,
+            "dependsOn": ["^dev"]
+        },
+        "build": {
+            "dependsOn": ["^build"],
+            "outputs": [".next/**", "dist/**"]
+        },
+        "lint": { "outputs": [] }
+    }
+}
+</file>
+
+<file path="apps/web/src/app/[locale]/page.tsx">
+import { useTranslations } from 'next-intl';
+import { Metadata } from 'next';
+import ChangeLang from '@/features/change-lang';
+import { fetchMetadata } from '@/shared/seo/metadata';
+import { IPageParams } from '@/shared/types/settings';
+import ChangeTheme from '@/features/change-theme';
+import UiLogo from '@/shared/ui/UiLogo';
+
+export async function generateMetadata({
+    params,
+}: IPageParams): Promise<Metadata> {
+    const { locale } = await params;
+    return await fetchMetadata({ locale, page: 'welcome', href: 'welcome' });
+}
+
+export default function HomePage() {
+    const allPagesT = useTranslations('all_pages');
+
+    return (
+        <main className="tablet-md:p-0 flex h-full min-h-screen flex-col pb-14">
+            <header>
+                <div className="container flex items-center justify-between gap-6 py-4">
+                    <UiLogo />
+
+                    <div className="flex items-center gap-4">
+                        <ChangeTheme />
+
+                        <ChangeLang />
+                    </div>
+                </div>
+            </header>
+
+            <section className="container text-4xl">
+                <h1>{allPagesT('slogan')}</h1>
+            </section>
+        </main>
+    );
+}
+</file>
+
+<file path="apps/web/src/features/change-lang/ChangeLang.tsx">
+'use client';
+
+import { FC, useMemo } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { UA, US } from 'country-flag-icons/react/3x2';
+import { CLang, TLang } from '@acw/types';
+import { IProps } from './types';
+import UiSelect from '@/shared/ui/UiSelect';
+
+const LANGS = [
+    {
+        label: (
+            <div className="flex items-center gap-1.5">
+                <span data-darkreader-ignore suppressHydrationWarning>
+                    <US title="United States" className="h-5 w-7" />
+                </span>
+                <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300">
+                    Eng
+                </span>
+            </div>
+        ),
+        value: CLang.EN,
+    },
+    {
+        label: (
+            <div className="flex items-center gap-1.5">
+                <span data-darkreader-ignore suppressHydrationWarning>
+                    <UA title="Ukraine" className="h-5 w-7" />
+                </span>
+                <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300">
+                    Укр
+                </span>
+            </div>
+        ),
+        value: CLang.UK,
+    },
+];
+
+const ChangeLang: FC<IProps> = ({ withoutText, expandTop }) => {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const activeLocale = useLocale();
+
+    const selected = useMemo(
+        () => LANGS.find((lang) => lang.value === activeLocale) ?? LANGS[0],
+        [activeLocale]
+    );
+
+    const handleChangeLang = (value: string) => {
+        const allSearchParams = searchParams.toString();
+        const newPath = pathname.replace(`/${activeLocale}`, '');
+        const newUrl = `/${value}${newPath}${allSearchParams ? `?${allSearchParams}` : ''}`;
+        router.replace(newUrl);
+    };
+
+    return (
+        <UiSelect
+            label="Change language"
+            options={LANGS}
+            value={selected.value}
+            onChange={handleChangeLang}
+        />
+    );
+};
+
+export default ChangeLang;
+</file>
+
+<file path="apps/web/src/shared/icons/index.ts">
+export { default as SunIcon } from './SunIcon';
+export { default as MoonIcon } from './MoonIcon';
+export { default as MonitorIcon } from './MonitorIcon';
+</file>
+
+<file path="apps/web/src/shared/seo/metadata.ts">
+import { Metadata } from 'next';
+import { IMetaProps } from '@/shared/types/settings';
+import { CLang } from '@acw/types';
+
+export async function fetchMetadata({
+    locale,
+    page,
+    href,
+    meta,
+}: IMetaProps): Promise<Metadata> {
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+    if (!BASE_URL) {
+        console.error('❌ NEXT_PUBLIC_BASE_URL is not defined');
+        // Do not throw to avoid crashing build if env missing (optional safe fallback?)
+        // throw new Error('❌ NEXT_PUBLIC_BASE_URL is not defined');
+    }
+
+    if (!locale) {
+        console.error('❌ Locale is missing in fetchMetadata');
+        locale = CLang.UK;
+    }
+
+    let title = 'Lucid Kit — Створи відчуття, що не зникає';
+    let description =
+        'Онлайн-сервіс для створення персоналізованих wow-привітань у вигляді красивих сторінок. Без реєстрацій і зайвого — просто обери подію, введи ім’я та отримай емоційне привітання за кілька секунд.';
+
+    if (page === null) {
+        if (meta) {
+            title = meta.title;
+            description = meta.description;
+        }
+    } else {
+        const raw = String(locale ?? '').toLowerCase();
+        const normalized = /^[a-z]{2}(-[a-z]{2})?$/i.test(raw) ? raw : CLang.UK;
+
+        async function importMessages(loc: string) {
+            try {
+                const mod = await import(`../../../messages/${loc}.json`);
+                return (mod as any).default ?? mod;
+            } catch {
+                if (loc !== CLang.UK) {
+                    const modUk = await import(
+                        `../../../messages/${CLang.UK}.json`
+                    );
+                    return (modUk as any).default ?? modUk;
+                }
+                return {};
+            }
+        }
+
+        const messages: any = await importMessages(normalized);
+        const metaT = (key: string) => messages?.[key] ?? {};
+
+        title = metaT(`${page}_page`)?.head?.title ?? title;
+        description = metaT(`${page}_page`)?.head?.description ?? description;
+    }
+
+    const path = href === 'welcome' ? '' : `/${href}`;
+    const baseUrl = BASE_URL || 'http://localhost:3000';
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: `${baseUrl}/${locale}${path}`,
+            languages: {
+                'x-default': `${baseUrl}/uk${path}`,
+                'uk-ua': `${baseUrl}/uk${path}`,
+                'en-ua': `${baseUrl}/en${path}`,
+            },
+        },
+    };
+}
+</file>
+
+<file path="apps/web/src/shared/styles/themes.css">
+/* 🌞 Light theme — за замовчуванням */
+:root {
+    --onyx: #f9fafb;
+    --ash: #f3f4f6;
+    --graphite: #d1d5db;
+
+    --snow: #101820;
+
+    --ember: #e63921;
+
+    --ocean: #377dff;
+}
+
+/* 🌚 Темна тема через клас .dark */
+.dark {
+    --onyx: #101820;
+    --ash: #1a2b34;
+    --graphite: #2b3a42;
+
+    --snow: #f8faf9;
+
+    --ember: #ff5e45;
+
+    --ocean: #5794ff;
+}
+
+/* 🎨 Прив’язка змінних до Tailwind токенів */
+@theme inline {
+    --color-onyx: var(--onyx);
+    --color-ash: var(--ash);
+    --color-graphite: var(--graphite);
+
+    --color-snow: var(--snow);
+
+    --color-ember: var(--ember);
+
+    --color-ocean: var(--ocean);
+}
+</file>
+
+<file path="apps/web/src/shared/types/settings.ts">
+export interface IPageParams {
+    params: Promise<{ locale: string }>;
+}
+
+interface IMeta {
+    title: string;
+    description: string;
+}
+
+export interface IMetaProps {
+    locale: string;
+    page: string | null;
+    href: string;
+    meta?: IMeta;
+}
+</file>
+
+<file path="apps/web/src/shared/ui/UiLogo/UiLogo.tsx">
+import Image from 'next/image';
+
+const UiLogo = () => {
+    return (
+        <p className="flex items-center gap-0.5 text-5xl">
+            <span data-darkreader-ignore suppressHydrationWarning>
+                <Image
+                    src="/favicon.svg"
+                    alt="Logo"
+                    width={40}
+                    height={40}
+                    priority
+                    suppressHydrationWarning
+                />
+            </span>
+            <span className="text-snow font-bold">Lucid Kit</span>
+        </p>
+    );
+};
+
+export default UiLogo;
+</file>
+
+<file path="apps/web/package.json">
+{
+    "name": "web",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev --turbopack",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@acw/types": "workspace:*",
+        "@headlessui/react": "^2.2.9",
+        "country-flag-icons": "^1.5.21",
+        "next": "^16.0.1",
+        "next-intl": "^4.4.0",
+        "next-themes": "^0.4.6",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+        "zustand": "^5.0.8"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.3.1",
+        "@tailwindcss/postcss": "^4.1.16",
+        "@types/lodash.pick": "^4.4.9",
+        "@types/node": "^24.9.2",
+        "@types/react": "^19.2.2",
+        "@types/react-dom": "^19.2.2",
+        "eslint": "^9.38.0",
+        "eslint-config-next": "^16.0.1",
+        "tailwindcss": "^4.1.16",
+        "typescript": "^5.9.3"
+    }
+}
+</file>
+
+<file path="apps/web/src/app/[locale]/layout.tsx">
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
+import { ReactNode } from 'react';
+import { notFound } from 'next/navigation';
+import { routing } from '@/i18n/routing';
+import { Mulish } from 'next/font/google';
+import '@/app/globals.css';
+import { IPageParams } from '@/shared/types/settings';
+import ThemeProvider from '@/providers/ThemeProvider';
+
+const mulish = Mulish({
+    subsets: ['cyrillic', 'latin'],
+    weight: ['300', '400', '700'],
+});
+
+interface ILocaleLayoutProps extends IPageParams {
+    children: ReactNode;
+}
+
+export default async function LocaleLayout({
+    children,
+    params,
+}: ILocaleLayoutProps) {
+    const { locale } = await params;
+    if (!hasLocale(routing.locales, locale)) {
+        notFound();
+    }
+
+    return (
+        <html lang={locale} suppressHydrationWarning>
+            <head>
+                <meta name="darkreader-lock" />
+                <meta name="color-scheme" content="light dark" />
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+            </head>
+
+            <body className={`${mulish.className} bg-onyx text-snow`}>
+                <NextIntlClientProvider>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                        themes={['light', 'dark']}
+                    >
+                        {children}
+                    </ThemeProvider>
+                </NextIntlClientProvider>
+            </body>
+        </html>
+    );
+}
+</file>
+
+<file path="apps/web/src/features/change-theme/ChangeTheme.tsx">
+'use client';
+
+import { FC, useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
+import { SunIcon, MoonIcon, MonitorIcon } from '@/shared/icons';
+import UiSelect from '@/shared/ui/UiSelect';
+
+const themeOptions = [
+    {
+        value: 'system',
+        label: <MonitorIcon classes="h-5 w-5 stroke-current" />,
+    },
+    {
+        value: 'light',
+        label: <SunIcon classes="h-5 w-5 stroke-current" />,
+    },
+    {
+        value: 'dark',
+        label: <MoonIcon classes="h-5 w-5 stroke-current" />,
+    },
+];
+
+const ChangeTheme: FC = () => {
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <div className="bg-ash h-8.5 w-13 animate-pulse rounded-md" />
+        );
+    }
+
+    return (
+        <UiSelect
+            options={themeOptions}
+            value={theme ?? 'system'}
+            onChange={setTheme}
+            label="Change theme"
+        />
+    );
+};
+
+export default ChangeTheme;
+</file>
+
+</files>

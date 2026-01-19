@@ -1,9 +1,11 @@
 'use client';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
 import { SunIcon, MoonIcon, MonitorIcon } from '@/shared/icons';
 import UiSelect from '@/shared/ui/UiSelect';
+
+const emptySubscribe = () => () => {};
 
 const themeOptions = [
     {
@@ -22,11 +24,11 @@ const themeOptions = [
 
 const ChangeTheme: FC = () => {
     const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false
+    );
 
     if (!mounted) {
         return (

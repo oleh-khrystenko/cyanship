@@ -1,0 +1,19 @@
+# deps / build
+node_modules/
+dist/
+build/
+.next/
+coverage/
+.cache/
+
+# env/secrets
+.env
+.env.*
+**/*.pem
+**/*.key
+**/*secrets*
+**/*credentials*
+
+# logs & generated
+*.log
+*.map
