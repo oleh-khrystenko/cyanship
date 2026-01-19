@@ -176,28 +176,6 @@ This section contains the contents of the repository's files.
 }
 </file>
 
-<file path=".repomixignore">
-# deps / build
-node_modules/
-dist/
-build/
-.next/
-coverage/
-.cache/
-
-# env/secrets
-.env
-.env.*
-**/*.pem
-**/*.key
-**/*secrets*
-**/*credentials*
-
-# logs & generated
-*.log
-*.map
-</file>
-
 <file path="apps/api/src/config/env.ts">
 const getEnvVar = (name: string, fallback?: string): string => {
     const value = process.env[name];
@@ -1582,6 +1560,28 @@ packages/**/dist
 }
 </file>
 
+<file path=".repomixignore">
+# deps / build
+node_modules/
+dist/
+build/
+.next/
+coverage/
+.cache/
+
+# env/secrets
+.env
+.env.*
+**/*.pem
+**/*.key
+**/*secrets*
+**/*credentials*
+
+# logs & generated
+*.log
+*.map
+</file>
+
 <file path="AGENTS.md">
 # Repository Guidelines
 
@@ -1782,38 +1782,6 @@ services:
             - "${WEB_PORT}:${WEB_PORT}"
         depends_on:
             - api
-</file>
-
-<file path="package.json">
-{
-    "name": "lucid-kit",
-    "version": "0.1.0",
-    "private": true,
-    "description": "",
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
-    "main": "index.js",
-    "scripts": {
-        "dev": "turbo run dev",
-        "build": "turbo run build",
-        "lint": "turbo run lint",
-        "format": "prettier --write ."
-    },
-    "keywords": [],
-    "author": "KhOlAn",
-    "license": "ISC",
-    "packageManager": "pnpm@10.20.0",
-    "devDependencies": {
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.4",
-        "prettier": "^3.6.2",
-        "prettier-plugin-tailwindcss": "^0.7.1",
-        "turbo": "^2.5.8",
-        "typescript": "^5.9.3"
-    }
-}
 </file>
 
 <file path="pnpm-workspace.yaml">
@@ -2295,38 +2263,33 @@ const UiLogo = () => {
 export default UiLogo;
 </file>
 
-<file path="apps/web/package.json">
+<file path="package.json">
 {
-    "name": "web",
+    "name": "lucid-kit",
     "version": "0.1.0",
     "private": true,
+    "description": "",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "main": "index.js",
     "scripts": {
-        "dev": "next dev --turbopack",
-        "build": "next build",
-        "start": "next start",
-        "lint": "next lint"
+        "dev": "turbo run dev",
+        "build": "turbo run build",
+        "lint": "turbo run lint",
+        "format": "prettier --write ."
     },
-    "dependencies": {
-        "@acw/types": "workspace:*",
-        "@headlessui/react": "^2.2.9",
-        "country-flag-icons": "^1.5.21",
-        "next": "^16.0.1",
-        "next-intl": "^4.4.0",
-        "next-themes": "^0.4.6",
-        "react": "^19.2.0",
-        "react-dom": "^19.2.0",
-        "zustand": "^5.0.8"
-    },
+    "keywords": [],
+    "author": "KhOlAn",
+    "license": "ISC",
+    "packageManager": "pnpm@10.28.0",
     "devDependencies": {
-        "@eslint/eslintrc": "^3.3.1",
-        "@tailwindcss/postcss": "^4.1.16",
-        "@types/lodash.pick": "^4.4.9",
-        "@types/node": "^24.9.2",
-        "@types/react": "^19.2.2",
-        "@types/react-dom": "^19.2.2",
-        "eslint": "^9.38.0",
-        "eslint-config-next": "^16.0.1",
-        "tailwindcss": "^4.1.16",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "prettier": "^3.6.2",
+        "prettier-plugin-tailwindcss": "^0.7.1",
+        "turbo": "^2.5.8",
         "typescript": "^5.9.3"
     }
 }
@@ -2386,36 +2349,76 @@ export default async function LocaleLayout({
 }
 </file>
 
+<file path="apps/web/package.json">
+{
+    "name": "web",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev --turbopack",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@acw/types": "workspace:*",
+        "@headlessui/react": "^2.2.9",
+        "country-flag-icons": "^1.5.21",
+        "lucide-react": "^0.562.0",
+        "next": "^16.0.1",
+        "next-intl": "^4.4.0",
+        "next-themes": "^0.4.6",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+        "zustand": "^5.0.8"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.3.1",
+        "@tailwindcss/postcss": "^4.1.16",
+        "@types/lodash.pick": "^4.4.9",
+        "@types/node": "^24.9.2",
+        "@types/react": "^19.2.2",
+        "@types/react-dom": "^19.2.2",
+        "eslint": "^9.38.0",
+        "eslint-config-next": "^16.0.1",
+        "tailwindcss": "^4.1.16",
+        "typescript": "^5.9.3"
+    }
+}
+</file>
+
 <file path="apps/web/src/features/change-theme/ChangeTheme.tsx">
 'use client';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
-import { SunIcon, MoonIcon, MonitorIcon } from '@/shared/icons';
+import { Sun, Moon, SunMoon } from 'lucide-react';
 import UiSelect from '@/shared/ui/UiSelect';
+
+const emptySubscribe = () => () => {};
 
 const themeOptions = [
     {
         value: 'system',
-        label: <MonitorIcon classes="h-5 w-5 stroke-current" />,
+        label: <SunMoon className="h-5 w-5" />,
     },
     {
         value: 'light',
-        label: <SunIcon classes="h-5 w-5 stroke-current" />,
+        label: <Sun className="h-5 w-5" />,
     },
     {
         value: 'dark',
-        label: <MoonIcon classes="h-5 w-5 stroke-current" />,
+        label: <Moon className="h-5 w-5" />,
     },
 ];
 
 const ChangeTheme: FC = () => {
     const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false
+    );
 
     if (!mounted) {
         return (
