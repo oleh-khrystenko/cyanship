@@ -2,7 +2,7 @@
 
 import { FC, useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
-import { SunIcon, MoonIcon, MonitorIcon } from '@/shared/icons';
+import { Sun, Moon, SunMoon } from 'lucide-react';
 import UiSelect from '@/shared/ui/UiSelect';
 
 const emptySubscribe = () => () => {};
@@ -10,15 +10,15 @@ const emptySubscribe = () => () => {};
 const themeOptions = [
     {
         value: 'system',
-        label: <MonitorIcon classes="h-5 w-5 stroke-current" />,
+        label: <SunMoon className="h-5 w-5" />,
     },
     {
         value: 'light',
-        label: <SunIcon classes="h-5 w-5 stroke-current" />,
+        label: <Sun className="h-5 w-5" />,
     },
     {
         value: 'dark',
-        label: <MoonIcon classes="h-5 w-5 stroke-current" />,
+        label: <Moon className="h-5 w-5" />,
     },
 ];
 
