@@ -116,7 +116,7 @@ Global prefix: `/api` (`apps/api/src/main.ts`).
 - `WEB_URL`, `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL` — redirects, canonical metadata, client API base URL.
 
 **Data/auth keys**
-- `MONGODB_URI`, `MONGODB_DB_NAME` — Mongo connection/database.
+- `MONGODB_URI` — Mongo connection string (includes database name).
 - `REDIS_URL` — Redis connection for token/rate-limit state.
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` — JWT signing/verification.
 
@@ -208,7 +208,7 @@ Docker (optional):
 
 Root `.env` should define at least:
 
-- `WEB_PORT`, `API_PORT`, `MONGODB_URI` or `MONGODB_DB_NAME`,
+- `WEB_PORT`, `API_PORT`, `MONGODB_URI`,
 - `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`.
 
 If you add new env keys, update documentation and sample config.

@@ -428,7 +428,6 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 
 - `NODE_ENV` → `'development'`
 - `PORT` → `'4000'`
-- `MONGODB_DB_NAME` → `'lucidkit'`
 - `WEB_URL` → `'http://localhost:3000'`
 - `RESEND_FROM_EMAIL` → `'LucidKit <onboarding@resend.dev>'` (dev fallback, у prod задати кастомний email)
 

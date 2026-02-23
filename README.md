@@ -53,7 +53,6 @@ API_PORT=4000
 
 # MongoDB
 MONGODB_URI=mongodb://mongo:27017    # dev (docker-compose.dev)
-MONGODB_DB_NAME=lucidkit
 
 # JWT
 JWT_ACCESS_SECRET=your-access-secret

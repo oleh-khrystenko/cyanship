@@ -4,7 +4,7 @@
 // connection strings. If a variable is missing, crash immediately.
 // Silent failures with localhost fallbacks are invisible in
 // production and break auth and SEO.
-// Only NODE_ENV, PORT, MONGODB_DB_NAME, WEB_URL may have defaults.
+// Only NODE_ENV, PORT, WEB_URL may have defaults.
 // ============================================================
 
 import { config } from 'dotenv';
@@ -30,7 +30,6 @@ export const ENV = {
     // --- REQUIRED WITH DEFAULTS ---
     NODE_ENV: nodeEnv,
     PORT: getEnvVar('PORT', '4000'),
-    MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'lucidkit'),
     WEB_URL: getEnvVar('WEB_URL', 'http://localhost:3000'),
 
     // --- REQUIRED (no fallback — crash if missing) ---

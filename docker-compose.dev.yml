@@ -31,8 +31,7 @@ services:
             - CI=true
             - NODE_ENV=development
             - PORT=${API_PORT}
-            - MONGODB_URI=mongodb://mongo:27017/${MONGODB_DB_NAME}
-            - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+            - MONGODB_URI=mongodb://mongo:27017/lucidkit
             - REDIS_URL=redis://redis:6379
             - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
             - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}

@@ -20,9 +20,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
         ThrottlerModule.forRoot({
             throttlers: [{ ttl: 60000, limit: 60 }],
         }),
-        MongooseModule.forRoot(ENV.MONGODB_URI, {
-            dbName: ENV.MONGODB_DB_NAME,
-        }),
+        MongooseModule.forRoot(ENV.MONGODB_URI),
         AuthModule,
         UsersModule,
         ReportsModule,
