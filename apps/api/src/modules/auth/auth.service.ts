@@ -81,7 +81,8 @@ export class AuthService {
             throw new UnauthorizedException('Invalid refresh token format');
         }
 
-        const storedValue = await this.redis.get(`refresh:${jti}`);
+        // Atomic consume: GETDEL ensures only one request can use the token
+        const storedValue = await this.redis.getdel(`refresh:${jti}`);
 
         if (!storedValue) {
             // Token reuse detected — revoke ALL tokens for this user
@@ -90,7 +91,7 @@ export class AuthService {
         }
 
         if (storedValue === 'rotated') {
-            // Grace period: another tab already rotated this token
+            // Grace period: one extra use allowed for concurrent tab
             return this.generateTokens(userId, email);
         }
 
@@ -98,11 +99,14 @@ export class AuthService {
             throw new UnauthorizedException('Token user mismatch');
         }
 
-        // Mark old token as rotated with short grace period
-        const pipeline = this.redis.pipeline();
-        pipeline.set(`refresh:${jti}`, 'rotated', 'EX', ROTATION_GRACE_PERIOD);
-        pipeline.srem(`refresh_family:${userId}`, jti);
-        await pipeline.exec();
+        // Mark old token as rotated with short grace period (one-time use via GETDEL above)
+        await this.redis.set(
+            `refresh:${jti}`,
+            'rotated',
+            'EX',
+            ROTATION_GRACE_PERIOD
+        );
+        await this.redis.srem(`refresh_family:${userId}`, jti);
 
         return this.generateTokens(userId, email);
     }

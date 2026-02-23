@@ -40,6 +40,7 @@ const mockRedis = {
     set: jest.fn(),
     incr: jest.fn(),
     expire: jest.fn(),
+    srem: jest.fn(),
     pipeline: jest.fn(),
     smembers: jest.fn(),
 };
@@ -146,11 +147,11 @@ describe('AuthService', () => {
             jti: 'old-jti-uuid',
         };
 
-        it('should rotate token: invalidate old, issue new pair', async () => {
+        it('should rotate token: atomically consume old, issue new pair', async () => {
             jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue(
                 validPayload
             );
-            mockRedis.get.mockResolvedValue(validPayload.sub);
+            mockRedis.getdel.mockResolvedValue(validPayload.sub);
             jest.spyOn(jwtService, 'signAsync')
                 .mockResolvedValueOnce('new-access-token')
                 .mockResolvedValueOnce('new-refresh-token');
@@ -162,15 +163,17 @@ describe('AuthService', () => {
                 accessToken: 'new-access-token',
                 refreshToken: 'new-refresh-token',
             });
-            expect(mockRedis.get).toHaveBeenCalledWith('refresh:old-jti-uuid');
+            expect(mockRedis.getdel).toHaveBeenCalledWith(
+                'refresh:old-jti-uuid'
+            );
             // Old token marked as rotated with grace period
-            expect(mockPipeline.set).toHaveBeenCalledWith(
+            expect(mockRedis.set).toHaveBeenCalledWith(
                 'refresh:old-jti-uuid',
                 'rotated',
                 'EX',
                 10
             );
-            expect(mockPipeline.srem).toHaveBeenCalledWith(
+            expect(mockRedis.srem).toHaveBeenCalledWith(
                 `refresh_family:${validPayload.sub}`,
                 'old-jti-uuid'
             );
@@ -202,7 +205,7 @@ describe('AuthService', () => {
                 validPayload
             );
             // jti NOT found in Redis — already consumed
-            mockRedis.get.mockResolvedValue(null);
+            mockRedis.getdel.mockResolvedValue(null);
             mockRedis.smembers.mockResolvedValue(['jti-1', 'jti-2']);
 
             await expect(
@@ -223,18 +226,18 @@ describe('AuthService', () => {
             jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue(
                 validPayload
             );
-            mockRedis.get.mockResolvedValue('different-user-id');
+            mockRedis.getdel.mockResolvedValue('different-user-id');
 
             await expect(
                 authService.rotateRefreshToken('token')
             ).rejects.toThrow('Token user mismatch');
         });
 
-        it('should allow concurrent refresh within grace period', async () => {
+        it('should allow one concurrent refresh within grace period', async () => {
             jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue(
                 validPayload
             );
-            mockRedis.get.mockResolvedValue('rotated');
+            mockRedis.getdel.mockResolvedValue('rotated');
             jest.spyOn(jwtService, 'signAsync')
                 .mockResolvedValueOnce('new-access')
                 .mockResolvedValueOnce('new-refresh');
