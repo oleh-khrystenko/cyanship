@@ -9,7 +9,7 @@
         "lint": "eslint src/"
     },
     "dependencies": {
-        "@bidguard/types": "workspace:*",
+        "@lucidkit/types": "workspace:*",
         "@headlessui/react": "^2.2.9",
         "@radix-ui/react-tooltip": "^1.2.8",
         "axios": "^1.13.5",

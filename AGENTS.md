@@ -6,7 +6,7 @@ This is a pnpm/Turborepo monorepo. Primary locations:
 
 - `apps/web/` — Next.js frontend (App Router, `src/app/[locale]/` for pages and i18n).
 - `apps/api/` — NestJS backend (`src/modules/` for feature modules).
-- `packages/types/` — Shared TypeScript types (`@bidguard/types`).
+- `packages/types/` — Shared TypeScript types (`@lucidkit/types`).
 - Root configs: `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.json`, `.prettierrc`.
 
 Frontend follows Feature-Sliced Design in `apps/web/src/`:

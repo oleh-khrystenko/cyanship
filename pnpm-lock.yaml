@@ -29,7 +29,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@bidguard/types':
+      '@lucidkit/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@nestjs/common':
@@ -180,7 +180,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@bidguard/types':
+      '@lucidkit/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@headlessui/react':

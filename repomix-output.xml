@@ -321,7 +321,7 @@ This section contains the contents of the repository's files.
       "Bash(git mv:*)",
       "Bash(tree:*)",
       "Bash(ls:*)",
-      "Bash(git -C /Users/KhOlAn/Projects/bidguard log --oneline)",
+      "Bash(git -C /Users/KhOlAn/Projects/lucidkit log --oneline)",
       "Bash(git check-ignore:*)",
       "Bash(pnpm --filter api build:*)",
       "Bash(cat:*)",
@@ -337,15 +337,15 @@ This section contains the contents of the repository's files.
       "Bash(node -e:*)",
       "Bash(node -e \"import\\(''eslint-config-next''\\).then\\(c => console.log\\(typeof c.default, Object.keys\\(c\\)\\)\\)\")",
       "Bash(npx turbo run test:*)",
-      "Bash(git -C /Users/KhOlAn/Projects/bidguard config --local -l)",
+      "Bash(git -C /Users/KhOlAn/Projects/lucidkit config --local -l)",
       "Bash(pnpm test:e2e:*)",
       "Bash(pnpm --filter api exec tsc:*)",
       "Bash(pnpm --filter api add:*)",
       "Bash(pnpm --filter web exec tsc:*)",
       "Bash(pnpm --filter web build:*)",
-      "Bash(MONGODB_URI=\"mongodb://localhost:27017/bidguard\" JWT_SECRET=\"test-secret\" WEB_URL=\"http://localhost:3000\" timeout 8 node:*)",
-      "Bash(MONGODB_URI=\"mongodb://localhost:27017/bidguard\" JWT_SECRET=\"test-secret\" WEB_URL=\"http://localhost:3000\" node -e \"\n  const { execSync } = require\\(''child_process''\\);\n  const proc = require\\(''child_process''\\).spawn\\(''node'', [''apps/api/dist/main.js''], {\n    env: { ...process.env, MONGODB_URI: ''mongodb://localhost:27017/bidguard'', JWT_SECRET: ''test-secret'', WEB_URL: ''http://localhost:3000'' },\n    stdio: ''pipe''\n  }\\);\n  let output = '''';\n  proc.stdout.on\\(''data'', d => { output += d.toString\\(\\); }\\);\n  proc.stderr.on\\(''data'', d => { output += d.toString\\(\\); }\\);\n  setTimeout\\(\\(\\) => { proc.kill\\(\\); console.log\\(output\\); }, 5000\\);\n\")",
-      "Bash(git -C /Users/KhOlAn/Projects/bidguard log --oneline -20)",
+      "Bash(MONGODB_URI=\"mongodb://localhost:27017/lucidkit\" JWT_SECRET=\"test-secret\" WEB_URL=\"http://localhost:3000\" timeout 8 node:*)",
+      "Bash(MONGODB_URI=\"mongodb://localhost:27017/lucidkit\" JWT_SECRET=\"test-secret\" WEB_URL=\"http://localhost:3000\" node -e \"\n  const { execSync } = require\\(''child_process''\\);\n  const proc = require\\(''child_process''\\).spawn\\(''node'', [''apps/api/dist/main.js''], {\n    env: { ...process.env, MONGODB_URI: ''mongodb://localhost:27017/lucidkit'', JWT_SECRET: ''test-secret'', WEB_URL: ''http://localhost:3000'' },\n    stdio: ''pipe''\n  }\\);\n  let output = '''';\n  proc.stdout.on\\(''data'', d => { output += d.toString\\(\\); }\\);\n  proc.stderr.on\\(''data'', d => { output += d.toString\\(\\); }\\);\n  setTimeout\\(\\(\\) => { proc.kill\\(\\); console.log\\(output\\); }, 5000\\);\n\")",
+      "Bash(git -C /Users/KhOlAn/Projects/lucidkit log --oneline -20)",
       "Bash(MONGODB_URI= JWT_ACCESS_SECRET=x JWT_REFRESH_SECRET=x REDIS_URL=x node:*)",
       "Bash(MONGODB_URI=x JWT_REFRESH_SECRET=x REDIS_URL=x node:*)",
       "Bash(MONGODB_URI=x JWT_ACCESS_SECRET=x REDIS_URL=x node:*)",
@@ -556,7 +556,7 @@ export { default as Logo } from './Logo';
 const Logo = () => {
     return (
         <p className="flex items-center gap-0.5 text-5xl">
-            <span className="text-text-primary font-bold">BidGuard</span>
+            <span className="text-text-primary font-bold">LucidKit</span>
         </p>
     );
 };
@@ -571,7 +571,7 @@ import { FC } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { UA, US } from 'country-flag-icons/react/3x2';
-import { LANG } from '@bidguard/types';
+import { LANG } from '@lucidkit/types';
 import { ChangeLangProps } from './types';
 import UiSelect from '@/shared/ui/UiSelect';
 import type { UiSelectOption } from '@/shared/ui/UiSelect';
@@ -654,7 +654,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
 <file path="apps/web/src/i18n/routing.ts">
 import { defineRouting } from 'next-intl/routing';
-import { LANG } from '@bidguard/types';
+import { LANG } from '@lucidkit/types';
 
 export const routing = defineRouting({
     locales: Object.values(LANG),
@@ -1382,7 +1382,7 @@ export const redisProvider: Provider = {
 <file path="apps/api/src/modules/auth/dto/send-magic-link.dto.ts">
 import { createZodDto } from 'nestjs-zod';
 
-import { SendMagicLinkSchema } from '@bidguard/types';
+import { SendMagicLinkSchema } from '@lucidkit/types';
 
 export class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
 </file>
@@ -1390,7 +1390,7 @@ export class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
 <file path="apps/api/src/modules/auth/dto/verify-magic-link.dto.ts">
 import { createZodDto } from 'nestjs-zod';
 
-import { VerifyMagicLinkSchema } from '@bidguard/types';
+import { VerifyMagicLinkSchema } from '@lucidkit/types';
 
 export class VerifyMagicLinkDto extends createZodDto(VerifyMagicLinkSchema) {}
 </file>
@@ -1897,7 +1897,7 @@ export default function HomePage() {
     return (
         <main className="container flex h-full min-h-screen flex-col justify-center gap-6 py-12">
             <p className="text-text-secondary text-sm tracking-[0.25em] uppercase">
-                BidGuard
+                LucidKit
             </p>
             <h1 className="text-text-primary text-4xl font-semibold">
                 {welcomeT('heading')}
@@ -2095,7 +2095,7 @@ export interface UiSpinnerProps {
 1. Перейти на `/auth/signin`
 2. Ввести email у поле
 3. Натиснути "Надіслати Magic Link"
-4. Відкрити email — клікнути на посилання "Увійти в BidGuard"
+4. Відкрити email — клікнути на посилання "Увійти в LucidKit"
 
 **Expected:**
 
@@ -2634,7 +2634,7 @@ This is a pnpm/Turborepo monorepo. Primary locations:
 
 - `apps/web/` — Next.js frontend (App Router, `src/app/[locale]/` for pages and i18n).
 - `apps/api/` — NestJS backend (`src/modules/` for feature modules).
-- `packages/types/` — Shared TypeScript types (`@bidguard/types`).
+- `packages/types/` — Shared TypeScript types (`@lucidkit/types`).
 - Root configs: `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.json`, `.prettierrc`.
 
 Frontend follows Feature-Sliced Design in `apps/web/src/`:
@@ -2858,21 +2858,21 @@ export class EmailService {
         const { error } = await this.resend.emails.send({
             from: ENV.RESEND_FROM_EMAIL,
             to: email,
-            subject: 'Вхід у BidGuard',
+            subject: 'Вхід у LucidKit',
             html: `
 <!DOCTYPE html>
 <html lang="uk">
 <head><meta charset="UTF-8"></head>
 <body style="font-family: sans-serif; background: #f4f4f5; padding: 40px 0;">
   <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 40px; text-align: center;">
-    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">BidGuard</h1>
+    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidKit</h1>
     <p style="color: #52525b; font-size: 16px; margin-bottom: 32px;">
       Натисніть кнопку нижче, щоб увійти у ваш акаунт.
     </p>
     <a href="${link}"
        style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none;
               padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
-      Увійти в BidGuard
+      Увійти в LucidKit
     </a>
     <p style="color: #a1a1aa; font-size: 13px; margin-top: 32px;">
       Посилання дійсне 15 хвилин. Якщо ви не запитували вхід — ігноруйте цей лист.
@@ -3032,7 +3032,7 @@ export default AuthInitializer;
 </file>
 
 <file path="apps/web/src/shared/api/auth.ts">
-import type { AuthResponse, UserProfile } from '@bidguard/types';
+import type { AuthResponse, UserProfile } from '@lucidkit/types';
 
 import { apiClient, setAccessToken } from './client';
 
@@ -3219,7 +3219,7 @@ export default UiSelect;
 
 <file path="apps/web/src/stores/auth/authStore.ts">
 import { create } from 'zustand';
-import type { UserProfile } from '@bidguard/types';
+import type { UserProfile } from '@lucidkit/types';
 
 interface AuthState {
     user: UserProfile | null;
@@ -3309,7 +3309,7 @@ export default eslintConfig;
 </file>
 
 <file path="docs/DESIGN/UI_UX_PLAN.md">
-# BidGuard: UI/UX План (Ultra-MVP)
+# LucidKit: UI/UX План (Ultra-MVP)
 
 ## Принцип
 
@@ -3351,7 +3351,7 @@ export default eslintConfig;
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ [Logo BidGuard]                                    [Увійти]     │
+│ [Logo LucidKit]                                    [Увійти]     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │              ПЕРЕВІР АВТО ПЕРЕД ПОКУПКОЮ                        │
@@ -3389,7 +3389,7 @@ export default eslintConfig;
 ├─────────────────────────────────────────────────────────────────┤
 │              [ Перевірити безкоштовно ]                         │
 ├─────────────────────────────────────────────────────────────────┤
-│ © 2025 BidGuard                                                 │
+│ © 2025 LucidKit                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -3665,7 +3665,7 @@ src/widgets/
 </file>
 
 <file path="docs/PLANNING/BUSINESS_CONCEPT.md">
-# BidGuard: Бізнес-Концепція
+# LucidKit: Бізнес-Концепція
 
 ## 1. Суть Бізнесу (Elevator Pitch)
 
@@ -3763,7 +3763,7 @@ export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
 
 <file path="packages/types/package.json">
 {
-    "name": "@bidguard/types",
+    "name": "@lucidkit/types",
     "version": "1.0.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -3787,7 +3787,7 @@ export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
 
 <file path="package.json">
 {
-    "name": "bidguard",
+    "name": "lucidkit",
     "version": "0.1.0",
     "private": true,
     "description": "",
@@ -3908,7 +3908,7 @@ export class StorageService {}
 
 <file path="apps/api/src/modules/users/schemas/user.schema.ts">
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { LANG } from '@bidguard/types';
+import { LANG } from '@lucidkit/types';
 import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
@@ -4059,7 +4059,7 @@ export {
 <file path="apps/web/src/shared/seo/metadata.ts">
 import { Metadata } from 'next';
 import { MetaProps } from '@/shared/types/settings';
-import { LANG } from '@bidguard/types';
+import { LANG } from '@lucidkit/types';
 import { ENV } from '@/shared/config';
 
 const BASE_URL = ENV.NEXT_PUBLIC_BASE_URL;
@@ -4081,9 +4081,9 @@ export async function fetchMetadata({
         locale = LANG.UK;
     }
 
-    let title = 'BidGuard – Захист ваших ставок';
+    let title = 'LucidKit – Захист ваших ставок';
     let description =
-        'BidGuard – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу.';
+        'LucidKit – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу.';
 
     if (page === null) {
         if (meta) {
@@ -4426,7 +4426,7 @@ export { useAuthStore } from './authStore';
         "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "@bidguard/types": ["../../packages/types/src/index.ts"]
+            "@lucidkit/types": ["../../packages/types/src/index.ts"]
         }
     },
     "include": [
@@ -4442,7 +4442,7 @@ export { useAuthStore } from './authStore';
 </file>
 
 <file path="docs/PLANNING/MVP_PLAN.md">
-# BidGuard: Ultra-MVP План
+# LucidKit: Ultra-MVP План
 
 ## Філософія
 
@@ -4705,7 +4705,7 @@ export { useAuthStore } from './authStore';
 3. **Report Entity & Schema**
     - Zod schemas в `packages/types/src/entities/report.ts`: `ReportSchema`, `DetectedIssueSchema`, `ReportAnalysisSchema`
     - Enums в `packages/types/src/enums/`: `ReportStatus`, `Verdict`, `IssueSeverity`
-    - Mongoose schema в `apps/api` — структура відповідає Zod schemas з @bidguard/types
+    - Mongoose schema в `apps/api` — структура відповідає Zod schemas з @lucidkit/types
     - MongooseModule.forFeature в ReportsModule
 
 4. **Photo Upload Confirmation**
@@ -4842,7 +4842,7 @@ export type CreateReportDto = z.infer<typeof CreateReportSchema>;
 ```typescript
 // apps/api/src/modules/reports/dto/
 import { createZodDto } from 'nestjs-zod';
-import { CreateReportSchema } from '@bidguard/types';
+import { CreateReportSchema } from '@lucidkit/types';
 
 export class CreateReportDto extends createZodDto(CreateReportSchema) {}
 ```
@@ -4854,7 +4854,7 @@ export class CreateReportDto extends createZodDto(CreateReportSchema) {}
 ```json
 [
     {
-        "AllowedOrigins": ["http://localhost:3000", "https://bidguard.app"],
+        "AllowedOrigins": ["http://localhost:3000", "https://lucidkit.app"],
         "AllowedMethods": ["PUT", "GET"],
         "AllowedHeaders": ["Content-Type"],
         "MaxAgeSeconds": 3600
@@ -4968,11 +4968,11 @@ pnpm --filter web add react-dropzone
 ### 1.4 Report Mongoose Schema — імплементація
 
 - [ ] Оновити `apps/api/src/modules/reports/schemas/report.schema.ts`:
-    - [ ] Структура відповідає `ReportSchema` з @bidguard/types
+    - [ ] Структура відповідає `ReportSchema` з @lucidkit/types
     - [ ] Використати sub-schemas (PhotoItem, DetectedIssue, ReportAnalysis) замість `type: Object`
     - [ ] Всі поля з `!` (definite assignment) для strict TS
     - [ ] Indexes: userId + createdAt, status
-    - [ ] Enum values імпортувати з @bidguard/types
+    - [ ] Enum values імпортувати з @lucidkit/types
 - [ ] Перевірити: `pnpm --filter api build`
 
 ### 1.5 Reports Service — створення звіту
@@ -4998,7 +4998,7 @@ pnpm --filter web add react-dropzone
 ### 1.6 Reports Controller — endpoints
 
 - [ ] Створити NestJS DTO в `apps/api/src/modules/reports/dto/`:
-    - [ ] `CreateReportDto extends createZodDto(CreateReportSchema)` — з @bidguard/types
+    - [ ] `CreateReportDto extends createZodDto(CreateReportSchema)` — з @lucidkit/types
 - [ ] Оновити `apps/api/src/modules/reports/reports.controller.ts`:
     - [ ] `POST /reports` — @UseGuards(JwtAuthGuard), CreateReportDto, повертає report + uploadUrls
     - [ ] `POST /reports/:id/confirm-upload` — @UseGuards(JwtAuthGuard), підтвердити upload
@@ -5049,7 +5049,7 @@ pnpm --filter web add react-dropzone
 ### 2.3 Reports API functions (frontend)
 
 - [ ] Створити `apps/web/src/shared/api/reports.ts`:
-    - [ ] Імпортувати типи з `@bidguard/types`: `Report`, `ReportStatus`, `ApiResponse`, `CreateReportDto`
+    - [ ] Імпортувати типи з `@lucidkit/types`: `Report`, `ReportStatus`, `ApiResponse`, `CreateReportDto`
     - [ ] `createReport(photoCount: number)` → `ApiResponse<{ reportId: string, uploadUrls: UploadUrl[] }>`
     - [ ] `uploadPhotoToR2(url: string, file: File, onProgress?)` → void
     - [ ] `confirmUpload(reportId: string)` → `ApiResponse<Report>`
@@ -5378,7 +5378,7 @@ export class ReportProcessor extends WorkerHost {
 ### Verdict Calculation
 
 ```typescript
-import type { DetectedIssue, Verdict } from '@bidguard/types';
+import type { DetectedIssue, Verdict } from '@lucidkit/types';
 
 function calculateVerdict(issues: DetectedIssue[]): {
     score: number;
@@ -5424,7 +5424,7 @@ function calculateVerdict(issues: DetectedIssue[]): {
 ### Polling Strategy (Frontend)
 
 ```typescript
-import type { ReportStatus } from '@bidguard/types';
+import type { ReportStatus } from '@lucidkit/types';
 
 // Poll every 2 seconds until completed or failed
 function useReportStatus(reportId: string) {
@@ -5585,7 +5585,7 @@ pnpm --filter api add @nestjs/bullmq bullmq @google/generative-ai
 ### 2.1 Verdict Logic
 
 - [ ] Створити `apps/api/src/modules/reports/ai/verdict.ts`:
-    - [ ] Імпортувати `DetectedIssue`, `Verdict`, `IssueSeverity` з `@bidguard/types`
+    - [ ] Імпортувати `DetectedIssue`, `Verdict`, `IssueSeverity` з `@lucidkit/types`
     - [ ] `calculateVerdict(issues): { score, verdict, explanation }`
     - [ ] Scoring algorithm:
         - [ ] Start at 100
@@ -5605,7 +5605,7 @@ pnpm --filter api add @nestjs/bullmq bullmq @google/generative-ai
 ### 2.2 Issue Deduplication
 
 - [ ] Створити `apps/api/src/modules/reports/ai/aggregation.ts`:
-    - [ ] Імпортувати `DetectedIssue` з `@bidguard/types`
+    - [ ] Імпортувати `DetectedIssue` з `@lucidkit/types`
     - [ ] `deduplicateIssues(issues): DetectedIssue[]`
         - [ ] Merge issues з однаковим type + location
         - [ ] Зберегти найвищий severity
@@ -5698,7 +5698,7 @@ pnpm --filter api add @nestjs/bullmq bullmq @google/generative-ai
 ### 3.4 Verdict Banner Widget
 
 - [ ] Створити `apps/web/src/widgets/verdict-banner/`
-    - [ ] Імпортувати `Verdict`, `ReportAnalysis` з `@bidguard/types`
+    - [ ] Імпортувати `Verdict`, `ReportAnalysis` з `@lucidkit/types`
     - [ ] `VerdictBanner.tsx`:
         - [ ] Колір фону:
             - [ ] RECOMMENDED → зелений (bg-green-50 border-green-500)
@@ -5714,7 +5714,7 @@ pnpm --filter api add @nestjs/bullmq bullmq @google/generative-ai
 ### 3.5 Issue Card Widget
 
 - [ ] Створити `apps/web/src/widgets/issue-card/`
-    - [ ] Імпортувати `DetectedIssue`, `IssueSeverity` з `@bidguard/types`
+    - [ ] Імпортувати `DetectedIssue`, `IssueSeverity` з `@lucidkit/types`
     - [ ] `IssueCard.tsx`:
         - [ ] Severity badge:
             - [ ] critical → red badge "Критична"
@@ -5755,7 +5755,7 @@ pnpm --filter api add @nestjs/bullmq bullmq @google/generative-ai
 ### 4.2 useReportStatus Hook
 
 - [ ] Створити `apps/web/src/features/reports/hooks/useReportStatus.ts`:
-    - [ ] Імпортувати `ReportStatus` з `@bidguard/types`
+    - [ ] Імпортувати `ReportStatus` з `@lucidkit/types`
     - [ ] Polling кожні 2 секунди
     - [ ] Cleanup on unmount
     - [ ] Stop polling on completed/failed
@@ -5949,12 +5949,12 @@ Upload (/check) або "Без кредитів" (placeholder для Phase 2)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ [Logo BidGuard]          💳 1 кредит   [👤 John] [Вийти]│
+│ [Logo LucidKit]          💳 1 кредит   [👤 John] [Вийти]│
 └─────────────────────────────────────────────────────────┘
 
 Не авторизований:
 ┌─────────────────────────────────────────────────────────┐
-│ [Logo BidGuard]                              [Увійти]   │
+│ [Logo LucidKit]                              [Увійти]   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -5965,7 +5965,7 @@ Upload (/check) або "Без кредитів" (placeholder для Phase 2)
 - `pnpm --filter api test` — тести проходять
 - Видалити невикористаний код та TODO-заглушки
 - Перевірити console.log — видалити debug logs
-- **Shared Types Audit:** жодних дубльованих типів — все з `@bidguard/types`
+- **Shared Types Audit:** жодних дубльованих типів — все з `@lucidkit/types`
 - **Single Source of Truth тест:** зміна поля в Zod schema → tsc помилки в API і Web
 
 ---
@@ -6013,7 +6013,7 @@ toast.loading('Завантаження...');
     - "Перевірити безкоштовно" button
 
 5. **Footer**
-    - © 2025 BidGuard
+    - © 2025 LucidKit
     - Made in Ukraine 🇺🇦
 
 ---
@@ -6092,7 +6092,7 @@ toast.loading('Завантаження...');
 ### 1.5 Landing Page — Footer
 
 - [ ] Footer component:
-    - [ ] © 2025 BidGuard
+    - [ ] © 2025 LucidKit
     - [ ] Зроблено в Україні
 - [ ] Responsive, center-aligned
 
@@ -6170,7 +6170,7 @@ toast.loading('Завантаження...');
 - [ ] Remove unused imports
 - [ ] Remove TODO comments for completed tasks
 - [ ] Check for hardcoded strings (повинні бути в i18n)
-- [ ] Verify shared types: жодних дубльованих типів між apps/api та apps/web — все з @bidguard/types
+- [ ] Verify shared types: жодних дубльованих типів між apps/api та apps/web — все з @lucidkit/types
 - [ ] Verify: зміна типу в `packages/types` → tsc помилки в обох apps (перевірити що "single source of truth" працює)
 
 ### 2.5 Security Review
@@ -6232,14 +6232,14 @@ toast.loading('Завантаження...');
 </file>
 
 <file path="docs/TECHNICAL/API_DESIGN.md">
-# BidGuard: API Design (Ultra-MVP)
+# LucidKit: API Design (Ultra-MVP)
 
 ## Overview
 
 REST API з мінімальним набором endpoints для MVP.
 
 - Base URL: `http://localhost:4000/api`
-- Production: `https://api.bidguard.app/api`
+- Production: `https://api.lucidkit.app/api`
 
 ---
 
@@ -6651,7 +6651,7 @@ X-RateLimit-Reset: 1707123456
 </file>
 
 <file path="docs/TECHNICAL/CRITICAL_FIXES_PLAN.md">
-# BidGuard — План критичних правок
+# LucidKit — План критичних правок
 
 > Результат архітектурного аудиту. Тільки проблеми, які зламають production або створять вразливості.
 > Мінорні покращення, стиль коду, відсутній функціонал (порожні модулі) — свідомо виключені.
@@ -6827,7 +6827,7 @@ app.useGlobalPipes(
 </file>
 
 <file path="docs/TECHNICAL/DATABASE_SCHEMA.md">
-# BidGuard: Схема Бази Даних (Ultra-MVP)
+# LucidKit: Схема Бази Даних (Ultra-MVP)
 
 ## Огляд
 
@@ -7216,7 +7216,7 @@ PaymentSchema.index({ externalId: 1 }, { unique: true });
 </file>
 
 <file path="docs/00_README.md">
-# BidGuard Documentation Guide
+# LucidKit Documentation Guide
 
 ## Структура папки
 
@@ -7397,25 +7397,25 @@ export * from './validation';
 </file>
 
 <file path="GEMINI.md">
-# Gemini Project: BidGuard
+# Gemini Project: LucidKit
 
-This document provides a comprehensive overview of the BidGuard project, its structure, and development conventions to assist Gemini in understanding and contributing to the codebase.
+This document provides a comprehensive overview of the LucidKit project, its structure, and development conventions to assist Gemini in understanding and contributing to the codebase.
 
 ## Project Overview
 
-BidGuard is a monorepo project built with pnpm workspaces and managed by Turborepo. It consists of a web application and an API.
+LucidKit is a monorepo project built with pnpm workspaces and managed by Turborepo. It consists of a web application and an API.
 
 - **Web Application (`apps/web`):** A modern frontend built with Next.js 16 (using the App Router and React 19), styled with TailwindCSS 4, and utilizing Zustand for state management. It supports internationalization (i18n) with `next-intl`.
 
 - **API (`apps/api`):** A robust backend powered by NestJS 11, using MongoDB with Mongoose for data persistence.
 
-- **Shared Packages (`packages`):** The `packages` directory holds code shared across the monorepo, such as TypeScript types in `@bidguard/types`.
+- **Shared Packages (`packages`):** The `packages` directory holds code shared across the monorepo, such as TypeScript types in `@lucidkit/types`.
 
 The project is fully containerized with Docker, providing consistent development and production environments.
 
 ## Building and Running
 
-The following commands are essential for working with the BidGuard project.
+The following commands are essential for working with the LucidKit project.
 
 ### Development
 
@@ -7493,11 +7493,11 @@ _TODO: Add information about commit message conventions and versioning strategy 
 </file>
 
 <file path="README.md">
-# BidGuard
+# LucidKit
 
 **Your Digital Auto Expert for US Auction Purchases**
 
-BidGuard is an AI-powered platform that analyzes vehicle photos from US auto auctions (Copart, IAAI) to detect hidden defects and provide instant risk assessments. We help buyers avoid costly mistakes by identifying issues that are often invisible to the untrained eye.
+LucidKit is an AI-powered platform that analyzes vehicle photos from US auto auctions (Copart, IAAI) to detect hidden defects and provide instant risk assessments. We help buyers avoid costly mistakes by identifying issues that are often invisible to the untrained eye.
 
 ## Key Features
 
@@ -7511,13 +7511,13 @@ BidGuard is an AI-powered platform that analyzes vehicle photos from US auto auc
 ## Project Structure
 
 ```
-bidguard/
+lucidkit/
 ├── apps/                       # Main applications
 │   ├── web/                    # Next.js 16 frontend (App Router, React 19)
 │   └── api/                    # NestJS 11 backend (MongoDB/Mongoose)
 │
 ├── packages/                   # Shared packages
-│   └── types/                  # @bidguard/types - shared TypeScript types
+│   └── types/                  # @lucidkit/types - shared TypeScript types
 │
 ├── docs/                       # Documentation
 │   └── BUSINESS_CONCEPT.md     # Business concept and strategy
@@ -7574,8 +7574,8 @@ bidguard/
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-org/bidguard.git
-cd bidguard
+git clone https://github.com/your-org/lucidkit.git
+cd lucidkit
 ```
 
 ---
@@ -7597,7 +7597,7 @@ Example content:
 NODE_ENV=production
 WEB_PORT=3000
 API_PORT=4000
-MONGODB_DB_NAME=bidguard
+MONGODB_DB_NAME=lucidkit
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
@@ -7605,7 +7605,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 > For production, specify a real Atlas URI:
 >
 > ```
-> MONGODB_URI=mongodb+srv://user:pass@cluster.example.mongodb.net/bidguard
+> MONGODB_URI=mongodb+srv://user:pass@cluster.example.mongodb.net/lucidkit
 > ```
 
 ---
@@ -7707,7 +7707,7 @@ jobs:
         runs-on: ubuntu-latest
 
         env:
-            MONGODB_URI: mongodb://localhost:27017/bidguard-test
+            MONGODB_URI: mongodb://localhost:27017/lucidkit-test
 
         services:
             mongodb:
@@ -8548,7 +8548,7 @@ export const env = {
     port: parseInt(process.env.PORT || '4000', 10),
 
     mongodb: {
-        uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/bidguard',
+        uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/lucidkit',
     },
 
     redis: {
@@ -8575,7 +8575,7 @@ export const env = {
         accountId: process.env.R2_ACCOUNT_ID || '',
         accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
-        bucketName: process.env.R2_BUCKET_NAME || 'bidguard-uploads',
+        bucketName: process.env.R2_BUCKET_NAME || 'lucidkit-uploads',
         publicUrl: process.env.R2_PUBLIC_URL || '',
     },
 
@@ -9209,7 +9209,7 @@ Expected: API starts without errors, all modules loaded.
 **Після цього спринту:**
 
 - **Zod foundation** в `packages/types` з правильною структурою (constants/, enums/, contracts/, entities/)
-- API підключений до `@bidguard/types` як залежність
+- API підключений до `@lucidkit/types` як залежність
 - `ZodValidationPipe` валідує всі вхідні дані через Zod schemas
 - TypeScript strict mode увімкнений на API
 - Rate limiting захищає від abuse
@@ -9239,7 +9239,7 @@ Expected: API starts without errors, all modules loaded.
     - Створити базові enums (ErrorCode)
     - Створити `contracts/api.ts` (ApiResponse, ApiError) як Zod schemas
     - Створити `validation/common.ts` (reusable validators)
-    - Підключити `@bidguard/types` до API (workspace dependency + tsconfig paths)
+    - Підключити `@lucidkit/types` до API (workspace dependency + tsconfig paths)
 
 3. **API Hardening** (Sprint 001, Day 4 — не завершено)
     - Встановити `nestjs-zod` на API
@@ -9306,7 +9306,7 @@ REDIS_URL: getEnvVar('REDIS_URL'),             // no fallback
 
 // REQUIRED WITH DEFAULTS — є розумний default
 PORT: getEnvVar('PORT', '4000'),
-MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'bidguard'),
+MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'lucidkit'),
 WEB_URL: getEnvVar('WEB_URL', 'http://localhost:3000'),
 
 // LAZY REQUIRED — перевіряються при використанні в модулі
@@ -9343,20 +9343,20 @@ packages/types/src/
 **Встановити:**
 
 ```bash
-pnpm --filter api add nestjs-zod @bidguard/types
+pnpm --filter api add nestjs-zod @lucidkit/types
 ```
 
 **Додати в `apps/api/package.json`:**
 
 ```json
-"@bidguard/types": "workspace:*"
+"@lucidkit/types": "workspace:*"
 ```
 
 **Додати path alias в `apps/api/tsconfig.json`:**
 
 ```json
 "paths": {
-  "@bidguard/types": ["../../packages/types/src/index.ts"]
+  "@lucidkit/types": ["../../packages/types/src/index.ts"]
 }
 ```
 
@@ -9371,7 +9371,7 @@ app.useGlobalPipes(new ZodValidationPipe());
 **Використання в контролерах:**
 
 ```typescript
-import { SendMagicLinkSchema } from '@bidguard/types';
+import { SendMagicLinkSchema } from '@lucidkit/types';
 import { createZodDto } from 'nestjs-zod';
 
 class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
@@ -9463,7 +9463,7 @@ pnpm --filter api remove class-validator class-transformer
 | Deliverable       | Acceptance Criteria                                                          |
 | ----------------- | ---------------------------------------------------------------------------- |
 | Zod Foundation    | `packages/types` має структуру constants/enums/contracts/ з Zod schemas      |
-| API ↔ Types       | `apps/api` імпортує з `@bidguard/types` без помилок                          |
+| API ↔ Types       | `apps/api` імпортує з `@lucidkit/types` без помилок                          |
 | ZodValidationPipe | POST з невалідним body → 400 з Zod error details                             |
 | TS Strict         | `pnpm --filter api build` — 0 помилок зі strict: true                        |
 | Rate Limiting     | 61+ запитів за хвилину → 429                                                 |
@@ -9506,8 +9506,8 @@ curl -H "Origin: https://evil.com" -I http://localhost:4000/api/health
 # → No Access-Control-Allow-Origin header
 
 # 7. Docker works
-docker build -t bidguard-api -f apps/api/Dockerfile .
-docker run -e MONGODB_URI=... -e JWT_ACCESS_SECRET=... -e JWT_REFRESH_SECRET=... -e REDIS_URL=... -p 4000:4000 bidguard-api
+docker build -t lucidkit-api -f apps/api/Dockerfile .
+docker run -e MONGODB_URI=... -e JWT_ACCESS_SECRET=... -e JWT_REFRESH_SECRET=... -e REDIS_URL=... -p 4000:4000 lucidkit-api
 curl http://localhost:4000/api/health
 ```
 </file>
@@ -9637,7 +9637,7 @@ Hardening           Auth                Upload & Storage    AI & Reports        
 
 ### Стратегія
 
-Пакет `@bidguard/types` використовує **Zod** як єдине джерело істини для типів, валідації та API-контрактів. Один Zod schema генерує:
+Пакет `@lucidkit/types` використовує **Zod** як єдине джерело істини для типів, валідації та API-контрактів. Один Zod schema генерує:
 
 - TypeScript тип (`z.infer<typeof Schema>`)
 - Runtime валідацію на API (через `nestjs-zod`)
@@ -9748,7 +9748,7 @@ export interface ApiResponse<T> {
 
 ```typescript
 // apps/api — використання (NestJS з nestjs-zod)
-import { SendMagicLinkSchema } from '@bidguard/types';
+import { SendMagicLinkSchema } from '@lucidkit/types';
 import { createZodDto } from 'nestjs-zod';
 
 class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
@@ -9757,7 +9757,7 @@ class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
 
 ```typescript
 // apps/web — використання (frontend)
-import { type AuthResponse, type UserProfile } from '@bidguard/types';
+import { type AuthResponse, type UserProfile } from '@lucidkit/types';
 
 const { data } = await api.post<ApiResponse<AuthResponse>>(
     '/auth/magic-link/verify',
@@ -9887,7 +9887,7 @@ const user: UserProfile = data.data.user;
 </file>
 
 <file path="docs/TECHNICAL/ARCHITECTURE.md">
-# BidGuard: Технічна Архітектура (Ultra-MVP)
+# LucidKit: Технічна Архітектура (Ultra-MVP)
 
 ## Загальна архітектура
 
@@ -9930,7 +9930,7 @@ const user: UserProfile = data.data.user;
 ## Структура монорепозиторію (MVP)
 
 ```
-bidguard/
+lucidkit/
 ├── apps/
 │   ├── web/                      # Next.js Frontend
 │   │   ├── src/
@@ -10203,7 +10203,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/bidguard
+MONGODB_URI=mongodb://localhost:27017/lucidkit
 
 # Redis (for BullMQ + sessions)
 REDIS_URL=redis://localhost:6379
@@ -10219,7 +10219,7 @@ GOOGLE_CLIENT_SECRET=
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
-R2_BUCKET_NAME=bidguard-uploads
+R2_BUCKET_NAME=lucidkit-uploads
 R2_PUBLIC_URL=
 
 # AI (Google Gemini)
@@ -10397,7 +10397,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ERROR_CODE, type ErrorCode } from '@bidguard/types';
+import { ERROR_CODE, type ErrorCode } from '@lucidkit/types';
 
 const HTTP_STATUS_TO_ERROR_CODE: Partial<Record<HttpStatus, ErrorCode>> = {
     [HttpStatus.BAD_REQUEST]: ERROR_CODE.VALIDATION_ERROR,
@@ -11005,7 +11005,7 @@ export const config = {
 </file>
 
 <file path="docs/PLANNING/ROADMAP.md">
-# BidGuard: Roadmap (Ultra-MVP)
+# LucidKit: Roadmap (Ultra-MVP)
 
 ## Огляд
 
@@ -11328,16 +11328,16 @@ export const config = {
 {
     "welcome_page": {
         "head": {
-            "title": "BidGuard – Protect Your Bids",
-            "description": "BidGuard is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
+            "title": "LucidKit – Protect Your Bids",
+            "description": "LucidKit is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
         },
-        "heading": "BidGuard — your trusted partner in the world of bidding.",
+        "heading": "LucidKit — your trusted partner in the world of bidding.",
         "description": "Here you'll find tools and solutions for secure bid management.",
         "cta": "Get Started"
     },
     "auth_page": {
         "signin": {
-            "heading": "Sign in to BidGuard",
+            "heading": "Sign in to LucidKit",
             "subheading": "Analyse car photos and detect hidden defects before purchase",
             "google_button": "Continue with Google",
             "divider": "or",
@@ -11375,16 +11375,16 @@ export const config = {
 {
     "welcome_page": {
         "head": {
-            "title": "BidGuard – Захист ваших ставок",
-            "description": "BidGuard – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу."
+            "title": "LucidKit – Захист ваших ставок",
+            "description": "LucidKit – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу."
         },
-        "heading": "BidGuard — ваш надійний партнер у світі ставок.",
+        "heading": "LucidKit — ваш надійний партнер у світі ставок.",
         "description": "Тут ви знайдете інструменти та рішення для безпечного управління ставками.",
         "cta": "Розпочати"
     },
     "auth_page": {
         "signin": {
-            "heading": "Вхід до BidGuard",
+            "heading": "Вхід до LucidKit",
             "subheading": "Аналізуйте фото автомобілів та виявляйте приховані дефекти перед покупкою",
             "google_button": "Продовжити з Google",
             "divider": "або",
@@ -11479,7 +11479,7 @@ export default ChangeTheme;
         "lint": "eslint src/"
     },
     "dependencies": {
-        "@bidguard/types": "workspace:*",
+        "@lucidkit/types": "workspace:*",
         "@headlessui/react": "^2.2.9",
         "@radix-ui/react-tooltip": "^1.2.8",
         "axios": "^1.13.5",
@@ -12153,7 +12153,7 @@ export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 ```typescript
 // apps/api/src/modules/auth/dto/
 import { createZodDto } from 'nestjs-zod';
-import { SendMagicLinkSchema, VerifyMagicLinkSchema } from '@bidguard/types';
+import { SendMagicLinkSchema, VerifyMagicLinkSchema } from '@lucidkit/types';
 
 export class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
 export class VerifyMagicLinkDto extends createZodDto(VerifyMagicLinkSchema) {}
@@ -12287,7 +12287,7 @@ export default function AuthCallbackPage() {
 
 **Чому не Cookie forwarding (SSR):**
 
-- Захищені сторінки BidGuard не потребують SEO
+- Захищені сторінки LucidKit не потребують SEO
 - Client-side fetching з skeleton/spinner — достатній UX
 - Cookie forwarding додає постійну складність (token sync між сервером і клієнтом, кешування per-user)
 
@@ -12345,14 +12345,14 @@ export default function AuthCallbackPage() {
 ```bash
 pnpm --filter api add @nestjs/passport passport passport-google-oauth20 passport-jwt @nestjs/jwt cookie-parser resend ioredis
 pnpm --filter api add -D @types/passport-google-oauth20 @types/passport-jwt @types/cookie-parser
-# nestjs-zod та @bidguard/types вже встановлені у Sprint 002
+# nestjs-zod та @lucidkit/types вже встановлені у Sprint 002
 ```
 
 ### Frontend
 
 ```bash
 pnpm --filter web add axios
-# Типи AuthResponse, UserProfile імпортуються з @bidguard/types (вже підключений)
+# Типи AuthResponse, UserProfile імпортуються з @lucidkit/types (вже підключений)
 ```
 
 ---
@@ -12388,7 +12388,7 @@ pnpm --filter web add axios
 </file>
 
 <file path="CLAUDE.md">
-# BidGuard
+# LucidKit
 
 > AI-сервіс для аналізу фото автомобілів та виявлення прихованих дефектів перед покупкою.
 
@@ -12436,7 +12436,7 @@ Turborepo monorepo з 2 apps + 1 shared package. Auth (Google OAuth + Magic Link
 ## Project Structure
 
 ```
-bidguard/
+lucidkit/
 ├── apps/
 │   ├── api/                              # NestJS backend
 │   │   ├── src/
@@ -12510,7 +12510,7 @@ bidguard/
 │       └── Dockerfile
 │
 ├── packages/
-│   └── types/                            # @bidguard/types
+│   └── types/                            # @lucidkit/types
 │       └── src/
 │           ├── constants/lang.ts         # LANG = { UK: 'uk', EN: 'en' }, Lang type
 │           ├── enums/error-code.ts       # ERROR_CODE (UNAUTHORIZED, VALIDATION_ERROR, NOT_FOUND, etc.)
@@ -12645,7 +12645,7 @@ async sendMagicLink(@Body() dto: SendMagicLinkDto) {
 export class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
 ```
 
-Схеми визначені в `@bidguard/types`, DTOs обгортають через `createZodDto()` з `nestjs-zod`.
+Схеми визначені в `@lucidkit/types`, DTOs обгортають через `createZodDto()` з `nestjs-zod`.
 
 ### Авторизація
 
@@ -12698,7 +12698,7 @@ getMe(@CurrentUser() user: UserDocument) {
 Файл: `apps/api/src/common/filters/all-exceptions.filter.ts`
 
 - Global filter для ВСІХ exceptions
-- Maps HTTP status → `ERROR_CODE` з `@bidguard/types`
+- Maps HTTP status → `ERROR_CODE` з `@lucidkit/types`
 - Response: `{ error: { code: string, message: string } }`
 - 5xx errors логуються зі stack trace
 
@@ -12794,7 +12794,7 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 
 - `NODE_ENV` → `'development'`
 - `PORT` → `'4000'`
-- `MONGODB_DB_NAME` → `'bidguard'`
+- `MONGODB_DB_NAME` → `'lucidkit'`
 - `WEB_URL` → `'http://localhost:3000'`
 - `RESEND_FROM_EMAIL` → `'onboarding@resend.dev'` (dev fallback, у prod задати кастомний email)
 
@@ -12825,7 +12825,7 @@ docker compose -f docker-compose.dev.yml up --build   # Dev: local MongoDB + Red
 docker compose up --build -d                          # Prod: MongoDB Atlas
 
 # packages/types
-pnpm --filter @bidguard/types build                   # Compile to CJS in dist/
+pnpm --filter @lucidkit/types build                   # Compile to CJS in dist/
 ```
 
 ## Rules & Conventions
@@ -12860,7 +12860,7 @@ Inline `<script>` в layout виконується ДО React hydration — чи
 
 ### packages/types build order
 
-`packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker. `tsconfig.build.json` компілює в CJS у `dist/`. **НІКОЛИ** не додавати `paths: { "@bidguard/types": [...] }` до API tsconfig — це ламає структуру output dir. API резолвить через workspace symlink → `dist/`. Web tsconfig МОЖЕ мати `paths` (Next.js використовує свій бандлер).
+`packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker. `tsconfig.build.json` компілює в CJS у `dist/`. **НІКОЛИ** не додавати `paths: { "@lucidkit/types": [...] }` до API tsconfig — це ламає структуру output dir. API резолвить через workspace symlink → `dist/`. Web tsconfig МОЖЕ мати `paths` (Next.js використовує свій бандлер).
 
 ### In-memory access token
 
@@ -13211,7 +13211,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/bidguard
+MONGODB_URI=mongodb://localhost:27017/lucidkit
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -13227,7 +13227,7 @@ GOOGLE_CLIENT_SECRET=
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
-R2_BUCKET_NAME=bidguard-uploads
+R2_BUCKET_NAME=lucidkit-uploads
 R2_PUBLIC_URL=
 
 # AI (Google Gemini)
@@ -13295,7 +13295,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthResponse, Lang } from '@bidguard/types';
+import { AuthResponse, Lang } from '@lucidkit/types';
 import { CookieOptions, Request, Response } from 'express';
 
 import { ENV } from '../../config/env';
@@ -13449,7 +13449,7 @@ export class AuthController {
         "test:e2e": "jest --config test/jest-e2e.json"
     },
     "dependencies": {
-        "@bidguard/types": "workspace:*",
+        "@lucidkit/types": "workspace:*",
         "@nestjs/common": "^11.1.8",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^11.1.8",
@@ -13590,7 +13590,7 @@ export const ENV = {
     // --- REQUIRED WITH DEFAULTS ---
     NODE_ENV: nodeEnv,
     PORT: getEnvVar('PORT', '4000'),
-    MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'bidguard'),
+    MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'lucidkit'),
     WEB_URL: getEnvVar('WEB_URL', 'http://localhost:3000'),
 
     // --- REQUIRED (no fallback — crash if missing) ---
@@ -13620,7 +13620,7 @@ export const ENV = {
     // Production: MUST set real sender (verified domain). Dev: uses Resend test sender.
     RESEND_FROM_EMAIL: isProduction
         ? getEnvVar('RESEND_FROM_EMAIL')
-        : getEnvVar('RESEND_FROM_EMAIL', 'BidGuard <onboarding@resend.dev>'),
+        : getEnvVar('RESEND_FROM_EMAIL', 'LucidKit <onboarding@resend.dev>'),
 };
 </file>
 
@@ -13633,7 +13633,7 @@ export const ENV = {
 
 - [x] Відкрити `apps/api/Dockerfile`
 - [x] Замінити `CMD ["pnpm", "--filter", ...]` на `CMD ["node", "dist/main.js"]`
-- [x] Перевірити: `docker build -t bidguard-api -f apps/api/Dockerfile .` (додано `--legacy` до `pnpm deploy` для pnpm v10)
+- [x] Перевірити: `docker build -t lucidkit-api -f apps/api/Dockerfile .` (додано `--legacy` до `pnpm deploy` для pnpm v10)
 - [x] Перевірити: контейнер стартує і відповідає на health check (`/api/health` → `{ status: "ok" }`)
 
 ### 1.2 TypeScript Strict Mode (API) ✅
@@ -13704,17 +13704,17 @@ export const ENV = {
     - [x] `src/shared/seo/metadata.ts`
 - [x] Перевірити: `pnpm build` — 0 помилок у всіх пакетах
 
-### 2.2 Підключити API до @bidguard/types ✅
+### 2.2 Підключити API до @lucidkit/types ✅
 
-- [x] Додати `"@bidguard/types": "workspace:*"` в `apps/api/package.json` dependencies
+- [x] Додати `"@lucidkit/types": "workspace:*"` в `apps/api/package.json` dependencies
 - [x] Додати path alias в `apps/api/tsconfig.json`:
     ```json
     "paths": {
-      "@bidguard/types": ["../../packages/types/src/index.ts"]
+      "@lucidkit/types": ["../../packages/types/src/index.ts"]
     }
     ```
 - [x] `pnpm install` для оновлення workspace links
-- [x] Перевірити: `import { LANG } from '@bidguard/types'` працює в API (tsc --noEmit — 0 помилок)
+- [x] Перевірити: `import { LANG } from '@lucidkit/types'` працює в API (tsc --noEmit — 0 помилок)
 
 ### 2.3 ZodValidationPipe (nestjs-zod) ✅
 
@@ -13793,12 +13793,12 @@ export const ENV = {
 ### MongoDB Atlas
 
 - [x] Створити MongoDB Atlas account (якщо немає)
-- [x] Створити новий Project "BidGuard"
+- [x] Створити новий Project "LucidKit"
 - [x] Створити Cluster (M0 Free Tier)
     - [x] Region: Europe (Frankfurt або Warsaw)
-    - [x] Cluster name: `bidguard-prod`
+    - [x] Cluster name: `lucidkit-prod`
 - [x] Створити Database User
-    - [x] Username: `bidguard-api`
+    - [x] Username: `lucidkit-api`
     - [x] Password: згенерувати сильний пароль
 - [~] Налаштувати Network Access ⚠️ _див. Pre-Production Checklist_
     - [x] Додати ваш поточний IP (Add Current IP Address)
@@ -13821,11 +13821,11 @@ export const ENV = {
 - [x] Увійти в Cloudflare Dashboard
 - [x] Перейти в R2 Object Storage
 - [x] Створити bucket
-    - [x] Name: `bidguard-uploads`
+    - [x] Name: `lucidkit-uploads`
     - [x] Location: Automatic
 - [x] Створити R2 API Token
     - [x] Permissions: Object Read & Write
-    - [x] Specify bucket: `bidguard-uploads`
+    - [x] Specify bucket: `lucidkit-uploads`
 - [x] Зберегти credentials:
     - [x] Account ID
     - [x] Access Key ID
@@ -13837,24 +13837,24 @@ export const ENV = {
 ### Google OAuth
 
 - [x] Увійти в Google Cloud Console
-- [x] Створити новий Project "BidGuard" (Project ID: `bidguard-486912`)
+- [x] Створити новий Project "LucidKit" (Project ID: `lucidkit-486912`)
 - [x] Перейти в APIs & Services > Credentials
 - [x] Налаштувати OAuth consent screen
     - [x] User Type: External
-    - [x] App name: BidGuard
+    - [x] App name: LucidKit
     - [x] User support email: olegkhristenko@gmail.com
     - [x] Scopes: email, profile, openid
 - [~] Створити OAuth 2.0 Client ID ⚠️ _див. Pre-Production Checklist_
     - [x] Application type: Web application
     - [x] Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
-    - [ ] Production redirect URI: `https://bidguard.app/api/auth/callback/google`
+    - [ ] Production redirect URI: `https://lucidkit.app/api/auth/callback/google`
 - [x] Зберегти Client ID та Client Secret
 
 ### Google AI (Gemini)
 
 - [x] Увійти в Google AI Studio (https://aistudio.google.com/)
 - [x] Створити новий API Key
-    - [x] Name: `bidguard-production`
+    - [x] Name: `lucidkit-production`
 - [x] Перевірити доступ до Gemini Flash моделі
 - [x] Перевірити безкоштовну квоту (15 RPM, 1500 RPD)
 
@@ -13967,7 +13967,7 @@ export const ENV = {
 ### 3.3 Vercel (Frontend - apps/web)
 
 - [ ] Увійти в https://vercel.com/
-- [ ] Import Git Repository → вибрати `bidguard`
+- [ ] Import Git Repository → вибрати `lucidkit`
 - [ ] Налаштувати project:
     - [ ] Framework Preset: Next.js
     - [ ] Root Directory: `apps/web`
@@ -13982,7 +13982,7 @@ export const ENV = {
 ### 3.4 Railway (Backend - apps/api)
 
 - [ ] Увійти в https://railway.app/ (GitHub OAuth)
-- [ ] New Project → Deploy from GitHub repo → `bidguard`
+- [ ] New Project → Deploy from GitHub repo → `lucidkit`
 - [ ] Налаштувати API service:
     - [ ] Root Directory: `/apps/api`
     - [ ] Builder: Nixpacks
@@ -13993,7 +13993,7 @@ export const ENV = {
     - [ ] `NODE_ENV=production`
     - [ ] `PORT=4000`
     - [ ] `MONGODB_URI` (Atlas connection string)
-    - [ ] `MONGODB_DB_NAME=bidguard`
+    - [ ] `MONGODB_DB_NAME=lucidkit`
     - [ ] `JWT_ACCESS_SECRET` (згенерувати: `openssl rand -base64 32`)
     - [ ] `JWT_REFRESH_SECRET` (згенерувати: `openssl rand -base64 32`)
 - [ ] Generate Domain → отримати public URL
@@ -14128,12 +14128,12 @@ _Додаткові нотатки:_
 - [ ] **Налаштувати власний Custom Domain**
     - Поточний URL: `https://pub-1f0684c7300647b78b7a27c999df8d7c.r2.dev`
     - Після придбання домену: R2 → Bucket Settings → Custom Domains
-    - Рекомендований формат: `cdn.bidguard.app` або `uploads.bidguard.app`
+    - Рекомендований формат: `cdn.lucidkit.app` або `uploads.lucidkit.app`
 
 ### Google OAuth
 
 - [ ] **Додати production redirect URI**
-    - Після отримання домену додати: `https://bidguard.app/api/auth/callback/google`
+    - Після отримання домену додати: `https://lucidkit.app/api/auth/callback/google`
     - Верифікувати додаток для production (якщо потрібно більше 100 користувачів)
 </file>
 
@@ -14178,12 +14178,12 @@ _Додаткові нотатки:_
 ### 1.5 User Mongoose Schema — імплементація
 
 - [x] Створити/оновити `apps/api/src/modules/users/schemas/user.schema.ts`
-    - [x] Структура відповідає `UserSchema` з `@bidguard/types`
+    - [x] Структура відповідає `UserSchema` з `@lucidkit/types`
     - [x] `email!: string` — required, unique, lowercase, trim
     - [x] `provider?: { name: string; id: string }` — OAuth provider info
     - [x] `profile!: { name?: string; avatar?: string }` — default: {}
     - [x] `credits!: { balance: number; freeReportUsed: boolean }` — default: { balance: 0, freeReportUsed: false }
-    - [x] `preferredLang!: string` — default: LANG.UK (з @bidguard/types)
+    - [x] `preferredLang!: string` — default: LANG.UK (з @lucidkit/types)
     - [x] `lastLoginAt?: Date`
     - [x] Timestamps enabled
     - [x] Indexes: email (unique), provider.id (sparse)
@@ -14333,9 +14333,9 @@ _Додаткові нотатки:_
 - [x] Створити `apps/api/src/modules/auth/services/email.service.ts`
     - [x] Resend client: `new Resend(ENV.RESEND_API_KEY)`
     - [x] `sendMagicLink(email: string, token: string): Promise<void>`
-    - [x] Email template: простий HTML з кнопкою "Увійти в BidGuard"
+    - [x] Email template: простий HTML з кнопкою "Увійти в LucidKit"
     - [x] Link: `${ENV.WEB_URL}/auth/verify?token=${token}`
-    - [x] From: `"BidGuard <noreply@bidguard.app>"` (або Resend default domain для dev)
+    - [x] From: `"LucidKit <noreply@lucidkit.app>"` (або Resend default domain для dev)
 - [x] Зареєструвати як provider в AuthModule
 
 ### 3.3 Auth Service — Magic Link methods

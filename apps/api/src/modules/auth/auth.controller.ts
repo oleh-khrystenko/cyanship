@@ -9,7 +9,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthResponse, Lang } from '@bidguard/types';
+import { AuthResponse, Lang } from '@lucidkit/types';
 import { CookieOptions, Request, Response } from 'express';
 
 import { ENV } from '../../config/env';

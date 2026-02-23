@@ -7,7 +7,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ERROR_CODE, type ErrorCode } from '@bidguard/types';
+import { ERROR_CODE, type ErrorCode } from '@lucidkit/types';
 
 const HTTP_STATUS_TO_ERROR_CODE: Partial<Record<HttpStatus, ErrorCode>> = {
     [HttpStatus.BAD_REQUEST]: ERROR_CODE.VALIDATION_ERROR,

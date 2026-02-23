@@ -1,4 +1,4 @@
-# BidGuard
+# LucidKit
 
 > AI-сервіс для аналізу фото автомобілів та виявлення прихованих дефектів перед покупкою.
 
@@ -46,7 +46,7 @@ Turborepo monorepo з 2 apps + 1 shared package. Auth (Google OAuth + Magic Link
 ## Project Structure
 
 ```
-bidguard/
+lucidkit/
 ├── apps/
 │   ├── api/                              # NestJS backend
 │   │   ├── src/
@@ -120,7 +120,7 @@ bidguard/
 │       └── Dockerfile
 │
 ├── packages/
-│   └── types/                            # @bidguard/types
+│   └── types/                            # @lucidkit/types
 │       └── src/
 │           ├── constants/lang.ts         # LANG = { UK: 'uk', EN: 'en' }, Lang type
 │           ├── enums/error-code.ts       # ERROR_CODE (UNAUTHORIZED, VALIDATION_ERROR, NOT_FOUND, etc.)
@@ -255,7 +255,7 @@ async sendMagicLink(@Body() dto: SendMagicLinkDto) {
 export class SendMagicLinkDto extends createZodDto(SendMagicLinkSchema) {}
 ```
 
-Схеми визначені в `@bidguard/types`, DTOs обгортають через `createZodDto()` з `nestjs-zod`.
+Схеми визначені в `@lucidkit/types`, DTOs обгортають через `createZodDto()` з `nestjs-zod`.
 
 ### Авторизація
 
@@ -308,7 +308,7 @@ getMe(@CurrentUser() user: UserDocument) {
 Файл: `apps/api/src/common/filters/all-exceptions.filter.ts`
 
 - Global filter для ВСІХ exceptions
-- Maps HTTP status → `ERROR_CODE` з `@bidguard/types`
+- Maps HTTP status → `ERROR_CODE` з `@lucidkit/types`
 - Response: `{ error: { code: string, message: string } }`
 - 5xx errors логуються зі stack trace
 
@@ -404,7 +404,7 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 
 - `NODE_ENV` → `'development'`
 - `PORT` → `'4000'`
-- `MONGODB_DB_NAME` → `'bidguard'`
+- `MONGODB_DB_NAME` → `'lucidkit'`
 - `WEB_URL` → `'http://localhost:3000'`
 - `RESEND_FROM_EMAIL` → `'onboarding@resend.dev'` (dev fallback, у prod задати кастомний email)
 
@@ -435,7 +435,7 @@ docker compose -f docker-compose.dev.yml up --build   # Dev: local MongoDB + Red
 docker compose up --build -d                          # Prod: MongoDB Atlas
 
 # packages/types
-pnpm --filter @bidguard/types build                   # Compile to CJS in dist/
+pnpm --filter @lucidkit/types build                   # Compile to CJS in dist/
 ```
 
 ## Rules & Conventions
@@ -470,7 +470,7 @@ Inline `<script>` в layout виконується ДО React hydration — чи
 
 ### packages/types build order
 
-`packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker. `tsconfig.build.json` компілює в CJS у `dist/`. **НІКОЛИ** не додавати `paths: { "@bidguard/types": [...] }` до API tsconfig — це ламає структуру output dir. API резолвить через workspace symlink → `dist/`. Web tsconfig МОЖЕ мати `paths` (Next.js використовує свій бандлер).
+`packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker. `tsconfig.build.json` компілює в CJS у `dist/`. **НІКОЛИ** не додавати `paths: { "@lucidkit/types": [...] }` до API tsconfig — це ламає структуру output dir. API резолвить через workspace symlink → `dist/`. Web tsconfig МОЖЕ мати `paths` (Next.js використовує свій бандлер).
 
 ### In-memory access token
 

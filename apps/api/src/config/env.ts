@@ -30,7 +30,7 @@ export const ENV = {
     // --- REQUIRED WITH DEFAULTS ---
     NODE_ENV: nodeEnv,
     PORT: getEnvVar('PORT', '4000'),
-    MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'bidguard'),
+    MONGODB_DB_NAME: getEnvVar('MONGODB_DB_NAME', 'lucidkit'),
     WEB_URL: getEnvVar('WEB_URL', 'http://localhost:3000'),
 
     // --- REQUIRED (no fallback — crash if missing) ---
@@ -60,5 +60,5 @@ export const ENV = {
     // Production: MUST set real sender (verified domain). Dev: uses Resend test sender.
     RESEND_FROM_EMAIL: isProduction
         ? getEnvVar('RESEND_FROM_EMAIL')
-        : getEnvVar('RESEND_FROM_EMAIL', 'BidGuard <onboarding@resend.dev>'),
+        : getEnvVar('RESEND_FROM_EMAIL', 'LucidKit <onboarding@resend.dev>'),
 };

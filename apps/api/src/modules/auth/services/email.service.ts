@@ -14,21 +14,21 @@ export class EmailService {
         const { error } = await this.resend.emails.send({
             from: ENV.RESEND_FROM_EMAIL,
             to: email,
-            subject: 'Вхід у BidGuard',
+            subject: 'Вхід у LucidKit',
             html: `
 <!DOCTYPE html>
 <html lang="uk">
 <head><meta charset="UTF-8"></head>
 <body style="font-family: sans-serif; background: #f4f4f5; padding: 40px 0;">
   <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 40px; text-align: center;">
-    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">BidGuard</h1>
+    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidKit</h1>
     <p style="color: #52525b; font-size: 16px; margin-bottom: 32px;">
       Натисніть кнопку нижче, щоб увійти у ваш акаунт.
     </p>
     <a href="${link}"
        style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none;
               padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
-      Увійти в BidGuard
+      Увійти в LucidKit
     </a>
     <p style="color: #a1a1aa; font-size: 13px; margin-top: 32px;">
       Посилання дійсне 15 хвилин. Якщо ви не запитували вхід — ігноруйте цей лист.

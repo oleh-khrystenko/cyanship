@@ -1,16 +1,16 @@
 {
     "welcome_page": {
         "head": {
-            "title": "BidGuard – Protect Your Bids",
-            "description": "BidGuard is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
+            "title": "LucidKit – Protect Your Bids",
+            "description": "LucidKit is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
         },
-        "heading": "BidGuard — your trusted partner in the world of bidding.",
+        "heading": "LucidKit — your trusted partner in the world of bidding.",
         "description": "Here you'll find tools and solutions for secure bid management.",
         "cta": "Get Started"
     },
     "auth_page": {
         "signin": {
-            "heading": "Sign in to BidGuard",
+            "heading": "Sign in to LucidKit",
             "subheading": "Analyse car photos and detect hidden defects before purchase",
             "google_button": "Continue with Google",
             "divider": "or",

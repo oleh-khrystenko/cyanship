@@ -41,7 +41,7 @@ jobs:
         runs-on: ubuntu-latest
 
         env:
-            MONGODB_URI: mongodb://localhost:27017/bidguard-test
+            MONGODB_URI: mongodb://localhost:27017/lucidkit-test
 
         services:
             mongodb:

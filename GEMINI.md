@@ -1,22 +1,22 @@
-# Gemini Project: BidGuard
+# Gemini Project: LucidKit
 
-This document provides a comprehensive overview of the BidGuard project, its structure, and development conventions to assist Gemini in understanding and contributing to the codebase.
+This document provides a comprehensive overview of the LucidKit project, its structure, and development conventions to assist Gemini in understanding and contributing to the codebase.
 
 ## Project Overview
 
-BidGuard is a monorepo project built with pnpm workspaces and managed by Turborepo. It consists of a web application and an API.
+LucidKit is a monorepo project built with pnpm workspaces and managed by Turborepo. It consists of a web application and an API.
 
 - **Web Application (`apps/web`):** A modern frontend built with Next.js 16 (using the App Router and React 19), styled with TailwindCSS 4, and utilizing Zustand for state management. It supports internationalization (i18n) with `next-intl`.
 
 - **API (`apps/api`):** A robust backend powered by NestJS 11, using MongoDB with Mongoose for data persistence.
 
-- **Shared Packages (`packages`):** The `packages` directory holds code shared across the monorepo, such as TypeScript types in `@bidguard/types`.
+- **Shared Packages (`packages`):** The `packages` directory holds code shared across the monorepo, such as TypeScript types in `@lucidkit/types`.
 
 The project is fully containerized with Docker, providing consistent development and production environments.
 
 ## Building and Running
 
-The following commands are essential for working with the BidGuard project.
+The following commands are essential for working with the LucidKit project.
 
 ### Development
 

@@ -1,4 +1,4 @@
-import type { AuthResponse, UserProfile } from '@bidguard/types';
+import type { AuthResponse, UserProfile } from '@lucidkit/types';
 
 import { apiClient, setAccessToken } from './client';
 

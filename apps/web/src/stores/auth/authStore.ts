@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UserProfile } from '@bidguard/types';
+import type { UserProfile } from '@lucidkit/types';
 
 interface AuthState {
     user: UserProfile | null;
