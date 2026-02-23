@@ -15,7 +15,7 @@
 
 | Шар            | Технологія                    | Версія                                |
 | -------------- | ----------------------------- | ------------------------------------- |
-| Monorepo       | Turborepo + pnpm workspaces   | turbo 2.5.8, pnpm 10.25               |
+| Monorepo       | Turborepo + pnpm workspaces   | turbo 2.5.8, pnpm 10.30.1             |
 | Frontend       | Next.js (App Router) + React  | 16.0.1, React 19.2                    |
 | Backend        | NestJS + Express              | 11.1.8                                |
 | БД             | MongoDB + Mongoose            | mongoose 8.19.2                       |
@@ -85,8 +85,9 @@ lucidkit/
 │       ├── src/
 │       │   ├── app/
 │       │   │   ├── providers.tsx         # next-themes ThemeProvider (attribute: class, defaultTheme: system)
+│       │   │   ├── globals.css           # Imports: tailwindcss, themes, settings, scrollbar, custom-variants, animations
 │       │   │   └── [locale]/
-│       │   │       ├── layout.tsx        # Providers, AuthInitializer, Header, initial theme script
+│       │   │       ├── layout.tsx        # Providers, AuthInitializer, Header, Mulish font
 │       │   │       ├── page.tsx          # Welcome page
 │       │   │       ├── auth/
 │       │   │       │   ├── signin/page.tsx   # Google OAuth + Magic Link form
@@ -94,13 +95,13 @@ lucidkit/
 │       │   │       │   └── verify/page.tsx   # Magic link verification (Suspense boundary)
 │       │   │       └── (protected)/
 │       │   │           ├── layout.tsx        # AuthGuard wrapper
-│       │   │           └── check/page.tsx    # Protected page
+│       │   │           └── check/page.tsx    # Protected page (placeholder)
 │       │   ├── entities/brand/           # Logo component
 │       │   ├── features/
 │       │   │   ├── auth/                 # AuthInitializer, AuthGuard
-│       │   │   ├── change-lang/          # Language switcher (country-flag-icons)
+│       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiSelect)
 │       │   │   └── change-theme/         # Theme toggle (next-themes, dynamic ssr:false)
-│       │   ├── widgets/header/           # Sticky header: Logo + user info/auth + theme + lang
+│       │   ├── widgets/header/           # Sticky header: Logo + user info/auth + theme + lang + logout
 │       │   ├── shared/
 │       │   │   ├── api/client.ts         # Axios instance + 401 auto-refresh interceptor
 │       │   │   ├── api/auth.ts           # Auth API calls (magic link, refresh, logout, getMe)
@@ -112,10 +113,9 @@ lucidkit/
 │       │   │   ├── types/settings.ts     # THEME enum, Theme, PageParams, MetaProps
 │       │   │   └── ui/                  # UiButton, UiInput, UiSelect, UiSwitch, UiSpinner
 │       │   ├── stores/
-│       │   │   ├── auth/authStore.ts     # user, isAuthenticated, isLoading
-│       │   │   └── settings/settingsStore.ts  # theme (Zustand)
+│       │   │   └── auth/authStore.ts     # user, isAuthenticated, isLoading (Zustand)
 │       │   ├── i18n/                     # routing.ts, request.ts
-│       │   └── middleware.ts             # Route protection (cookie check)
+│       │   └── middleware.ts             # Route protection (cookie check) + i18n
 │       ├── messages/                     # uk.json, en.json
 │       └── Dockerfile
 │
@@ -123,15 +123,19 @@ lucidkit/
 │   └── types/                            # @lucidkit/types
 │       └── src/
 │           ├── constants/lang.ts         # LANG = { UK: 'uk', EN: 'en' }, Lang type
-│           ├── enums/error-code.ts       # ERROR_CODE (UNAUTHORIZED, VALIDATION_ERROR, NOT_FOUND, etc.)
+│           ├── enums/error-code.ts       # ERROR_CODE (6 кодів), ErrorCode type
 │           ├── entities/user.ts          # Zod schemas: UserSchema, UserProfileSchema, UserCreditsSchema
 │           ├── contracts/api.ts          # ApiErrorSchema, ApiResponse<T> interface
 │           ├── contracts/auth.ts         # SendMagicLinkSchema, VerifyMagicLinkSchema, AuthResponseSchema
 │           ├── validation/common.ts      # emailSchema, objectIdSchema
 │           └── index.ts                  # Re-exports all
 │
-├── docs/                                 # Документація: PLANNING, TECHNICAL, DESIGN, SPRINTS
-├── docker-compose.yml                    # Production
+├── docs/                                 # Документація
+│   ├── planning/                         # Roadmap, epics (placeholder)
+│   ├── sprints/sprint-003/               # Manual E2E auth test plan (18 scenarios)
+│   ├── audits/auth/                      # Auth implementation audit (9 findings)
+│   └── prompts/                          # Service prompts для агентів (codex, gemini)
+├── docker-compose.yml                    # Production (api + web)
 ├── docker-compose.dev.yml                # Dev (mongo + redis + api + web)
 ├── turbo.json                            # Build pipeline
 ├── pnpm-workspace.yaml                   # apps/*, packages/*
@@ -166,7 +170,7 @@ Zod: `packages/types/src/entities/user.ts`
 | `refresh:{jti}`              | userId      | 7 days | Refresh token storage             |
 | `refresh_family:{userId}`    | Set[jti]    | 7 days | Token family для reuse detection  |
 
-### Report, Payment — **[НЕ РЕАЛІЗОВАНО]**, schema у `docs/TECHNICAL/DATABASE_SCHEMA.md`
+### Report, Payment — **[НЕ РЕАЛІЗОВАНО]**
 
 ### Типи в packages/types
 
@@ -214,21 +218,23 @@ layout.tsx
 ├── NextIntlClientProvider (i18n)
 ├── AuthInitializer (silent token refresh on load)
 ├── Header (widget)
-│   ├── Logo (entity/brand)
+│   ├── Logo (entity/brand) — wrapped in Link to home
 │   ├── User info / SignIn button (auth-aware)
+│   ├── Logout button (auth-aware)
 │   ├── ChangeTheme (feature, dynamic import ssr:false) → next-themes
 │   └── ChangeLang (feature) → next-intl routing
 └── {children} — pages
 
 middleware.ts
+├── i18n middleware (next-intl createIntlMiddleware)
 ├── Protected paths: /check, /pay → redirect to /auth/signin if no bid_refresh cookie
 └── Auth paths: /auth/signin → redirect to /check if bid_refresh cookie exists
 ```
 
 ### Cross-package
 
-- `apps/web` → `packages/types` (workspace dependency)
-- `apps/api` → `packages/types` (workspace dependency)
+- `apps/web` → `packages/types` (workspace dependency, tsconfig paths)
+- `apps/api` → `packages/types` (workspace dependency, symlink → dist/)
 
 ## Key Patterns
 
@@ -294,6 +300,7 @@ getMe(@CurrentUser() user: UserDocument) {
 - Access token в пам'яті (closure variable, НЕ localStorage)
 - Axios interceptor: на 401 → `POST /auth/refresh` (cookie) → retry original request
 - Дедуплікація concurrent refresh requests через promise sharing
+- Excluded endpoints: refresh та logout НЕ retry на 401
 
 ### Refresh token rotation
 
@@ -310,6 +317,7 @@ getMe(@CurrentUser() user: UserDocument) {
 - Global filter для ВСІХ exceptions
 - Maps HTTP status → `ERROR_CODE` з `@lucidkit/types`
 - Response: `{ error: { code: string, message: string } }`
+- Mapping: 400→VALIDATION_ERROR, 401→UNAUTHORIZED, 404→NOT_FOUND, 422→VALIDATION_ERROR, 429→RATE_LIMIT_EXCEEDED, 5xx→INTERNAL_ERROR
 - 5xx errors логуються зі stack trace
 
 ### Env vars — fail-fast
@@ -343,6 +351,24 @@ const getEnvVar = (name: string, fallback?: string): string => {
 - Порядок: cookie-parser → globalPrefix `/api` → ZodValidationPipe → AllExceptionsFilter → CORS → listen
 - CORS: localhost:3000 + ENV.WEB_URL, credentials: true
 - Listen на `0.0.0.0` для Docker
+- Logger: production (error/warn/log), dev (+debug/verbose)
+
+### CSS Theme System
+
+Файл: `apps/web/src/shared/styles/themes.css`
+
+- CSS custom properties для кольорів: `--primary`, `--background`, `--surface`, `--border`, `--text-primary`, `--text-secondary`, `--success`, `--warning`, `--error`
+- Light: `:root`, Dark: `.dark` selector
+- Tailwind інтеграція через `@theme inline` директиву (TailwindCSS 4.x)
+- Custom dark variant: `@custom-variant dark (&:where(.dark, .dark *))`
+
+### SEO metadata
+
+Файл: `apps/web/src/shared/seo/metadata.ts`
+
+- `fetchMetadata()` — динамічно завантажує переклади з `messages/{locale}.json`
+- Генерує canonical URL, hreflang alternates (x-default, uk-ua, en-ua)
+- Використовується через `generateMetadata()` в кожному page component
 
 ## API Overview
 
@@ -406,7 +432,7 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 - `PORT` → `'4000'`
 - `MONGODB_DB_NAME` → `'lucidkit'`
 - `WEB_URL` → `'http://localhost:3000'`
-- `RESEND_FROM_EMAIL` → `'onboarding@resend.dev'` (dev fallback, у prod задати кастомний email)
+- `RESEND_FROM_EMAIL` → `'LucidKit <onboarding@resend.dev>'` (dev fallback, у prod задати кастомний email)
 
 ### Web env vars (`apps/web/src/shared/config/env.ts`)
 
@@ -415,11 +441,19 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 - `NEXT_PUBLIC_BASE_URL` — canonical URL сайту
 - `NEXT_PUBLIC_API_URL` — URL бекенду
 
+### next.config.ts
+
+- `output: 'standalone'` — Docker-ready
+- `reactStrictMode: true`
+- `images.remotePatterns`: `lh3.googleusercontent.com` (Google avatars)
+- Завантажує `.env` з monorepo root (`../../.env`) через dotenv override
+- next-intl plugin інтеграція
+
 ## Common Commands
 
 ```bash
 # Development
-pnpm dev                                              # Всі apps через Turborepo
+pnpm dev                                              # Всі apps через Turborepo (Turbopack for web)
 pnpm build                                            # Build all
 pnpm lint                                             # Lint all
 pnpm format                                           # Prettier format
@@ -444,11 +478,11 @@ pnpm --filter @lucidkit/types build                   # Compile to CJS in dist/
 - API lint: no `any`, no floating promises, async requires await
 - `main.ts` використовує `void bootstrap()` — не `.finally()`
 - Mongoose schemas потребують `!` (definite assignment) на всіх `@Prop()` полях
-- `@/widgets/header` exports `{ Header }` (named), не default
+- `@/widgets/header` exports `{ Header }` (named, re-exported from default)
 - Cookie для refresh token: `bid_refresh`, httpOnly, secure (prod), sameSite=lax, path=/, maxAge=7d
 - Frontend: Feature-Sliced Design (`app/`, `features/`, `entities/`, `widgets/`, `shared/`)
 - UI компоненти: `Component.tsx` + `types.ts` + `index.ts` структура
-- Шрифт: Google Fonts Mulish (300, 400, 700)
+- Шрифт: Google Fonts Mulish (300, 400, 700; subsets: cyrillic, latin)
 - Locales: `uk` (default), `en`
 - Theme: next-themes (attribute: class, storageKey: theme, defaultTheme: system)
 - **Zod = single source of truth**: схеми в `packages/types`, types через `z.infer`, валідація на API і Web
@@ -456,6 +490,10 @@ pnpm --filter @lucidkit/types build                   # Compile to CJS in dist/
 - API response format: `{ data: {...} }` для success, `{ error: { code, message } }` для errors
 - Access token: в пам'яті (closure), refresh token: httpOnly cookie
 - Zustand stores без Provider — працюють напряму
+- Prettier: singleQuote, tabWidth 4, trailingComma es5, semi true, printWidth 80
+- Web: prettier-plugin-tailwindcss для сортування класів
+- i18n message keys: `{page}_page.{section}.{key}` (welcome_page.head.title)
+- Web path aliases: `@/*` → `./src/*`, `@lucidkit/types` → types source
 
 ## Known Complexities
 
@@ -463,10 +501,6 @@ pnpm --filter @lucidkit/types build                   # Compile to CJS in dist/
 
 Файл: `apps/web/src/features/change-theme/ChangeTheme.tsx`
 `ChangeTheme` імпортується з `dynamic(..., { ssr: false })` у Header — уникає hydration mismatch. Компонент використовує `useTheme()` з `next-themes`. `providers.tsx` обгортає app у `ThemeProvider` з `attribute: class`.
-
-### Initial theme script (layout.tsx)
-
-Inline `<script>` в layout виконується ДО React hydration — читає localStorage і встановлює `class` на `<html>`, щоб уникнути flash of wrong theme (next-themes потребує це для SSR).
 
 ### packages/types build order
 
@@ -484,7 +518,7 @@ Access token зберігається в closure variable (не localStorage) д
 
 ### Two-layer route protection
 
-1. **Middleware** (server) — перевіряє `bid_refresh` cookie, швидкий redirect
+1. **Middleware** (server) — перевіряє `bid_refresh` cookie, швидкий redirect + i18n через createIntlMiddleware
 2. **AuthGuard** (client) — перевіряє auth store, показує spinner поки loading
 
 ### Refresh token rotation security
@@ -502,3 +536,18 @@ Redis-based: max 3 requests per email per 15min. Token: 64-byte hex (256-bit), T
 
 Файл: `apps/web/src/app/[locale]/auth/verify/page.tsx`
 `useSearchParams()` вимагає Suspense boundary у Next.js App Router. Verify page обгорнута у `<Suspense>` для читання `?token=` параметру.
+
+### next.config.ts env loading
+
+Файл: `apps/web/next.config.ts`
+dotenv завантажує `.env` з monorepo root (`../../.env`) з override. Це дозволяє мати єдиний `.env` файл для всього проєкту. `NEXT_PUBLIC_*` змінні мають використовувати прямий `process.env.VAR` доступ для Next.js inlining.
+
+### Docker dev polling
+
+Файл: `docker-compose.dev.yml`
+File watching в Docker потребує polling: `TSC_WATCHFILE=UsePolling` (API), `WATCHPACK_POLLING=true` + `CHOKIDAR_USEPOLLING=true` (Web). Build pipeline: `pnpm install → types build → app dev`.
+
+### Known audit findings
+
+Файл: `docs/audits/auth/auth-implementation-audit.md`
+9 знахідок (1 critical, 4 high, 2 medium, 2 low). Ключові: magic-link не atomic (GET+DEL race), Google OAuth без state validation, E2E тести потребують мокування зовнішніх залежностей, rate-limit bypass через email variants.
