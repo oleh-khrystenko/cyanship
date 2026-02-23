@@ -140,7 +140,7 @@ lucidkit/
 │
 ├── docs/                                 # Документація
 │   ├── planning/                         # Roadmap, epics (placeholder)
-│   ├── sprints/sprint-003/               # Manual E2E auth test plan (18 scenarios)
+│   ├── sprints/sprint-003-auth/          # Manual E2E auth test plan (18 scenarios)
 │   ├── audits/auth/                      # Auth implementation audit (9 findings)
 │   └── prompts/                          # Service prompts для агентів (codex, gemini)
 ├── docker-compose.yml                    # Production (api + web)
