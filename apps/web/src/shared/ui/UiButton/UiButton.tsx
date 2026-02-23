@@ -138,15 +138,15 @@ const UiButton = forwardRef<
     // Type guard: Native anchor element
     if (props.as === 'a') {
         const {
-            as,
+            as: _as,
             href,
-            variant: _,
-            size: __,
-            className: ___,
-            IconLeft: ____,
-            IconRight: _____,
-            disabled: ______,
-            children: _______,
+            variant: _variant,
+            size: _size,
+            className: _className,
+            IconLeft: _iconLeft,
+            IconRight: _iconRight,
+            disabled: _disabled,
+            children: _children,
             ...anchorProps
         } = props;
 
@@ -174,15 +174,15 @@ const UiButton = forwardRef<
     // Type guard: Internal link
     if (props.as === 'link') {
         const {
-            as,
+            as: _as,
             href,
-            variant: _,
-            size: __,
-            className: ___,
-            IconLeft: ____,
-            IconRight: _____,
-            disabled: ______,
-            children: _______,
+            variant: _variant,
+            size: _size,
+            className: _className,
+            IconLeft: _iconLeft,
+            IconRight: _iconRight,
+            disabled: _disabled,
+            children: _children,
             ...linkProps
         } = props;
 
@@ -209,14 +209,14 @@ const UiButton = forwardRef<
 
     // Default: Button
     const {
-        as,
-        variant: _,
-        size: __,
-        className: ___,
-        IconLeft: ____,
-        IconRight: _____,
-        disabled: ______,
-        children: _______,
+        as: _as,
+        variant: _variant,
+        size: _size,
+        className: _className,
+        IconLeft: _iconLeft,
+        IconRight: _iconRight,
+        disabled: _disabled,
+        children: _children,
         ...buttonProps
     } = props;
 

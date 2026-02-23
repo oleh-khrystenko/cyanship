@@ -392,22 +392,18 @@ describe('AuthService', () => {
         it('should throw 429 when rate limit exceeded (4th request)', async () => {
             mockRedis.incr.mockResolvedValue(4);
 
-            await expect(authService.sendMagicLink(email)).rejects.toThrow(
-                expect.objectContaining({
-                    status: HttpStatus.TOO_MANY_REQUESTS,
-                })
-            );
+            await expect(
+                authService.sendMagicLink(email)
+            ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
             expect(emailService.sendMagicLink).not.toHaveBeenCalled();
         });
 
         it('should throw 429 when rate limit is well over max', async () => {
             mockRedis.incr.mockResolvedValue(10);
 
-            await expect(authService.sendMagicLink(email)).rejects.toThrow(
-                expect.objectContaining({
-                    status: HttpStatus.TOO_MANY_REQUESTS,
-                })
-            );
+            await expect(
+                authService.sendMagicLink(email)
+            ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
         });
 
         it('should not leak email in rate limit error message', async () => {
@@ -415,10 +411,9 @@ describe('AuthService', () => {
 
             await expect(
                 authService.sendMagicLink('secret@example.com')
-            ).rejects.toThrow(
-                expect.objectContaining({
-                    message: expect.not.stringContaining('secret@example.com'),
-                })
+            ).rejects.toHaveProperty(
+                'message',
+                expect.not.stringContaining('secret@example.com') as string
             );
         });
     });
