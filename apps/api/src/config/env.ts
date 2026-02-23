@@ -3,7 +3,7 @@
 // NEVER add fallback values for URLs, secrets, API keys, or
 // connection strings. If a variable is missing, crash immediately.
 // Silent failures with localhost fallbacks are invisible in
-// production and break auth, SEO, storage, payments.
+// production and break auth and SEO.
 // Only NODE_ENV, PORT, MONGODB_DB_NAME, WEB_URL may have defaults.
 // ============================================================
 
@@ -39,21 +39,10 @@ export const ENV = {
     JWT_REFRESH_SECRET: getEnvVar('JWT_REFRESH_SECRET'),
     REDIS_URL: getEnvVar('REDIS_URL'),
 
-    // Cloudflare R2
-    R2_ACCOUNT_ID: getEnvVar('R2_ACCOUNT_ID'),
-    R2_BUCKET_NAME: getEnvVar('R2_BUCKET_NAME'),
-    R2_ACCESS_KEY_ID: getEnvVar('R2_ACCESS_KEY_ID'),
-    R2_SECRET_ACCESS_KEY: getEnvVar('R2_SECRET_ACCESS_KEY'),
-    R2_ENDPOINT: getEnvVar('R2_ENDPOINT'),
-    R2_PUBLIC_URL: getEnvVar('R2_PUBLIC_URL'),
-
     // Google OAuth
     GOOGLE_CLIENT_ID: getEnvVar('GOOGLE_CLIENT_ID'),
     GOOGLE_CLIENT_SECRET: getEnvVar('GOOGLE_CLIENT_SECRET'),
     GOOGLE_CALLBACK_URL: getEnvVar('GOOGLE_CALLBACK_URL'),
-
-    // Google AI (Gemini)
-    GOOGLE_GEMINI_API_KEY: getEnvVar('GOOGLE_GEMINI_API_KEY'),
 
     // Resend (email)
     RESEND_API_KEY: getEnvVar('RESEND_API_KEY'),

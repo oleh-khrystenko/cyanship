@@ -402,7 +402,7 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 
 - `ReportsController` — CRUD звітів, AI-аналіз
 - `PaymentsController` — Оплата credits
-- `StorageService` — Cloudflare R2 (без контролера)
+- `StorageService` — інфраструктурний skeleton (без контролера)
 
 ## Configuration & Environment
 
@@ -421,9 +421,7 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 - `JWT_ACCESS_SECRET` — JWT access token signing
 - `JWT_REFRESH_SECRET` — JWT refresh token signing
 - `REDIS_URL` — Redis для magic links + rate limiting
-- `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL` — Cloudflare R2
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` — Google OAuth
-- `GOOGLE_GEMINI_API_KEY` — Google Gemini AI
 - `RESEND_API_KEY` — Resend email service
 
 **Optional (мають defaults):**

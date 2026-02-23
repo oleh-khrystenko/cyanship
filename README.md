@@ -34,8 +34,6 @@ lucid-kit/
 | Backend   | NestJS, Mongoose (MongoDB), Passport (JWT + Google OAuth), ioredis |
 | Shared    | Zod (валідація), TypeScript (strict) |
 | Email     | Resend                              |
-| Storage   | Cloudflare R2 (planned)             |
-| AI        | Google Gemini (planned)             |
 
 ---
 
@@ -71,17 +69,6 @@ GOOGLE_CALLBACK_URL=http://localhost:4000/api/auth/google/callback
 
 # Resend
 RESEND_API_KEY=your-resend-api-key
-
-# Google Gemini AI
-GOOGLE_GEMINI_API_KEY=your-gemini-key
-
-# Cloudflare R2
-R2_ACCOUNT_ID=your-r2-account-id
-R2_BUCKET_NAME=your-bucket
-R2_ACCESS_KEY_ID=your-r2-access-key
-R2_SECRET_ACCESS_KEY=your-r2-secret-key
-R2_ENDPOINT=your-r2-endpoint
-R2_PUBLIC_URL=your-r2-public-url
 
 # Web
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -130,4 +117,3 @@ docker compose up --build -d
 | `pnpm --filter api test:e2e`             | API E2E тести               |
 | `pnpm --filter api test:cov`             | API coverage                |
 | `pnpm --filter @lucidkit/types build`    | Build shared types          |
-

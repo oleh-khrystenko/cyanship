@@ -123,8 +123,6 @@ Global prefix: `/api` (`apps/api/src/main.ts`).
 **Integrations**
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` — Google OAuth strategy.
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL` — magic-link email transport/sender.
-- `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL` — Cloudflare R2 (prepared, not yet consumed by business logic).
-- `GOOGLE_GEMINI_API_KEY` — reserved for AI integration (not yet consumed by modules).
 
 ## Testing Strategy
 - **API Unit tests:** service-level tests with mocks for Redis/JWT/Mongoose (`apps/api/src/modules/auth/auth.service.spec.ts`, `apps/api/src/modules/users/users.service.spec.ts`).
