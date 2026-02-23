@@ -2,10 +2,10 @@
     "name": "@lucidkit/types",
     "version": "1.0.0",
     "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
+            "types": "./src/index.ts",
             "default": "./dist/index.js"
         }
     },
