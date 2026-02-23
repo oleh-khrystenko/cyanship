@@ -144,6 +144,15 @@ Global prefix: `/api` (`apps/api/src/main.ts`).
 - **Docker dev stack:** `docker compose -f docker-compose.dev.yml up --build`
 - **DB Migration:** відсутні migration scripts (Mongoose schema-first; manual/one-off data changes).
 
+## Project Conventions (MANDATORY)
+
+All AI agents MUST read and follow rules in `docs/conventions/`:
+
+- **[Tone & Style](docs/conventions/tone.md)** — tone and style for all user-facing messages (toasts, errors, confirmations)
+- **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
+
+Full index: [docs/conventions/README.md](docs/conventions/README.md)
+
 ## Rules & Conventions
 # Repository Guidelines
 

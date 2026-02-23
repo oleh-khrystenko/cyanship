@@ -14,6 +14,15 @@ LucidKit is a monorepo project built with pnpm workspaces and managed by Turbore
 
 The project is fully containerized with Docker, providing consistent development and production environments.
 
+## Project Conventions (MANDATORY)
+
+All AI agents MUST read and follow rules in `docs/conventions/`:
+
+- **[Tone & Style](docs/conventions/tone.md)** — tone and style for all user-facing messages (toasts, errors, confirmations)
+- **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
+
+Full index: [docs/conventions/README.md](docs/conventions/README.md)
+
 ## Building and Running
 
 The following commands are essential for working with the LucidKit project.

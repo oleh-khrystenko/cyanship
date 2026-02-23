@@ -9,6 +9,15 @@
 - Before making ANY code changes, read the relevant module's files to understand current implementation
 - Always check prisma/schema.prisma before modifying data layer
 - Always check existing patterns in similar modules before creating new ones
+
+## Project Conventions (ОБОВ'ЯЗКОВО)
+
+All AI agents MUST read and follow rules in `docs/conventions/`:
+
+- **[Tone & Style](docs/conventions/tone.md)** — тон та стиль user-facing повідомлень (toasts, errors, confirmations)
+- **[Fail Fast](docs/conventions/fail-fast.md)** — політика обов'язкових env vars
+
+Full index: [docs/conventions/README.md](docs/conventions/README.md)
   <!-- MANUAL:END -->
 
 ## Tech Stack
