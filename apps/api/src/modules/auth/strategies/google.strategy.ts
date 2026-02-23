@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 
@@ -19,6 +19,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             clientSecret: ENV.GOOGLE_CLIENT_SECRET,
             callbackURL: ENV.GOOGLE_CALLBACK_URL,
             scope: ['email', 'profile'],
+            state: true,
         });
     }
 
@@ -27,14 +28,34 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         _refreshToken: string,
         profile: {
             id: string;
-            emails?: { value: string }[];
+            emails?: { value: string; verified?: boolean }[];
             displayName?: string;
             photos?: { value: string }[];
         },
         done: VerifyCallback
     ): void {
+        const emailEntry = profile.emails?.[0];
+
+        if (!emailEntry?.value) {
+            done(
+                new UnauthorizedException(
+                    'Google account has no associated email'
+                ),
+                undefined
+            );
+            return;
+        }
+
+        if (emailEntry.verified === false) {
+            done(
+                new UnauthorizedException('Google email is not verified'),
+                undefined
+            );
+            return;
+        }
+
         const user: GoogleValidatedUser = {
-            email: profile.emails?.[0]?.value ?? '',
+            email: emailEntry.value,
             name: profile.displayName,
             avatar: profile.photos?.[0]?.value,
             providerId: profile.id,
