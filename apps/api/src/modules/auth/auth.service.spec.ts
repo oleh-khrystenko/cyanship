@@ -37,6 +37,9 @@ const mockRedis = {
     get: jest.fn(),
     getdel: jest.fn(),
     del: jest.fn(),
+    set: jest.fn(),
+    incr: jest.fn(),
+    expire: jest.fn(),
     pipeline: jest.fn(),
     smembers: jest.fn(),
 };
@@ -342,36 +345,41 @@ describe('AuthService', () => {
     describe('sendMagicLink', () => {
         const email = 'user@example.com';
 
-        it('should generate token, store in Redis, and send email', async () => {
-            mockRedis.get.mockResolvedValue(null);
+        it('should normalize email, generate token, store in Redis, and send email', async () => {
+            mockRedis.incr.mockResolvedValue(1);
 
-            await authService.sendMagicLink(email);
+            await authService.sendMagicLink('  User@Example.COM  ');
 
-            expect(mockRedis.get).toHaveBeenCalledWith(
-                `ratelimit:magic:${email}`
+            expect(mockRedis.incr).toHaveBeenCalledWith(
+                'ratelimit:magic:user@example.com'
             );
-            expect(mockPipeline.set).toHaveBeenCalledWith(
+            expect(mockRedis.expire).toHaveBeenCalledWith(
+                'ratelimit:magic:user@example.com',
+                900
+            );
+            expect(mockRedis.set).toHaveBeenCalledWith(
                 expect.stringMatching(/^magic:[a-f0-9]{64}$/),
-                email,
+                'user@example.com',
                 'EX',
                 900
             );
-            expect(mockPipeline.incr).toHaveBeenCalledWith(
-                `ratelimit:magic:${email}`
-            );
-            expect(mockPipeline.expire).toHaveBeenCalledWith(
-                `ratelimit:magic:${email}`,
-                900
-            );
-            expect(mockPipeline.exec).toHaveBeenCalled();
             expect(emailService.sendMagicLink).toHaveBeenCalledWith(
-                email,
+                'user@example.com',
                 expect.stringMatching(/^[a-f0-9]{64}$/)
             );
         });
 
+        it('should not set expire on subsequent requests (count > 1)', async () => {
+            mockRedis.incr.mockResolvedValue(2);
+
+            await authService.sendMagicLink(email);
+
+            expect(mockRedis.expire).not.toHaveBeenCalled();
+            expect(emailService.sendMagicLink).toHaveBeenCalled();
+        });
+
         it('should allow up to 3 requests within rate limit window', async () => {
-            mockRedis.get.mockResolvedValue('2');
+            mockRedis.incr.mockResolvedValue(3);
 
             await authService.sendMagicLink(email);
 
@@ -379,7 +387,7 @@ describe('AuthService', () => {
         });
 
         it('should throw 429 when rate limit exceeded (4th request)', async () => {
-            mockRedis.get.mockResolvedValue('3');
+            mockRedis.incr.mockResolvedValue(4);
 
             await expect(authService.sendMagicLink(email)).rejects.toThrow(
                 expect.objectContaining({
@@ -390,11 +398,23 @@ describe('AuthService', () => {
         });
 
         it('should throw 429 when rate limit is well over max', async () => {
-            mockRedis.get.mockResolvedValue('10');
+            mockRedis.incr.mockResolvedValue(10);
 
             await expect(authService.sendMagicLink(email)).rejects.toThrow(
                 expect.objectContaining({
                     status: HttpStatus.TOO_MANY_REQUESTS,
+                })
+            );
+        });
+
+        it('should not leak email in rate limit error message', async () => {
+            mockRedis.incr.mockResolvedValue(4);
+
+            await expect(
+                authService.sendMagicLink('secret@example.com')
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    message: expect.not.stringContaining('secret@example.com'),
                 })
             );
         });

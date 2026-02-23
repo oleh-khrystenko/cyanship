@@ -146,23 +146,25 @@ export class AuthService {
     }
 
     async sendMagicLink(email: string): Promise<void> {
-        const rateLimitKey = `ratelimit:magic:${email}`;
-        const currentCount = await this.redis.get(rateLimitKey);
+        const normalizedEmail = email.trim().toLowerCase();
+        const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
 
-        if (currentCount && parseInt(currentCount, 10) >= RATE_LIMIT_MAX) {
-            throw new TooManyRequestsException(email);
+        const count = await this.redis.incr(rateLimitKey);
+
+        if (count === 1) {
+            await this.redis.expire(rateLimitKey, RATE_LIMIT_TTL);
+        }
+
+        if (count > RATE_LIMIT_MAX) {
+            throw new TooManyRequestsException();
         }
 
         const token = randomBytes(32).toString('hex');
         const magicKey = `magic:${token}`;
 
-        const pipeline = this.redis.pipeline();
-        pipeline.set(magicKey, email, 'EX', MAGIC_LINK_TTL);
-        pipeline.incr(rateLimitKey);
-        pipeline.expire(rateLimitKey, RATE_LIMIT_TTL);
-        await pipeline.exec();
+        await this.redis.set(magicKey, normalizedEmail, 'EX', MAGIC_LINK_TTL);
 
-        await this.emailService.sendMagicLink(email, token);
+        await this.emailService.sendMagicLink(normalizedEmail, token);
     }
 
     async verifyMagicLink(
@@ -206,9 +208,9 @@ export class AuthService {
 }
 
 class TooManyRequestsException extends HttpException {
-    constructor(email: string) {
+    constructor() {
         super(
-            `Too many magic link requests for ${email}. Try again in 15 minutes.`,
+            'Too many requests. Try again in 15 minutes.',
             HttpStatus.TOO_MANY_REQUESTS
         );
     }
