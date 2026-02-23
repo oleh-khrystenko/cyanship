@@ -169,15 +169,13 @@ export class AuthService {
         token: string
     ): Promise<{ user: UserDocument; tokens: TokenPair }> {
         const magicKey = `magic:${token}`;
-        const email = await this.redis.get(magicKey);
+        const email = await this.redis.getdel(magicKey);
 
         if (!email) {
             throw new UnauthorizedException(
                 'Invalid or expired magic link token'
             );
         }
-
-        await this.redis.del(magicKey);
 
         const user = await this.usersService.findOrCreateByEmail(email);
         const tokens = await this.generateTokens(user.id as string, user.email);

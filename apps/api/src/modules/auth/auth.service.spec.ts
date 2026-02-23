@@ -35,6 +35,7 @@ const mockPipeline = {
 
 const mockRedis = {
     get: jest.fn(),
+    getdel: jest.fn(),
     del: jest.fn(),
     pipeline: jest.fn(),
     smembers: jest.fn(),
@@ -402,9 +403,8 @@ describe('AuthService', () => {
     describe('verifyMagicLink', () => {
         const token = 'a'.repeat(64);
 
-        it('should verify token, delete from Redis, create user, and return tokens', async () => {
-            mockRedis.get.mockResolvedValue('user@example.com');
-            mockRedis.del.mockResolvedValue(1);
+        it('should atomically consume token, create user, and return tokens', async () => {
+            mockRedis.getdel.mockResolvedValue('user@example.com');
             jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue(
                 mockUser as never
             );
@@ -414,8 +414,7 @@ describe('AuthService', () => {
 
             const result = await authService.verifyMagicLink(token);
 
-            expect(mockRedis.get).toHaveBeenCalledWith(`magic:${token}`);
-            expect(mockRedis.del).toHaveBeenCalledWith(`magic:${token}`);
+            expect(mockRedis.getdel).toHaveBeenCalledWith(`magic:${token}`);
             expect(usersService.findOrCreateByEmail).toHaveBeenCalledWith(
                 'user@example.com'
             );
@@ -427,7 +426,7 @@ describe('AuthService', () => {
         });
 
         it('should throw UnauthorizedException for invalid token', async () => {
-            mockRedis.get.mockResolvedValue(null);
+            mockRedis.getdel.mockResolvedValue(null);
 
             await expect(
                 authService.verifyMagicLink('invalid-token')
@@ -435,12 +434,11 @@ describe('AuthService', () => {
         });
 
         it('should throw UnauthorizedException for expired token', async () => {
-            mockRedis.get.mockResolvedValue(null);
+            mockRedis.getdel.mockResolvedValue(null);
 
             await expect(authService.verifyMagicLink(token)).rejects.toThrow(
                 'Invalid or expired magic link token'
             );
-            expect(mockRedis.del).not.toHaveBeenCalled();
         });
     });
 });
