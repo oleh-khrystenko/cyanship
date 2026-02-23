@@ -1,10 +1,14 @@
 packages:
-    - apps/*
-    - packages/*
+  - apps/*
+  - packages/*
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
 
 onlyBuiltDependencies:
-    - '@nestjs/core'
-    - '@swc/core'
-    - '@tailwindcss/oxide'
-    - sharp
-    - unrs-resolver
+  - '@nestjs/core'
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - mongodb-memory-server
+  - sharp
+  - unrs-resolver
