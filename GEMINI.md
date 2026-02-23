@@ -14,6 +14,13 @@ LucidKit is a monorepo project built with pnpm workspaces and managed by Turbore
 
 The project is fully containerized with Docker, providing consistent development and production environments.
 
+<!-- MANUAL:START -->
+# Rules
+
+- Before making ANY code changes, read the relevant module's files to understand current implementation
+- Always check prisma/schema.prisma before modifying data layer
+- Always check existing patterns in similar modules before creating new ones
+
 ## Project Conventions (MANDATORY)
 
 All AI agents MUST read and follow rules in `docs/conventions/`:
@@ -22,6 +29,7 @@ All AI agents MUST read and follow rules in `docs/conventions/`:
 - **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
 
 Full index: [docs/conventions/README.md](docs/conventions/README.md)
+  <!-- MANUAL:END -->
 
 ## Building and Running
 

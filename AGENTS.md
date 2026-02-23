@@ -144,6 +144,13 @@ Global prefix: `/api` (`apps/api/src/main.ts`).
 - **Docker dev stack:** `docker compose -f docker-compose.dev.yml up --build`
 - **DB Migration:** відсутні migration scripts (Mongoose schema-first; manual/one-off data changes).
 
+<!-- MANUAL:START -->
+# Rules
+
+- Before making ANY code changes, read the relevant module's files to understand current implementation
+- Always check prisma/schema.prisma before modifying data layer
+- Always check existing patterns in similar modules before creating new ones
+
 ## Project Conventions (MANDATORY)
 
 All AI agents MUST read and follow rules in `docs/conventions/`:
@@ -152,6 +159,7 @@ All AI agents MUST read and follow rules in `docs/conventions/`:
 - **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
 
 Full index: [docs/conventions/README.md](docs/conventions/README.md)
+  <!-- MANUAL:END -->
 
 ## Rules & Conventions
 # Repository Guidelines
