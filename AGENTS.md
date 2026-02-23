@@ -35,7 +35,7 @@
 - `apps/web/src/i18n` — locale routing and message loading.
 - `packages/types/src` — shared constants/contracts/entities/validation.
 - `.github/workflows/ci.yml` — lint/build + API unit test pipeline.
-- `docs/audits/auth/2026-02-23/auth-implementation-audit.md` — технічний аудит auth імплементації.
+- `docs/audits/auth/auth-implementation-audit.md` — технічний аудит auth імплементації.
 
 ## Domain Model & Schema
 **Primary persistent entity (MongoDB):**
