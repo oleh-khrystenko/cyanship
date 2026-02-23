@@ -1,11 +1,21 @@
 {
-    "name": "@acw/types",
+    "name": "@bidguard/types",
     "version": "1.0.0",
-    "types": "src/index.ts",
-    "scripts": {},
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "exports": {
-        ".": "./src/index.ts"
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "dev": "tsc -p tsconfig.build.json --watch"
     },
     "license": "MIT",
-    "packageManager": "pnpm@10.12.1"
+    "packageManager": "pnpm@10.12.1",
+    "dependencies": {
+        "zod": "^4.3.6"
+    }
 }

@@ -1,5 +1,1 @@
-export interface IProps {
-    withoutText?: boolean;
-    expandTop?: boolean;
-    selectHoverItemBg?: string;
-}
+export type ChangeLangProps = Record<string, never>;

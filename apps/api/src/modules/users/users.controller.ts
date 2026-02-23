@@ -1,17 +1,24 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { UserDocument } from './schemas/user.schema';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
-
-    @Get()
-    async getAll() {
-        return this.usersService.findAll();
-    }
-
-    @Get(':id')
-    async getById(@Param('id') id: string) {
-        return this.usersService.findById(id);
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    getMe(@CurrentUser() user: UserDocument): {
+        data: Record<string, unknown>;
+    } {
+        return {
+            data: {
+                id: user.id as string,
+                email: user.email,
+                profile: user.profile,
+                credits: user.credits,
+                preferredLang: user.preferredLang,
+            },
+        };
     }
 }

@@ -1,11 +1,44 @@
 {
-    "all_pages": {
-        "slogan": "Make them feel it forever."
-    },
     "welcome_page": {
         "head": {
-            "title": "Lucid Kit — Make them feel it forever",
-            "description": "An online service for creating personalized wow greetings as beautiful web pages. No registration, no hassle — just pick an occasion, enter a name, and get an emotional greeting in seconds."
+            "title": "BidGuard – Protect Your Bids",
+            "description": "BidGuard is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
+        },
+        "heading": "BidGuard — your trusted partner in the world of bidding.",
+        "description": "Here you'll find tools and solutions for secure bid management.",
+        "cta": "Get Started"
+    },
+    "auth_page": {
+        "signin": {
+            "heading": "Sign in to BidGuard",
+            "subheading": "Analyse car photos and detect hidden defects before purchase",
+            "google_button": "Continue with Google",
+            "divider": "or",
+            "email_placeholder": "your@email.com",
+            "magic_link_button": "Send Magic Link",
+            "sent_heading": "Check your email",
+            "sent_description": "We sent a sign-in link to your email. Click it to continue.",
+            "error_generic": "Something went wrong. Please try again."
+        },
+        "callback": {
+            "loading": "Signing you in…"
+        },
+        "verify": {
+            "verifying": "Verifying your link…",
+            "redirecting": "Redirecting…",
+            "error_heading": "Link is invalid or expired",
+            "error_description": "The sign-in link you used is no longer valid. Please request a new one.",
+            "retry_button": "Try again"
+        }
+    },
+    "components": {
+        "header": {
+            "signin": "Sign in",
+            "logout": "Log out",
+            "credits": "credits"
+        },
+        "change_lang": {
+            "label": "Change language"
         }
     }
 }

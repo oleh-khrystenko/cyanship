@@ -21,8 +21,7 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "@shared/*": ["../../packages/shared/src/*"],
-            "@acw/types": ["../../packages/types/src/index.ts"]
+            "@bidguard/types": ["../../packages/types/src/index.ts"]
         }
     },
     "include": [
@@ -30,8 +29,8 @@
         "**/*.ts",
         "**/*.tsx",
         ".next/types/**/*.ts",
-        "../../packages/shared/types/svg.d.ts",
-        ".next/dev/types/**/*.ts"
+        ".next/dev/types/**/*.ts",
+        ".next/dev/dev/types/**/*.ts"
     ],
     "exclude": ["node_modules"]
 }

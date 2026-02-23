@@ -1,29 +1,30 @@
 import { Metadata } from 'next';
-import { IMetaProps } from '@/shared/types/settings';
-import { CLang } from '@acw/types';
+import { MetaProps } from '@/shared/types/settings';
+import { LANG } from '@bidguard/types';
+import { ENV } from '@/shared/config';
+
+const BASE_URL = ENV.NEXT_PUBLIC_BASE_URL;
 
 export async function fetchMetadata({
-    locale,
+    params,
     page,
     href,
     meta,
-}: IMetaProps): Promise<Metadata> {
-    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+}: MetaProps): Promise<Metadata> {
+    let locale: string;
 
-    if (!BASE_URL) {
-        console.error('❌ NEXT_PUBLIC_BASE_URL is not defined');
-        // Do not throw to avoid crashing build if env missing (optional safe fallback?)
-        // throw new Error('❌ NEXT_PUBLIC_BASE_URL is not defined');
+    try {
+        const resolved = await params;
+        locale = resolved?.locale;
+        if (!locale) throw new Error('Locale is missing in params');
+    } catch (error) {
+        console.error('❌ Failed to resolve locale from params:', error);
+        locale = LANG.UK;
     }
 
-    if (!locale) {
-        console.error('❌ Locale is missing in fetchMetadata');
-        locale = CLang.UK;
-    }
-
-    let title = 'Lucid Kit — Створи відчуття, що не зникає';
+    let title = 'BidGuard – Захист ваших ставок';
     let description =
-        'Онлайн-сервіс для створення персоналізованих wow-привітань у вигляді красивих сторінок. Без реєстрацій і зайвого — просто обери подію, введи ім’я та отримай емоційне привітання за кілька секунд.';
+        'BidGuard – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу.';
 
     if (page === null) {
         if (meta) {
@@ -32,42 +33,47 @@ export async function fetchMetadata({
         }
     } else {
         const raw = String(locale ?? '').toLowerCase();
-        const normalized = /^[a-z]{2}(-[a-z]{2})?$/i.test(raw) ? raw : CLang.UK;
+        const normalized = /^[a-z]{2}(-[a-z]{2})?$/i.test(raw) ? raw : LANG.UK;
 
-        async function importMessages(loc: string) {
+        interface PageMessages {
+            head?: { title?: string; description?: string };
+        }
+
+        type Messages = Record<string, PageMessages>;
+
+        async function importMessages(loc: string): Promise<Messages> {
             try {
                 const mod = await import(`../../../messages/${loc}.json`);
-                return (mod as any).default ?? mod;
+                return mod.default ?? mod;
             } catch {
-                if (loc !== CLang.UK) {
+                if (loc !== LANG.UK) {
                     const modUk = await import(
-                        `../../../messages/${CLang.UK}.json`
+                        `../../../messages/${LANG.UK}.json`
                     );
-                    return (modUk as any).default ?? modUk;
+                    return modUk.default ?? modUk;
                 }
                 return {};
             }
         }
 
-        const messages: any = await importMessages(normalized);
-        const metaT = (key: string) => messages?.[key] ?? {};
+        const messages = await importMessages(normalized);
+        const pageData = messages[`${page}_page`];
 
-        title = metaT(`${page}_page`)?.head?.title ?? title;
-        description = metaT(`${page}_page`)?.head?.description ?? description;
+        title = pageData?.head?.title ?? title;
+        description = pageData?.head?.description ?? description;
     }
 
     const path = href === 'welcome' ? '' : `/${href}`;
-    const baseUrl = BASE_URL || 'http://localhost:3000';
 
     return {
         title,
         description,
         alternates: {
-            canonical: `${baseUrl}/${locale}${path}`,
+            canonical: `${BASE_URL}/${locale}${path}`,
             languages: {
-                'x-default': `${baseUrl}/uk${path}`,
-                'uk-ua': `${baseUrl}/uk${path}`,
-                'en-ua': `${baseUrl}/en${path}`,
+                'x-default': `${BASE_URL}/uk${path}`,
+                'uk-ua': `${BASE_URL}/uk${path}`,
+                'en-ua': `${BASE_URL}/en${path}`,
             },
         },
     };

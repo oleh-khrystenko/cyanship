@@ -1,8 +1,8 @@
 import { defineRouting } from 'next-intl/routing';
-import { CLang } from '@acw/types';
+import { LANG } from '@bidguard/types';
 
 export const routing = defineRouting({
-    locales: Object.values(CLang),
+    locales: Object.values(LANG),
 
-    defaultLocale: CLang.UK,
+    defaultLocale: LANG.UK,
 });

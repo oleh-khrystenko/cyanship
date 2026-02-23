@@ -51,6 +51,7 @@ jest-html-reporters-*.html
 # --- TypeScript ---
 *.tsbuildinfo
 *.d.ts.map
+next-env.d.ts
 
 # --- IDE / OS ---
 .idea/

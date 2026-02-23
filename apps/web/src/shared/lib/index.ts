@@ -1,0 +1,1 @@
+export { composeClasses } from './utils';

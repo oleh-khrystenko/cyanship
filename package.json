@@ -1,5 +1,5 @@
 {
-    "name": "lucid-kit",
+    "name": "bidguard",
     "version": "0.1.0",
     "private": true,
     "description": "",
@@ -12,12 +12,13 @@
         "dev": "turbo run dev",
         "build": "turbo run build",
         "lint": "turbo run lint",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "test": "turbo run test"
     },
     "keywords": [],
     "author": "KhOlAn",
     "license": "ISC",
-    "packageManager": "pnpm@10.28.0",
+    "packageManager": "pnpm@10.25.0",
     "devDependencies": {
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",

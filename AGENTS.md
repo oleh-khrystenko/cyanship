@@ -1,31 +1,67 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repo is a Turborepo monorepo with application code under `apps/` and shared packages under `packages/`. The main apps are `apps/web` (Next.js frontend) and `apps/api` (NestJS backend). Shared UI/components and types live in `packages/shared` and `packages/types`. Root-level configs include `turbo.json`, `tsconfig.json`, and Prettier settings in `.prettierrc`. Docker workflows are defined in `docker-compose.dev.yml` and `docker-compose.yml`.
+
+This is a pnpm/Turborepo monorepo. Primary locations:
+
+- `apps/web/` — Next.js frontend (App Router, `src/app/[locale]/` for pages and i18n).
+- `apps/api/` — NestJS backend (`src/modules/` for feature modules).
+- `packages/types/` — Shared TypeScript types (`@bidguard/types`).
+- Root configs: `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.json`, `.prettierrc`.
+
+Frontend follows Feature-Sliced Design in `apps/web/src/`:
+
+- `features/`, `entities/`, `widgets/`, `shared/ui/`, `shared/lib/`, `shared/icons/`, `stores/`.
 
 ## Build, Test, and Development Commands
-- `pnpm dev` runs all dev servers via Turbo.
-- `pnpm build` builds all packages/apps.
-- `pnpm lint` runs lint tasks across the workspace.
-- `pnpm format` formats the repo with Prettier.
-App-specific examples:
-- `pnpm --filter web dev` runs the Next.js dev server.
-- `pnpm --filter api start:dev` runs the NestJS API in watch mode.
-Docker workflows:
-- `docker compose -f docker-compose.dev.yml up --build` starts local dev with Mongo.
-- `docker compose up --build -d` starts production-style containers.
+
+Run from repo root:
+
+- `pnpm dev` — Start all apps in dev mode via Turborepo.
+- `pnpm build` — Build all apps.
+- `pnpm lint` — Lint all apps.
+- `pnpm format` — Format with Prettier.
+
+API-specific testing:
+
+- `pnpm --filter api test` — Unit tests.
+- `pnpm --filter api test:watch` — Watch mode.
+- `pnpm --filter api test:e2e` — End-to-end tests.
+- `pnpm --filter api test:cov` — Coverage run.
+
+Docker (optional):
+
+- `docker compose -f docker-compose.dev.yml up --build` — Dev with local MongoDB.
+- `docker compose up --build -d` — Production-style run (Atlas).
 
 ## Coding Style & Naming Conventions
-Prettier enforces 4-space indentation, single quotes, semicolons, and 80-column lines. Use `pnpm format` before pushing. ESLint runs in both apps. Tailwind class sorting is enabled for `apps/web` via `prettier-plugin-tailwindcss`. Use `.spec.ts` for unit tests and `.e2e-spec.ts` for end-to-end tests.
+
+- Language: TypeScript across apps and packages.
+- Formatting: Prettier (`pnpm format`). ESLint runs via `pnpm lint`.
+- UI components in `apps/web/src/shared/ui/` follow: `Component.tsx`, `types.ts`, `index.ts`, `README.md`.
+- Keep naming consistent with existing modules (e.g., `UiButton`, `UiSelect`).
 
 ## Testing Guidelines
-The API uses Jest (unit and e2e). Run:
-- `pnpm --filter api test` for unit tests.
-- `pnpm --filter api test:e2e` for end-to-end tests.
-No frontend test harness is configured yet; add one only if requirements emerge.
+
+- Run API tests with `pnpm --filter api test` before PRs.
+- Use `test:cov` for coverage-sensitive changes.
+- Keep test files near related modules under `apps/api/src/`.
 
 ## Commit & Pull Request Guidelines
-There is only an initial commit in history, so no formal commit convention exists. Keep messages short and imperative (e.g., “add api health check”). PRs should describe the change, include relevant commands run (e.g., `pnpm lint`), and add screenshots for UI changes. Link related issues when applicable.
 
-## Configuration Notes
-Create a root `.env` file for Docker runs (see `README.md` for example values). Do not commit secrets; keep environment-specific values local.
+- Git history is not available in this workspace, so no commit convention can be inferred.
+- Use concise, imperative commit summaries (e.g., `add api kv module`).
+- PRs should include:
+    - Clear description of behavior changes.
+    - Linked issues/tickets if applicable.
+    - Screenshots for UI changes (web).
+    - Notes on env/config updates (e.g., `.env` keys).
+
+## Configuration & Environment
+
+Root `.env` should define at least:
+
+- `WEB_PORT`, `API_PORT`, `MONGODB_URI` or `MONGODB_DB_NAME`,
+- `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`.
+
+If you add new env keys, update documentation and sample config.
