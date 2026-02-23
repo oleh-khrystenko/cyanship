@@ -69,6 +69,7 @@ services:
             - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
             - PNPM_STORE_DIR=/pnpm-store
             - PORT=${WEB_PORT}
+            - API_INTERNAL_URL=http://api:${API_PORT}
             - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
             - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
             - WATCHPACK_POLLING=true
