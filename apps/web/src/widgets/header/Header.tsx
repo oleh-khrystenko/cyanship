@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { LogOut } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
@@ -31,7 +32,9 @@ const Header = () => {
     return (
         <header className="bg-background sticky top-0 z-50 shadow-sm">
             <div className="container flex items-center justify-between gap-6 py-4">
-                <Logo />
+                <Link href={`/${locale}`} aria-label="Go to home page">
+                    <Logo />
+                </Link>
 
                 <div className="flex items-center gap-4">
                     {isLoading ? (
