@@ -2,16 +2,25 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import { Mulish } from 'next/font/google';
+import localFont from 'next/font/local';
 import '@/app/globals.css';
 import { PageParams } from '@/shared/types/settings';
 import { Header } from '@/widgets/header';
 import { AuthInitializer } from '@/features/auth';
 import { Providers } from '@/app/providers';
 
-const mulish = Mulish({
-    subsets: ['cyrillic', 'latin'],
-    weight: ['300', '400', '700'],
+const mulish = localFont({
+    src: [
+        {
+            path: '../../shared/fonts/mulish-cyrillic.woff2',
+            style: 'normal',
+        },
+        {
+            path: '../../shared/fonts/mulish-latin.woff2',
+            style: 'normal',
+        },
+    ],
+    display: 'swap',
 });
 
 interface LocaleLayoutProps extends PageParams {
