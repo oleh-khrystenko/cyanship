@@ -14,6 +14,7 @@
 ## Поточне наповнення
 
 - `docs/planning/README.md`
+- `docs/planning/auth-flow.md`
 - `docs/sprints/sprint-003-auth/manual-e2e-auth-test-plan.md`
 - `docs/audits/auth/auth-implementation-audit.md`
 - `docs/conventions/README.md`
