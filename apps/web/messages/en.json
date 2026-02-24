@@ -31,6 +31,24 @@
             "retry_button": "Try again"
         }
     },
+    "notifications": {
+        "auth": {
+            "magic_link_sent": "A sign-in link has been sent to your email",
+            "logged_out": "You have been logged out"
+        }
+    },
+    "errors": {
+        "auth": {
+            "unauthorized": "Your session has expired. Please sign in again",
+            "invalid_magic_link": "The link is invalid or has expired"
+        },
+        "generic": {
+            "validation_error": "Please check the entered data",
+            "rate_limit_exceeded": "Too many requests. Please try again in 15 minutes",
+            "internal_error": "Something went wrong. Please try again later",
+            "unknown": "Something went wrong. Please try again later"
+        }
+    },
     "components": {
         "header": {
             "signin": "Sign in",

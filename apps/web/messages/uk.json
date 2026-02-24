@@ -31,6 +31,24 @@
             "retry_button": "Спробувати знову"
         }
     },
+    "notifications": {
+        "auth": {
+            "magic_link_sent": "Посилання надіслано на вашу пошту",
+            "logged_out": "Ви вийшли з акаунту"
+        }
+    },
+    "errors": {
+        "auth": {
+            "unauthorized": "Час сесії вичерпано. Увійдіть знову",
+            "invalid_magic_link": "Посилання недійсне або прострочене"
+        },
+        "generic": {
+            "validation_error": "Перевірте введені дані",
+            "rate_limit_exceeded": "Забагато запитів. Спробуйте через 15 хвилин",
+            "internal_error": "Сталася помилка. Спробуйте пізніше",
+            "unknown": "Сталася помилка. Спробуйте пізніше"
+        }
+    },
     "components": {
         "header": {
             "signin": "Увійти",
