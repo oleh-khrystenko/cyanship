@@ -37,3 +37,7 @@ export async function getMe(): Promise<UserProfile> {
     const { data } = await apiClient.get<{ data: UserProfile }>('/users/me');
     return data.data;
 }
+
+export async function updatePreferredLang(lang: string): Promise<void> {
+    await apiClient.patch('/users/me/lang', { lang });
+}

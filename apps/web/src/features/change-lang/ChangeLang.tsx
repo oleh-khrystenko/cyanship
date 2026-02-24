@@ -8,6 +8,8 @@ import { LANG } from '@lucidkit/types';
 import { ChangeLangProps } from './types';
 import UiSelect from '@/shared/ui/UiSelect';
 import type { UiSelectOption } from '@/shared/ui/UiSelect';
+import { updatePreferredLang } from '@/shared/api';
+import { useAuthStore } from '@/stores/auth';
 
 const LANGS: UiSelectOption[] = [
     {
@@ -36,12 +38,17 @@ const ChangeLang: FC<ChangeLangProps> = () => {
     const searchParams = useSearchParams();
     const activeLocale = useLocale();
     const t = useTranslations('components.change_lang');
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
     const handleChangeLang = (value: string) => {
         const allSearchParams = searchParams.toString();
         const newPath = pathname.replace(`/${activeLocale}`, '');
         const newUrl = `/${value}${newPath}${allSearchParams ? `?${allSearchParams}` : ''}`;
         router.replace(newUrl);
+
+        if (isAuthenticated) {
+            void updatePreferredLang(value);
+        }
     };
 
     return (

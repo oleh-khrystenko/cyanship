@@ -100,6 +100,12 @@ export class UsersService {
         return false;
     }
 
+    async updateLang(userId: string, lang: string): Promise<void> {
+        await this.userModel
+            .findByIdAndUpdate(userId, { preferredLang: lang })
+            .exec();
+    }
+
     async hasCredit(userId: string): Promise<boolean> {
         const user = await this.userModel.findById(userId).exec();
         if (!user) return false;

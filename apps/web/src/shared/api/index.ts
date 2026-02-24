@@ -6,4 +6,5 @@ export {
     refreshToken,
     logout,
     getMe,
+    updatePreferredLang,
 } from './auth';
