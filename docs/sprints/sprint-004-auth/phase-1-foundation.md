@@ -155,9 +155,22 @@ deletedAt!: Date | null;
 ```typescript
 // Auth configuration
 AUTH_PASSWORD_MIN_LENGTH: parseInt(getEnvVar('AUTH_PASSWORD_MIN_LENGTH', '8'), 10),
-AUTH_MAX_LOGIN_ATTEMPTS: parseInt(getEnvVar('AUTH_MAX_LOGIN_ATTEMPTS', '100'), 10),
-AUTH_LOGIN_BLOCK_DURATION_MIN: parseInt(getEnvVar('AUTH_LOGIN_BLOCK_DURATION_MIN', '15'), 10),
+AUTH_LOCKOUT_THRESHOLDS: getEnvVar('AUTH_LOCKOUT_THRESHOLDS', '5:1,10:5,20:15'),
+AUTH_LOGIN_ATTEMPTS_TTL_MIN: parseInt(getEnvVar('AUTH_LOGIN_ATTEMPTS_TTL_MIN', '15'), 10),
+AUTH_MAGIC_LINK_DEDUP_SEC: parseInt(getEnvVar('AUTH_MAGIC_LINK_DEDUP_SEC', '60'), 10),
 ACCOUNT_DELETION_GRACE_DAYS: parseInt(getEnvVar('ACCOUNT_DELETION_GRACE_DAYS', '30'), 10),
+```
+
+Додати утиліту для парсингу thresholds:
+
+```typescript
+// Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]
+export function parseLockoutThresholds(raw: string): Array<{ attempts: number; blockMin: number }> {
+    return raw.split(',').map((entry) => {
+        const [attempts, blockMin] = entry.split(':').map(Number);
+        return { attempts, blockMin };
+    });
+}
 ```
 
 ---

@@ -65,6 +65,8 @@ const handlePasswordSubmit = async (email: string, password: string) => {
 // State: password → forgot password
 const handleForgotPassword = async (email: string) => {
     await sendMagicLink(email, 'reset-password');
+    // Однакове повідомлення незалежно від існування email (anti-enumeration)
+    toast.success(t('forgot_password_sent'));
     setState('magic-link-sent');
 };
 ```
@@ -94,18 +96,19 @@ const handleForgotPassword = async (email: string) => {
 │        Вхід до LucidKit     │
 │                             │
 │  ┌───────────────────────┐  │
-│  │ user@email.com    ✓   │  │ ← readonly, з галочкою
+│  │ user@email.com [Змін] │  │ ← readonly, з кнопкою "Змінити"
 │  └───────────────────────┘  │
 │  ┌───────────────────────┐  │
-│  │ Пароль                │  │
+│  │ Пароль            [👁] │  │ ← show/hide toggle
 │  └───────────────────────┘  │
 │              Забули пароль? │ ← link
 │                             │
 │  [ Увійти                 ] │
-│                             │
-│  ← Інший email              │ ← link, повертає до state: email
 └─────────────────────────────┘
 ```
+
+- **Show/hide toggle:** Іконка ока (lucide-react `Eye`/`EyeOff`) перемикає `type="password"` ↔ `type="text"`. Замість окремого поля "Підтвердити пароль" — менше фрустрації.
+- **"Змінити":** Повертає до state `email` — юзер не змушений натискати Back у браузері. Кнопка всередині поля email (як suffix).
 
 **State: magic-link-sent (Scenario B/C)**
 ```
@@ -302,11 +305,14 @@ interface UserProfile {
             "password_placeholder": "Введіть пароль",
             "signin_button": "Увійти",
             "forgot_password": "Забули пароль?",
+            "forgot_password_sent": "Якщо акаунт з цією адресою існує, ми надіслали посилання для зміни пароля",
+            "change_email": "Змінити",
             "other_email": "Інший email",
             "magic_link_sent_title": "Перевірте пошту",
             "magic_link_sent_description": "Ми надіслали посилання на {email}. Перевірте папку \"Вхідні\" та натисніть на посилання для входу.",
             "invalid_credentials": "Невірний email або пароль",
-            "too_many_attempts": "Забагато спроб. Спробуйте через {minutes} хвилин",
+            "too_many_attempts": "Забагато спроб. Спробуйте через {minutes} хвилин або скористайтесь посиланням «Забули пароль?»",
+            "session_revoked": "Сесію завершено. Увійдіть знову",
             "error_generic": "Щось пішло не так. Спробуйте ще раз"
         },
         "recovery": {
@@ -336,11 +342,14 @@ interface UserProfile {
             "password_placeholder": "Enter password",
             "signin_button": "Sign In",
             "forgot_password": "Forgot password?",
+            "forgot_password_sent": "If an account with this email exists, we sent a password reset link",
+            "change_email": "Change",
             "other_email": "Different email",
             "magic_link_sent_title": "Check your email",
             "magic_link_sent_description": "We sent a link to {email}. Check your inbox and click the link to sign in.",
             "invalid_credentials": "Invalid email or password",
-            "too_many_attempts": "Too many attempts. Try again in {minutes} minutes",
+            "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
+            "session_revoked": "Session ended. Please sign in again",
             "error_generic": "Something went wrong. Please try again"
         },
         "recovery": {
@@ -360,11 +369,13 @@ interface UserProfile {
 
 ## Verification
 
-1. Signin page: email → checkEmail → Scenario A (password form)
+1. Signin page: email → checkEmail → Scenario A (password form з show/hide toggle + "Змінити" email)
 2. Signin page: email → checkEmail → Scenario B (magic link sent, new user)
 3. Signin page: email → checkEmail → Scenario C (magic link sent, existing user)
-4. Signin page: password login → success → redirect
-5. Signin page: password login → brute force → error
-6. Signin page: forgot password → magic link sent
-7. Verify page: purpose routing (register, login, reset-password, delete-account)
-8. Recovery screen: restore account → success
+4. Signin page: "Змінити" email → повертає до кроку email
+5. Signin page: password login → success → redirect
+6. Signin page: password login → progressive lockout (5/10/20 спроб) → error з таймером
+7. Signin page: forgot password → однаковий toast незалежно від існування email
+8. Signin page: check-email rate limit → 429 після 10 запитів per-IP
+9. Verify page: purpose routing (register, login, reset-password, delete-account)
+10. Recovery screen: restore account → success

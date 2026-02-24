@@ -41,7 +41,7 @@
 - `src/enums/error-code.ts` — edit (ACCOUNT_DELETED)
 
 ### apps/api
-- `src/config/env.ts` — edit (нові env vars)
+- `src/config/env.ts` — edit (AUTH_LOCKOUT_THRESHOLDS, AUTH_LOGIN_ATTEMPTS_TTL_MIN, AUTH_MAGIC_LINK_DEDUP_SEC, ACCOUNT_DELETION_GRACE_DAYS)
 - `src/modules/users/schemas/user.schema.ts` — edit (passwordHash, deletedAt)
 - `src/modules/users/users.controller.ts` — edit (PATCH /me, account endpoints)
 - `src/modules/users/users.service.ts` — edit (password + account methods)

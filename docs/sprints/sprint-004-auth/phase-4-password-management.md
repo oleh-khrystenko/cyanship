@@ -53,12 +53,17 @@ async setPassword(userId: string, password: string): Promise<void> {
 }
 ```
 
-#### `changePassword(userId, currentPassword, newPassword)`
+#### `changePassword(userId, currentPassword, newPassword, currentJti?)`
 
-Змінити існуючий пароль:
+Змінити існуючий пароль + ревокувати всі інші сесії:
 
 ```typescript
-async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    currentJti?: string,
+): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.usersService.findById(userId);
     if (!user || !user.passwordHash) {
         throw new BadRequestException('No password set');
@@ -69,8 +74,17 @@ async changePassword(userId: string, currentPassword: string, newPassword: strin
     }
     const hash = await bcrypt.hash(newPassword, 10);
     await this.usersService.setPasswordHash(userId, hash);
+
+    // Інвалідація всіх інших сесій
+    await this.revokeAllUserTokens(userId);
+
+    // Видати нову пару токенів для поточної сесії
+    const tokens = await this.generateTokens(userId, user.email);
+    return tokens;
 }
 ```
+
+> **Безпека:** Після зміни пароля backend ревокує ВСІ refresh tokens (`revokeAllUserTokens()`) і видає нову пару токенів для поточного пристрою. Юзер на інших пристроях "вилітає" при наступному refresh. Це запобігає ситуації, коли зловмисник, який вже авторизований, залишається в системі після зміни пароля.
 
 #### `deletePassword(userId)`
 
@@ -122,15 +136,31 @@ async setPassword(@CurrentUser() user: UserDocument, @Body() dto: SetPasswordDto
 ```typescript
 @Post('password/change')
 @UseGuards(JwtAuthGuard)
-async changePassword(@CurrentUser() user: UserDocument, @Body() dto: ChangePasswordDto) {
-    await this.authService.changePassword(
+async changePassword(
+    @CurrentUser() user: UserDocument,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+) {
+    const { accessToken, refreshToken } = await this.authService.changePassword(
         user._id.toString(),
         dto.currentPassword,
         dto.newPassword,
     );
-    return { data: { message: 'Password changed' } };
+
+    // Оновити refresh cookie з новим токеном
+    res.cookie('bid_refresh', refreshToken, {
+        httpOnly: true,
+        secure: ENV.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return { data: { message: 'Password changed', accessToken } };
 }
 ```
+
+> **Примітка:** Response повертає новий `accessToken`, бо всі попередні були ревоковані. Frontend має оновити in-memory token.
 
 #### `POST /auth/password/delete`
 
@@ -161,12 +191,16 @@ async verifyPassword(@CurrentUser() user: UserDocument, @Body() dto: VerifyPassw
 Forgot password — це НЕ окремий endpoint. Це magic link з purpose `reset-password`:
 
 1. На signin page user вводить email → Scenario A (hasPassword)
-2. User бачить password field + "Forgot password?" link
+2. User бачить password field (з show/hide toggle) + "Forgot password?" link + "Змінити email" link
 3. Клік на "Forgot password?" → frontend викликає `sendMagicLink(email, 'reset-password')`
-4. User отримує email з reset link
-5. Клік на link → verify page → purpose = 'reset-password'
-6. Frontend redirect на `/profile?mode=reset-password`
-7. Profile page показує password field як **обов'язковий** (інші поля view-only)
+4. **Toast: "Якщо акаунт з цією адресою існує, ми надіслали посилання для зміни пароля"** — однаковий response незалежно від існування email (запобігає user enumeration)
+5. User отримує email з reset link
+6. Клік на link → verify page → purpose = 'reset-password'
+7. Frontend redirect на `/profile?mode=reset-password`
+8. Profile page показує password field (з show/hide toggle) як **обов'язковий** (інші поля view-only)
+9. **Після зміни пароля:** Усі інші сесії ревокуються, видається нова пара токенів (див. `changePassword`)
+
+> **Безпека:** Backend для forgot password завжди повертає однаковий успішний response (`{ message: 'Magic link sent' }`), навіть якщо email не існує в базі. Це запобігає user enumeration через forgot password flow.
 
 ---
 
@@ -180,9 +214,11 @@ Forgot password — це НЕ окремий endpoint. Це magic link з purpos
 - User not found → NotFoundException
 
 **changePassword:**
-- Happy path: valid current + new → success
+- Happy path: valid current + new → success + нові токени
 - Invalid current password → UnauthorizedException
 - No password set → BadRequestException
+- Після зміни: revokeAllUserTokens() викликано
+- Після зміни: повертає нові accessToken + refreshToken
 
 **deletePassword:**
 - Happy path: user з password → delete → success

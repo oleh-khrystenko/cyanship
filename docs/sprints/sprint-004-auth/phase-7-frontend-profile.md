@@ -103,17 +103,21 @@ interface SecuritySectionProps {
 
 | hasPassword | mode | UI |
 |---|---|---|
-| false | `new` | "Встановити пароль (опціонально)" — password + confirm fields |
-| false | `set-password` | "Встановити пароль (опціонально)" — password + confirm fields |
-| false | `reset-password` | "Встановити пароль" — password + confirm fields (**required**) |
-| false | default | "Встановити пароль" — password + confirm fields |
-| true | default | "Змінити пароль" — current + new + confirm fields + "Видалити пароль" link |
-| true | `reset-password` | "Новий пароль" — new + confirm fields (**required**, без current) |
+| false | `new` | "Встановити пароль (опціонально)" — password field з show/hide toggle |
+| false | `set-password` | "Встановити пароль (опціонально)" — password field з show/hide toggle |
+| false | `reset-password` | "Встановити пароль" — password field з show/hide toggle (**required**) |
+| false | default | "Встановити пароль" — password field з show/hide toggle |
+| true | default | "Змінити пароль" — current + new fields (обидва з show/hide toggle) + "Видалити пароль" link |
+| true | `reset-password` | "Новий пароль" — new field з show/hide toggle (**required**, без current) |
+
+> **Show/hide toggle:** Всі password fields використовують іконку ока (lucide-react `Eye`/`EyeOff`) замість окремого поля "Підтвердити пароль". Сучасний підхід — менше фрустрації для юзера.
 
 **API calls:**
 - Set password → `POST /auth/password/set`
-- Change password → `POST /auth/password/change`
+- Change password → `POST /auth/password/change` → response містить новий `accessToken` (всі інші сесії ревоковані) → оновити in-memory token
 - Delete password → `POST /auth/password/delete` (після confirmation)
+
+> **Session invalidation:** Після `changePassword` backend ревокує всі інші refresh tokens і повертає новий `accessToken`. Frontend має оновити in-memory token з response. Toast: "Пароль змінено. Інші пристрої було відключено."
 
 ### `DangerZone.tsx`
 
@@ -264,11 +268,11 @@ const protectedPaths = ['/check', '/pay', '/profile'];
             "delete_password": "Видалити пароль",
             "current_password_label": "Поточний пароль",
             "new_password_label": "Новий пароль",
-            "confirm_password_label": "Підтвердіть пароль",
             "password_placeholder": "Мінімум 8 символів",
-            "passwords_mismatch": "Паролі не співпадають",
+            "show_password": "Показати пароль",
+            "hide_password": "Сховати пароль",
             "password_set": "Пароль встановлено",
-            "password_changed": "Пароль змінено",
+            "password_changed": "Пароль змінено. Інші пристрої було відключено",
             "password_deleted": "Пароль видалено",
             "password_invalid": "Невірний пароль",
             "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google."
@@ -320,11 +324,11 @@ const protectedPaths = ['/check', '/pay', '/profile'];
             "delete_password": "Delete password",
             "current_password_label": "Current password",
             "new_password_label": "New password",
-            "confirm_password_label": "Confirm password",
             "password_placeholder": "Minimum 8 characters",
-            "passwords_mismatch": "Passwords do not match",
+            "show_password": "Show password",
+            "hide_password": "Hide password",
             "password_set": "Password set",
-            "password_changed": "Password changed",
+            "password_changed": "Password changed. Other devices have been signed out",
             "password_deleted": "Password deleted",
             "password_invalid": "Invalid password",
             "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google."

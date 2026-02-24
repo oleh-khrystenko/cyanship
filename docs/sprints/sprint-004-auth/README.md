@@ -2,7 +2,18 @@
 
 ## Контекст
 
-Специфікація `docs/planning/auth-flow.md` (714 рядків) описує повний auth flow: progressive disclosure, password auth, forgot password, profile management, account deletion з grace period, account recovery. Поточна реалізація покриває лише Google OAuth + Magic Link (без purpose context). Цей спринт закриває всі gaps між специфікацією та кодом.
+Специфікація `docs/planning/auth-flow.md` описує повний auth flow: progressive disclosure, password auth, forgot password, profile management, account deletion з grace period, account recovery. Поточна реалізація покриває лише Google OAuth + Magic Link (без purpose context). Цей спринт закриває всі gaps між специфікацією та кодом.
+
+### Ключові зміни після ревізії auth-flow.md
+
+- **Progressive lockout** замість фіксованих 100 спроб: 5→1хв, 10→5хв, 20→15хв (`AUTH_LOCKOUT_THRESHOLDS`)
+- **IP+email ключ** для brute force (`login_attempts:{ip}:{email}`) — захист від DoS
+- **Інвалідація сесій** при зміні/скиді пароля (`revokeAllUserTokens()`)
+- **Однакова відповідь** forgot password — запобігає user enumeration
+- **Show/hide toggle** для паролів замість поля "Підтвердити пароль"
+- **"Змінити email"** на кроці пароля — UX покращення
+- **Anti-spam дедуплікація** magic link (< 60s → не відправляє повторний email)
+- **Rate limit check-email** — per-IP, 10 req/min
 
 ## Документи
 

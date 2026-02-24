@@ -35,9 +35,21 @@ async sendMagicLink(email: string, purpose: MagicLinkPurpose = MAGIC_LINK_PURPOS
     // Rate limiting — залишається per-email (не per-purpose)
     // ... existing rate limit logic ...
 
+    // Anti-spam: якщо є валідний токен < 1 хвилини для цього email+purpose — не відправляти
+    const dedupKey = `magic_dedup:${normalizedEmail}:${purpose}`;
+    const existingDedup = await this.redis.get(dedupKey);
+    if (existingDedup) {
+        // Повертаємо успіх без відправки нового листа
+        return;
+    }
+
     const token = randomBytes(32).toString('hex');
     const payload = JSON.stringify({ email: normalizedEmail, purpose });
-    await this.redis.set(`magic:${token}`, payload, 'EX', 15 * 60);
+
+    const pipeline = this.redis.pipeline();
+    pipeline.set(`magic:${token}`, payload, 'EX', 15 * 60);
+    pipeline.set(dedupKey, token, 'EX', ENV.AUTH_MAGIC_LINK_DEDUP_SEC);
+    await pipeline.exec();
 
     // Визначити мову для email
     const user = await this.usersService.findByEmail(normalizedEmail);
@@ -46,6 +58,8 @@ async sendMagicLink(email: string, purpose: MagicLinkPurpose = MAGIC_LINK_PURPOS
     await this.emailService.sendMagicLink(normalizedEmail, token, purpose, lang);
 }
 ```
+
+> **Anti-spam:** Ключ `magic_dedup:{email}:{purpose}` з TTL 60s запобігає подвійному кліку та спаму. Якщо юзер натисне "Продовжити" двічі швидко — другий запит поверне успіх без відправки нового листа. Конфігурується через `AUTH_MAGIC_LINK_DEDUP_SEC`.
 
 ### Зміни в `verifyMagicLink`
 
@@ -194,6 +208,9 @@ private getEmailTemplate(purpose: MagicLinkPurpose, lang: string, link: string) 
 - Explicit purpose зберігається в Redis як JSON
 - Rate limiting працює per-email (не per-purpose)
 - Email service отримує правильний purpose + lang
+- Anti-spam dedup: повторний виклик < 60s → success без відправки email
+- Anti-spam dedup: повторний виклик > 60s → відправляє новий email
+- Dedup per email+purpose: різні purposes для того самого email — обидва відправляються
 
 **verifyMagicLink з purpose:**
 - Purpose 'login' → повертає user + purpose

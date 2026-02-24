@@ -109,9 +109,11 @@ Purpose визначає:
 | Компонент | Деталі |
 |---|---|
 | bcrypt інтеграція | hash + compare |
-| Brute force protection | Redis `login_attempts:{email}`, max 100, блок 15 хв |
+| Brute force protection | Progressive lockout: 5→1хв, 10→5хв, 20→15хв. Redis `login_attempts:{ip}:{email}` (IP+email ключ для захисту від DoS) |
+| check-email rate limit | Redis `check_email:{ip}`, 10 req/min per-IP |
 | Password validation | min 8 chars (configurable `AUTH_PASSWORD_MIN_LENGTH`) |
-| Нові env vars | `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_MAX_LOGIN_ATTEMPTS`, `AUTH_LOGIN_BLOCK_DURATION_MIN`, `ACCOUNT_DELETION_GRACE_DAYS` |
+| Session invalidation | `revokeAllUserTokens()` при зміні/скиді пароля (крім поточної сесії) |
+| Нові env vars | `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS` |
 
 ### 6. apps/api — Email templates (5 замість 1)
 
@@ -205,4 +207,6 @@ Purpose визначає:
 
 | Ключ | Значення | TTL | Призначення |
 |---|---|---|---|
-| `login_attempts:{email}` | count (int) | 15 хв | Brute force protection |
+| `login_attempts:{ip}:{email}` | count (int) | 15 хв | Progressive lockout (IP+email) |
+| `check_email:{ip}` | count (int) | 60s | Rate limit для check-email per-IP |
+| `magic_dedup:{email}:{purpose}` | token (string) | 60s | Anti-spam дедуплікація magic link |

@@ -30,15 +30,28 @@
 | 7 | lastLoginAt updated | successful login | user.lastLoginAt = new Date() |
 | 8 | Deleted account | user з deletedAt | `{ accountDeleted: true, deletedAt }` |
 
-#### Brute force protection
+#### Progressive lockout (brute force protection)
 
 | # | Кейс | Expected |
 |---|---|---|
-| 1 | First failed attempt | Redis INCR `login_attempts:{email}` |
-| 2 | Attempts count = MAX-1 | Ще дозволено |
-| 3 | Attempts count = MAX | 429 TooManyRequests |
-| 4 | TTL на Redis key | = AUTH_LOGIN_BLOCK_DURATION_MIN * 60 |
-| 5 | After successful login | Redis DEL `login_attempts:{email}` |
+| 1 | First failed attempt | Redis INCR `login_attempts:{ip}:{email}` |
+| 2 | 4 attempts (< threshold) | Ще дозволено |
+| 3 | 5 attempts | 429 TooManyRequests (1 хв block) |
+| 4 | 10 attempts | 429 TooManyRequests (5 хв block) |
+| 5 | 20 attempts | 429 TooManyRequests (15 хв block) |
+| 6 | TTL на Redis key | = AUTH_LOGIN_ATTEMPTS_TTL_MIN * 60 |
+| 7 | After successful login | Redis DEL `login_attempts:{ip}:{email}` |
+| 8 | Different IP, same email | Не блокує (окремий ключ) |
+| 9 | Same IP, different email | Не блокує (окремий ключ) |
+
+#### check-email rate limit
+
+| # | Кейс | Expected |
+|---|---|---|
+| 1 | 10 requests from same IP | Всі дозволені |
+| 2 | 11th request from same IP | 429 TooManyRequests |
+| 3 | Request from different IP | Дозволено (окремий лічильник) |
+| 4 | TTL на Redis key | 60s |
 
 #### Magic link з purpose
 
@@ -52,6 +65,9 @@
 | 6 | verifyMagicLink delete-account | виконує soft delete, revoke tokens |
 | 7 | Rate limiting per-email | НЕ per-purpose — один ліміт на email |
 | 8 | Email service отримує purpose + lang | correct arguments passed |
+| 9 | Anti-spam dedup: повторний виклик < 60s | Success без відправки email |
+| 10 | Anti-spam dedup: повторний виклик > 60s | Відправляє новий email |
+| 11 | Dedup per email+purpose | Різні purposes — обидва відправляються |
 
 #### Password management
 
@@ -60,7 +76,7 @@
 | 1 | setPassword — no existing | bcrypt hash → save |
 | 2 | setPassword — already has password | 400 BadRequest |
 | 3 | setPassword — user not found | 404 NotFound |
-| 4 | changePassword — valid current | new hash saved |
+| 4 | changePassword — valid current | new hash saved + revokeAllUserTokens called + new tokens returned |
 | 5 | changePassword — invalid current | 401 Unauthorized |
 | 6 | changePassword — no password set | 400 BadRequest |
 | 7 | deletePassword — has password | passwordHash = null |
@@ -142,7 +158,10 @@ describe('POST /auth/login/password', () => {
     it('invalid password → 401');
     it('nonexistent email → 401');
     it('user without password → 401');
-    it('brute force protection → 429 after N attempts');
+    it('progressive lockout → 429 after 5 attempts (1 min block)');
+    it('progressive lockout → 429 after 10 attempts (5 min block)');
+    it('progressive lockout → 429 after 20 attempts (15 min block)');
+    it('different IP same email → not blocked');
     it('successful login after failed attempts → clears counter');
     it('deleted account → 200 + accountDeleted: true');
 });
@@ -157,6 +176,7 @@ describe('POST /auth/magic-link/send', () => {
     it('explicit purpose = reset-password');
     it('explicit purpose = delete-account');
     it('rate limiting → 429 after 3 requests');
+    it('anti-spam dedup → second call within 60s does not send email');
 });
 ```
 
@@ -183,9 +203,10 @@ describe('POST /auth/password/set', () => {
 });
 
 describe('POST /auth/password/change', () => {
-    it('valid current + new → 200');
+    it('valid current + new → 200 + new accessToken + refreshToken cookie');
     it('invalid current → 401');
     it('no password set → 400');
+    it('session invalidation → all other refresh tokens revoked');
     it('no auth → 401');
 });
 
@@ -253,9 +274,17 @@ describe('PATCH /users/me', () => {
 ### Password Auth
 
 - [ ] **Успішний вхід з паролем**: email + password → 200 → redirect
+- [ ] **Show/hide toggle**: Іконка ока перемикає видимість пароля
+- [ ] **"Змінити email"**: На password screen натиснути "Змінити" → повертає до кроку email
 - [ ] **Невірний пароль**: email + wrong password → error message
-- [ ] **Brute force**: 100+ невірних спроб → "Too many attempts" → заблоковано на 15 хвилин
-- [ ] **Forgot password**: На password screen натиснути "Забули пароль?" → отримати email з purpose=reset-password → verify → redirect до /profile?mode=reset-password → ввести новий пароль
+- [ ] **Progressive lockout (5)**: 5 невірних спроб → "Спробуйте через 1 хвилину"
+- [ ] **Progressive lockout (10)**: 10 невірних спроб → "Спробуйте через 5 хвилин"
+- [ ] **Progressive lockout (20)**: 20 невірних спроб → "Спробуйте через 15 хвилин"
+- [ ] **Lockout per IP+email**: З іншого IP той самий email — не заблокований
+- [ ] **check-email rate limit**: 11 запитів per-IP → 429
+- [ ] **Forgot password**: На password screen натиснути "Забули пароль?" → toast "Якщо акаунт існує..." → email з purpose=reset-password → verify → /profile?mode=reset-password → ввести новий пароль
+- [ ] **Forgot password (неіснуючий email)**: Той самий toast що й при існуючому email
+- [ ] **Anti-spam magic link**: Двічі швидко натиснути "Продовжити" → другий запит не відправляє email
 
 ### Profile
 
@@ -263,7 +292,8 @@ describe('PATCH /users/me', () => {
 - [ ] **Set password (mode=set-password)**: Встановити пароль (optional) → зберегти
 - [ ] **Reset password (mode=reset-password)**: Ввести новий пароль (required) → зберегти
 - [ ] **Default mode**: Переглянути профіль → редагувати ім'я → зберегти → toast "Профіль оновлено"
-- [ ] **Change password**: Security → "Змінити пароль" → ввести поточний + новий → зберегти
+- [ ] **Change password**: Security → "Змінити пароль" → ввести поточний + новий (show/hide toggle) → зберегти → toast "Пароль змінено. Інші пристрої відключено"
+- [ ] **Session invalidation**: Після зміни пароля — на іншому пристрої "вилітає" при наступному refresh
 - [ ] **Delete password**: Security → "Видалити пароль" → confirm → toast "Пароль видалено"
 - [ ] **Language switch**: Змінити мову → зберегти → UI перемикається
 
