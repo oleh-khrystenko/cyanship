@@ -8,6 +8,7 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Lang } from '@lucidkit/types';
 import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '../../common/providers/redis.provider';
@@ -149,7 +150,7 @@ export class AuthService {
         return { user, tokens };
     }
 
-    async sendMagicLink(email: string): Promise<void> {
+    async sendMagicLink(email: string, lang?: Lang): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
 
@@ -168,7 +169,7 @@ export class AuthService {
 
         await this.redis.set(magicKey, normalizedEmail, 'EX', MAGIC_LINK_TTL);
 
-        await this.emailService.sendMagicLink(normalizedEmail, token);
+        await this.emailService.sendMagicLink(normalizedEmail, token, lang);
     }
 
     async verifyMagicLink(

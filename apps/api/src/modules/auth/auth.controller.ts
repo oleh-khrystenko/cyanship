@@ -59,7 +59,7 @@ export class AuthController {
     async sendMagicLink(
         @Body() dto: SendMagicLinkDto
     ): Promise<ApiMessageResponse> {
-        await this.authService.sendMagicLink(dto.email);
+        await this.authService.sendMagicLink(dto.email, dto.lang as Lang);
         return {
             data: {
                 code: RESPONSE_CODE.MAGIC_LINK_SENT,

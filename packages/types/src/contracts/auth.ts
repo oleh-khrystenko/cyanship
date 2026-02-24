@@ -1,9 +1,13 @@
 import { z } from 'zod';
 
+import { LANG } from '../constants/lang';
 import { UserProfileSchema } from '../entities/user';
+
+const langValues = Object.values(LANG) as [string, ...string[]];
 
 export const SendMagicLinkSchema = z.object({
     email: z.string().email(),
+    lang: z.enum(langValues).optional(),
 });
 
 export const VerifyMagicLinkSchema = z.object({
