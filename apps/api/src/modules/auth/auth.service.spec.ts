@@ -368,7 +368,8 @@ describe('AuthService', () => {
             );
             expect(emailService.sendMagicLink).toHaveBeenCalledWith(
                 'user@example.com',
-                expect.stringMatching(/^[a-f0-9]{64}$/)
+                expect.stringMatching(/^[a-f0-9]{64}$/),
+                undefined
             );
         });
 
