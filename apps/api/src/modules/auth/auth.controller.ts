@@ -9,7 +9,12 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthResponse, Lang } from '@lucidkit/types';
+import {
+    AuthResponse,
+    Lang,
+    RESPONSE_CODE,
+    type ApiMessageResponse,
+} from '@lucidkit/types';
 import { CookieOptions, Request, Response } from 'express';
 
 import { ENV } from '../../config/env';
@@ -53,9 +58,14 @@ export class AuthController {
     @Post('magic-link/send')
     async sendMagicLink(
         @Body() dto: SendMagicLinkDto
-    ): Promise<{ data: { message: string } }> {
+    ): Promise<ApiMessageResponse> {
         await this.authService.sendMagicLink(dto.email);
-        return { data: { message: 'Magic link sent' } };
+        return {
+            data: {
+                code: RESPONSE_CODE.MAGIC_LINK_SENT,
+                message: 'Magic link sent',
+            },
+        };
     }
 
     @Post('magic-link/verify')
@@ -120,7 +130,7 @@ export class AuthController {
     async logout(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response
-    ): Promise<{ data: { message: string } }> {
+    ): Promise<ApiMessageResponse> {
         const refreshToken = req.cookies?.bid_refresh as string | undefined;
 
         if (refreshToken) {
@@ -134,6 +144,11 @@ export class AuthController {
             path: '/',
         });
 
-        return { data: { message: 'Logged out' } };
+        return {
+            data: {
+                code: RESPONSE_CODE.LOGGED_OUT,
+                message: 'Logged out',
+            },
+        };
     }
 }
