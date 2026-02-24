@@ -1,10 +1,18 @@
+import { RESPONSE_CODE, type ResponseCode } from './response-code';
+
+/**
+ * @deprecated Use RESPONSE_CODE instead. Kept for backward compatibility with AllExceptionsFilter.
+ */
 export const ERROR_CODE = {
-    UNAUTHORIZED: 'UNAUTHORIZED',
-    VALIDATION_ERROR: 'VALIDATION_ERROR',
-    NOT_FOUND: 'NOT_FOUND',
-    RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
-    INSUFFICIENT_CREDITS: 'INSUFFICIENT_CREDITS',
-    INTERNAL_ERROR: 'INTERNAL_ERROR',
+    UNAUTHORIZED: RESPONSE_CODE.UNAUTHORIZED,
+    VALIDATION_ERROR: RESPONSE_CODE.VALIDATION_ERROR,
+    NOT_FOUND: RESPONSE_CODE.NOT_FOUND,
+    RATE_LIMIT_EXCEEDED: RESPONSE_CODE.RATE_LIMIT_EXCEEDED,
+    INSUFFICIENT_CREDITS: RESPONSE_CODE.INSUFFICIENT_CREDITS,
+    INTERNAL_ERROR: RESPONSE_CODE.INTERNAL_ERROR,
 } as const;
 
-export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
+/**
+ * @deprecated Use ResponseCode instead.
+ */
+export type ErrorCode = ResponseCode;
