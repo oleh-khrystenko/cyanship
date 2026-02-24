@@ -2,8 +2,11 @@ import type { AuthResponse, UserProfile } from '@lucidkit/types';
 
 import { apiClient, setAccessToken } from './client';
 
-export async function sendMagicLink(email: string): Promise<void> {
-    await apiClient.post('/auth/magic-link/send', { email });
+export async function sendMagicLink(
+    email: string,
+    lang?: string
+): Promise<void> {
+    await apiClient.post('/auth/magic-link/send', { email, lang });
 }
 
 export async function verifyMagicLink(token: string): Promise<AuthResponse> {

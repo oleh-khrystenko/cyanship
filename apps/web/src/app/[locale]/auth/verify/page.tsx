@@ -5,13 +5,15 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import UiButton from '@/shared/ui/UiButton';
-import { verifyMagicLink, getMe } from '@/shared/api';
+import { verifyMagicLink, getMe, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import { AxiosError } from 'axios';
 
 type VerifyStatus = 'verifying' | 'success' | 'error';
 
 function VerifyContent() {
     const t = useTranslations('auth_page.verify');
+    const tErrors = useTranslations();
     const router = useRouter();
     const { locale } = useParams<{ locale: string }>();
     const searchParams = useSearchParams();
@@ -19,6 +21,7 @@ function VerifyContent() {
     const [status, setStatus] = useState<VerifyStatus>(
         token ? 'verifying' : 'error'
     );
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         if (!token) return;
@@ -30,13 +33,22 @@ function VerifyContent() {
                 useAuthStore.getState().setUser(user);
                 setStatus('success');
                 router.replace(`/${locale}/check`);
-            } catch {
+            } catch (err) {
                 setStatus('error');
+                const code =
+                    err instanceof AxiosError
+                        ? err.response?.data?.error?.code
+                        : undefined;
+                if (code) {
+                    setErrorMessage(
+                        tErrors(getApiMessageKey(code, 'auth'))
+                    );
+                }
             }
         };
 
         void verify();
-    }, [token, router, locale]);
+    }, [token, router, locale, tErrors]);
 
     if (status === 'error') {
         return (
@@ -45,7 +57,7 @@ function VerifyContent() {
                     {t('error_heading')}
                 </p>
                 <p className="text-text-secondary text-sm">
-                    {t('error_description')}
+                    {errorMessage || t('error_description')}
                 </p>
                 <UiButton
                     as="link"

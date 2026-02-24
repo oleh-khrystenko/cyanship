@@ -9,13 +9,15 @@ import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
-import { sendMagicLink } from '@/shared/api';
+import { sendMagicLink, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import { AxiosError } from 'axios';
 
 type SigninStatus = 'idle' | 'sending' | 'sent' | 'error';
 
 export default function SigninPage() {
     const t = useTranslations('auth_page.signin');
+    const tErrors = useTranslations();
     const locale = useLocale();
     const router = useRouter();
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -36,11 +38,19 @@ export default function SigninPage() {
         setErrorMessage('');
 
         try {
-            await sendMagicLink(email);
+            await sendMagicLink(email, locale);
             setStatus('sent');
-        } catch {
+        } catch (err) {
             setStatus('error');
-            setErrorMessage(t('error_generic'));
+            const code =
+                err instanceof AxiosError
+                    ? err.response?.data?.error?.code
+                    : undefined;
+            setErrorMessage(
+                code
+                    ? tErrors(getApiMessageKey(code, 'auth'))
+                    : t('error_generic')
+            );
         }
     };
 
