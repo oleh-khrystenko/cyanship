@@ -19,12 +19,18 @@ import {
 } from '@lucidkit/types';
 import { CookieOptions, Request, Response } from 'express';
 
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ENV } from '../../config/env';
+import { UserDocument } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CheckEmailDto } from './dto/check-email.dto';
 import { LoginPasswordDto } from './dto/login-password.dto';
 import { SendMagicLinkDto } from './dto/send-magic-link.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 import { VerifyMagicLinkDto } from './dto/verify-magic-link.dto';
+import { VerifyPasswordDto } from './dto/verify-password.dto';
 import { GoogleValidatedUser } from './strategies/google.strategy';
 
 const REFRESH_COOKIE_OPTIONS: CookieOptions = {
@@ -142,6 +148,70 @@ export class AuthController {
                 purpose,
             },
         };
+    }
+
+    @Post('password/set')
+    @UseGuards(JwtAuthGuard)
+    async setPassword(
+        @CurrentUser() user: UserDocument,
+        @Body() dto: SetPasswordDto
+    ): Promise<ApiMessageResponse> {
+        await this.authService.setPassword(
+            user._id.toString(),
+            dto.password
+        );
+        return {
+            data: {
+                code: RESPONSE_CODE.PASSWORD_SET,
+                message: 'Password set',
+            },
+        };
+    }
+
+    @Post('password/change')
+    @UseGuards(JwtAuthGuard)
+    async changePassword(
+        @CurrentUser() user: UserDocument,
+        @Body() dto: ChangePasswordDto,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<{ data: { message: string; accessToken: string } }> {
+        const { accessToken, refreshToken } =
+            await this.authService.changePassword(
+                user._id.toString(),
+                dto.currentPassword,
+                dto.newPassword
+            );
+
+        res.cookie('bid_refresh', refreshToken, REFRESH_COOKIE_OPTIONS);
+
+        return { data: { message: 'Password changed', accessToken } };
+    }
+
+    @Post('password/delete')
+    @UseGuards(JwtAuthGuard)
+    async deletePassword(
+        @CurrentUser() user: UserDocument
+    ): Promise<ApiMessageResponse> {
+        await this.authService.deletePassword(user._id.toString());
+        return {
+            data: {
+                code: RESPONSE_CODE.PASSWORD_DELETED,
+                message: 'Password deleted',
+            },
+        };
+    }
+
+    @Post('password/verify')
+    @UseGuards(JwtAuthGuard)
+    async verifyPassword(
+        @CurrentUser() user: UserDocument,
+        @Body() dto: VerifyPasswordDto
+    ): Promise<{ data: { isValid: boolean } }> {
+        const isValid = await this.authService.verifyPassword(
+            user._id.toString(),
+            dto.password
+        );
+        return { data: { isValid } };
     }
 
     @Post('refresh')
