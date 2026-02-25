@@ -11,6 +11,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import {
     AuthResponse,
+    CheckEmailResponse,
     Lang,
     RESPONSE_CODE,
     type ApiMessageResponse,
@@ -19,6 +20,8 @@ import { CookieOptions, Request, Response } from 'express';
 
 import { ENV } from '../../config/env';
 import { AuthService } from './auth.service';
+import { CheckEmailDto } from './dto/check-email.dto';
+import { LoginPasswordDto } from './dto/login-password.dto';
 import { SendMagicLinkDto } from './dto/send-magic-link.dto';
 import { VerifyMagicLinkDto } from './dto/verify-magic-link.dto';
 import { GoogleValidatedUser } from './strategies/google.strategy';
@@ -53,6 +56,48 @@ export class AuthController {
 
         res.cookie('bid_refresh', tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
         res.redirect(`${ENV.WEB_URL}/auth/callback`);
+    }
+
+    @Post('check-email')
+    async checkEmail(
+        @Body() dto: CheckEmailDto,
+        @Req() req: Request
+    ): Promise<{ data: CheckEmailResponse }> {
+        const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+        const result = await this.authService.checkEmail(dto.email, ip);
+        return { data: result };
+    }
+
+    @Post('login/password')
+    async loginWithPassword(
+        @Body() dto: LoginPasswordDto,
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<{ data: AuthResponse }> {
+        const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+        const { user, accessToken, refreshToken } =
+            await this.authService.loginWithPassword(
+                dto.email,
+                dto.password,
+                ip
+            );
+
+        res.cookie('bid_refresh', refreshToken, REFRESH_COOKIE_OPTIONS);
+
+        return {
+            data: {
+                user: {
+                    id: user.id as string,
+                    email: user.email,
+                    profile: user.profile,
+                    credits: user.credits,
+                    hasPassword: !!user.passwordHash,
+                    deletedAt: user.deletedAt ?? null,
+                    preferredLang: user.preferredLang as Lang,
+                },
+                accessToken,
+            },
+        };
     }
 
     @Post('magic-link/send')

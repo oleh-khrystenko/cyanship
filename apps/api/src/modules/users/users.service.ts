@@ -106,6 +106,14 @@ export class UsersService {
             .exec();
     }
 
+    async setPasswordHash(userId: string, hash: string): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, { passwordHash: hash });
+    }
+
+    async clearPasswordHash(userId: string): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, { passwordHash: null });
+    }
+
     async hasCredit(userId: string): Promise<boolean> {
         const user = await this.userModel.findById(userId).exec();
         if (!user) return false;
