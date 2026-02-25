@@ -28,7 +28,8 @@
 | [phase-5-account-deletion.md](./phase-5-account-deletion.md) | Фаза 5: Account Deletion + Recovery |
 | [phase-6-frontend-signin.md](./phase-6-frontend-signin.md) | Фаза 6: Progressive Disclosure (Signin) |
 | [phase-7-frontend-profile.md](./phase-7-frontend-profile.md) | Фаза 7: Profile Page |
-| [phase-8-tests.md](./phase-8-tests.md) | Фаза 8: Тести + QA |
+
+> **Тестування:** Винесено в окремий спринт — [sprint-005-auth-testing](../sprint-005-auth-testing/README.md) (unit + integration + manual E2E).
 
 ## Порядок виконання
 
@@ -40,7 +41,7 @@
               └─→ Фаза 5 (Account Deletion) ─── залежить від 4
   └─→ Фаза 6 (Frontend Signin) ─── залежить від 2 + 3
         └─→ Фаза 7 (Frontend Profile) ─── залежить від 4 + 5 + 6
-              └─→ Фаза 8 (Тести) ─── після всіх фаз
+              └─→ Sprint 005 (Тестування) ─── після всіх фаз
 ```
 
 Фази 2 і 3 можна робити паралельно після Фази 1.

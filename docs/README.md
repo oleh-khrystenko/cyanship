@@ -15,7 +15,9 @@
 
 - `docs/planning/README.md`
 - `docs/planning/auth-flow.md`
-- `docs/sprints/sprint-003-auth/manual-e2e-auth-test-plan.md`
+- `docs/sprints/sprint-003-auth/i18n-sync-plan.md`
+- `docs/sprints/sprint-004-auth/` — повне покриття auth-flow.md (7 фаз)
+- `docs/sprints/sprint-005-auth-testing/` — unit + integration + manual E2E тести
 - `docs/audits/auth/auth-implementation-audit.md`
 - `docs/conventions/README.md`
 - `docs/conventions/fail-fast.md`

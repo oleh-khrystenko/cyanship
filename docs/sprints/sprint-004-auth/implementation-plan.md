@@ -15,7 +15,7 @@
 | 5 | [Account Deletion](./phase-5-account-deletion.md) | soft delete, recovery, confirmation | 4 |
 | 6 | [Frontend Signin](./phase-6-frontend-signin.md) | progressive disclosure, API functions | 2, 3 |
 | 7 | [Frontend Profile](./phase-7-frontend-profile.md) | profile page, security, danger zone | 4, 5, 6 |
-| 8 | [Tests + QA](./phase-8-tests.md) | unit, E2E, manual testing | 7 |
+| — | [Sprint 005: Testing](../sprint-005-auth-testing/README.md) | unit, integration, manual E2E | 7 |
 
 ## Граф залежностей
 
@@ -27,7 +27,7 @@
               └─→ Фаза 5 (Account Deletion)
   ├─→ Фаза 6 (Frontend Signin) ─── залежить від 2 + 3
   │     └─→ Фаза 7 (Frontend Profile) ─── залежить від 4 + 5 + 6
-  │           └─→ Фаза 8 (Тести + QA)
+  │           └─→ Sprint 005 (Тестування)
 ```
 
 Фази 2 і 3 можна робити паралельно після Фази 1.
