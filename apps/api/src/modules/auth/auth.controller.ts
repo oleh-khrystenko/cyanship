@@ -127,9 +127,17 @@ export class AuthController {
     async verifyMagicLink(
         @Body() dto: VerifyMagicLinkDto,
         @Res({ passthrough: true }) res: Response
-    ): Promise<{ data: AuthResponse }> {
-        const { user, tokens, purpose } =
-            await this.authService.verifyMagicLink(dto.token);
+    ): Promise<{ data: AuthResponse | { deleted: true; message: string } }> {
+        const result = await this.authService.verifyMagicLink(dto.token);
+
+        if (result.deleted) {
+            res.clearCookie('bid_refresh', { path: '/' });
+            return {
+                data: { deleted: true, message: result.message },
+            };
+        }
+
+        const { user, tokens, purpose } = result;
 
         res.cookie('bid_refresh', tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
 

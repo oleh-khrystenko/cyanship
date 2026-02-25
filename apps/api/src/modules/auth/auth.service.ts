@@ -202,11 +202,19 @@ export class AuthService {
 
     async verifyMagicLink(
         token: string
-    ): Promise<{
-        user: UserDocument;
-        tokens: TokenPair;
-        purpose: MagicLinkPurpose;
-    }> {
+    ): Promise<
+        | {
+              user: UserDocument;
+              tokens: TokenPair;
+              purpose: MagicLinkPurpose;
+              deleted?: false;
+          }
+        | {
+              deleted: true;
+              message: string;
+              purpose: typeof MAGIC_LINK_PURPOSE.DELETE_ACCOUNT;
+          }
+    > {
         const magicKey = `magic:${token}`;
         const raw = await this.redis.getdel(magicKey);
 
@@ -221,6 +229,10 @@ export class AuthService {
             purpose: MagicLinkPurpose;
         };
 
+        if (purpose === MAGIC_LINK_PURPOSE.DELETE_ACCOUNT) {
+            return this.handleDeleteAccountVerification(email);
+        }
+
         const user = await this.usersService.findOrCreateByEmail(email);
 
         user.lastLoginAt = new Date();
@@ -232,6 +244,36 @@ export class AuthService {
         );
 
         return { user, tokens, purpose };
+    }
+
+    private async handleDeleteAccountVerification(
+        email: string
+    ): Promise<{
+        deleted: true;
+        message: string;
+        purpose: typeof MAGIC_LINK_PURPOSE.DELETE_ACCOUNT;
+    }> {
+        const user = await this.usersService.findByEmail(email);
+        if (!user) throw new NotFoundException('User not found');
+
+        await this.usersService.softDelete(user._id.toString());
+        await this.revokeAllUserTokens(user._id.toString());
+
+        const deletionDate = new Date();
+        deletionDate.setDate(
+            deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
+        );
+        await this.emailService.sendDeletionConfirmation(
+            email,
+            deletionDate,
+            user.preferredLang
+        );
+
+        return {
+            deleted: true,
+            message: 'Account scheduled for deletion',
+            purpose: MAGIC_LINK_PURPOSE.DELETE_ACCOUNT,
+        };
     }
 
     async checkEmail(

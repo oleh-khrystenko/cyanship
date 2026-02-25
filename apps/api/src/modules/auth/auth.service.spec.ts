@@ -98,12 +98,15 @@ describe('AuthService', () => {
                         findOrCreateByEmail: jest.fn(),
                         setPasswordHash: jest.fn().mockResolvedValue(undefined),
                         clearPasswordHash: jest.fn().mockResolvedValue(undefined),
+                        softDelete: jest.fn().mockResolvedValue(undefined),
                     },
                 },
                 {
                     provide: EmailService,
                     useValue: {
                         sendMagicLink: jest.fn().mockResolvedValue(undefined),
+                        sendDeletionConfirmation:
+                            jest.fn().mockResolvedValue(undefined),
                     },
                 },
                 {
@@ -554,7 +557,7 @@ describe('AuthService', () => {
                 'user@example.com'
             );
             expect(result.purpose).toBe('login');
-            expect(result.tokens).toEqual({
+            expect('tokens' in result && result.tokens).toEqual({
                 accessToken: 'access-token',
                 refreshToken: 'refresh-token',
             });
@@ -639,6 +642,70 @@ describe('AuthService', () => {
             await expect(authService.verifyMagicLink(token)).rejects.toThrow(
                 'Invalid or expired magic link token'
             );
+        });
+
+        it('should soft-delete user and revoke tokens for delete-account purpose', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'user@example.com',
+                    purpose: 'delete-account',
+                })
+            );
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue({
+                ...mockUser,
+                _id: { toString: () => '507f1f77bcf86cd799439011' },
+                preferredLang: 'uk',
+            } as never);
+            mockRedis.smembers.mockResolvedValue([]);
+
+            const result = await authService.verifyMagicLink(token);
+
+            expect(result.deleted).toBe(true);
+            expect(result.purpose).toBe('delete-account');
+            expect(usersService.softDelete).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011'
+            );
+            expect(mockRedis.smembers).toHaveBeenCalledWith(
+                'refresh_family:507f1f77bcf86cd799439011'
+            );
+            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith(
+                'user@example.com',
+                expect.any(Date),
+                'uk'
+            );
+        });
+
+        it('should throw NotFoundException for delete-account if user not found', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'unknown@example.com',
+                    purpose: 'delete-account',
+                })
+            );
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+
+            await expect(
+                authService.verifyMagicLink(token)
+            ).rejects.toThrow(NotFoundException);
+        });
+
+        it('should not create user for delete-account purpose', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'user@example.com',
+                    purpose: 'delete-account',
+                })
+            );
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue({
+                ...mockUser,
+                _id: { toString: () => '507f1f77bcf86cd799439011' },
+                preferredLang: 'uk',
+            } as never);
+            mockRedis.smembers.mockResolvedValue([]);
+
+            await authService.verifyMagicLink(token);
+
+            expect(usersService.findOrCreateByEmail).not.toHaveBeenCalled();
         });
     });
 
