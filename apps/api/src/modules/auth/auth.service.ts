@@ -2,10 +2,12 @@ import { randomBytes, randomUUID } from 'crypto';
 
 import * as bcrypt from 'bcrypt';
 import {
+    BadRequestException,
     HttpException,
     HttpStatus,
     Inject,
     Injectable,
+    NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -284,6 +286,61 @@ export class AuthService {
         );
 
         return { user, accessToken, refreshToken };
+    }
+
+    async setPassword(userId: string, password: string): Promise<void> {
+        const user = await this.usersService.findById(userId);
+        if (!user) throw new NotFoundException('User not found');
+        if (user.passwordHash) {
+            throw new BadRequestException(
+                'Password already set. Use change password instead.'
+            );
+        }
+        const hash = await bcrypt.hash(password, 10);
+        await this.usersService.setPasswordHash(userId, hash);
+    }
+
+    async changePassword(
+        userId: string,
+        currentPassword: string,
+        newPassword: string
+    ): Promise<TokenPair> {
+        const user = await this.usersService.findById(userId);
+        if (!user || !user.passwordHash) {
+            throw new BadRequestException('No password set');
+        }
+        const isValid = await bcrypt.compare(
+            currentPassword,
+            user.passwordHash
+        );
+        if (!isValid) {
+            throw new UnauthorizedException('Invalid current password');
+        }
+        const hash = await bcrypt.hash(newPassword, 10);
+        await this.usersService.setPasswordHash(userId, hash);
+
+        // Invalidate all other sessions
+        await this.revokeAllUserTokens(userId);
+
+        // Issue new token pair for current session
+        return this.generateTokens(userId, user.email);
+    }
+
+    async deletePassword(userId: string): Promise<void> {
+        const user = await this.usersService.findById(userId);
+        if (!user || !user.passwordHash) {
+            throw new BadRequestException('No password to delete');
+        }
+        await this.usersService.clearPasswordHash(userId);
+    }
+
+    async verifyPassword(
+        userId: string,
+        password: string
+    ): Promise<boolean> {
+        const user = await this.usersService.findById(userId);
+        if (!user || !user.passwordHash) return false;
+        return bcrypt.compare(password, user.passwordHash);
     }
 
     private async checkEmailRateLimit(ip: string): Promise<void> {
