@@ -4,7 +4,7 @@ import { routing } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const PROTECTED_PATHS = ['/check', '/pay'];
+const PROTECTED_PATHS = ['/profile', '/pay'];
 const AUTH_PATHS = ['/auth/signin'];
 const COOKIE_NAME = 'bid_refresh';
 
@@ -36,7 +36,7 @@ export default function middleware(request: NextRequest) {
     );
 
     if (isAuthPath && hasRefreshCookie) {
-        return NextResponse.redirect(new URL(`/${locale}/check`, request.url));
+        return NextResponse.redirect(new URL(`/${locale}/profile`, request.url));
     }
 
     return intlMiddleware(request);

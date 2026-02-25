@@ -18,7 +18,7 @@ export default function CallbackPage() {
                 await refreshToken();
                 const user = await getMe();
                 useAuthStore.getState().setUser(user);
-                router.replace(`/${locale}/check`);
+                router.replace(`/${locale}/profile`);
             } catch {
                 router.replace(`/${locale}/auth/signin`);
             }

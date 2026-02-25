@@ -37,7 +37,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/check`);
+                        router.replace(`/${locale}/profile`);
                         break;
                     }
 
@@ -45,7 +45,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/check`);
+                        router.replace(`/${locale}/profile`);
                         break;
                     }
 
@@ -53,7 +53,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/check`);
+                        router.replace(`/${locale}/profile`);
                         break;
                     }
 
@@ -68,7 +68,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/check`);
+                        router.replace(`/${locale}/profile`);
                     }
                 }
             } catch (err) {

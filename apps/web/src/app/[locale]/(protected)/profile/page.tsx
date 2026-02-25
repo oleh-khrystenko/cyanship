@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 
-export default function CheckPage() {
+export default function ProfilePage() {
     const t = useTranslations('welcome_page');
 
     return (

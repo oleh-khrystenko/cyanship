@@ -49,7 +49,7 @@ export default function SigninPage() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            router.replace(`/${locale}/check`);
+            router.replace(`/${locale}/profile`);
         }
     }, [isAuthenticated, locale, router]);
 
@@ -126,7 +126,7 @@ export default function SigninPage() {
             } else {
                 const me = await getMe();
                 setUser(me);
-                router.push(`/${locale}/check`);
+                router.push(`/${locale}/profile`);
             }
         } catch (err) {
             setSubmitting(false);
@@ -164,7 +164,7 @@ export default function SigninPage() {
             toast.success(tRecovery('restored'));
             const me = await getMe();
             setUser(me);
-            router.push(`/${locale}/check`);
+            router.push(`/${locale}/profile`);
         } catch (err) {
             setSubmitting(false);
             handleError(err);
