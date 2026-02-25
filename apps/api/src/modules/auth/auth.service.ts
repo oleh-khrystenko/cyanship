@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from 'crypto';
 
+import * as bcrypt from 'bcrypt';
 import {
     HttpException,
     HttpStatus,
@@ -12,7 +13,7 @@ import { Lang } from '@lucidkit/types';
 import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '../../common/providers/redis.provider';
-import { ENV } from '../../config/env';
+import { ENV, parseLockoutThresholds } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { EmailService } from './services/email.service';
@@ -190,6 +191,119 @@ export class AuthService {
         return { user, tokens };
     }
 
+    async checkEmail(
+        email: string,
+        ip: string
+    ): Promise<{ hasPassword: boolean; isNewUser: boolean }> {
+        await this.checkEmailRateLimit(ip);
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const user = await this.usersService.findByEmail(normalizedEmail);
+        return {
+            hasPassword: !!user?.passwordHash,
+            isNewUser: !user,
+        };
+    }
+
+    async loginWithPassword(
+        email: string,
+        password: string,
+        ip: string
+    ): Promise<{ user: UserDocument; accessToken: string; refreshToken: string }> {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        // 1. Check progressive lockout (IP+email)
+        await this.checkBruteForce(ip, normalizedEmail);
+
+        // 2. Find user
+        const user = await this.usersService.findByEmail(normalizedEmail);
+        if (!user || !user.passwordHash) {
+            await this.incrementLoginAttempts(ip, normalizedEmail);
+            throw new UnauthorizedException('Invalid email or password');
+        }
+
+        // 3. Compare password
+        const isValid = await bcrypt.compare(password, user.passwordHash);
+        if (!isValid) {
+            await this.incrementLoginAttempts(ip, normalizedEmail);
+            throw new UnauthorizedException('Invalid email or password');
+        }
+
+        // 4. Clear attempts on success
+        await this.clearLoginAttempts(ip, normalizedEmail);
+
+        // 5. Update lastLoginAt
+        user.lastLoginAt = new Date();
+        await user.save();
+
+        // 6. Generate tokens
+        const { accessToken, refreshToken } = await this.generateTokens(
+            user._id.toString(),
+            user.email
+        );
+
+        return { user, accessToken, refreshToken };
+    }
+
+    private async checkEmailRateLimit(ip: string): Promise<void> {
+        const key = `check_email:${ip}`;
+        const count = await this.redis.get(key);
+        if (count && parseInt(count, 10) >= 10) {
+            throw new TooManyRequestsException(
+                'Too many requests. Try again later'
+            );
+        }
+        const pipeline = this.redis.pipeline();
+        pipeline.incr(key);
+        pipeline.expire(key, 60);
+        await pipeline.exec();
+    }
+
+    private async checkBruteForce(
+        ip: string,
+        email: string
+    ): Promise<void> {
+        const key = `login_attempts:${ip}:${email}`;
+        const attemptsStr = await this.redis.get(key);
+        if (!attemptsStr) return;
+
+        const attempts = parseInt(attemptsStr, 10);
+        const thresholds = parseLockoutThresholds(
+            ENV.AUTH_LOCKOUT_THRESHOLDS
+        );
+
+        // Find the highest threshold that has been exceeded
+        const activeThreshold = [...thresholds]
+            .reverse()
+            .find((t) => attempts >= t.attempts);
+
+        if (activeThreshold) {
+            throw new TooManyRequestsException(
+                `Too many login attempts. Try again in ${activeThreshold.blockMin} minutes`
+            );
+        }
+    }
+
+    private async incrementLoginAttempts(
+        ip: string,
+        email: string
+    ): Promise<void> {
+        const key = `login_attempts:${ip}:${email}`;
+        const ttl = ENV.AUTH_LOGIN_ATTEMPTS_TTL_MIN * 60;
+        const pipeline = this.redis.pipeline();
+        pipeline.incr(key);
+        pipeline.expire(key, ttl);
+        await pipeline.exec();
+    }
+
+    private async clearLoginAttempts(
+        ip: string,
+        email: string
+    ): Promise<void> {
+        const key = `login_attempts:${ip}:${email}`;
+        await this.redis.del(key);
+    }
+
     private async storeRefreshToken(
         userId: string,
         jti: string
@@ -213,10 +327,7 @@ export class AuthService {
 }
 
 class TooManyRequestsException extends HttpException {
-    constructor() {
-        super(
-            'Too many requests. Try again in 15 minutes.',
-            HttpStatus.TOO_MANY_REQUESTS
-        );
+    constructor(message = 'Too many requests. Try again in 15 minutes.') {
+        super(message, HttpStatus.TOO_MANY_REQUESTS);
     }
 }
