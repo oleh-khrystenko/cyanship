@@ -4,6 +4,7 @@ import { RESPONSE_CODE, type ResponseCode } from './response-code';
  * @deprecated Use RESPONSE_CODE instead. Kept for backward compatibility with AllExceptionsFilter.
  */
 export const ERROR_CODE = {
+    ACCOUNT_DELETED: RESPONSE_CODE.ACCOUNT_DELETED,
     UNAUTHORIZED: RESPONSE_CODE.UNAUTHORIZED,
     VALIDATION_ERROR: RESPONSE_CODE.VALIDATION_ERROR,
     NOT_FOUND: RESPONSE_CODE.NOT_FOUND,
