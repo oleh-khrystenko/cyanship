@@ -1,12 +1,43 @@
-import type { AuthResponse, UserProfile } from '@lucidkit/types';
+import type {
+    AuthResponse,
+    CheckEmailResponse,
+    MagicLinkPurpose,
+    UserProfile,
+} from '@lucidkit/types';
 
 import { apiClient, setAccessToken } from './client';
 
+export async function checkEmail(email: string): Promise<CheckEmailResponse> {
+    const { data } = await apiClient.post<{ data: CheckEmailResponse }>(
+        '/auth/check-email',
+        { email }
+    );
+    return data.data;
+}
+
+export async function loginWithPassword(
+    email: string,
+    password: string
+): Promise<AuthResponse> {
+    const { data } = await apiClient.post<{ data: AuthResponse }>(
+        '/auth/login/password',
+        { email, password }
+    );
+
+    setAccessToken(data.data.accessToken);
+    return data.data;
+}
+
 export async function sendMagicLink(
     email: string,
-    lang?: string
+    lang?: string,
+    purpose?: MagicLinkPurpose
 ): Promise<void> {
-    await apiClient.post('/auth/magic-link/send', { email, lang });
+    await apiClient.post('/auth/magic-link/send', { email, lang, purpose });
+}
+
+export async function restoreAccount(): Promise<void> {
+    await apiClient.post('/users/account/restore');
 }
 
 export async function verifyMagicLink(token: string): Promise<AuthResponse> {

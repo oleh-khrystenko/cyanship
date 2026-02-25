@@ -43,6 +43,7 @@ export const AuthResponseSchema = z.object({
     user: UserProfileSchema,
     accessToken: z.string(),
     purpose: MagicLinkPurposeSchema.optional(),
+    accountDeleted: z.boolean().optional(),
 });
 
 // --- Check Email ---

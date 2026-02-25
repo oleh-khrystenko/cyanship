@@ -12,13 +12,31 @@
         "signin": {
             "heading": "Sign in to LucidKit",
             "subheading": "Analyse car photos and detect hidden defects before purchase",
-            "google_button": "Continue with Google",
-            "divider": "or",
+            "email_label": "Email",
             "email_placeholder": "your@email.com",
-            "magic_link_button": "Send Magic Link",
-            "sent_heading": "Check your email",
-            "sent_description": "We sent a sign-in link to your email. Click it to continue.",
-            "error_generic": "Something went wrong. Please try again."
+            "continue_button": "Continue",
+            "or_divider": "or",
+            "google_button": "Sign in with Google",
+            "password_label": "Password",
+            "password_placeholder": "Enter password",
+            "signin_button": "Sign In",
+            "forgot_password": "Forgot password?",
+            "forgot_password_sent": "If an account with this email exists, we sent a password reset link",
+            "change_email": "Change",
+            "other_email": "Different email",
+            "magic_link_sent_title": "Check your email",
+            "magic_link_sent_description": "We sent a link to {email}. Check your inbox and click the link to sign in.",
+            "invalid_credentials": "Invalid email or password",
+            "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
+            "session_revoked": "Session ended. Please sign in again",
+            "error_generic": "Something went wrong. Please try again"
+        },
+        "recovery": {
+            "title": "Account deactivated",
+            "description": "Your account was deleted on {date}. It will be permanently removed in {days} days.",
+            "restore_button": "Restore account",
+            "logout_button": "Sign out",
+            "restored": "Account restored!"
         },
         "callback": {
             "loading": "Signing you in…"

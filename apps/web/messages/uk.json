@@ -12,13 +12,31 @@
         "signin": {
             "heading": "Вхід до LucidKit",
             "subheading": "Аналізуйте фото автомобілів та виявляйте приховані дефекти перед покупкою",
-            "google_button": "Продовжити з Google",
-            "divider": "або",
+            "email_label": "Email",
             "email_placeholder": "your@email.com",
-            "magic_link_button": "Надіслати Magic Link",
-            "sent_heading": "Перевірте пошту",
-            "sent_description": "Ми надіслали посилання для входу на вашу електронну пошту. Натисніть на нього, щоб продовжити.",
-            "error_generic": "Щось пішло не так. Спробуйте ще раз."
+            "continue_button": "Продовжити",
+            "or_divider": "або",
+            "google_button": "Увійти через Google",
+            "password_label": "Пароль",
+            "password_placeholder": "Введіть пароль",
+            "signin_button": "Увійти",
+            "forgot_password": "Забули пароль?",
+            "forgot_password_sent": "Якщо акаунт з цією адресою існує, ми надіслали посилання для зміни пароля",
+            "change_email": "Змінити",
+            "other_email": "Інший email",
+            "magic_link_sent_title": "Перевірте пошту",
+            "magic_link_sent_description": "Ми надіслали посилання на {email}. Перевірте папку \"Вхідні\" та натисніть на посилання для входу.",
+            "invalid_credentials": "Невірний email або пароль",
+            "too_many_attempts": "Забагато спроб. Спробуйте через {minutes} хвилин або скористайтесь посиланням «Забули пароль?»",
+            "session_revoked": "Сесію завершено. Увійдіть знову",
+            "error_generic": "Щось пішло не так. Спробуйте ще раз"
+        },
+        "recovery": {
+            "title": "Акаунт деактивовано",
+            "description": "Ваш акаунт було видалено {date}. Він буде остаточно видалено через {days} днів.",
+            "restore_button": "Відновити акаунт",
+            "logout_button": "Вийти",
+            "restored": "Акаунт відновлено!"
         },
         "callback": {
             "loading": "Авторизація…"
