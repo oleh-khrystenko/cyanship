@@ -25,6 +25,8 @@ export class UsersController {
                 email: user.email,
                 profile: user.profile,
                 credits: user.credits,
+                hasPassword: !!user.passwordHash,
+                deletedAt: user.deletedAt ?? null,
                 preferredLang: user.preferredLang,
             },
         };

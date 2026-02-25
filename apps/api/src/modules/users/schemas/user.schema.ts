@@ -48,6 +48,12 @@ export class User {
     })
     credits!: UserCredits;
 
+    @Prop({ type: String, default: null })
+    passwordHash!: string | null;
+
+    @Prop({ type: Date, default: null })
+    deletedAt!: Date | null;
+
     @Prop({ required: true, default: LANG.UK })
     preferredLang!: string;
 
