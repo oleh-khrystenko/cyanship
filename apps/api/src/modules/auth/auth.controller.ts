@@ -57,12 +57,16 @@ export class AuthController {
         @Req() req: Request,
         @Res() res: Response
     ): Promise<void> {
-        const { tokens } = await this.authService.handleGoogleAuth(
-            req.user as GoogleValidatedUser
-        );
+        const { tokens, accountDeleted } =
+            await this.authService.handleGoogleAuth(
+                req.user as GoogleValidatedUser
+            );
 
         res.cookie('bid_refresh', tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
-        res.redirect(`${ENV.WEB_URL}/auth/callback`);
+        const callbackUrl = accountDeleted
+            ? `${ENV.WEB_URL}/auth/callback?account_deleted=true`
+            : `${ENV.WEB_URL}/auth/callback`;
+        res.redirect(callbackUrl);
     }
 
     @Post('check-email')
@@ -82,7 +86,7 @@ export class AuthController {
         @Res({ passthrough: true }) res: Response
     ): Promise<{ data: AuthResponse }> {
         const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-        const { user, accessToken, refreshToken } =
+        const { user, accessToken, refreshToken, accountDeleted } =
             await this.authService.loginWithPassword(
                 dto.email,
                 dto.password,
@@ -103,6 +107,7 @@ export class AuthController {
                     preferredLang: user.preferredLang as Lang,
                 },
                 accessToken,
+                ...(accountDeleted && { accountDeleted }),
             },
         };
     }
@@ -137,7 +142,7 @@ export class AuthController {
             };
         }
 
-        const { user, tokens, purpose } = result;
+        const { user, tokens, purpose, accountDeleted } = result;
 
         res.cookie('bid_refresh', tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
 
@@ -154,6 +159,7 @@ export class AuthController {
                 },
                 accessToken: tokens.accessToken,
                 purpose,
+                ...(accountDeleted && { accountDeleted }),
             },
         };
     }

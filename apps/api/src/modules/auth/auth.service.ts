@@ -149,12 +149,20 @@ export class AuthService {
 
     async handleGoogleAuth(
         googleProfile: GoogleValidatedUser
-    ): Promise<{ user: UserDocument; tokens: TokenPair }> {
+    ): Promise<{
+        user: UserDocument;
+        tokens: TokenPair;
+        accountDeleted?: boolean;
+    }> {
         const user =
             await this.usersService.findOrCreateByGoogle(googleProfile);
         const tokens = await this.generateTokens(user.id as string, user.email);
 
-        return { user, tokens };
+        return {
+            user,
+            tokens,
+            accountDeleted: user.deletedAt ? true : undefined,
+        };
     }
 
     async sendMagicLink(
@@ -208,6 +216,7 @@ export class AuthService {
               tokens: TokenPair;
               purpose: MagicLinkPurpose;
               deleted?: false;
+              accountDeleted?: boolean;
           }
         | {
               deleted: true;
@@ -243,7 +252,12 @@ export class AuthService {
             user.email
         );
 
-        return { user, tokens, purpose };
+        return {
+            user,
+            tokens,
+            purpose,
+            accountDeleted: user.deletedAt ? true : undefined,
+        };
     }
 
     private async handleDeleteAccountVerification(
@@ -294,7 +308,12 @@ export class AuthService {
         email: string,
         password: string,
         ip: string
-    ): Promise<{ user: UserDocument; accessToken: string; refreshToken: string }> {
+    ): Promise<{
+        user: UserDocument;
+        accessToken: string;
+        refreshToken: string;
+        accountDeleted?: boolean;
+    }> {
         const normalizedEmail = email.trim().toLowerCase();
 
         // 1. Check progressive lockout (IP+email)
@@ -327,7 +346,12 @@ export class AuthService {
             user.email
         );
 
-        return { user, accessToken, refreshToken };
+        return {
+            user,
+            accessToken,
+            refreshToken,
+            accountDeleted: user.deletedAt ? true : undefined,
+        };
     }
 
     async setPassword(userId: string, password: string): Promise<void> {
