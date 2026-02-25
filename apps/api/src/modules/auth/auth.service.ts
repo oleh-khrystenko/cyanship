@@ -260,6 +260,21 @@ export class AuthService {
         };
     }
 
+    async sendDeletionConfirmationEmail(
+        email: string,
+        lang: string
+    ): Promise<void> {
+        const deletionDate = new Date();
+        deletionDate.setDate(
+            deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
+        );
+        await this.emailService.sendDeletionConfirmation(
+            email,
+            deletionDate,
+            lang
+        );
+    }
+
     private async handleDeleteAccountVerification(
         email: string
     ): Promise<{
@@ -272,16 +287,7 @@ export class AuthService {
 
         await this.usersService.softDelete(user._id.toString());
         await this.revokeAllUserTokens(user._id.toString());
-
-        const deletionDate = new Date();
-        deletionDate.setDate(
-            deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
-        );
-        await this.emailService.sendDeletionConfirmation(
-            email,
-            deletionDate,
-            user.preferredLang
-        );
+        await this.sendDeletionConfirmationEmail(email, user.preferredLang);
 
         return {
             deleted: true,

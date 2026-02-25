@@ -19,10 +19,8 @@ import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { ENV } from '../../config/env';
 import { AuthService } from '../auth/auth.service';
 import { VerifyPasswordDto } from '../auth/dto/verify-password.dto';
-import { EmailService } from '../auth/services/email.service';
 import { UpdateLangDto } from './dto/update-lang.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserDocument } from './schemas/user.schema';
@@ -32,8 +30,7 @@ import { UsersService } from './users.service';
 export class UsersController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly authService: AuthService,
-        private readonly emailService: EmailService
+        private readonly authService: AuthService
     ) {}
 
     @Get('me')
@@ -129,14 +126,8 @@ export class UsersController {
 
         await this.usersService.softDelete(user._id.toString());
         await this.authService.revokeAllUserTokens(user._id.toString());
-
-        const deletionDate = new Date();
-        deletionDate.setDate(
-            deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
-        );
-        await this.emailService.sendDeletionConfirmation(
+        await this.authService.sendDeletionConfirmationEmail(
             user.email,
-            deletionDate,
             user.preferredLang
         );
 
