@@ -707,6 +707,59 @@ describe('AuthService', () => {
 
             expect(usersService.findOrCreateByEmail).not.toHaveBeenCalled();
         });
+
+        it('should return accountDeleted for user with deletedAt', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'user@example.com',
+                    purpose: 'login',
+                })
+            );
+            const deletedUser = {
+                ...mockUser,
+                deletedAt: new Date('2026-01-01'),
+                save: jest.fn().mockImplementation(function (this: unknown) {
+                    return Promise.resolve(this);
+                }),
+            };
+            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue(
+                deletedUser as never
+            );
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.verifyMagicLink(token);
+
+            expect(result.deleted).toBeFalsy();
+            expect('accountDeleted' in result && result.accountDeleted).toBe(
+                true
+            );
+        });
+
+        it('should not include accountDeleted for active user on verify', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'user@example.com',
+                    purpose: 'login',
+                })
+            );
+            const saveMock = jest.fn().mockResolvedValue(mockUser);
+            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue({
+                ...mockUser,
+                deletedAt: null,
+                save: saveMock,
+            } as never);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.verifyMagicLink(token);
+
+            expect(
+                'accountDeleted' in result ? result.accountDeleted : undefined
+            ).toBeUndefined();
+        });
     });
 
     describe('checkEmail', () => {
@@ -936,6 +989,50 @@ describe('AuthService', () => {
 
             expect(userWithPassword.lastLoginAt).toBeInstanceOf(Date);
             expect(userWithPassword.save).toHaveBeenCalled();
+        });
+
+        it('should return accountDeleted: true for deleted user', async () => {
+            const deletedUser = {
+                ...userWithPassword,
+                deletedAt: new Date('2026-01-01'),
+                save: jest.fn().mockImplementation(function (this: unknown) {
+                    return Promise.resolve(this);
+                }),
+            };
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                deletedUser as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.loginWithPassword(
+                email,
+                password,
+                ip
+            );
+
+            expect(result.accountDeleted).toBe(true);
+            expect(result.accessToken).toBe('access-token');
+        });
+
+        it('should not include accountDeleted for active user', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.loginWithPassword(
+                email,
+                password,
+                ip
+            );
+
+            expect(result.accountDeleted).toBeUndefined();
         });
     });
 
