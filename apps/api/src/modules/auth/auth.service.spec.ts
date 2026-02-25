@@ -368,7 +368,12 @@ describe('AuthService', () => {
     describe('sendMagicLink', () => {
         const email = 'user@example.com';
 
-        it('should normalize email, generate token, store in Redis, and send email', async () => {
+        beforeEach(() => {
+            mockRedis.get.mockResolvedValue(null);
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+        });
+
+        it('should normalize email, generate token, store JSON in Redis, and send email', async () => {
             mockRedis.incr.mockResolvedValue(1);
 
             await authService.sendMagicLink('  User@Example.COM  ');
@@ -380,16 +385,44 @@ describe('AuthService', () => {
                 'ratelimit:magic:user@example.com',
                 900
             );
-            expect(mockRedis.set).toHaveBeenCalledWith(
+            // Token payload stored as JSON via pipeline
+            expect(mockPipeline.set).toHaveBeenCalledWith(
                 expect.stringMatching(/^magic:[a-f0-9]{64}$/),
-                'user@example.com',
+                expect.stringContaining('"email":"user@example.com"'),
                 'EX',
                 900
             );
             expect(emailService.sendMagicLink).toHaveBeenCalledWith(
                 'user@example.com',
                 expect.stringMatching(/^[a-f0-9]{64}$/),
-                undefined
+                'login',
+                'uk'
+            );
+        });
+
+        it('should store purpose in Redis JSON payload', async () => {
+            mockRedis.incr.mockResolvedValue(1);
+
+            await authService.sendMagicLink(email, 'register');
+
+            expect(mockPipeline.set).toHaveBeenCalledWith(
+                expect.stringMatching(/^magic:/),
+                JSON.stringify({ email, purpose: 'register' }),
+                'EX',
+                900
+            );
+        });
+
+        it('should default purpose to login', async () => {
+            mockRedis.incr.mockResolvedValue(1);
+
+            await authService.sendMagicLink(email);
+
+            expect(mockPipeline.set).toHaveBeenCalledWith(
+                expect.stringMatching(/^magic:/),
+                JSON.stringify({ email, purpose: 'login' }),
+                'EX',
+                900
             );
         });
 
@@ -437,16 +470,45 @@ describe('AuthService', () => {
                 expect.not.stringContaining('secret@example.com') as string
             );
         });
+
+        it('should skip sending email if dedup key exists (anti-spam)', async () => {
+            mockRedis.incr.mockResolvedValue(1);
+            mockRedis.get.mockResolvedValue('existing-token');
+
+            await authService.sendMagicLink(email);
+
+            expect(emailService.sendMagicLink).not.toHaveBeenCalled();
+        });
+
+        it('should use user preferredLang for email when user exists', async () => {
+            mockRedis.incr.mockResolvedValue(1);
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue({
+                preferredLang: 'en',
+            } as never);
+
+            await authService.sendMagicLink(email);
+
+            expect(emailService.sendMagicLink).toHaveBeenCalledWith(
+                email,
+                expect.any(String),
+                'login',
+                'en'
+            );
+        });
     });
 
     describe('verifyMagicLink', () => {
         const token = 'a'.repeat(64);
 
-        it('should atomically consume token, create user, and return tokens', async () => {
-            mockRedis.getdel.mockResolvedValue('user@example.com');
-            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue(
-                mockUser as never
+        it('should atomically consume token, create user, and return tokens + purpose', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({ email: 'user@example.com', purpose: 'login' })
             );
+            const saveMock = jest.fn().mockResolvedValue(mockUser);
+            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue({
+                ...mockUser,
+                save: saveMock,
+            } as never);
             jest.spyOn(jwtService, 'signAsync')
                 .mockResolvedValueOnce('access-token')
                 .mockResolvedValueOnce('refresh-token');
@@ -457,11 +519,32 @@ describe('AuthService', () => {
             expect(usersService.findOrCreateByEmail).toHaveBeenCalledWith(
                 'user@example.com'
             );
-            expect(result.user).toBe(mockUser);
+            expect(result.purpose).toBe('login');
             expect(result.tokens).toEqual({
                 accessToken: 'access-token',
                 refreshToken: 'refresh-token',
             });
+        });
+
+        it('should return correct purpose from Redis payload', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'user@example.com',
+                    purpose: 'reset-password',
+                })
+            );
+            const saveMock = jest.fn().mockResolvedValue(mockUser);
+            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue({
+                ...mockUser,
+                save: saveMock,
+            } as never);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.verifyMagicLink(token);
+
+            expect(result.purpose).toBe('reset-password');
         });
 
         it('should throw UnauthorizedException for invalid token', async () => {

@@ -1,29 +1,76 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Lang, LANG } from '@lucidkit/types';
+import {
+    LANG,
+    MAGIC_LINK_PURPOSE,
+    type MagicLinkPurpose,
+} from '@lucidkit/types';
 import { Resend } from 'resend';
 
 import { ENV } from '../../../config/env';
 
-const TEMPLATES: Record<
-    Lang,
-    {
-        subject: string;
-        body: string;
-        cta: string;
-        footer: string;
-    }
-> = {
-    [LANG.UK]: {
-        subject: 'Вхід у LucidKit',
-        body: 'Натисніть кнопку нижче, щоб увійти у ваш акаунт.',
-        cta: 'Увійти в LucidKit',
-        footer: 'Посилання дійсне 15 хвилин. Якщо ви не запитували вхід — ігноруйте цей лист.',
+interface EmailTemplate {
+    subject: string;
+    body: string;
+    cta: string;
+    footer: string;
+}
+
+const TEMPLATES: Record<MagicLinkPurpose, Record<string, EmailTemplate>> = {
+    [MAGIC_LINK_PURPOSE.LOGIN]: {
+        [LANG.UK]: {
+            subject: 'Вхід до LucidKit',
+            body: 'Натисніть кнопку нижче, щоб увійти у ваш акаунт.',
+            cta: 'Увійти',
+            footer: 'Посилання дійсне 15 хвилин. Якщо ви не запитували вхід — ігноруйте цей лист.',
+        },
+        [LANG.EN]: {
+            subject: 'Sign in to LucidKit',
+            body: 'Click the button below to sign in to your account.',
+            cta: 'Sign In',
+            footer: "This link expires in 15 minutes. If you didn't request this — ignore this email.",
+        },
     },
-    [LANG.EN]: {
-        subject: 'Sign in to LucidKit',
-        body: 'Click the button below to sign in to your account.',
-        cta: 'Sign in to LucidKit',
-        footer: "This link expires in 15 minutes. If you didn't request this — ignore this email.",
+    [MAGIC_LINK_PURPOSE.REGISTER]: {
+        [LANG.UK]: {
+            subject: 'Ласкаво просимо до LucidKit',
+            body: 'Натисніть кнопку нижче, щоб завершити реєстрацію.',
+            cta: 'Завершити реєстрацію',
+            footer: 'Посилання дійсне 15 хвилин. Якщо ви не реєструвалися — ігноруйте цей лист.',
+        },
+        [LANG.EN]: {
+            subject: 'Welcome to LucidKit',
+            body: 'Click the button below to complete your registration.',
+            cta: 'Complete Registration',
+            footer: "This link expires in 15 minutes. If you didn't sign up — ignore this email.",
+        },
+    },
+    [MAGIC_LINK_PURPOSE.RESET_PASSWORD]: {
+        [LANG.UK]: {
+            subject: 'Скидання пароля',
+            body: 'Натисніть кнопку нижче, щоб скинути пароль.',
+            cta: 'Скинути пароль',
+            footer: 'Посилання дійсне 15 хвилин. Якщо ви не запитували скидання — ігноруйте цей лист.',
+        },
+        [LANG.EN]: {
+            subject: 'Reset Your Password',
+            body: 'Click the button below to reset your password.',
+            cta: 'Reset Password',
+            footer: "This link expires in 15 minutes. If you didn't request a reset — ignore this email.",
+        },
+    },
+    [MAGIC_LINK_PURPOSE.DELETE_ACCOUNT]: {
+        [LANG.UK]: {
+            subject: 'Підтвердження видалення акаунту',
+            body: 'Натисніть кнопку нижче, щоб підтвердити видалення акаунту. Після підтвердження у вас буде 30 днів, щоб відновити акаунт.',
+            cta: 'Підтвердити видалення',
+            footer: 'Посилання дійсне 15 хвилин. Якщо ви не запитували видалення — ігноруйте цей лист.',
+        },
+        [LANG.EN]: {
+            subject: 'Confirm Account Deletion',
+            body: 'Click the button below to confirm account deletion. After confirmation, you will have 30 days to recover your account.',
+            cta: 'Confirm Deletion',
+            footer: "This link expires in 15 minutes. If you didn't request deletion — ignore this email.",
+        },
     },
 };
 
@@ -35,10 +82,11 @@ export class EmailService {
     async sendMagicLink(
         email: string,
         token: string,
-        lang: Lang = LANG.UK
+        purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
+        lang: string = LANG.UK
     ): Promise<void> {
         const link = `${ENV.WEB_URL}/auth/verify?token=${token}`;
-        const t = TEMPLATES[lang];
+        const t = TEMPLATES[purpose][lang] ?? TEMPLATES[purpose][LANG.UK];
 
         const { error } = await this.resend.emails.send({
             from: ENV.RESEND_FROM_EMAIL,
@@ -74,6 +122,6 @@ export class EmailService {
             throw new Error(`Failed to send email: ${error.message}`);
         }
 
-        this.logger.log(`Magic link sent to ${email}`);
+        this.logger.log(`Magic link (${purpose}) sent to ${email}`);
     }
 }

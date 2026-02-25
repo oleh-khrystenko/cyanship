@@ -13,6 +13,7 @@ import {
     AuthResponse,
     CheckEmailResponse,
     Lang,
+    MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
     type ApiMessageResponse,
 } from '@lucidkit/types';
@@ -104,7 +105,10 @@ export class AuthController {
     async sendMagicLink(
         @Body() dto: SendMagicLinkDto
     ): Promise<ApiMessageResponse> {
-        await this.authService.sendMagicLink(dto.email, dto.lang as Lang);
+        await this.authService.sendMagicLink(
+            dto.email,
+            dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN
+        );
         return {
             data: {
                 code: RESPONSE_CODE.MAGIC_LINK_SENT,
@@ -118,9 +122,8 @@ export class AuthController {
         @Body() dto: VerifyMagicLinkDto,
         @Res({ passthrough: true }) res: Response
     ): Promise<{ data: AuthResponse }> {
-        const { user, tokens } = await this.authService.verifyMagicLink(
-            dto.token
-        );
+        const { user, tokens, purpose } =
+            await this.authService.verifyMagicLink(dto.token);
 
         res.cookie('bid_refresh', tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
 
@@ -136,6 +139,7 @@ export class AuthController {
                     preferredLang: user.preferredLang as Lang,
                 },
                 accessToken: tokens.accessToken,
+                purpose,
             },
         };
     }

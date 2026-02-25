@@ -9,7 +9,11 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Lang } from '@lucidkit/types';
+import {
+    LANG,
+    MAGIC_LINK_PURPOSE,
+    type MagicLinkPurpose,
+} from '@lucidkit/types';
 import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '../../common/providers/redis.provider';
@@ -151,7 +155,10 @@ export class AuthService {
         return { user, tokens };
     }
 
-    async sendMagicLink(email: string, lang?: Lang): Promise<void> {
+    async sendMagicLink(
+        email: string,
+        purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN
+    ): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
 
@@ -165,30 +172,64 @@ export class AuthService {
             throw new TooManyRequestsException();
         }
 
+        // Anti-spam dedup: skip sending if recent token exists for same email+purpose
+        const dedupKey = `magic_dedup:${normalizedEmail}:${purpose}`;
+        const existingDedup = await this.redis.get(dedupKey);
+        if (existingDedup) {
+            return;
+        }
+
         const token = randomBytes(32).toString('hex');
-        const magicKey = `magic:${token}`;
+        const payload = JSON.stringify({ email: normalizedEmail, purpose });
 
-        await this.redis.set(magicKey, normalizedEmail, 'EX', MAGIC_LINK_TTL);
+        const pipeline = this.redis.pipeline();
+        pipeline.set(`magic:${token}`, payload, 'EX', MAGIC_LINK_TTL);
+        pipeline.set(dedupKey, token, 'EX', ENV.AUTH_MAGIC_LINK_DEDUP_SEC);
+        await pipeline.exec();
 
-        await this.emailService.sendMagicLink(normalizedEmail, token, lang);
+        const user = await this.usersService.findByEmail(normalizedEmail);
+        const lang = user?.preferredLang ?? LANG.UK;
+
+        await this.emailService.sendMagicLink(
+            normalizedEmail,
+            token,
+            purpose,
+            lang
+        );
     }
 
     async verifyMagicLink(
         token: string
-    ): Promise<{ user: UserDocument; tokens: TokenPair }> {
+    ): Promise<{
+        user: UserDocument;
+        tokens: TokenPair;
+        purpose: MagicLinkPurpose;
+    }> {
         const magicKey = `magic:${token}`;
-        const email = await this.redis.getdel(magicKey);
+        const raw = await this.redis.getdel(magicKey);
 
-        if (!email) {
+        if (!raw) {
             throw new UnauthorizedException(
                 'Invalid or expired magic link token'
             );
         }
 
-        const user = await this.usersService.findOrCreateByEmail(email);
-        const tokens = await this.generateTokens(user.id as string, user.email);
+        const { email, purpose } = JSON.parse(raw) as {
+            email: string;
+            purpose: MagicLinkPurpose;
+        };
 
-        return { user, tokens };
+        const user = await this.usersService.findOrCreateByEmail(email);
+
+        user.lastLoginAt = new Date();
+        await user.save();
+
+        const tokens = await this.generateTokens(
+            user._id.toString(),
+            user.email
+        );
+
+        return { user, tokens, purpose };
     }
 
     async checkEmail(
