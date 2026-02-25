@@ -13,14 +13,33 @@ jest.mock('../../config/env', () => ({
         JWT_REFRESH_SECRET: 'test-refresh-secret',
         WEB_URL: 'http://localhost:3000',
         RESEND_API_KEY: 'test-resend-key',
+        AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
+        AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
     },
+    parseLockoutThresholds: (raw: string) =>
+        raw.split(',').map((entry: string) => {
+            const [attempts, blockMin] = entry.split(':').map(Number);
+            return { attempts, blockMin };
+        }),
 }));
+
+jest.mock('bcrypt', () => ({
+    compare: jest.fn(),
+}));
+
+import * as bcrypt from 'bcrypt';
 
 const mockUser = {
     id: '507f1f77bcf86cd799439011',
+    _id: { toString: () => '507f1f77bcf86cd799439011' },
     email: 'test@gmail.com',
     profile: { name: 'John Doe' },
     credits: { balance: 0, freeReportUsed: false },
+    passwordHash: null as string | null,
+    lastLoginAt: null as Date | null,
+    save: jest.fn().mockImplementation(function (this: unknown) {
+        return Promise.resolve(this);
+    }),
 };
 
 const mockPipeline = {
@@ -67,6 +86,7 @@ describe('AuthService', () => {
                 {
                     provide: UsersService,
                     useValue: {
+                        findByEmail: jest.fn(),
                         findOrCreateByGoogle: jest.fn(),
                         findOrCreateByEmail: jest.fn(),
                     },
@@ -458,6 +478,236 @@ describe('AuthService', () => {
             await expect(authService.verifyMagicLink(token)).rejects.toThrow(
                 'Invalid or expired magic link token'
             );
+        });
+    });
+
+    describe('checkEmail', () => {
+        const ip = '192.168.1.1';
+
+        beforeEach(() => {
+            mockRedis.get.mockResolvedValue(null);
+        });
+
+        it('should return hasPassword: true for existing user with password', async () => {
+            const userWithPassword = { ...mockUser, passwordHash: '$2b$10$hash' };
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+
+            const result = await authService.checkEmail('test@gmail.com', ip);
+
+            expect(result).toEqual({ hasPassword: true, isNewUser: false });
+        });
+
+        it('should return hasPassword: false for existing user without password', async () => {
+            const userNoPassword = { ...mockUser, passwordHash: null };
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userNoPassword as never
+            );
+
+            const result = await authService.checkEmail('test@gmail.com', ip);
+
+            expect(result).toEqual({ hasPassword: false, isNewUser: false });
+        });
+
+        it('should return isNewUser: true for non-existing user', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+
+            const result = await authService.checkEmail('new@gmail.com', ip);
+
+            expect(result).toEqual({ hasPassword: false, isNewUser: true });
+        });
+
+        it('should normalize email (trim + lowercase)', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+
+            await authService.checkEmail('  Test@Gmail.COM  ', ip);
+
+            expect(usersService.findByEmail).toHaveBeenCalledWith(
+                'test@gmail.com'
+            );
+        });
+
+        it('should allow up to 10 requests per IP', async () => {
+            mockRedis.get.mockResolvedValue('9');
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+
+            await expect(
+                authService.checkEmail('test@gmail.com', ip)
+            ).resolves.toBeDefined();
+        });
+
+        it('should throw 429 on 11th request from same IP', async () => {
+            mockRedis.get.mockResolvedValue('10');
+
+            await expect(
+                authService.checkEmail('test@gmail.com', ip)
+            ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
+        });
+    });
+
+    describe('loginWithPassword', () => {
+        const ip = '192.168.1.1';
+        const email = 'test@gmail.com';
+        const password = 'securepass123';
+        const hashedPassword = '$2b$10$hashedpassword';
+
+        const userWithPassword = {
+            ...mockUser,
+            passwordHash: hashedPassword,
+            save: jest.fn().mockImplementation(function (this: unknown) {
+                return Promise.resolve(this);
+            }),
+        };
+
+        beforeEach(() => {
+            mockRedis.get.mockResolvedValue(null);
+            mockUser.save.mockClear();
+        });
+
+        it('should return user and tokens on valid credentials', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.loginWithPassword(
+                email,
+                password,
+                ip
+            );
+
+            expect(result.user).toBe(userWithPassword);
+            expect(result.accessToken).toBe('access-token');
+            expect(result.refreshToken).toBe('refresh-token');
+        });
+
+        it('should throw 401 and increment attempts on invalid password', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+            await expect(
+                authService.loginWithPassword(email, password, ip)
+            ).rejects.toThrow('Invalid email or password');
+
+            expect(mockPipeline.incr).toHaveBeenCalledWith(
+                `login_attempts:${ip}:${email}`
+            );
+        });
+
+        it('should throw 401 and increment attempts when user not found', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+
+            await expect(
+                authService.loginWithPassword(email, password, ip)
+            ).rejects.toThrow('Invalid email or password');
+
+            expect(mockPipeline.incr).toHaveBeenCalledWith(
+                `login_attempts:${ip}:${email}`
+            );
+        });
+
+        it('should throw 401 and increment attempts when user has no password', async () => {
+            const userNoPassword = { ...mockUser, passwordHash: null };
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userNoPassword as never
+            );
+
+            await expect(
+                authService.loginWithPassword(email, password, ip)
+            ).rejects.toThrow('Invalid email or password');
+
+            expect(mockPipeline.incr).toHaveBeenCalledWith(
+                `login_attempts:${ip}:${email}`
+            );
+        });
+
+        it('should throw 429 after 5 failed attempts (1 min block)', async () => {
+            mockRedis.get.mockResolvedValue('5');
+
+            await expect(
+                authService.loginWithPassword(email, password, ip)
+            ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
+        });
+
+        it('should throw 429 after 10 failed attempts (5 min block)', async () => {
+            mockRedis.get.mockResolvedValue('10');
+
+            await expect(
+                authService.loginWithPassword(email, password, ip)
+            ).rejects.toMatchObject({
+                status: HttpStatus.TOO_MANY_REQUESTS,
+                message: expect.stringContaining('5 minutes') as string,
+            });
+        });
+
+        it('should throw 429 after 20 failed attempts (15 min block)', async () => {
+            mockRedis.get.mockResolvedValue('20');
+
+            await expect(
+                authService.loginWithPassword(email, password, ip)
+            ).rejects.toMatchObject({
+                status: HttpStatus.TOO_MANY_REQUESTS,
+                message: expect.stringContaining('15 minutes') as string,
+            });
+        });
+
+        it('should not block different IP for same email', async () => {
+            mockRedis.get.mockResolvedValue(null);
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.loginWithPassword(
+                email,
+                password,
+                '10.0.0.1'
+            );
+
+            expect(mockRedis.get).toHaveBeenCalledWith(
+                `login_attempts:10.0.0.1:${email}`
+            );
+            expect(result.accessToken).toBe('access-token');
+        });
+
+        it('should clear login attempts on successful login', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            await authService.loginWithPassword(email, password, ip);
+
+            expect(mockRedis.del).toHaveBeenCalledWith(
+                `login_attempts:${ip}:${email}`
+            );
+        });
+
+        it('should update lastLoginAt on successful login', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            await authService.loginWithPassword(email, password, ip);
+
+            expect(userWithPassword.lastLoginAt).toBeInstanceOf(Date);
+            expect(userWithPassword.save).toHaveBeenCalled();
         });
     });
 });
