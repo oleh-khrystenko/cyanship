@@ -49,4 +49,36 @@ export const ENV = {
     RESEND_FROM_EMAIL: isProduction
         ? getEnvVar('RESEND_FROM_EMAIL')
         : getEnvVar('RESEND_FROM_EMAIL', 'LucidKit <onboarding@resend.dev>'),
+
+    // --- AUTH CONFIGURATION (optional, with defaults) ---
+    AUTH_PASSWORD_MIN_LENGTH: parseInt(
+        getEnvVar('AUTH_PASSWORD_MIN_LENGTH', '8'),
+        10
+    ),
+    AUTH_LOCKOUT_THRESHOLDS: getEnvVar(
+        'AUTH_LOCKOUT_THRESHOLDS',
+        '5:1,10:5,20:15'
+    ),
+    AUTH_LOGIN_ATTEMPTS_TTL_MIN: parseInt(
+        getEnvVar('AUTH_LOGIN_ATTEMPTS_TTL_MIN', '15'),
+        10
+    ),
+    AUTH_MAGIC_LINK_DEDUP_SEC: parseInt(
+        getEnvVar('AUTH_MAGIC_LINK_DEDUP_SEC', '60'),
+        10
+    ),
+    ACCOUNT_DELETION_GRACE_DAYS: parseInt(
+        getEnvVar('ACCOUNT_DELETION_GRACE_DAYS', '30'),
+        10
+    ),
 };
+
+// Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]
+export function parseLockoutThresholds(
+    raw: string
+): Array<{ attempts: number; blockMin: number }> {
+    return raw.split(',').map((entry) => {
+        const [attempts, blockMin] = entry.split(':').map(Number);
+        return { attempts, blockMin };
+    });
+}
