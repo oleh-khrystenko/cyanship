@@ -9,5 +9,11 @@ export {
     logout,
     getMe,
     updatePreferredLang,
+    setPassword,
+    changePassword,
+    deletePassword,
+    verifyPassword,
+    deleteAccount,
+    confirmDeleteAccount,
     restoreAccount,
 } from './auth';

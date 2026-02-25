@@ -36,6 +36,43 @@ export async function sendMagicLink(
     await apiClient.post('/auth/magic-link/send', { email, lang, purpose });
 }
 
+export async function setPassword(password: string): Promise<void> {
+    await apiClient.post('/auth/password/set', { password });
+}
+
+export async function changePassword(
+    currentPassword: string,
+    newPassword: string
+): Promise<void> {
+    await apiClient.post('/auth/password/change', {
+        currentPassword,
+        newPassword,
+    });
+}
+
+export async function deletePassword(): Promise<void> {
+    await apiClient.post('/auth/password/delete');
+}
+
+export async function verifyPassword(
+    password: string
+): Promise<{ isValid: boolean }> {
+    const { data } = await apiClient.post<{
+        data: { isValid: boolean };
+    }>('/auth/password/verify', { password });
+    return data.data;
+}
+
+export async function deleteAccount(): Promise<void> {
+    await apiClient.post('/users/account/delete');
+}
+
+export async function confirmDeleteAccount(
+    password: string
+): Promise<void> {
+    await apiClient.post('/users/account/delete/confirm', { password });
+}
+
 export async function restoreAccount(): Promise<void> {
     await apiClient.post('/users/account/restore');
 }
