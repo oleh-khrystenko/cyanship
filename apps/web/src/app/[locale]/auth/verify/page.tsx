@@ -3,16 +3,18 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import UiButton from '@/shared/ui/UiButton';
 import { verifyMagicLink, getMe, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
-import { AxiosError } from 'axios';
 
 type VerifyStatus = 'verifying' | 'success' | 'error';
 
 function VerifyContent() {
     const t = useTranslations('auth_page.verify');
+    const tNotifications = useTranslations('notifications.auth');
     const tErrors = useTranslations();
     const router = useRouter();
     const { locale } = useParams<{ locale: string }>();
@@ -28,11 +30,47 @@ function VerifyContent() {
 
         const verify = async () => {
             try {
-                await verifyMagicLink(token);
-                const user = await getMe();
-                useAuthStore.getState().setUser(user);
-                setStatus('success');
-                router.replace(`/${locale}/check`);
+                const result = await verifyMagicLink(token);
+
+                switch (result.purpose) {
+                    case 'register': {
+                        const user = await getMe();
+                        useAuthStore.getState().setUser(user);
+                        setStatus('success');
+                        router.replace(`/${locale}/check`);
+                        break;
+                    }
+
+                    case 'login': {
+                        const user = await getMe();
+                        useAuthStore.getState().setUser(user);
+                        setStatus('success');
+                        router.replace(`/${locale}/check`);
+                        break;
+                    }
+
+                    case 'reset-password': {
+                        const user = await getMe();
+                        useAuthStore.getState().setUser(user);
+                        setStatus('success');
+                        router.replace(`/${locale}/check`);
+                        break;
+                    }
+
+                    case 'delete-account': {
+                        toast.success(tNotifications('account_deleted'));
+                        setStatus('success');
+                        router.replace(`/${locale}/auth/signin`);
+                        break;
+                    }
+
+                    default: {
+                        const user = await getMe();
+                        useAuthStore.getState().setUser(user);
+                        setStatus('success');
+                        router.replace(`/${locale}/check`);
+                    }
+                }
             } catch (err) {
                 setStatus('error');
                 const code =
@@ -48,7 +86,7 @@ function VerifyContent() {
         };
 
         void verify();
-    }, [token, router, locale, tErrors]);
+    }, [token, router, locale, tErrors, tNotifications]);
 
     if (status === 'error') {
         return (

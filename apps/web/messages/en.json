@@ -52,7 +52,8 @@
     "notifications": {
         "auth": {
             "magic_link_sent": "A sign-in link has been sent to your email",
-            "logged_out": "You have been logged out"
+            "logged_out": "You have been logged out",
+            "account_deleted": "Account deleted"
         }
     },
     "errors": {
