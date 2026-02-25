@@ -1,4 +1,9 @@
-import { HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+    BadRequestException,
+    HttpStatus,
+    NotFoundException,
+    UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 
@@ -25,6 +30,7 @@ jest.mock('../../config/env', () => ({
 
 jest.mock('bcrypt', () => ({
     compare: jest.fn(),
+    hash: jest.fn().mockResolvedValue('$2b$10$newhash'),
 }));
 
 import * as bcrypt from 'bcrypt';
@@ -87,8 +93,11 @@ describe('AuthService', () => {
                     provide: UsersService,
                     useValue: {
                         findByEmail: jest.fn(),
+                        findById: jest.fn(),
                         findOrCreateByGoogle: jest.fn(),
                         findOrCreateByEmail: jest.fn(),
+                        setPasswordHash: jest.fn().mockResolvedValue(undefined),
+                        clearPasswordHash: jest.fn().mockResolvedValue(undefined),
                     },
                 },
                 {
@@ -860,6 +869,221 @@ describe('AuthService', () => {
 
             expect(userWithPassword.lastLoginAt).toBeInstanceOf(Date);
             expect(userWithPassword.save).toHaveBeenCalled();
+        });
+    });
+
+    describe('setPassword', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        it('should hash and set password for user without password', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: null,
+            } as never);
+
+            await authService.setPassword(userId, 'newPassword123');
+
+            expect(bcrypt.hash).toHaveBeenCalledWith('newPassword123', 10);
+            expect(usersService.setPasswordHash).toHaveBeenCalledWith(
+                userId,
+                '$2b$10$newhash'
+            );
+        });
+
+        it('should throw BadRequestException if password already set', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$existinghash',
+            } as never);
+
+            await expect(
+                authService.setPassword(userId, 'newPassword123')
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw NotFoundException if user not found', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue(null);
+
+            await expect(
+                authService.setPassword(userId, 'newPassword123')
+            ).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('changePassword', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        it('should change password, revoke all tokens, and return new token pair', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$oldhash',
+            } as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            mockRedis.smembers.mockResolvedValue(['jti-1']);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('new-access')
+                .mockResolvedValueOnce('new-refresh');
+
+            const result = await authService.changePassword(
+                userId,
+                'oldPass',
+                'newPass'
+            );
+
+            expect(bcrypt.compare).toHaveBeenCalledWith(
+                'oldPass',
+                '$2b$10$oldhash'
+            );
+            expect(bcrypt.hash).toHaveBeenCalledWith('newPass', 10);
+            expect(usersService.setPasswordHash).toHaveBeenCalledWith(
+                userId,
+                '$2b$10$newhash'
+            );
+            // revokeAllUserTokens was called
+            expect(mockRedis.smembers).toHaveBeenCalledWith(
+                `refresh_family:${userId}`
+            );
+            expect(result).toEqual({
+                accessToken: 'new-access',
+                refreshToken: 'new-refresh',
+            });
+        });
+
+        it('should throw UnauthorizedException on invalid current password', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$oldhash',
+            } as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+            await expect(
+                authService.changePassword(userId, 'wrongPass', 'newPass')
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should throw BadRequestException if no password set', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: null,
+            } as never);
+
+            await expect(
+                authService.changePassword(userId, 'oldPass', 'newPass')
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw BadRequestException if user not found', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue(null);
+
+            await expect(
+                authService.changePassword(userId, 'oldPass', 'newPass')
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it('should issue new tokens after revoking all sessions', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$oldhash',
+            } as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            mockRedis.smembers.mockResolvedValue([]);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('fresh-access')
+                .mockResolvedValueOnce('fresh-refresh');
+
+            const result = await authService.changePassword(
+                userId,
+                'oldPass',
+                'newPass'
+            );
+
+            expect(result.accessToken).toBe('fresh-access');
+            expect(result.refreshToken).toBe('fresh-refresh');
+        });
+    });
+
+    describe('deletePassword', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        it('should delete password for user with password', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$hash',
+            } as never);
+
+            await authService.deletePassword(userId);
+
+            expect(usersService.clearPasswordHash).toHaveBeenCalledWith(userId);
+        });
+
+        it('should throw BadRequestException if no password to delete', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: null,
+            } as never);
+
+            await expect(
+                authService.deletePassword(userId)
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw BadRequestException if user not found', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue(null);
+
+            await expect(
+                authService.deletePassword(userId)
+            ).rejects.toThrow(BadRequestException);
+        });
+    });
+
+    describe('verifyPassword', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        it('should return true for valid password', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$hash',
+            } as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+            const result = await authService.verifyPassword(userId, 'correct');
+
+            expect(bcrypt.compare).toHaveBeenCalledWith(
+                'correct',
+                '$2b$10$hash'
+            );
+            expect(result).toBe(true);
+        });
+
+        it('should return false for invalid password', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: '$2b$10$hash',
+            } as never);
+            (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+            const result = await authService.verifyPassword(userId, 'wrong');
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false if no password set', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue({
+                ...mockUser,
+                passwordHash: null,
+            } as never);
+
+            const result = await authService.verifyPassword(userId, 'any');
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false if user not found', async () => {
+            jest.spyOn(usersService, 'findById').mockResolvedValue(null);
+
+            const result = await authService.verifyPassword(userId, 'any');
+
+            expect(result).toBe(false);
         });
     });
 });
