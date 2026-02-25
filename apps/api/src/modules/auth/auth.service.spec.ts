@@ -495,6 +495,31 @@ describe('AuthService', () => {
                 'en'
             );
         });
+
+        it('should rate limit per-email regardless of purpose', async () => {
+            mockRedis.incr.mockResolvedValue(4);
+
+            await expect(
+                authService.sendMagicLink(email, 'register')
+            ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
+
+            expect(mockRedis.incr).toHaveBeenCalledWith(
+                `ratelimit:magic:${email}`
+            );
+        });
+
+        it('should dedup per email+purpose: different purposes both send', async () => {
+            mockRedis.incr.mockResolvedValue(1);
+            // Dedup returns null for both — no existing dedup keys
+            mockRedis.get.mockResolvedValue(null);
+
+            await authService.sendMagicLink(email, 'login');
+
+            expect(mockRedis.get).toHaveBeenCalledWith(
+                `magic_dedup:${email}:login`
+            );
+            expect(emailService.sendMagicLink).toHaveBeenCalled();
+        });
     });
 
     describe('verifyMagicLink', () => {
@@ -545,6 +570,50 @@ describe('AuthService', () => {
             const result = await authService.verifyMagicLink(token);
 
             expect(result.purpose).toBe('reset-password');
+        });
+
+        it('should return purpose register from Redis payload', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({
+                    email: 'user@example.com',
+                    purpose: 'register',
+                })
+            );
+            const saveMock = jest.fn().mockResolvedValue(mockUser);
+            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue({
+                ...mockUser,
+                save: saveMock,
+            } as never);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.verifyMagicLink(token);
+
+            expect(result.purpose).toBe('register');
+        });
+
+        it('should update lastLoginAt on verify', async () => {
+            mockRedis.getdel.mockResolvedValue(
+                JSON.stringify({ email: 'user@example.com', purpose: 'login' })
+            );
+            const saveMock = jest.fn().mockResolvedValue(mockUser);
+            const userObj = {
+                ...mockUser,
+                lastLoginAt: null as Date | null,
+                save: saveMock,
+            };
+            jest.spyOn(usersService, 'findOrCreateByEmail').mockResolvedValue(
+                userObj as never
+            );
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            await authService.verifyMagicLink(token);
+
+            expect(userObj.lastLoginAt).toBeInstanceOf(Date);
+            expect(saveMock).toHaveBeenCalled();
         });
 
         it('should throw UnauthorizedException for invalid token', async () => {
