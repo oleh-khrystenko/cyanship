@@ -1,18 +1,40 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import {
+    BadRequestException,
+    Body,
+    Controller,
+    Get,
+    Patch,
+    Post,
+    Res,
+    UnauthorizedException,
+    UseGuards,
+} from '@nestjs/common';
+import {
+    Lang,
+    MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
     type ApiMessageResponse,
 } from '@lucidkit/types';
+import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ENV } from '../../config/env';
+import { AuthService } from '../auth/auth.service';
+import { VerifyPasswordDto } from '../auth/dto/verify-password.dto';
+import { EmailService } from '../auth/services/email.service';
 import { UpdateLangDto } from './dto/update-lang.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserDocument } from './schemas/user.schema';
 import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly authService: AuthService,
+        private readonly emailService: EmailService
+    ) {}
 
     @Get('me')
     @UseGuards(JwtAuthGuard)
@@ -32,6 +54,29 @@ export class UsersController {
         };
     }
 
+    @Patch('me')
+    @UseGuards(JwtAuthGuard)
+    async updateProfile(
+        @CurrentUser() user: UserDocument,
+        @Body() dto: UpdateProfileDto
+    ): Promise<{ data: Record<string, unknown> }> {
+        const updated = await this.usersService.updateProfile(
+            user._id.toString(),
+            dto
+        );
+        return {
+            data: {
+                id: updated!._id,
+                email: updated!.email,
+                profile: updated!.profile,
+                credits: updated!.credits,
+                hasPassword: !!updated!.passwordHash,
+                deletedAt: updated!.deletedAt ?? null,
+                preferredLang: updated!.preferredLang,
+            },
+        };
+    }
+
     @Patch('me/lang')
     @UseGuards(JwtAuthGuard)
     async updateLang(
@@ -43,6 +88,81 @@ export class UsersController {
             data: {
                 code: RESPONSE_CODE.LANG_UPDATED,
                 message: 'Language updated',
+            },
+        };
+    }
+
+    @Post('account/delete')
+    @UseGuards(JwtAuthGuard)
+    async deleteAccount(
+        @CurrentUser() user: UserDocument
+    ): Promise<{ data: Record<string, unknown> }> {
+        if (user.passwordHash) {
+            return { data: { requiresPassword: true } };
+        }
+        await this.authService.sendMagicLink(
+            user.email,
+            MAGIC_LINK_PURPOSE.DELETE_ACCOUNT
+        );
+        return {
+            data: {
+                requiresMagicLink: true,
+                message: 'Confirmation link sent',
+            },
+        };
+    }
+
+    @Post('account/delete/confirm')
+    @UseGuards(JwtAuthGuard)
+    async confirmDeleteAccount(
+        @CurrentUser() user: UserDocument,
+        @Body() dto: VerifyPasswordDto,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<ApiMessageResponse> {
+        const isValid = await this.authService.verifyPassword(
+            user._id.toString(),
+            dto.password
+        );
+        if (!isValid) {
+            throw new UnauthorizedException('Invalid password');
+        }
+
+        await this.usersService.softDelete(user._id.toString());
+        await this.authService.revokeAllUserTokens(user._id.toString());
+
+        const deletionDate = new Date();
+        deletionDate.setDate(
+            deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
+        );
+        await this.emailService.sendDeletionConfirmation(
+            user.email,
+            deletionDate,
+            user.preferredLang
+        );
+
+        res.clearCookie('bid_refresh', { path: '/' });
+
+        return {
+            data: {
+                code: RESPONSE_CODE.ACCOUNT_DELETED,
+                message: 'Account scheduled for deletion',
+            },
+        };
+    }
+
+    @Post('account/restore')
+    @UseGuards(JwtAuthGuard)
+    async restoreAccount(
+        @CurrentUser() user: UserDocument
+    ): Promise<ApiMessageResponse> {
+        if (!user.deletedAt) {
+            throw new BadRequestException('Account is not deleted');
+        }
+        await this.usersService.restore(user._id.toString());
+        return {
+            data: {
+                code: RESPONSE_CODE.ACCOUNT_RESTORED,
+                message: 'Account restored',
             },
         };
     }

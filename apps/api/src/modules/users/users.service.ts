@@ -114,6 +114,28 @@ export class UsersService {
         await this.userModel.findByIdAndUpdate(userId, { passwordHash: null });
     }
 
+    async softDelete(userId: string): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, {
+            deletedAt: new Date(),
+        });
+    }
+
+    async restore(userId: string): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, { deletedAt: null });
+    }
+
+    async updateProfile(
+        userId: string,
+        data: { name?: string; avatar?: string; preferredLang?: string }
+    ): Promise<UserDocument | null> {
+        const update: Record<string, unknown> = {};
+        if (data.name !== undefined) update['profile.name'] = data.name;
+        if (data.avatar !== undefined) update['profile.avatar'] = data.avatar;
+        if (data.preferredLang !== undefined)
+            update.preferredLang = data.preferredLang;
+        return this.userModel.findByIdAndUpdate(userId, update, { new: true });
+    }
+
     async hasCredit(userId: string): Promise<boolean> {
         const user = await this.userModel.findById(userId).exec();
         if (!user) return false;

@@ -124,4 +124,75 @@ export class EmailService {
 
         this.logger.log(`Magic link (${purpose}) sent to ${email}`);
     }
+
+    async sendDeletionConfirmation(
+        email: string,
+        deletionDate: Date,
+        lang: string = LANG.UK
+    ): Promise<void> {
+        const formattedDate = deletionDate.toLocaleDateString(
+            lang === LANG.UK ? 'uk-UA' : 'en-US',
+            { year: 'numeric', month: 'long', day: 'numeric' }
+        );
+
+        const t =
+            lang === LANG.UK
+                ? {
+                      subject: 'Ваш акаунт деактивовано',
+                      body: `Ваш акаунт LucidKit деактивовано. Усі дані буде остаточно видалено <strong>${formattedDate}</strong>.`,
+                      instruction:
+                          'Щоб відновити акаунт, просто увійдіть протягом 30 днів.',
+                      cta: 'Увійти',
+                      footer:
+                          'Якщо ви не запитували видалення — увійдіть у свій акаунт якомога швидше.',
+                  }
+                : {
+                      subject: 'Your account has been deactivated',
+                      body: `Your LucidKit account has been deactivated. All data will be permanently deleted on <strong>${formattedDate}</strong>.`,
+                      instruction:
+                          'To restore your account, simply sign in within 30 days.',
+                      cta: 'Sign In',
+                      footer:
+                          "If you didn't request deletion — sign in to your account as soon as possible.",
+                  };
+
+        const { error } = await this.resend.emails.send({
+            from: ENV.RESEND_FROM_EMAIL,
+            to: email,
+            subject: t.subject,
+            html: `
+<!DOCTYPE html>
+<html lang="${lang}">
+<head><meta charset="UTF-8"></head>
+<body style="font-family: sans-serif; background: #f4f4f5; padding: 40px 0;">
+  <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 40px; text-align: center;">
+    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidKit</h1>
+    <p style="color: #52525b; font-size: 16px; margin-bottom: 16px;">
+      ${t.body}
+    </p>
+    <p style="color: #52525b; font-size: 16px; margin-bottom: 32px;">
+      ${t.instruction}
+    </p>
+    <a href="${ENV.WEB_URL}"
+       style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none;
+              padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+      ${t.cta}
+    </a>
+    <p style="color: #a1a1aa; font-size: 13px; margin-top: 32px;">
+      ${t.footer}
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+        });
+
+        if (error) {
+            this.logger.error(
+                `Failed to send deletion confirmation to ${email}: ${error.message}`
+            );
+            throw new Error(`Failed to send email: ${error.message}`);
+        }
+
+        this.logger.log(`Deletion confirmation sent to ${email}`);
+    }
 }

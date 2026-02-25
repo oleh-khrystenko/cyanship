@@ -1,4 +1,5 @@
 import {
+    forwardRef,
     Inject,
     Logger,
     Module,
@@ -28,7 +29,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
             secret: ENV.JWT_ACCESS_SECRET,
             signOptions: { expiresIn: '1h' },
         }),
-        UsersModule,
+        forwardRef(() => UsersModule),
     ],
     controllers: [AuthController],
     providers: [
@@ -38,7 +39,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         GoogleStrategy,
         redisProvider,
     ],
-    exports: [AuthService, REDIS_CLIENT],
+    exports: [AuthService, EmailService, REDIS_CLIENT],
 })
 export class AuthModule implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(AuthModule.name);
