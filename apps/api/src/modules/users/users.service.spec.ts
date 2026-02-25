@@ -19,6 +19,8 @@ const mockUserDoc = (overrides = {}) => ({
 const mockModel = {
     findOne: jest.fn(),
     findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findByIdAndDelete: jest.fn(),
     create: jest.fn(),
 };
 
@@ -277,6 +279,84 @@ describe('UsersService', () => {
             });
 
             expect(await service.hasCredit('nonexistent')).toBe(false);
+        });
+    });
+
+    describe('softDelete', () => {
+        it('should set deletedAt to current date', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.softDelete('507f1f77bcf86cd799439011');
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { deletedAt: expect.any(Date) }
+            );
+        });
+    });
+
+    describe('restore', () => {
+        it('should clear deletedAt', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.restore('507f1f77bcf86cd799439011');
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { deletedAt: null }
+            );
+        });
+    });
+
+    describe('updateProfile', () => {
+        it('should update name and avatar', async () => {
+            const updated = mockUserDoc({
+                profile: { name: 'New Name', avatar: 'https://new.url' },
+            });
+            mockModel.findByIdAndUpdate.mockResolvedValue(updated);
+
+            const result = await service.updateProfile(
+                '507f1f77bcf86cd799439011',
+                { name: 'New Name', avatar: 'https://new.url' }
+            );
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                {
+                    'profile.name': 'New Name',
+                    'profile.avatar': 'https://new.url',
+                },
+                { new: true }
+            );
+            expect(result).toBe(updated);
+        });
+
+        it('should update only preferredLang when only lang provided', async () => {
+            const updated = mockUserDoc({ preferredLang: 'en' });
+            mockModel.findByIdAndUpdate.mockResolvedValue(updated);
+
+            await service.updateProfile('507f1f77bcf86cd799439011', {
+                preferredLang: 'en',
+            });
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { preferredLang: 'en' },
+                { new: true }
+            );
+        });
+
+        it('should not include undefined fields in update', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(mockUserDoc());
+
+            await service.updateProfile('507f1f77bcf86cd799439011', {
+                name: 'Only Name',
+            });
+
+            const updateArg = mockModel.findByIdAndUpdate.mock.calls[0][1];
+            expect(updateArg).toEqual({ 'profile.name': 'Only Name' });
+            expect(updateArg).not.toHaveProperty('profile.avatar');
+            expect(updateArg).not.toHaveProperty('preferredLang');
         });
     });
 });

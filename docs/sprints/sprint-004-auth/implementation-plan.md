@@ -12,7 +12,7 @@
 | 2 | [Password Auth](./phase-2-password-auth.md) | check-email, login/password, brute force | 1 |
 | 3 | [Magic Link Purpose](./phase-3-magic-link-purpose.md) | Redis purpose context, email templates | 1 |
 | 4 | [Password Management](./phase-4-password-management.md) | set/change/delete/verify password | 2, 3 |
-| 5 | [Account Deletion](./phase-5-account-deletion.md) | soft delete, recovery, confirmation | 4 |
+| 5 | [Account Deletion](./phase-5-account-deletion.md) | soft delete, recovery, confirmation, hard delete cron | 4 |
 | 6 | [Frontend Signin](./phase-6-frontend-signin.md) | progressive disclosure, API functions | 2, 3 |
 | 7 | [Frontend Profile](./phase-7-frontend-profile.md) | profile page, security, danger zone | 4, 5, 6 |
 | — | [Sprint 005: Testing](../sprint-005-auth-testing/README.md) | unit, integration, manual E2E | 7 |

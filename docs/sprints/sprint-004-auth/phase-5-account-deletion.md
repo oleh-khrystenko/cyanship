@@ -218,15 +218,39 @@ async sendDeletionConfirmation(email: string, deletionDate: Date, lang: string) 
 
 ---
 
-## 5.6 Hard delete (cron) — окрема задача
+## 5.6 Hard delete (cron)
 
-Hard delete після grace period виходить за scope цього спринту. Потребує:
-- NestJS cron job (`@nestjs/schedule`)
-- Query: `{ deletedAt: { $lte: new Date(Date.now() - GRACE_DAYS * 86400000) } }`
-- Cascade: видалити user, reports, payments, Redis tokens
-- Звільнити email для нової реєстрації
+> **Статус:** Done
+> **Залежності:** 5.1–5.5 (soft delete + recovery повністю реалізовані)
+> **Пакети:** `@nestjs/schedule` (додати в api)
 
-**Можна реалізувати пізніше як окрему задачу.**
+### Scope
+
+Cron job для остаточного видалення акаунтів після завершення grace period (`ACCOUNT_DELETION_GRACE_DAYS`).
+
+### Задачі
+
+1. **Встановити `@nestjs/schedule`** в `apps/api`
+2. **Створити `CleanupService`** (`apps/api/src/modules/users/cleanup.service.ts`):
+   - `@Cron(CronExpression.EVERY_DAY_AT_3AM)` — щоденний запуск о 03:00
+   - Query: `{ deletedAt: { $lte: new Date(Date.now() - GRACE_DAYS * 86400000) } }`
+   - Для кожного знайденого user:
+     - Видалити всі Redis tokens (`revokeAllUserTokens`)
+     - Видалити пов'язані reports (коли модуль реалізований)
+     - Видалити пов'язані payments (коли модуль реалізований)
+     - Видалити документ user з MongoDB
+   - Logger: кількість видалених акаунтів
+3. **Зареєструвати `ScheduleModule.forRoot()`** в `app.module.ts`
+4. **Додати `CleanupService`** до `UsersModule` providers
+
+### Acceptance criteria
+
+- [x] Акаунти з `deletedAt` старше `ACCOUNT_DELETION_GRACE_DAYS` днів видаляються щоденно
+- [x] Redis tokens видалені для кожного hard-deleted user
+- [x] Email звільняється для нової реєстрації після hard delete
+- [x] Unit тести: mock cron trigger → перевірка cascade delete
+- [x] Логування кількості видалених акаунтів за кожен запуск
+- [x] Акаунти в межах grace period НЕ видаляються
 
 ---
 
