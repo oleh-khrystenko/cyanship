@@ -10,21 +10,18 @@
 
 | Файл | Опис |
 |------|------|
-| [automated-tests.md](./automated-tests.md) | Unit + Integration тести: describe/it блоки, мокування, assertions |
+| [automated-tests.md](./automated-tests.md) | Service prompt для AI агента: створення unit, e2e та frontend тестів |
 | [manual-test-plan.md](./manual-test-plan.md) | Покрокові сценарії для ручного тестування з чеклистами |
 
 ## Scope
 
 ### automated-tests.md
 
-- **Unit тести (apps/api):**
-  - `auth.service.spec.ts` — checkEmail, loginWithPassword, progressive lockout, magic link з purpose, anti-spam dedup, password management (set/change/delete/verify), session invalidation, account deletion
-  - `users.service.spec.ts` — password hash methods, soft delete, restore, updateProfile
-  - `email.service.spec.ts` — templates per purpose + lang, deletion confirmation
-- **Integration/E2E тести (apps/api):**
-  - Всі auth endpoints (check-email, login/password, magic-link/send, magic-link/verify, password/*, refresh, logout)
-  - Users endpoints (GET /me, PATCH /me, account/delete, account/restore)
-  - Cross-cutting: rate limiting, cookie handling, error responses
+Service prompt для AI агента (Claude Code). Описує що тестувати, а не як — агент сам читає кодову базу та пише тести.
+
+- **Backend unit тести:** auth.service, users.service, email.service, auth.controller (новий), users.controller (новий)
+- **Backend e2e тести:** всі auth + users endpoints, rate limiting, cookies, error format
+- **Frontend unit тести:** axios interceptors, auth API functions, Zustand store, AuthGuard, AuthInitializer, middleware
 
 ### manual-test-plan.md
 
@@ -45,7 +42,8 @@ Sprint 005 виконується після повної реалізації s
 ## Verification
 
 1. `pnpm --filter @lucidkit/types build` — types компілюються
-2. `pnpm --filter api test` — всі unit тести pass
-3. `pnpm --filter api test:e2e` — всі integration тести pass
-4. `pnpm build` — повний build без помилок
-5. Manual: пройти весь чеклист з manual-test-plan.md
+2. `pnpm --filter api test` — всі backend unit тести pass
+3. `pnpm --filter api test:e2e` — всі backend e2e тести pass
+4. `pnpm --filter web test` — всі frontend unit тести pass
+5. `pnpm build` — повний build без помилок
+6. Manual: пройти весь чеклист з manual-test-plan.md
