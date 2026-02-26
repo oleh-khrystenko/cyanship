@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
@@ -22,6 +22,26 @@ const DeleteAccountModal = ({
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !submitting) {
+                onClose();
+            }
+        },
+        [onClose, submitting]
+    );
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
+
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget && !submitting) {
+            onClose();
+        }
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -47,7 +67,10 @@ const DeleteAccountModal = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={handleBackdropClick}
+        >
             <div className="bg-background mx-4 w-full max-w-md rounded-xl p-6 shadow-xl">
                 <h2 className="text-text-primary text-lg font-semibold">
                     {t('title')}

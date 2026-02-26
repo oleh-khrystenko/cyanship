@@ -9,9 +9,13 @@ import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { setPassword, changePassword, deletePassword } from '@/shared/api';
+import {
+    setPassword,
+    changePassword,
+    deletePassword,
+    getMe,
+} from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
-import { getMe } from '@/shared/api';
 
 export type ProfileMode = 'new' | 'set-password' | 'reset-password' | null;
 
@@ -319,7 +323,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             onClick={() => setConfirmDelete(false)}
                             disabled={submitting}
                         >
-                            {t('hide_password')}
+                            {t('cancel')}
                         </UiButton>
                     </div>
                 </div>

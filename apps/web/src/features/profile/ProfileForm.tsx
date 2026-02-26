@@ -23,6 +23,19 @@ const LANG_OPTIONS = [
     { value: 'en', label: 'English' },
 ];
 
+function parseName(fullName?: string): { firstName: string; lastName: string } {
+    if (!fullName) return { firstName: '', lastName: '' };
+    const parts = fullName.trim().split(/\s+/);
+    return {
+        firstName: parts[0] ?? '',
+        lastName: parts.slice(1).join(' '),
+    };
+}
+
+function combineName(firstName: string, lastName: string): string {
+    return [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+}
+
 const ProfileForm = ({
     user,
     editable,
@@ -33,7 +46,9 @@ const ProfileForm = ({
     const locale = useLocale();
     const setUser = useAuthStore((s) => s.setUser);
 
-    const [name, setName] = useState(user.profile.name ?? '');
+    const parsed = parseName(user.profile.name);
+    const [firstName, setFirstName] = useState(parsed.firstName);
+    const [lastName, setLastName] = useState(parsed.lastName);
     const [avatar, setAvatar] = useState(user.profile.avatar ?? '');
     const [lang, setLang] = useState<Lang>(
         (user.preferredLang as Lang) ?? (locale as Lang)
@@ -44,7 +59,7 @@ const ProfileForm = ({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (nameRequired && !name.trim()) {
+        if (nameRequired && !firstName.trim()) {
             setNameError(t('name_required'));
             return;
         }
@@ -53,8 +68,9 @@ const ProfileForm = ({
         setNameError('');
 
         try {
+            const fullName = combineName(firstName, lastName);
             await updateProfile({
-                name: name.trim() || undefined,
+                name: fullName || undefined,
                 avatar: avatar.trim() || undefined,
                 preferredLang: lang,
             });
@@ -63,7 +79,7 @@ const ProfileForm = ({
             toast.success(t('saved'));
             onSaved?.();
         } catch {
-            toast.error(t('saved'));
+            toast.error(t('save_error'));
         } finally {
             setSubmitting(false);
         }
@@ -81,12 +97,26 @@ const ProfileForm = ({
                 <UiInput
                     type="text"
                     placeholder={t('name_placeholder')}
-                    value={name}
+                    value={firstName}
                     onChange={(e) => {
-                        setName(e.target.value);
+                        setFirstName(e.target.value);
                         if (nameError) setNameError('');
                     }}
                     error={nameError || undefined}
+                    disabled={!editable}
+                    size="lg"
+                />
+            </div>
+
+            <div>
+                <label className="text-text-secondary mb-1 block text-sm">
+                    {t('last_name_label')}
+                </label>
+                <UiInput
+                    type="text"
+                    placeholder={t('last_name_placeholder')}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     disabled={!editable}
                     size="lg"
                 />

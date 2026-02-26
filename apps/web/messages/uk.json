@@ -81,7 +81,8 @@
             "avatar_placeholder": "https://example.com/photo.jpg",
             "language_label": "Мова",
             "save_button": "Зберегти",
-            "saved": "Профіль оновлено"
+            "saved": "Профіль оновлено",
+            "save_error": "Не вдалося зберегти профіль"
         },
         "security": {
             "heading": "Безпека",
@@ -98,7 +99,8 @@
             "password_changed": "Пароль змінено. Інші пристрої було відключено",
             "password_deleted": "Пароль видалено",
             "password_invalid": "Невірний пароль",
-            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google."
+            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google.",
+            "cancel": "Скасувати"
         },
         "danger_zone": {
             "heading": "Небезпечна зона",

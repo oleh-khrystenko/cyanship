@@ -81,7 +81,8 @@
             "avatar_placeholder": "https://example.com/photo.jpg",
             "language_label": "Language",
             "save_button": "Save",
-            "saved": "Profile updated"
+            "saved": "Profile updated",
+            "save_error": "Failed to save profile"
         },
         "security": {
             "heading": "Security",
@@ -98,7 +99,8 @@
             "password_changed": "Password changed. Other devices have been signed out",
             "password_deleted": "Password deleted",
             "password_invalid": "Invalid password",
-            "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google."
+            "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google.",
+            "cancel": "Cancel"
         },
         "danger_zone": {
             "heading": "Danger zone",
