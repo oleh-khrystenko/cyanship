@@ -63,6 +63,18 @@ export const ENV = {
         getEnvVar('AUTH_LOGIN_ATTEMPTS_TTL_MIN', '15'),
         10
     ),
+    AUTH_MAGIC_LINK_TTL_MIN: parseInt(
+        getEnvVar('AUTH_MAGIC_LINK_TTL_MIN', '15'),
+        10
+    ),
+    AUTH_MAGIC_LINK_RATE_LIMIT: parseInt(
+        getEnvVar('AUTH_MAGIC_LINK_RATE_LIMIT', '3'),
+        10
+    ),
+    AUTH_MAGIC_LINK_RATE_WINDOW_MIN: parseInt(
+        getEnvVar('AUTH_MAGIC_LINK_RATE_WINDOW_MIN', '15'),
+        10
+    ),
     AUTH_MAGIC_LINK_DEDUP_SEC: parseInt(
         getEnvVar('AUTH_MAGIC_LINK_DEDUP_SEC', '60'),
         10

@@ -44,6 +44,8 @@ export default function SigninPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [showMagicLinkSuggestion, setShowMagicLinkSuggestion] =
+        useState(false);
     const [deletedAt, setDeletedAt] = useState<string | null>(null);
     const [deletedDaysLeft, setDeletedDaysLeft] = useState(0);
 
@@ -135,7 +137,10 @@ export default function SigninPage() {
                     ? err.response?.data?.error?.code
                     : undefined;
 
-            if (code === 'UNAUTHORIZED') {
+            if (code === 'RATE_LIMIT_EXCEEDED') {
+                setShowMagicLinkSuggestion(true);
+                handleError(err);
+            } else if (code === 'UNAUTHORIZED') {
                 setErrorMessage(t('invalid_credentials'));
             } else {
                 handleError(err);
@@ -172,11 +177,26 @@ export default function SigninPage() {
         }
     };
 
+    const handleSendMagicLinkFromPassword = async () => {
+        setSubmitting(true);
+        try {
+            await sendMagicLink(email, locale, 'login');
+            setState('magic-link-sent');
+            setShowMagicLinkSuggestion(false);
+        } catch {
+            setState('magic-link-sent');
+            setShowMagicLinkSuggestion(false);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const goBackToEmail = () => {
         setState('email');
         setPassword('');
         setErrorMessage('');
         setSubmitting(false);
+        setShowMagicLinkSuggestion(false);
     };
 
     // --- Header ---
@@ -318,6 +338,20 @@ export default function SigninPage() {
                     t('signin_button')
                 )}
             </UiButton>
+
+            {showMagicLinkSuggestion && (
+                <UiButton
+                    type="button"
+                    variant="filled"
+                    size="lg"
+                    className="w-full justify-center rounded-lg border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+                    disabled={submitting}
+                    onClick={handleSendMagicLinkFromPassword}
+                    IconLeft={Mail}
+                >
+                    {t('login_via_email_link')}
+                </UiButton>
+            )}
         </form>
     );
 

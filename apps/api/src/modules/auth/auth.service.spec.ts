@@ -20,6 +20,10 @@ jest.mock('../../config/env', () => ({
         RESEND_API_KEY: 'test-resend-key',
         AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
         AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
+        AUTH_MAGIC_LINK_TTL_MIN: 15,
+        AUTH_MAGIC_LINK_RATE_LIMIT: 3,
+        AUTH_MAGIC_LINK_RATE_WINDOW_MIN: 15,
+        AUTH_MAGIC_LINK_DEDUP_SEC: 60,
         ACCOUNT_DELETION_GRACE_DAYS: 30,
     },
     parseLockoutThresholds: (raw: string) =>

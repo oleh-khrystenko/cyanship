@@ -36,9 +36,6 @@ interface JwtPayload {
     jti?: string;
 }
 
-const MAGIC_LINK_TTL = 900; // 15 minutes
-const RATE_LIMIT_TTL = 900; // 15 minutes
-const RATE_LIMIT_MAX = 3;
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days in seconds
 const ROTATION_GRACE_PERIOD = 10; // 10 seconds for concurrent tab requests
 
@@ -171,14 +168,15 @@ export class AuthService {
     ): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
+        const rateLimitTtl = ENV.AUTH_MAGIC_LINK_RATE_WINDOW_MIN * 60;
 
         const count = await this.redis.incr(rateLimitKey);
 
         if (count === 1) {
-            await this.redis.expire(rateLimitKey, RATE_LIMIT_TTL);
+            await this.redis.expire(rateLimitKey, rateLimitTtl);
         }
 
-        if (count > RATE_LIMIT_MAX) {
+        if (count > ENV.AUTH_MAGIC_LINK_RATE_LIMIT) {
             throw new TooManyRequestsException();
         }
 
@@ -191,9 +189,10 @@ export class AuthService {
 
         const token = randomBytes(32).toString('hex');
         const payload = JSON.stringify({ email: normalizedEmail, purpose });
+        const magicLinkTtl = ENV.AUTH_MAGIC_LINK_TTL_MIN * 60;
 
         const pipeline = this.redis.pipeline();
-        pipeline.set(`magic:${token}`, payload, 'EX', MAGIC_LINK_TTL);
+        pipeline.set(`magic:${token}`, payload, 'EX', magicLinkTtl);
         pipeline.set(dedupKey, token, 'EX', ENV.AUTH_MAGIC_LINK_DEDUP_SEC);
         await pipeline.exec();
 

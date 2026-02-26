@@ -28,6 +28,7 @@
             "magic_link_sent_description": "We sent a link to {email}. Check your inbox and click the link to sign in.",
             "invalid_credentials": "Invalid email or password",
             "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
+            "login_via_email_link": "Sign in via email link",
             "session_revoked": "Session ended. Please sign in again",
             "error_generic": "Something went wrong. Please try again"
         },
