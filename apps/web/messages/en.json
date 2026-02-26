@@ -68,6 +68,55 @@
             "unknown": "Something went wrong. Please try again later"
         }
     },
+    "profile_page": {
+        "heading": "Profile",
+        "new_heading": "Complete your profile",
+        "form": {
+            "name_label": "First name",
+            "name_placeholder": "Your name",
+            "name_required": "Name is required",
+            "last_name_label": "Last name",
+            "last_name_placeholder": "Your last name",
+            "avatar_label": "Avatar (URL)",
+            "avatar_placeholder": "https://example.com/photo.jpg",
+            "language_label": "Language",
+            "save_button": "Save",
+            "saved": "Profile updated"
+        },
+        "security": {
+            "heading": "Security",
+            "set_password": "Set password",
+            "set_password_optional": "Set password (optional)",
+            "change_password": "Change password",
+            "delete_password": "Delete password",
+            "current_password_label": "Current password",
+            "new_password_label": "New password",
+            "password_placeholder": "Minimum 8 characters",
+            "show_password": "Show password",
+            "hide_password": "Hide password",
+            "password_set": "Password set",
+            "password_changed": "Password changed. Other devices have been signed out",
+            "password_deleted": "Password deleted",
+            "password_invalid": "Invalid password",
+            "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google."
+        },
+        "danger_zone": {
+            "heading": "Danger zone",
+            "delete_title": "Delete account",
+            "delete_description": "After deletion you have 30 days to restore your account.",
+            "delete_button": "Delete account"
+        }
+    },
+    "delete_account_modal": {
+        "title": "Delete account",
+        "description": "Are you sure? Your account will be deactivated. You will have 30 days to restore it.",
+        "password_label": "Enter password to confirm",
+        "cancel_button": "Cancel",
+        "confirm_button": "Delete account",
+        "magic_link_sent": "Confirmation link sent to your email",
+        "deleted": "Account deactivated",
+        "invalid_password": "Invalid password"
+    },
     "components": {
         "header": {
             "signin": "Sign in",

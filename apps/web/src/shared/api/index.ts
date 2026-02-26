@@ -13,6 +13,7 @@ export {
     changePassword,
     deletePassword,
     verifyPassword,
+    updateProfile,
     deleteAccount,
     confirmDeleteAccount,
     restoreAccount,

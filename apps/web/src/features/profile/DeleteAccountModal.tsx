@@ -1,0 +1,108 @@
+'use client';
+
+import { FormEvent, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { AxiosError } from 'axios';
+import UiButton from '@/shared/ui/UiButton';
+import UiInput from '@/shared/ui/UiInput';
+import UiSpinner from '@/shared/ui/UiSpinner';
+import { confirmDeleteAccount } from '@/shared/api';
+
+interface DeleteAccountModalProps {
+    onClose: () => void;
+    onDeleted: () => void;
+}
+
+const DeleteAccountModal = ({
+    onClose,
+    onDeleted,
+}: DeleteAccountModalProps) => {
+    const t = useTranslations('delete_account_modal');
+
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError('');
+
+        try {
+            await confirmDeleteAccount(password);
+            onDeleted();
+        } catch (err) {
+            const code =
+                err instanceof AxiosError
+                    ? err.response?.data?.error?.code
+                    : undefined;
+            if (code === 'UNAUTHORIZED') {
+                setError(t('invalid_password'));
+            } else {
+                setError(t('invalid_password'));
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-background mx-4 w-full max-w-md rounded-xl p-6 shadow-xl">
+                <h2 className="text-text-primary text-lg font-semibold">
+                    {t('title')}
+                </h2>
+                <p className="text-text-secondary mt-2 text-sm">
+                    {t('description')}
+                </p>
+
+                <form
+                    onSubmit={handleSubmit}
+                    className="mt-4 space-y-4"
+                >
+                    <div>
+                        <label className="text-text-secondary mb-1 block text-sm">
+                            {t('password_label')}
+                        </label>
+                        <UiInput
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            error={error || undefined}
+                            required
+                            size="lg"
+                            autoFocus
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-3">
+                        <UiButton
+                            type="button"
+                            variant="text"
+                            size="md"
+                            onClick={onClose}
+                            disabled={submitting}
+                        >
+                            {t('cancel_button')}
+                        </UiButton>
+                        <UiButton
+                            type="submit"
+                            variant="filled"
+                            size="md"
+                            className="rounded-lg bg-red-600 hover:bg-red-700"
+                            disabled={submitting || !password}
+                        >
+                            {submitting ? (
+                                <UiSpinner size="sm" />
+                            ) : (
+                                t('confirm_button')
+                            )}
+                        </UiButton>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default DeleteAccountModal;

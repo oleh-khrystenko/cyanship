@@ -2,6 +2,7 @@ import type {
     AuthResponse,
     CheckEmailResponse,
     MagicLinkPurpose,
+    UpdateProfileDto,
     UserProfile,
 } from '@lucidkit/types';
 
@@ -43,11 +44,16 @@ export async function setPassword(password: string): Promise<void> {
 export async function changePassword(
     currentPassword: string,
     newPassword: string
-): Promise<void> {
-    await apiClient.post('/auth/password/change', {
+): Promise<{ accessToken: string }> {
+    const { data } = await apiClient.post<{
+        data: { accessToken: string };
+    }>('/auth/password/change', {
         currentPassword,
         newPassword,
     });
+
+    setAccessToken(data.data.accessToken);
+    return data.data;
 }
 
 export async function deletePassword(): Promise<void> {
@@ -63,8 +69,27 @@ export async function verifyPassword(
     return data.data;
 }
 
-export async function deleteAccount(): Promise<void> {
-    await apiClient.post('/users/account/delete');
+export async function updateProfile(
+    dto: UpdateProfileDto
+): Promise<UserProfile> {
+    const { data } = await apiClient.patch<{ data: UserProfile }>(
+        '/users/me',
+        dto
+    );
+    return data.data;
+}
+
+export async function deleteAccount(): Promise<{
+    requiresPassword?: boolean;
+    requiresMagicLink?: boolean;
+}> {
+    const { data } = await apiClient.post<{
+        data: {
+            requiresPassword?: boolean;
+            requiresMagicLink?: boolean;
+        };
+    }>('/users/account/delete');
+    return data.data;
 }
 
 export async function confirmDeleteAccount(

@@ -68,6 +68,55 @@
             "unknown": "Сталася помилка. Спробуйте пізніше"
         }
     },
+    "profile_page": {
+        "heading": "Профіль",
+        "new_heading": "Заповніть профіль",
+        "form": {
+            "name_label": "Ім'я",
+            "name_placeholder": "Ваше ім'я",
+            "name_required": "Ім'я обов'язкове",
+            "last_name_label": "Прізвище",
+            "last_name_placeholder": "Ваше прізвище",
+            "avatar_label": "Аватар (URL)",
+            "avatar_placeholder": "https://example.com/photo.jpg",
+            "language_label": "Мова",
+            "save_button": "Зберегти",
+            "saved": "Профіль оновлено"
+        },
+        "security": {
+            "heading": "Безпека",
+            "set_password": "Встановити пароль",
+            "set_password_optional": "Встановити пароль (опціонально)",
+            "change_password": "Змінити пароль",
+            "delete_password": "Видалити пароль",
+            "current_password_label": "Поточний пароль",
+            "new_password_label": "Новий пароль",
+            "password_placeholder": "Мінімум 8 символів",
+            "show_password": "Показати пароль",
+            "hide_password": "Сховати пароль",
+            "password_set": "Пароль встановлено",
+            "password_changed": "Пароль змінено. Інші пристрої було відключено",
+            "password_deleted": "Пароль видалено",
+            "password_invalid": "Невірний пароль",
+            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google."
+        },
+        "danger_zone": {
+            "heading": "Небезпечна зона",
+            "delete_title": "Видалення акаунту",
+            "delete_description": "Після видалення у вас є 30 днів для відновлення акаунту.",
+            "delete_button": "Видалити акаунт"
+        }
+    },
+    "delete_account_modal": {
+        "title": "Видалення акаунту",
+        "description": "Ви впевнені? Ваш акаунт буде деактивовано. У вас буде 30 днів для відновлення.",
+        "password_label": "Введіть пароль для підтвердження",
+        "cancel_button": "Скасувати",
+        "confirm_button": "Видалити акаунт",
+        "magic_link_sent": "Посилання для підтвердження надіслано на пошту",
+        "deleted": "Акаунт деактивовано",
+        "invalid_password": "Невірний пароль"
+    },
     "components": {
         "header": {
             "signin": "Увійти",
