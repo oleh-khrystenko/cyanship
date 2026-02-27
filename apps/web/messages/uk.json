@@ -1,11 +1,133 @@
 {
-    "all_pages": {
-        "slogan": "Створи відчуття, що не зникає."
-    },
     "welcome_page": {
         "head": {
-            "title": "Lucid Kit — Створи відчуття, що не зникає",
-            "description": "Онлайн-сервіс для створення персоналізованих wow-привітань у вигляді красивих сторінок. Без реєстрацій і зайвого — просто обери подію, введи ім’я та отримай емоційне привітання за кілька секунд."
+            "title": "LucidKit – Захист ваших ставок",
+            "description": "LucidKit – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу."
+        },
+        "heading": "LucidKit — ваш надійний партнер у світі ставок.",
+        "description": "Тут ви знайдете інструменти та рішення для безпечного управління ставками.",
+        "cta": "Розпочати"
+    },
+    "auth_page": {
+        "signin": {
+            "heading": "Вхід до LucidKit",
+            "subheading": "Аналізуйте фото автомобілів та виявляйте приховані дефекти перед покупкою",
+            "email_label": "Email",
+            "email_placeholder": "your@email.com",
+            "continue_button": "Продовжити",
+            "or_divider": "або",
+            "google_button": "Увійти через Google",
+            "password_label": "Пароль",
+            "password_placeholder": "Введіть пароль",
+            "signin_button": "Увійти",
+            "forgot_password": "Забули пароль?",
+            "forgot_password_sent": "Якщо акаунт з цією адресою існує, ми надіслали посилання для зміни пароля",
+            "change_email": "Змінити",
+            "other_email": "Інший email",
+            "magic_link_sent_title": "Перевірте пошту",
+            "magic_link_sent_description": "Ми надіслали посилання на {email}. Перевірте папку \"Вхідні\" та натисніть на посилання для входу.",
+            "invalid_credentials": "Невірний email або пароль",
+            "too_many_attempts": "Забагато спроб. Спробуйте через {minutes} хвилин або скористайтесь посиланням «Забули пароль?»",
+            "login_via_email_link": "Увійти через email-посилання",
+            "session_revoked": "Сесію завершено. Увійдіть знову",
+            "error_generic": "Щось пішло не так. Спробуйте ще раз"
+        },
+        "recovery": {
+            "title": "Акаунт деактивовано",
+            "description": "Ваш акаунт було видалено {date}. Він буде остаточно видалено через {days} днів.",
+            "restore_button": "Відновити акаунт",
+            "logout_button": "Вийти",
+            "restored": "Акаунт відновлено!"
+        },
+        "callback": {
+            "loading": "Авторизація…"
+        },
+        "verify": {
+            "verifying": "Перевіряємо посилання…",
+            "redirecting": "Перенаправлення…",
+            "error_heading": "Посилання недійсне або прострочене",
+            "error_description": "Посилання для входу, яке ви використали, більше не дійсне. Будь ласка, запросіть нове.",
+            "retry_button": "Спробувати знову"
+        }
+    },
+    "notifications": {
+        "auth": {
+            "magic_link_sent": "Посилання надіслано на вашу пошту",
+            "logged_out": "Ви вийшли з акаунту",
+            "account_deleted": "Акаунт видалено"
+        }
+    },
+    "errors": {
+        "auth": {
+            "unauthorized": "Час сесії вичерпано. Увійдіть знову",
+            "invalid_magic_link": "Посилання недійсне або прострочене"
+        },
+        "generic": {
+            "validation_error": "Перевірте введені дані",
+            "rate_limit_exceeded": "Забагато запитів. Спробуйте через 15 хвилин",
+            "internal_error": "Сталася помилка. Спробуйте пізніше",
+            "unknown": "Сталася помилка. Спробуйте пізніше"
+        }
+    },
+    "profile_page": {
+        "heading": "Профіль",
+        "new_heading": "Заповніть профіль",
+        "form": {
+            "name_label": "Ім'я",
+            "name_placeholder": "Ваше ім'я",
+            "name_required": "Ім'я обов'язкове",
+            "last_name_label": "Прізвище",
+            "last_name_placeholder": "Ваше прізвище",
+            "avatar_label": "Аватар (URL)",
+            "avatar_placeholder": "https://example.com/photo.jpg",
+            "language_label": "Мова",
+            "save_button": "Зберегти",
+            "saved": "Профіль оновлено",
+            "save_error": "Не вдалося зберегти профіль"
+        },
+        "security": {
+            "heading": "Безпека",
+            "set_password": "Встановити пароль",
+            "set_password_optional": "Встановити пароль (опціонально)",
+            "change_password": "Змінити пароль",
+            "delete_password": "Видалити пароль",
+            "current_password_label": "Поточний пароль",
+            "new_password_label": "Новий пароль",
+            "password_placeholder": "Мінімум 8 символів",
+            "show_password": "Показати пароль",
+            "hide_password": "Сховати пароль",
+            "password_set": "Пароль встановлено",
+            "password_changed": "Пароль змінено. Інші пристрої було відключено",
+            "password_deleted": "Пароль видалено",
+            "password_invalid": "Невірний пароль",
+            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google.",
+            "cancel": "Скасувати"
+        },
+        "danger_zone": {
+            "heading": "Небезпечна зона",
+            "delete_title": "Видалення акаунту",
+            "delete_description": "Після видалення у вас є 30 днів для відновлення акаунту.",
+            "delete_button": "Видалити акаунт"
+        }
+    },
+    "delete_account_modal": {
+        "title": "Видалення акаунту",
+        "description": "Ви впевнені? Ваш акаунт буде деактивовано. У вас буде 30 днів для відновлення.",
+        "password_label": "Введіть пароль для підтвердження",
+        "cancel_button": "Скасувати",
+        "confirm_button": "Видалити акаунт",
+        "magic_link_sent": "Посилання для підтвердження надіслано на пошту",
+        "deleted": "Акаунт деактивовано",
+        "invalid_password": "Невірний пароль"
+    },
+    "components": {
+        "header": {
+            "signin": "Увійти",
+            "logout": "Вийти",
+            "credits": "кредитів"
+        },
+        "change_lang": {
+            "label": "Змінити мову"
         }
     }
 }

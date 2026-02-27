@@ -1,66 +1,64 @@
 'use client';
 
-import { FC, useMemo } from 'react';
+import { FC } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { UA, US } from 'country-flag-icons/react/3x2';
-import { CLang, TLang } from '@acw/types';
-import { IProps } from './types';
+import { LANG } from '@lucidkit/types';
+import { ChangeLangProps } from './types';
 import UiSelect from '@/shared/ui/UiSelect';
+import type { UiSelectOption } from '@/shared/ui/UiSelect';
+import { updatePreferredLang } from '@/shared/api';
+import { useAuthStore } from '@/stores/auth';
 
-const LANGS = [
+const LANGS: UiSelectOption[] = [
     {
         label: (
             <div className="flex items-center gap-1.5">
-                <span data-darkreader-ignore suppressHydrationWarning>
-                    <US title="United States" className="h-5 w-7" />
-                </span>
-                <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300">
-                    Eng
-                </span>
+                <US title="United States" className="h-5 w-7" />
+                <span className="text-sm font-bold">Eng</span>
             </div>
         ),
-        value: CLang.EN,
+        value: LANG.EN,
     },
     {
         label: (
             <div className="flex items-center gap-1.5">
-                <span data-darkreader-ignore suppressHydrationWarning>
-                    <UA title="Ukraine" className="h-5 w-7" />
-                </span>
-                <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300">
-                    Укр
-                </span>
+                <UA title="Ukraine" className="h-5 w-7" />
+                <span className="text-sm font-bold">Укр</span>
             </div>
         ),
-        value: CLang.UK,
+        value: LANG.UK,
     },
 ];
 
-const ChangeLang: FC<IProps> = ({ withoutText, expandTop }) => {
+const ChangeLang: FC<ChangeLangProps> = () => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const activeLocale = useLocale();
-
-    const selected = useMemo(
-        () => LANGS.find((lang) => lang.value === activeLocale) ?? LANGS[0],
-        [activeLocale]
-    );
+    const t = useTranslations('components.change_lang');
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
     const handleChangeLang = (value: string) => {
         const allSearchParams = searchParams.toString();
         const newPath = pathname.replace(`/${activeLocale}`, '');
         const newUrl = `/${value}${newPath}${allSearchParams ? `?${allSearchParams}` : ''}`;
         router.replace(newUrl);
+
+        if (isAuthenticated) {
+            void updatePreferredLang(value);
+        }
     };
 
     return (
         <UiSelect
-            label="Change language"
+            label={t('label')}
             options={LANGS}
-            value={selected.value}
+            value={activeLocale}
             onChange={handleChangeLang}
+            variant="outlined"
+            size="sm"
         />
     );
 };

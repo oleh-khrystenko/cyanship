@@ -1,7 +1,17 @@
 import { ReactNode } from 'react';
 
-export interface IProps {
+export type UiSwitchSize = 'sm' | 'md' | 'lg';
+
+/**
+ * Base props for UiSwitch component
+ */
+export interface UiSwitchProps {
     checked: boolean;
-    onChange?: (event: boolean) => void;
+    onChange?: (checked: boolean) => void;
     children?: ReactNode;
+    size?: UiSwitchSize;
+    className?: string;
+    disabled?: boolean;
+    id?: string;
+    name?: string;
 }

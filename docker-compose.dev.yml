@@ -7,6 +7,14 @@ services:
         volumes:
             - mongo_data_dev:/data/db
 
+    redis:
+        image: redis:7-alpine
+        restart: unless-stopped
+        ports:
+            - '6379:6379'
+        volumes:
+            - redis_data_dev:/data
+
     api:
         image: node:20-alpine
         working_dir: /app
@@ -14,8 +22,8 @@ services:
             sh -c "corepack enable &&
             pnpm install --frozen-lockfile
             --filter ./apps/api...
-            --filter ./packages/shared...
             --filter ./packages/types... &&
+            pnpm --filter ./packages/types build &&
             pnpm --filter ./apps/api dev"
         environment:
             - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
@@ -23,8 +31,15 @@ services:
             - CI=true
             - NODE_ENV=development
             - PORT=${API_PORT}
-            - MONGODB_URI=mongodb://mongo:27017/${MONGODB_DB_NAME}
-            - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+            - MONGODB_URI=mongodb://mongo:27017/lucidkit
+            - REDIS_URL=redis://redis:6379
+            - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+            - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+            - WEB_URL=http://localhost:${WEB_PORT}
+            - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+            - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+            - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+            - RESEND_API_KEY=${RESEND_API_KEY}
             - TSC_WATCHFILE=UsePolling
             - TSC_WATCHDIRECTORY=UsePolling
         ports:
@@ -35,6 +50,7 @@ services:
             - /app/node_modules
         depends_on:
             - mongo
+            - redis
 
     web:
         image: node:20-alpine
@@ -43,8 +59,8 @@ services:
             sh -c "corepack enable &&
             pnpm install --frozen-lockfile
             --filter ./apps/web...
-            --filter ./packages/shared...
             --filter ./packages/types... &&
+            pnpm --filter ./packages/types build &&
             pnpm --filter ./apps/web dev"
         environment:
             - CI=true
@@ -53,6 +69,7 @@ services:
             - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
             - PNPM_STORE_DIR=/pnpm-store
             - PORT=${WEB_PORT}
+            - API_INTERNAL_URL=http://api:${API_PORT}
             - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
             - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
             - WATCHPACK_POLLING=true
@@ -68,4 +85,5 @@ services:
 
 volumes:
     mongo_data_dev:
+    redis_data_dev:
     pnpm-store:

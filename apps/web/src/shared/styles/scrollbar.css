@@ -5,5 +5,5 @@
 
 *::-webkit-scrollbar-thumb {
     border-radius: 9999px;
-    background: var(--graphite);
+    background: var(--border);
 }
