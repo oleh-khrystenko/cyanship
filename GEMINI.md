@@ -1,18 +1,74 @@
-# Gemini Project: LucidKit
+# LucidKit
+> Modern monorepo SaaS boilerplate with Next.js 16, NestJS 11, and Feature-Sliced Design.
 
-This document provides a comprehensive overview of the LucidKit project, its structure, and development conventions to assist Gemini in understanding and contributing to the codebase.
+## Tech Stack
+- **Core:** TypeScript, Node.js, pnpm workspaces, Turborepo.
+- **Frontend:** Next.js 16 (App Router), React 19, TailwindCSS 4, Zustand (state), next-intl (i18n), class-variance-authority (UI).
+- **Backend:** NestJS 11, Mongoose (MongoDB), Redis (caching/rate-limiting), Passport.js (OAuth/JWT).
+- **Communication:** Axios, Resend (email), Google OAuth.
+- **Infra:** Docker, docker-compose.
 
-## Project Overview
+## Architecture Overview
+- **Monorepo:** Розділення на `apps/web`, `apps/api` та `packages/shared`.
+- **Frontend (apps/web):** Feature-Sliced Design (FSD). Шари: `app`, `widgets`, `features`, `entities`, `shared`.
+- **Backend (apps/api):** Modular NestJS. Кожен домен — окремий модуль.
+- **Types (packages/types):** Single source of truth для типів, енамів та контрактів API.
 
-LucidKit is a monorepo project built with pnpm workspaces and managed by Turborepo. It consists of a web application and an API.
+## Project Structure
+- `apps/web/src/app/[locale]` — Routing та Layouts (i18n enabled).
+- `apps/web/src/features` — Бізнес-фічі (auth, profile).
+- `apps/web/src/shared/ui` — Атомарні UI компоненти.
+- `apps/api/src/modules` — Модулі бекенду (auth, users, payments, etc.).
+- `apps/api/src/common` — Глобальні Guards, Filters, Decorators.
+- `packages/types/src` — Спільні TypeScript дефініції.
+- `docs/conventions` — Обов'язкові інженерні стандарти.
 
-- **Web Application (`apps/web`):** A modern frontend built with Next.js 16 (using the App Router and React 19), styled with TailwindCSS 4, and utilizing Zustand for state management. It supports internationalization (i18n) with `next-intl`.
+## Domain Model & Schema
+- **User:** Основна сутність. Зберігає `email`, `profile` (name, avatar), `credits`, `passwordHash`, `deletedAt` (для soft delete), `preferredLang`.
+- **Mongoose Schema:** `apps/api/src/modules/users/schemas/user.schema.ts`.
+- **Types:** `packages/types/src/entities/user.ts`.
 
-- **API (`apps/api`):** A robust backend powered by NestJS 11, using MongoDB with Mongoose for data persistence.
+## Module Dependency Map
+- `apps/web` → `@lucidkit/types`
+- `apps/api` → `@lucidkit/types`
+- `packages/types` → Standalone (Zod для валідації).
 
-- **Shared Packages (`packages`):** The `packages` directory holds code shared across the monorepo, such as TypeScript types in `@lucidkit/types`.
+## Key Patterns (CodeDNA)
+- **Створення Endpoint:** `apps/api/src/modules/users/users.controller.ts`
+- **Валідація (DTO):** `apps/api/src/modules/auth/dto/login-password.dto.ts`
+- **Auth Guard:** `apps/api/src/common/guards/jwt-auth.guard.ts`
+- **Error Handling:** `apps/api/src/common/filters/all-exceptions.filter.ts`
+- **Frontend Store:** `apps/web/src/stores/auth/authStore.ts`
+- **Frontend Auth Guard:** `apps/web/src/features/auth/AuthGuard.tsx`
+- **Environment Config:** `apps/api/src/config/env.ts` (Fail-fast policy).
 
-The project is fully containerized with Docker, providing consistent development and production environments.
+## API Surface
+### Auth Module (`/auth`)
+- `GET /google`, `GET /google/callback` — OAuth.
+- `POST /check-email` — Перевірка існування користувача.
+- `POST /login/password` — Login за паролем.
+- `POST /magic-link/send` — Відправка лінку для входу/реєстрації.
+- `POST /magic-link/verify` — Верифікація токена.
+- `POST /refresh`, `POST /logout` — Керування сесією.
+- `POST /password/set`, `POST /password/change`, `POST /password/delete` — Керування паролем.
+
+### Users Module (`/users`)
+- `GET /me` — Профіль поточного користувача.
+- `PATCH /me` — Оновлення профілю.
+- `PATCH /me/lang` — Оновлення мови.
+- `POST /account/delete`, `POST /account/delete/confirm` — Soft delete.
+- `POST /account/restore` — Відновлення акаунту.
+
+## Environment & Config
+- **Backend:** `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `REDIS_URL`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`.
+- **Frontend:** `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`.
+- **Policy:** Fail-fast (система крашиться при відсутності критичних змінних).
+
+## Dev Workflow
+- `pnpm dev` — Запуск усіх додатків локально.
+- `pnpm build` — Build проекту.
+- `pnpm lint`, `pnpm format` — Перевірка стилю.
+- `docker compose -f docker-compose.dev.yml up` — Dev оточення в Docker.
 
 <!-- MANUAL:START -->
 # Rules
@@ -31,80 +87,8 @@ All AI agents MUST read and follow rules in `docs/conventions/`:
 Full index: [docs/conventions/README.md](docs/conventions/README.md)
   <!-- MANUAL:END -->
 
-## Building and Running
-
-The following commands are essential for working with the LucidKit project.
-
-### Development
-
-- **Run all applications in development mode:**
-
-    ```bash
-    pnpm dev
-    ```
-
-- **Build all applications:**
-    ```bash
-    pnpm build
-    ```
-
-### Linting and Formatting
-
-- **Lint all applications:**
-
-    ```bash
-    pnpm lint
-    ```
-
-- **Format the entire codebase:**
-    ```bash
-    pnpm format
-    ```
-
-### Docker
-
-- **Run the development environment (with a local MongoDB):**
-
-    ```bash
-    docker compose -f docker-compose.dev.yml up --build
-    ```
-
-    - Frontend: `http://localhost:3000`
-    - Backend: `http://localhost:4000`
-
-- **Run the production environment (requires MongoDB Atlas connection string in `.env`):**
-    ```bash
-    docker compose up --build -d
-    ```
-
-## Development Conventions
-
-### Frontend (`apps/web`)
-
-The frontend follows the **Feature-Sliced Design** methodology, organizing code into the following directories:
-
-- `src/app`: Core application logic, routing, and layouts.
-- `src/widgets`: Composite UI components (e.g., Header, Footer).
-- `src/features`: Specific application features (e.g., authentication, settings).
-- `src/entities`: Business-level entities and models.
-- `src/shared`: Reusable code, including UI components, utilities, and configuration.
-
-**UI Components:** Reusable UI components are located in `src/shared/ui` and are built using `class-variance-authority` for flexible styling.
-
-**State Management:** Global state is managed with Zustand. Each feature has its own store in `src/stores` (e.g., `useSettingsStore`). No Provider wrapper needed.
-
-**Styling:** The project uses TailwindCSS with a "light" and "dark" theme system. Theme variables are defined in `src/shared/styles/themes.css`.
-
-### Backend (`apps/api`)
-
-The backend follows the standard NestJS modular architecture. Core business logic is organized into modules within the `src/modules` directory.
-
-**Configuration:** Environment variables are managed via the `@nestjs/config` module and accessed through the `ENV` object in `src/config/env.ts`.
-
-### Shared Code
-
-Code shared between the `web` and `api` applications, such as type definitions, is located in the `packages` directory. This promotes code reuse and consistency across the monorepo.
-
-### Commits and Versioning
-
-_TODO: Add information about commit message conventions and versioning strategy (e.g., Conventional Commits, Semantic Versioning)._
+## Known Complexities & Debt
+- **Prisma Reference:** У секції `Rules` згадується `prisma/schema.prisma`, хоча проект використовує Mongoose. Це застаріла інструкція, яку слід ігнорувати або оновити при переході на Prisma.
+- **Soft Delete Logic:** Реалізовано через `deletedAt` в `users.service.ts` з можливістю відновлення протягом `ACCOUNT_DELETION_GRACE_DAYS`.
+- **I18n Sync:** Складна логіка синхронізації мови між Frontend (Next.js middleware) та Backend (`preferredLang` у користувача). Див. `docs/conventions/i18n.md`.
+- **Tailwind 4:** Використання нової версії Tailwind з CSS-first конфігурацією (`apps/web/src/app/globals.css`).

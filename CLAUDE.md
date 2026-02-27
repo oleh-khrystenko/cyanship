@@ -73,14 +73,16 @@ lucidkit/
 │   │   │       ├── auth/                 # ✅ Повністю реалізований
 │   │   │       │   ├── auth.module.ts    # Passport, JWT, UsersModule, Redis (OnModuleInit/Destroy)
 │   │   │       │   ├── auth.controller.ts # 12 endpoints: Google OAuth, magic-link, password, refresh, logout
-│   │   │       │   ├── auth.service.ts   # Tokens, magic links, rate limiting, brute force, password, rotation
+│   │   │       │   ├── auth.service.ts   # Tokens, magic links, rate limiting, brute force, password, rotation (503 lines)
 │   │   │       │   ├── auth.service.spec.ts  # 40+ test cases
+│   │   │       │   ├── auth.controller.spec.ts
 │   │   │       │   ├── services/
 │   │   │       │   │   ├── email.service.ts       # Resend: 4 email templates (login/register/reset/delete) × 2 langs
 │   │   │       │   │   └── email.service.spec.ts
 │   │   │       │   ├── strategies/
-│   │   │       │   │   ├── jwt.strategy.ts        # Extracts user from DB by sub claim
-│   │   │       │   │   └── google.strategy.ts     # Validates Google OAuth profile
+│   │   │       │   │   ├── jwt.strategy.ts        # Extracts user from DB by sub claim, checks deletedAt
+│   │   │       │   │   ├── jwt.strategy.spec.ts
+│   │   │       │   │   └── google.strategy.ts     # Validates Google OAuth profile (email verified check)
 │   │   │       │   └── dto/              # 7 Zod DTOs (createZodDto)
 │   │   │       │       ├── check-email.dto.ts
 │   │   │       │       ├── login-password.dto.ts
@@ -92,6 +94,7 @@ lucidkit/
 │   │   │       ├── users/                # ✅ Повністю реалізований
 │   │   │       │   ├── users.module.ts
 │   │   │       │   ├── users.controller.ts  # 6 endpoints: getMe, updateProfile, updateLang, deleteAccount, confirmDelete, restore
+│   │   │       │   ├── users.controller.spec.ts
 │   │   │       │   ├── users.service.ts     # CRUD, findOrCreate, profile, soft-delete, restore, credits
 │   │   │       │   ├── users.service.spec.ts
 │   │   │       │   ├── cleanup.service.ts   # @Cron(EVERY_DAY_AT_3AM) hard-delete expired accounts (30-day grace)
@@ -103,8 +106,11 @@ lucidkit/
 │   │   │       ├── reports/              # 🟡 Skeleton (empty controller + service)
 │   │   │       ├── storage/              # 🟡 Skeleton (no controller, service only)
 │   │   │       └── payments/             # 🟡 Skeleton (empty controller + service)
-│   │   ├── test/app.e2e-spec.ts          # E2E: MongoMemoryServer + mocked Redis
-│   │   └── Dockerfile                    # 4-stage: base → deps → build → runtime
+│   │   ├── test/
+│   │   │   ├── app.e2e-spec.ts           # E2E: MongoMemoryServer + mocked Redis
+│   │   │   ├── auth.e2e-spec.ts          # E2E: Full auth flows with stateful Redis mock (in-memory Map)
+│   │   │   └── jest-e2e.json             # E2E Jest config
+│   │   └── Dockerfile                    # 4-stage: base → deps → build → runtime (node dist/main.js)
 │   │
 │   └── web/                              # Next.js frontend
 │       ├── src/
@@ -115,7 +121,7 @@ lucidkit/
 │       │   │       ├── layout.tsx        # Providers, AuthInitializer, Header, Mulish font (local woff2)
 │       │   │       ├── page.tsx          # Welcome page (public)
 │       │   │       ├── auth/
-│       │   │       │   ├── signin/page.tsx   # Email → password/magic-link decision, recovery flow
+│       │   │       │   ├── signin/page.tsx   # Email → password/magic-link decision, recovery flow (450 lines)
 │       │   │       │   ├── callback/page.tsx # OAuth callback handler
 │       │   │       │   └── verify/page.tsx   # Magic link verification (Suspense boundary, handles 4 purposes)
 │       │   │       └── (protected)/
@@ -123,7 +129,7 @@ lucidkit/
 │       │   │           └── profile/page.tsx  # Profile management (form + security + danger zone)
 │       │   ├── entities/brand/           # Logo component (server component, text-based)
 │       │   ├── features/
-│       │   │   ├── auth/                 # AuthInitializer, AuthGuard
+│       │   │   ├── auth/                 # AuthInitializer, AuthGuard + specs
 │       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiSelect)
 │       │   │   ├── change-theme/         # Theme toggle (next-themes, dynamic ssr:false)
 │       │   │   └── profile/              # ProfileForm, SecuritySection, DangerZone, DeleteAccountModal
@@ -146,7 +152,9 @@ lucidkit/
 │       │   │   └── auth/authStore.ts     # user, isAuthenticated, isLoading (Zustand)
 │       │   ├── i18n/                     # routing.ts, request.ts
 │       │   └── middleware.ts             # Route protection (cookie check) + i18n via createIntlMiddleware
-│       ├── messages/                     # uk.json, en.json
+│       ├── messages/                     # uk.json, en.json (133 lines each)
+│       ├── jest.config.ts               # jsdom, ts-jest, moduleNameMapper aliases
+│       ├── postcss.config.mjs           # @tailwindcss/postcss (v4)
 │       └── Dockerfile                    # 4-stage with build args for NEXT_PUBLIC_* vars
 │
 ├── packages/
@@ -169,14 +177,18 @@ lucidkit/
 │   ├── README.md                         # Index of doc blocks
 │   ├── conventions/                      # tone.md, fail-fast.md, i18n.md
 │   ├── planning/auth-flow.md             # 714 рядків — повна специфікація
-│   ├── sprints/sprint-003-auth/          # Manual E2E test plan (18 scenarios), i18n sync plan
+│   ├── sprints/
+│   │   ├── sprint-003-auth/              # i18n sync plan
+│   │   ├── sprint-004-auth/              # 7 phases implementation plan + gap analysis
+│   │   └── sprint-005-auth-testing/      # Automated + manual test plans
 │   ├── audits/auth/                      # Auth implementation audit (9 findings)
-│   └── prompts/                          # Service prompts для агентів
+│   └── prompts/                          # Service prompts для агентів (codex, gemini)
 ├── docker-compose.yml                    # Production (api + web)
 ├── docker-compose.dev.yml                # Dev (mongo:7 + redis:7-alpine + api + web, polling)
 ├── turbo.json                            # Build pipeline (dev, build, lint, test)
 ├── .prettierrc                           # singleQuote, tabWidth 4, trailingComma es5, tailwindcss plugin for web
 ├── pnpm-workspace.yaml                   # apps/*, packages/*
+├── AGENTS.md                             # Architecture documentation for AI agents
 └── package.json                          # Root scripts (dev, build, lint, format, test)
 ```
 
@@ -201,7 +213,7 @@ Zod: `packages/types/src/entities/user.ts`
 
 **Індекси:** `{ email: 1 }` (unique), `{ 'provider.id': 1 }` (sparse)
 
-**UsersService методи:** findByEmail, findById, findOrCreateByGoogle (enriches missing profile data), findOrCreateByEmail, updateProfile, updateLang, softDelete, restore, deductCredit, hasCredit
+**UsersService методи:** findByEmail, findById, findOrCreateByGoogle (enriches missing profile data), findOrCreateByEmail, updateProfile, updateLang, softDelete, restore, deductCredit, hasCredit, setPasswordHash, clearPasswordHash
 
 ### Redis Keys (тимчасові)
 
@@ -227,7 +239,7 @@ Zod: `packages/types/src/entities/user.ts`
 | `enums/response-type.ts` | `RESPONSE_TYPE = { SUCCESS, ERROR }`, `ResponseType` type |
 | `entities/user.ts`     | Zod: `UserSchema`, `UserProfileSchema`, `UserCreditsSchema`, `UserProviderSchema`, `UserProfileDataSchema`; Types: `User`, `UserProfile` |
 | `contracts/api.ts`     | `ApiErrorSchema`, `ApiError`, `ApiResponse<T>`, `ApiMessageResponse` (з `code: ResponseCode`)              |
-| `contracts/auth.ts`    | `MAGIC_LINK_PURPOSE` (LOGIN, REGISTER, RESET_PASSWORD, DELETE_ACCOUNT), `SendMagicLinkSchema`, `VerifyMagicLinkSchema`, `AuthResponseSchema`, `CheckEmailSchema`, `CheckEmailResponseSchema`, `LoginPasswordSchema`, `SetPasswordSchema`, `ChangePasswordSchema`, `VerifyPasswordSchema` + types |
+| `contracts/auth.ts`    | `MAGIC_LINK_PURPOSE` (LOGIN, REGISTER, RESET_PASSWORD, DELETE_ACCOUNT), `MagicLinkPurposeSchema`, `SendMagicLinkSchema`, `VerifyMagicLinkSchema`, `AuthResponseSchema`, `CheckEmailSchema`, `CheckEmailResponseSchema`, `LoginPasswordSchema`, `SetPasswordSchema`, `ChangePasswordSchema`, `VerifyPasswordSchema` + types |
 | `contracts/users.ts`   | `UpdateLangSchema`, `UpdateProfileSchema`                                                                   |
 | `validation/common.ts` | `emailSchema`, `passwordSchema` (min 8), `objectIdSchema` (regex /^[a-f\d]{24}$/i)                         |
 
@@ -245,13 +257,13 @@ AppModule (root)
 ├── AuthModule
 │   ├── PassportModule
 │   ├── JwtModule (JWT_ACCESS_SECRET, 1h)
-│   ├── UsersModule (imported)
+│   ├── UsersModule (imported via forwardRef)
 │   ├── Providers: [AuthService, EmailService, JwtStrategy, GoogleStrategy, redisProvider]
-│   └── Exports: [AuthService, REDIS_CLIENT]
-│   → lifecycle: OnModuleInit (redis ping), OnModuleDestroy (redis quit)
+│   ├── Exports: [AuthService, EmailService, REDIS_CLIENT]
+│   └── Lifecycle: OnModuleInit (redis ping), OnModuleDestroy (redis quit)
 ├── UsersModule
 │   ├── MongooseModule.forFeature(User)
-│   ├── AuthModule (imported — circular via forwardRef)
+│   ├── AuthModule (imported via forwardRef — circular)
 │   ├── Providers: [UsersService, CleanupService]
 │   └── Exports: [UsersService]
 ├── ReportsModule — skeleton (empty controller + service)
@@ -329,13 +341,13 @@ getMe(@CurrentUser() user: UserDocument) {
 }
 ```
 
-- `JwtAuthGuard` — перевіряє Bearer token (JWT strategy витягує user з DB за `sub`)
+- `JwtAuthGuard` — перевіряє Bearer token (JWT strategy витягує user з DB за `sub`, перевіряє `deletedAt`)
 - `@CurrentUser()` — витягує `request.user`
 
 ### Auth flow (Google OAuth)
 
 1. Client → `GET /api/auth/google` → Google consent screen (scope: email, profile)
-2. Google → `GET /api/auth/google/callback` → GoogleStrategy validates → AuthService.handleGoogleAuth()
+2. Google → `GET /api/auth/google/callback` → GoogleStrategy validates (email verified check) → AuthService.handleGoogleAuth()
 3. findOrCreateByGoogle() (enriches missing name/avatar) → generateTokens()
 4. API sets `bid_refresh` cookie → redirect to `{WEB_URL}/auth/callback` (з `?account_deleted=true` якщо deletedAt)
 5. Web callback page: `refreshToken()` → `getMe()` → update store → redirect to `/profile`
@@ -343,7 +355,7 @@ getMe(@CurrentUser() user: UserDocument) {
 ### Auth flow (Magic Link)
 
 1. Client → `POST /api/auth/magic-link/send` { email, purpose }
-2. API normalizes email → Redis rate limit (3/15min) → dedup check (60s) → generate 64-byte hex token → Redis SET magic:{token}={email,purpose} (15min TTL) → Resend HTML email (template за purpose)
+2. API normalizes email → Redis rate limit (3/15min) → dedup check (60s) → generate 64-byte hex token → Redis SET magic:{token}={email,purpose} (15min TTL) → Resend HTML email (template за purpose × lang)
 3. User clicks link → `GET {WEB_URL}/auth/verify?token=XXX`
 4. Web verify page → `POST /api/auth/magic-link/verify` { token }
 5. API: Redis GETDEL magic:{token} (atomic) → findOrCreateByEmail() → generateTokens() → sets `bid_refresh` cookie → returns `{ user, accessToken, purpose }`
@@ -543,6 +555,9 @@ Prefix: `/api` (global). Rate limit: 60 req/60s (ThrottlerGuard).
 - `AUTH_PASSWORD_MIN_LENGTH` → `'8'`
 - `AUTH_LOCKOUT_THRESHOLDS` → `'5:1,10:5,20:15'` (attempts:blockMinutes)
 - `AUTH_LOGIN_ATTEMPTS_TTL_MIN` → `'15'`
+- `AUTH_MAGIC_LINK_TTL_MIN` → `'15'`
+- `AUTH_MAGIC_LINK_RATE_LIMIT` → `'3'`
+- `AUTH_MAGIC_LINK_RATE_WINDOW_MIN` → `'15'`
 - `AUTH_MAGIC_LINK_DEDUP_SEC` → `'60'`
 - `ACCOUNT_DELETION_GRACE_DAYS` → `'30'`
 
@@ -582,6 +597,9 @@ pnpm --filter api test:watch                          # Watch mode
 pnpm --filter api test:e2e                            # E2E тести (MongoMemoryServer + mocked Redis)
 pnpm --filter api test:cov                            # Coverage
 
+# Web тести
+pnpm --filter web test                                # Unit тести (jsdom)
+
 # Docker
 docker compose -f docker-compose.dev.yml up --build   # Dev: mongo:7 + redis:7-alpine + apps (polling)
 docker compose up --build -d                          # Prod: MongoDB Atlas
@@ -620,6 +638,7 @@ pnpm --filter @lucidkit/types dev                     # Watch mode
 - TooManyRequestsException: кастомний HttpException (429) в auth.service.ts
 - Password hashing: bcrypt з salt rounds 10
 - Account deletion: soft-delete (deletedAt field) → 30-day grace → hard-delete via CleanupService cron
+- ESLint: test files (spec.ts, e2e-spec.ts) мають ослаблені правила (unbound-method, no-unsafe-assignment)
 
 ## Known Complexities
 
@@ -703,6 +722,21 @@ File watching в Docker потребує polling: `TSC_WATCHFILE=UsePolling` (AP
 - `?mode=set-password` — OAuth user встановлює пароль
 - `?mode=reset-password` — скидання пароля через magic link
 - No mode — стандартний перегляд/редагування профілю
+
+### Signin page — state machine
+
+Файл: `apps/web/src/app/[locale]/auth/signin/page.tsx` (450 lines)
+States: `email | loading | password | magic-link-sent | recovery | error`. Handles progressive UI disclosure, retry-after header parsing for rate limits, account recovery with grace period countdown (days remaining).
+
+### Email service — bilingual templates
+
+Файл: `apps/api/src/modules/auth/services/email.service.ts`
+4 email templates × 2 languages (UK + EN). Purpose-specific subjects and bodies. Uses `user.preferredLang` for localization. Formats deletion date localized (uk-UA / en-US).
+
+### E2E tests — stateful Redis mock
+
+Файл: `apps/api/test/auth.e2e-spec.ts`
+Uses in-memory Map to simulate Redis operations (SET, GET, GETDEL, DEL, INCR, EXPIRE, SADD, SMEMBERS, SREM, PIPELINE). Allows full auth flow testing without real Redis connection. MongoMemoryServer for MongoDB.
 
 ### Known audit findings
 
