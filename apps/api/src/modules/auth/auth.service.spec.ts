@@ -380,6 +380,84 @@ describe('AuthService', () => {
                 refreshToken: 'refresh-token',
             });
         });
+
+        it('should return accountDeleted: true for deleted user', async () => {
+            const deletedUser = {
+                ...mockUser,
+                deletedAt: new Date('2026-01-01'),
+            };
+            jest.spyOn(usersService, 'findOrCreateByGoogle').mockResolvedValue(
+                deletedUser as never
+            );
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.handleGoogleAuth(googleProfile);
+
+            expect(result.accountDeleted).toBe(true);
+            expect(result.tokens).toEqual({
+                accessToken: 'access-token',
+                refreshToken: 'refresh-token',
+            });
+        });
+
+        it('should not include accountDeleted for active user', async () => {
+            jest.spyOn(usersService, 'findOrCreateByGoogle').mockResolvedValue(
+                mockUser as never
+            );
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            const result = await authService.handleGoogleAuth(googleProfile);
+
+            expect(result.accountDeleted).toBeUndefined();
+        });
+    });
+
+    describe('sendDeletionConfirmationEmail', () => {
+        it('should call emailService.sendDeletionConfirmation with correct date', async () => {
+            const before = new Date();
+            before.setDate(before.getDate() + 30);
+
+            await authService.sendDeletionConfirmationEmail(
+                'test@gmail.com',
+                'uk'
+            );
+
+            const after = new Date();
+            after.setDate(after.getDate() + 30);
+
+            expect(
+                emailService.sendDeletionConfirmation
+            ).toHaveBeenCalledWith(
+                'test@gmail.com',
+                expect.any(Date),
+                'uk'
+            );
+
+            const calledDate = (
+                emailService.sendDeletionConfirmation as jest.Mock
+            ).mock.calls[0][1] as Date;
+            expect(calledDate.getTime()).toBeGreaterThanOrEqual(
+                before.getTime()
+            );
+            expect(calledDate.getTime()).toBeLessThanOrEqual(
+                after.getTime()
+            );
+        });
+
+        it('should pass lang parameter to emailService', async () => {
+            await authService.sendDeletionConfirmationEmail(
+                'test@gmail.com',
+                'en'
+            );
+
+            expect(
+                emailService.sendDeletionConfirmation
+            ).toHaveBeenCalledWith('test@gmail.com', expect.any(Date), 'en');
+        });
     });
 
     describe('sendMagicLink', () => {
@@ -830,6 +908,21 @@ describe('AuthService', () => {
                 authService.checkEmail('test@gmail.com', ip)
             ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
         });
+
+        it('should use pipeline to increment and set expiry for rate limit counter', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
+
+            await authService.checkEmail('test@gmail.com', ip);
+
+            expect(mockPipeline.incr).toHaveBeenCalledWith(
+                `check_email:${ip}`
+            );
+            expect(mockPipeline.expire).toHaveBeenCalledWith(
+                `check_email:${ip}`,
+                60
+            );
+            expect(mockPipeline.exec).toHaveBeenCalled();
+        });
     });
 
     describe('loginWithPassword', () => {
@@ -1038,6 +1131,26 @@ describe('AuthService', () => {
             );
 
             expect(result.accountDeleted).toBeUndefined();
+        });
+
+        it('should normalize email (trim + toLowerCase) before lookup', async () => {
+            jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
+                userWithPassword as never
+            );
+            (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+
+            await authService.loginWithPassword(
+                '  Test@Gmail.COM  ',
+                password,
+                ip
+            );
+
+            expect(usersService.findByEmail).toHaveBeenCalledWith(
+                'test@gmail.com'
+            );
         });
     });
 

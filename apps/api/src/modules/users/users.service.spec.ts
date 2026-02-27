@@ -139,6 +139,52 @@ describe('UsersService', () => {
                 id: 'google-123',
             });
         });
+
+        it('should enrich missing name from Google profile', async () => {
+            const existing = mockUserDoc({
+                profile: { name: undefined, avatar: 'https://existing.url' },
+            });
+            existing.save.mockResolvedValue(existing);
+            mockModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(existing),
+            });
+
+            await service.findOrCreateByGoogle(googleProfile);
+
+            expect(existing.profile.name).toBe('John Doe');
+        });
+
+        it('should enrich missing avatar from Google profile', async () => {
+            const existing = mockUserDoc({
+                profile: { name: 'Existing Name', avatar: undefined },
+            });
+            existing.save.mockResolvedValue(existing);
+            mockModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(existing),
+            });
+
+            await service.findOrCreateByGoogle(googleProfile);
+
+            expect(existing.profile.avatar).toBe('https://photo.url');
+        });
+
+        it('should NOT overwrite existing name with Google data', async () => {
+            const existing = mockUserDoc({
+                profile: {
+                    name: 'Existing Name',
+                    avatar: 'https://existing.url',
+                },
+            });
+            existing.save.mockResolvedValue(existing);
+            mockModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(existing),
+            });
+
+            await service.findOrCreateByGoogle(googleProfile);
+
+            expect(existing.profile.name).toBe('Existing Name');
+            expect(existing.profile.avatar).toBe('https://existing.url');
+        });
     });
 
     describe('findOrCreateByEmail', () => {
@@ -279,6 +325,50 @@ describe('UsersService', () => {
             });
 
             expect(await service.hasCredit('nonexistent')).toBe(false);
+        });
+    });
+
+    describe('updateLang', () => {
+        it('should update preferredLang for user', async () => {
+            mockModel.findByIdAndUpdate.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(undefined),
+            });
+
+            await service.updateLang('507f1f77bcf86cd799439011', 'en');
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { preferredLang: 'en' }
+            );
+        });
+    });
+
+    describe('setPasswordHash', () => {
+        it('should store password hash via findByIdAndUpdate', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.setPasswordHash(
+                '507f1f77bcf86cd799439011',
+                '$2b$10$hash'
+            );
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { passwordHash: '$2b$10$hash' }
+            );
+        });
+    });
+
+    describe('clearPasswordHash', () => {
+        it('should set passwordHash to null', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.clearPasswordHash('507f1f77bcf86cd799439011');
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { passwordHash: null }
+            );
         });
     });
 

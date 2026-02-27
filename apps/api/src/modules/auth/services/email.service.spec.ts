@@ -164,5 +164,125 @@ describe('EmailService', () => {
                 emailService.sendMagicLink(email, token, 'login', 'uk')
             ).rejects.toThrow('Failed to send email: Send failed');
         });
+
+        it('should use English reset-password template', async () => {
+            await emailService.sendMagicLink(
+                email,
+                token,
+                'reset-password',
+                'en'
+            );
+
+            expect(sendSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subject: 'Reset Your Password',
+                })
+            );
+            const html = sendSpy.mock.calls[0][0].html as string;
+            expect(html).toContain('Reset Password');
+        });
+
+        it('should use English delete-account template', async () => {
+            await emailService.sendMagicLink(
+                email,
+                token,
+                'delete-account',
+                'en'
+            );
+
+            expect(sendSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subject: 'Confirm Account Deletion',
+                })
+            );
+            const html = sendSpy.mock.calls[0][0].html as string;
+            expect(html).toContain('Confirm Deletion');
+        });
+    });
+
+    describe('sendDeletionConfirmation', () => {
+        const email = 'user@example.com';
+        const deletionDate = new Date('2026-03-29T12:00:00Z');
+
+        it('should send UK deletion confirmation with correct subject', async () => {
+            await emailService.sendDeletionConfirmation(
+                email,
+                deletionDate,
+                'uk'
+            );
+
+            expect(sendSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: email,
+                    subject: 'Ваш акаунт деактивовано',
+                })
+            );
+        });
+
+        it('should send EN deletion confirmation with correct subject', async () => {
+            await emailService.sendDeletionConfirmation(
+                email,
+                deletionDate,
+                'en'
+            );
+
+            expect(sendSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: email,
+                    subject: 'Your account has been deactivated',
+                })
+            );
+        });
+
+        it('should include formatted deletion date in HTML', async () => {
+            await emailService.sendDeletionConfirmation(
+                email,
+                deletionDate,
+                'uk'
+            );
+
+            const html = sendSpy.mock.calls[0][0].html as string;
+            // Date should be formatted in uk-UA locale
+            expect(html).toContain('2026');
+        });
+
+        it('should include WEB_URL link for recovery', async () => {
+            await emailService.sendDeletionConfirmation(
+                email,
+                deletionDate,
+                'uk'
+            );
+
+            const html = sendSpy.mock.calls[0][0].html as string;
+            expect(html).toContain('http://localhost:3000');
+        });
+
+        it('should use EN template for non-UK lang', async () => {
+            await emailService.sendDeletionConfirmation(
+                email,
+                deletionDate,
+                'fr' as any
+            );
+
+            expect(sendSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subject: 'Your account has been deactivated',
+                })
+            );
+        });
+
+        it('should throw error when Resend fails', async () => {
+            sendSpy.mockResolvedValue({
+                error: { message: 'Send failed' },
+            });
+
+            await expect(
+                emailService.sendDeletionConfirmation(
+                    email,
+                    deletionDate,
+                    'uk'
+                )
+            ).rejects.toThrow('Failed to send email: Send failed');
+        });
     });
 });
