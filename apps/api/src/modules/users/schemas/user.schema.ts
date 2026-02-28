@@ -59,8 +59,41 @@ export class User {
 
     @Prop()
     lastLoginAt?: Date;
+
+    @Prop({
+        type: {
+            provider: { type: String, default: null },
+            providerCustomerId: { type: String, default: null },
+            providerSubscriptionId: { type: String, default: null },
+            planCode: { type: String, default: null },
+            currency: { type: String, default: null },
+            subscriptionStatus: { type: String, default: null },
+            providerSubscriptionStatus: { type: String, default: null },
+            currentPeriodEnd: { type: Date, default: null },
+            cancelAtPeriodEnd: { type: Boolean, default: false },
+            hasActiveSubscription: { type: Boolean, default: false },
+            lastProviderEventAt: { type: Date, default: null },
+        },
+        default: null,
+        _id: false,
+    })
+    billing!: {
+        provider: string | null;
+        providerCustomerId: string | null;
+        providerSubscriptionId: string | null;
+        planCode: string | null;
+        currency: string | null;
+        subscriptionStatus: string | null;
+        providerSubscriptionStatus: string | null;
+        currentPeriodEnd: Date | null;
+        cancelAtPeriodEnd: boolean;
+        hasActiveSubscription: boolean;
+        lastProviderEventAt: Date | null;
+    } | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ 'provider.id': 1 }, { sparse: true });
+UserSchema.index({ 'billing.providerCustomerId': 1 }, { sparse: true });
+UserSchema.index({ 'billing.providerSubscriptionId': 1 }, { sparse: true });

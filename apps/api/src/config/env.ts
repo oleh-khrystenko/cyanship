@@ -50,6 +50,21 @@ export const ENV = {
         ? getEnvVar('RESEND_FROM_EMAIL')
         : getEnvVar('RESEND_FROM_EMAIL', 'LucidKit <onboarding@resend.dev>'),
 
+    // --- STRIPE (required — crash if missing) ---
+    STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
+    STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
+    STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
+
+    // Billing URLs — optional (defaults based on WEB_URL)
+    BILLING_SUCCESS_URL: getEnvVar(
+        'BILLING_SUCCESS_URL',
+        `${getEnvVar('WEB_URL', 'http://localhost:3000')}/billing/success`
+    ),
+    BILLING_CANCEL_URL: getEnvVar(
+        'BILLING_CANCEL_URL',
+        `${getEnvVar('WEB_URL', 'http://localhost:3000')}/billing/cancel`
+    ),
+
     // --- AUTH CONFIGURATION (optional, with defaults) ---
     AUTH_PASSWORD_MIN_LENGTH: parseInt(
         getEnvVar('AUTH_PASSWORD_MIN_LENGTH', '8'),
