@@ -55,12 +55,22 @@
             "magic_link_sent": "Посилання надіслано на вашу пошту",
             "logged_out": "Ви вийшли з акаунту",
             "account_deleted": "Акаунт видалено"
+        },
+        "payments": {
+            "checkout_session_created": "Сесію оплати створено. Переходьте до оплати.",
+            "portal_session_created": "Перенаправлення до порталу керування підпискою.",
+            "webhook_processed": "Webhook оброблено."
         }
     },
     "errors": {
         "auth": {
             "unauthorized": "Час сесії вичерпано. Увійдіть знову",
             "invalid_magic_link": "Посилання недійсне або прострочене"
+        },
+        "payments": {
+            "already_subscribed": "У вас вже є активна підписка.",
+            "subscription_required": "Для доступу потрібна активна підписка.",
+            "no_billing_account": "Платіжний акаунт не знайдено. Оформіть підписку."
         },
         "generic": {
             "validation_error": "Перевірте введені дані",

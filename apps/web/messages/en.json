@@ -55,12 +55,22 @@
             "magic_link_sent": "A sign-in link has been sent to your email",
             "logged_out": "You have been logged out",
             "account_deleted": "Account deleted"
+        },
+        "payments": {
+            "checkout_session_created": "Checkout session created. Proceed to payment.",
+            "portal_session_created": "Redirecting to subscription management portal.",
+            "webhook_processed": "Webhook processed."
         }
     },
     "errors": {
         "auth": {
             "unauthorized": "Your session has expired. Please sign in again",
             "invalid_magic_link": "The link is invalid or has expired"
+        },
+        "payments": {
+            "already_subscribed": "You already have an active subscription.",
+            "subscription_required": "An active subscription is required for access.",
+            "no_billing_account": "No billing account found. Please subscribe first."
         },
         "generic": {
             "validation_error": "Please check the entered data",
