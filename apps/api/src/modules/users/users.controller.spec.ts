@@ -60,6 +60,7 @@ describe('UsersController', () => {
                     hasPassword: true,
                     deletedAt: null,
                     preferredLang: 'uk',
+                    billing: null,
                 },
             });
         });

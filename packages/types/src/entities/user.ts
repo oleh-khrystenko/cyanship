@@ -40,6 +40,7 @@ export const UserProfileSchema = UserSchema.pick({
     hasPassword: true,
     deletedAt: true,
     preferredLang: true,
+    billing: true,
 });
 
 export type User = z.infer<typeof UserSchema>;

@@ -130,6 +130,26 @@
         "deleted": "Акаунт деактивовано",
         "invalid_password": "Невірний пароль"
     },
+    "billing_page": {
+        "head": {
+            "title": "Підписка"
+        },
+        "subscribe": {
+            "title": "Оформіть підписку",
+            "description": "Отримайте доступ до AI-аналізу автомобілів.",
+            "plan_label": "План: Monthly",
+            "button": "Оформити підписку"
+        },
+        "active": {
+            "title": "Ваша підписка",
+            "status_active": "Активна",
+            "status_canceling": "Активна до {date}",
+            "plan_label": "План: {plan}",
+            "next_billing": "Наступне списання: {date}",
+            "cancel_notice": "Підписку буде скасовано після завершення поточного періоду.",
+            "manage_button": "Керувати підпискою"
+        }
+    },
     "components": {
         "header": {
             "signin": "Увійти",

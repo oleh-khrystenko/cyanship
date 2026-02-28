@@ -18,3 +18,4 @@ export {
     confirmDeleteAccount,
     restoreAccount,
 } from './auth';
+export { createCheckoutSession, createPortalSession } from './payments';

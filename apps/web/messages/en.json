@@ -130,6 +130,26 @@
         "deleted": "Account deactivated",
         "invalid_password": "Invalid password"
     },
+    "billing_page": {
+        "head": {
+            "title": "Subscription"
+        },
+        "subscribe": {
+            "title": "Subscribe",
+            "description": "Get access to AI-powered vehicle analysis.",
+            "plan_label": "Plan: Monthly",
+            "button": "Subscribe"
+        },
+        "active": {
+            "title": "Your subscription",
+            "status_active": "Active",
+            "status_canceling": "Active until {date}",
+            "plan_label": "Plan: {plan}",
+            "next_billing": "Next billing: {date}",
+            "cancel_notice": "Your subscription will be canceled at the end of the current period.",
+            "manage_button": "Manage subscription"
+        }
+    },
     "components": {
         "header": {
             "signin": "Sign in",
