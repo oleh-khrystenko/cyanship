@@ -88,22 +88,21 @@ export class UsersService {
     }
 
     async deductCredit(userId: string): Promise<boolean> {
-        const user = await this.userModel.findById(userId).exec();
-        if (!user) return false;
+        // Try atomic paid-credit deduction first (no race condition).
+        const paid = await this.userModel.findOneAndUpdate(
+            { _id: userId, 'credits.balance': { $gt: 0 } },
+            { $inc: { 'credits.balance': -1 } },
+            { new: true },
+        );
+        if (paid) return true;
 
-        if (user.credits.balance > 0) {
-            user.credits.balance -= 1;
-            await user.save();
-            return true;
-        }
-
-        if (!user.credits.freeReportUsed) {
-            user.credits.freeReportUsed = true;
-            await user.save();
-            return true;
-        }
-
-        return false;
+        // Fallback: consume free report atomically.
+        const free = await this.userModel.findOneAndUpdate(
+            { _id: userId, 'credits.freeReportUsed': false },
+            { $set: { 'credits.freeReportUsed': true } },
+            { new: true },
+        );
+        return free !== null;
     }
 
     async updateLang(userId: string, lang: string): Promise<void> {
