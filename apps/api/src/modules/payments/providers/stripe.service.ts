@@ -100,7 +100,7 @@ export class StripeService implements IPaymentProvider {
 
     private handleCheckoutCompleted(
         event: Stripe.Event,
-    ): BillingWebhookEvent {
+    ): BillingWebhookEvent | null {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId =
             session.metadata?.userId ||
@@ -127,16 +127,24 @@ export class StripeService implements IPaymentProvider {
         }
 
         // Subscription checkout (mode=subscription)
-        return {
-            type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
-            providerEventId: event.id,
-            occurredAt: new Date(event.created * 1000),
-            userId,
-            subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
-            currentPeriodEnd: null,
-            cancelAtPeriodEnd: false,
-            raw: this.toRaw(event.data.object),
-        };
+        if (session.mode === 'subscription') {
+            return {
+                type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                providerEventId: event.id,
+                occurredAt: new Date(event.created * 1000),
+                userId,
+                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: this.toRaw(event.data.object),
+            };
+        }
+
+        // Unexpected mode/status — e.g. async payment not yet paid
+        this.logger.debug(
+            `Ignoring checkout.session.completed with mode=${session.mode} payment_status=${session.payment_status}`,
+        );
+        return null;
     }
 
     private handleSubscriptionEvent(
