@@ -270,7 +270,7 @@ export class PaymentsService {
         event: BillingWebhookEvent,
     ): Promise<void> {
         const credits = event.creditsAmount ?? 0;
-        if (credits <= 0) {
+        if (!Number.isFinite(credits) || credits <= 0) {
             this.logger.warn(
                 `ONE_OFF_PAYMENT_COMPLETED event ${event.providerEventId} has no creditsAmount`,
             );
