@@ -9,6 +9,7 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
+import type { CreditPackCode } from '@lucidkit/types';
 
 // Load .env from monorepo root before reading process.env.
 // Use __dirname (relative to this file) instead of process.cwd() which varies by runner.
@@ -135,9 +136,8 @@ if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
 // Computed: maps packCode → { priceId, credits }
 // Used in PaymentsService to resolve priceId for one-off checkouts.
 // Empty when one-off payments are disabled — prevents sending empty priceId to Stripe.
-export const STRIPE_CREDIT_PACKS: Record<
-    string,
-    { priceId: string; credits: number }
+export const STRIPE_CREDIT_PACKS: Partial<
+    Record<CreditPackCode, { priceId: string; credits: number }>
 > = oneOffEnabled
     ? {
           credits_5: {
