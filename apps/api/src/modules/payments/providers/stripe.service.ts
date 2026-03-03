@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import {
     BillingWebhookEvent,
     BILLING_EVENT_TYPE,
+    PAYMENT_TYPE,
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
 } from '@lucidkit/types';
@@ -28,13 +29,20 @@ export class StripeService implements IPaymentProvider {
     async createCheckoutSession(
         input: CreateCheckoutInput,
     ): Promise<CheckoutResult> {
+        const mode =
+            input.paymentType === PAYMENT_TYPE.ONE_OFF
+                ? 'payment'
+                : 'subscription';
+
         const session = await this.stripe.checkout.sessions.create({
-            mode: 'subscription',
+            mode,
             customer_email: input.userEmail,
-            line_items: [
-                { price: ENV.STRIPE_PRICE_MONTHLY_USD, quantity: 1 },
-            ],
-            metadata: { userId: input.userId, planCode: input.planCode },
+            line_items: [{ price: input.priceId, quantity: 1 }],
+            metadata: {
+                userId: input.userId,
+                planCode: input.planCode,
+                credits: String(input.credits ?? 0),
+            },
             client_reference_id: input.userId,
             success_url: input.successUrl,
             cancel_url: input.cancelUrl,
@@ -99,13 +107,31 @@ export class StripeService implements IPaymentProvider {
             session.client_reference_id ||
             '';
 
+        // One-off payment (mode=payment, paid)
+        if (
+            session.mode === 'payment' &&
+            session.payment_status === 'paid'
+        ) {
+            const credits = parseInt(
+                session.metadata?.credits ?? '0',
+                10,
+            );
+            return {
+                type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                providerEventId: event.id,
+                occurredAt: new Date(event.created * 1000),
+                userId,
+                creditsAmount: credits,
+                raw: this.toRaw(event.data.object),
+            };
+        }
+
+        // Subscription checkout (mode=subscription)
         return {
             type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
             providerEventId: event.id,
             occurredAt: new Date(event.created * 1000),
             userId,
-            // Checkout session doesn't carry subscription status;
-            // the follow-up customer.subscription.updated event will set the real value.
             subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
             currentPeriodEnd: null,
             cancelAtPeriodEnd: false,
