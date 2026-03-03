@@ -1,17 +1,17 @@
 {
     "welcome_page": {
         "head": {
-            "title": "LucidKit – Protect Your Bids",
-            "description": "LucidKit is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
+            "title": "LucidKit – Production-ready SaaS Boilerplate",
+            "description": "LucidKit is a production-ready SaaS boilerplate with auth, payments, i18n, and theming out of the box."
         },
-        "heading": "LucidKit — your trusted partner in the world of bidding.",
-        "description": "Here you'll find tools and solutions for secure bid management.",
+        "heading": "LucidKit — your production-ready SaaS starter.",
+        "description": "Everything you need to ship your web app faster.",
         "cta": "Get Started"
     },
     "auth_page": {
         "signin": {
             "heading": "Sign in to LucidKit",
-            "subheading": "Analyse car photos and detect hidden defects before purchase",
+            "subheading": "Launch your SaaS faster with production-ready auth, payments, and more",
             "email_label": "Email",
             "email_placeholder": "your@email.com",
             "continue_button": "Continue",
@@ -131,7 +131,7 @@
         },
         "subscribe": {
             "title": "Subscribe",
-            "description": "Get access to AI-powered vehicle analysis.",
+            "description": "Unlock all premium features and take your product further.",
             "plan_label": "Plan: Monthly",
             "button": "Subscribe",
             "error": "Failed to create checkout session"

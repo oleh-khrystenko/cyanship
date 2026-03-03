@@ -1,6 +1,6 @@
 # LucidKit
 
-> AI-сервіс для аналізу фото автомобілів та виявлення прихованих дефектів перед покупкою.
+> Production-ready SaaS boilerplate — все, що потрібно для швидкого запуску web-додатка: auth, payments, i18n, theming та модульна архітектура з коробки.
 
 <!-- MANUAL:START -->
 # Rules

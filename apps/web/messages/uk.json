@@ -1,17 +1,17 @@
 {
     "welcome_page": {
         "head": {
-            "title": "LucidKit – Захист ваших ставок",
-            "description": "LucidKit – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу."
+            "title": "LucidKit – Готовий SaaS-бойлерплейт",
+            "description": "LucidKit – готовий SaaS-бойлерплейт з auth, payments, i18n та темами з коробки."
         },
-        "heading": "LucidKit — ваш надійний партнер у світі ставок.",
-        "description": "Тут ви знайдете інструменти та рішення для безпечного управління ставками.",
+        "heading": "LucidKit — ваш готовий SaaS-стартер.",
+        "description": "Все необхідне для швидкого запуску вашого web-додатка.",
         "cta": "Розпочати"
     },
     "auth_page": {
         "signin": {
             "heading": "Вхід до LucidKit",
-            "subheading": "Аналізуйте фото автомобілів та виявляйте приховані дефекти перед покупкою",
+            "subheading": "Запустіть свій SaaS швидше — auth, payments та i18n з коробки",
             "email_label": "Email",
             "email_placeholder": "your@email.com",
             "continue_button": "Продовжити",
@@ -131,7 +131,7 @@
         },
         "subscribe": {
             "title": "Оформіть підписку",
-            "description": "Отримайте доступ до AI-аналізу автомобілів.",
+            "description": "Відкрийте преміум-можливості для свого продукту.",
             "plan_label": "План: Monthly",
             "button": "Оформити підписку",
             "error": "Не вдалося створити сесію оплати"
