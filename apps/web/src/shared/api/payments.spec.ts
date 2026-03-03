@@ -3,7 +3,12 @@ jest.mock('./client', () => ({
 }));
 
 import { apiClient } from './client';
-import { createCheckoutSession, createPortalSession } from './payments';
+import { PAYMENT_TYPE } from '@lucidkit/types';
+import {
+    createSubscriptionCheckout,
+    createOneOffCheckout,
+    createPortalSession,
+} from './payments';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -16,19 +21,22 @@ describe('payments api', () => {
         jest.clearAllMocks();
     });
 
-    // ─── createCheckoutSession ───────────────────────────────────────
+    // ─── createSubscriptionCheckout ───────────────────────────────────
 
-    describe('createCheckoutSession', () => {
-        it('should POST to /api/payments/checkout-session with planCode in body', async () => {
+    describe('createSubscriptionCheckout', () => {
+        it('should POST to /api/payments/checkout-session with paymentType and planCode', async () => {
             mockPost.mockResolvedValue({
                 data: { data: { checkoutUrl: 'https://checkout.stripe.com/test' } },
             });
 
-            await createCheckoutSession('monthly_usd');
+            await createSubscriptionCheckout('monthly_usd');
 
             expect(mockPost).toHaveBeenCalledWith(
                 '/api/payments/checkout-session',
-                { planCode: 'monthly_usd' },
+                {
+                    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                    planCode: 'monthly_usd',
+                },
             );
         });
 
@@ -37,7 +45,7 @@ describe('payments api', () => {
                 data: { data: { checkoutUrl: 'https://checkout.stripe.com/test' } },
             });
 
-            const result = await createCheckoutSession('monthly_usd');
+            const result = await createSubscriptionCheckout('monthly_usd');
 
             expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/test' });
         });
@@ -45,13 +53,51 @@ describe('payments api', () => {
         it('should propagate errors from apiClient.post', async () => {
             mockPost.mockRejectedValue(new Error('Network error'));
 
-            await expect(createCheckoutSession('monthly_usd')).rejects.toThrow(
+            await expect(createSubscriptionCheckout('monthly_usd')).rejects.toThrow(
                 'Network error',
             );
         });
     });
 
-    // ─── createPortalSession ─────────────────────────────────────────
+    // ─── createOneOffCheckout ─────────────────────────────────────────
+
+    describe('createOneOffCheckout', () => {
+        it('should POST to /api/payments/checkout-session with paymentType and packCode', async () => {
+            mockPost.mockResolvedValue({
+                data: { data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' } },
+            });
+
+            await createOneOffCheckout('credits_5');
+
+            expect(mockPost).toHaveBeenCalledWith(
+                '/api/payments/checkout-session',
+                {
+                    paymentType: PAYMENT_TYPE.ONE_OFF,
+                    packCode: 'credits_5',
+                },
+            );
+        });
+
+        it('should return { checkoutUrl } extracted from response.data.data', async () => {
+            mockPost.mockResolvedValue({
+                data: { data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' } },
+            });
+
+            const result = await createOneOffCheckout('credits_10');
+
+            expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/oneoff' });
+        });
+
+        it('should propagate errors from apiClient.post', async () => {
+            mockPost.mockRejectedValue(new Error('Payment failed'));
+
+            await expect(createOneOffCheckout('credits_5')).rejects.toThrow(
+                'Payment failed',
+            );
+        });
+    });
+
+    // ─── createPortalSession ──────────────────────────────────────────
 
     describe('createPortalSession', () => {
         it('should POST to /api/payments/portal-session without body', async () => {
