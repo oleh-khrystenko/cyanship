@@ -82,9 +82,12 @@ export class UsersService {
     }
 
     async addCredits(userId: string, amount: number): Promise<void> {
-        await this.userModel.findByIdAndUpdate(userId, {
+        const result = await this.userModel.findByIdAndUpdate(userId, {
             $inc: { 'credits.balance': amount },
         });
+        if (!result) {
+            throw new Error(`addCredits: user ${userId} not found`);
+        }
     }
 
     async deductCredit(userId: string): Promise<boolean> {

@@ -221,7 +221,7 @@ describe('UsersService', () => {
 
     describe('addCredits', () => {
         it('should increment credits.balance by amount', async () => {
-            mockModel.findByIdAndUpdate.mockResolvedValue(null);
+            mockModel.findByIdAndUpdate.mockResolvedValue(mockUserDoc());
 
             await service.addCredits('507f1f77bcf86cd799439011', 10);
 
@@ -229,6 +229,14 @@ describe('UsersService', () => {
                 '507f1f77bcf86cd799439011',
                 { $inc: { 'credits.balance': 10 } },
             );
+        });
+
+        it('should throw when user not found', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(null);
+
+            await expect(
+                service.addCredits('nonexistent', 5),
+            ).rejects.toThrow('addCredits: user nonexistent not found');
         });
     });
 
