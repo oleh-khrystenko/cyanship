@@ -21,7 +21,7 @@ export class ProcessedWebhookEvent {
     @Prop({ required: true })
     type!: string;
 
-    @Prop({ default: null })
+    @Prop({ type: String, default: null })
     userId!: string | null;
 }
 

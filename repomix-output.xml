@@ -1297,7 +1297,7 @@ export class StripeService implements IPaymentProvider {
             mode: 'subscription',
             customer_email: input.userEmail,
             line_items: [
-                { price: ENV.STRIPE_PRICE_MONTHLY_USD, quantity: 1 },
+                { price: ENV.STRIPE_PRICE_ONE_OFF_USD, quantity: 1 },
             ],
             metadata: { userId: input.userId },
             client_reference_id: input.userId,
@@ -1786,7 +1786,7 @@ export class AppService {
 // but not needed for unit tests (mocked at service level).
 process.env.STRIPE_SECRET_KEY ??= 'sk_test_placeholder';
 process.env.STRIPE_WEBHOOK_SECRET ??= 'whsec_test_placeholder';
-process.env.STRIPE_PRICE_MONTHLY_USD ??= 'price_test_placeholder';
+process.env.STRIPE_PRICE_ONE_OFF_USD ??= 'price_test_placeholder';
 </file>
 
 <file path="apps/api/test/auth.e2e-spec.ts">
@@ -6754,7 +6754,7 @@ middleware.ts                            — EDIT: додати /billing до pr
 ## Constraints
 
 1. **Zod = single source of truth.** Всі типи через `z.infer`, схеми в `packages/types`.
-2. **Fail-fast policy.** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_USD` — required, crash if missing. `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` — optional з defaults.
+2. **Fail-fast policy.** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ONE_OFF_USD` — required, crash if missing. `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` — optional з defaults.
 3. **RESPONSE_CODE pattern.** Нові коди додаються в `RESPONSE_CODE` + `RESPONSE_CODE_TYPE` mapping.
 4. **Mongoose `!` operator.** Всі `@Prop()` поля мають `!` (definite assignment).
 5. **Не додавати `paths` до API tsconfig.** Packages/types резолвиться через workspace symlink.
@@ -6918,7 +6918,7 @@ export * from './contracts/payments';
 // Stripe — required (fail-fast)
 STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
 STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
-STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
+STRIPE_PRICE_ONE_OFF_USD: getEnvVar('STRIPE_PRICE_ONE_OFF_USD'),
 
 // Billing URLs — optional (мають defaults)
 BILLING_SUCCESS_URL: getEnvVar('BILLING_SUCCESS_URL', `${getEnvVar('WEB_URL', 'http://localhost:3000')}/billing/success`),
@@ -7140,7 +7140,7 @@ import {
 - Створити `stripe.checkout.sessions.create()`:
   - `mode: 'subscription'`
   - `customer_email: input.userEmail` (якщо немає існуючого customer)
-  - `line_items: [{ price: ENV.STRIPE_PRICE_MONTHLY_USD, quantity: 1 }]`
+  - `line_items: [{ price: ENV.STRIPE_PRICE_ONE_OFF_USD, quantity: 1 }]`
   - `metadata: { userId: input.userId }`
   - `client_reference_id: input.userId`
   - `success_url: input.successUrl`
@@ -9033,7 +9033,7 @@ export class PaymentsService {
                 base['billing.providerSubscriptionId'] =
                     (raw.subscription as string) ?? null;
                 base['billing.planCode'] =
-                    ENV.STRIPE_PRICE_MONTHLY_USD;
+                    ENV.STRIPE_PRICE_ONE_OFF_USD;
                 base['billing.currency'] =
                     (raw.currency as string) ?? null;
                 base['billing.providerSubscriptionStatus'] =
@@ -11818,7 +11818,7 @@ raw: Record<string, unknown>  // оригінальний provider payload дл�
 Required (fail-fast, crash if missing):
 - `STRIPE_SECRET_KEY` — Stripe API secret key
 - `STRIPE_WEBHOOK_SECRET` — Webhook endpoint signing secret
-- `STRIPE_PRICE_MONTHLY_USD` — Stripe Price ID для monthly plan
+- `STRIPE_PRICE_ONE_OFF_USD` — Stripe Price ID для monthly plan
 
 Optional (мають defaults):
 - `BILLING_SUCCESS_URL` → `${WEB_URL}/billing/success`
@@ -19234,7 +19234,7 @@ export const ENV = {
     // --- STRIPE (required — crash if missing) ---
     STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
     STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
-    STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
+    STRIPE_PRICE_ONE_OFF_USD: getEnvVar('STRIPE_PRICE_ONE_OFF_USD'),
 
     // Billing URLs — optional (defaults based on WEB_URL)
     BILLING_SUCCESS_URL: getEnvVar(

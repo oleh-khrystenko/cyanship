@@ -16,7 +16,7 @@
 ## Constraints
 
 1. **Zod = single source of truth.** Всі типи через `z.infer`, схеми в `packages/types`.
-2. **Fail-fast policy.** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_USD` — required, crash if missing. `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` — optional з defaults.
+2. **Fail-fast policy.** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ONE_OFF_USD` — required, crash if missing. `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` — optional з defaults.
 3. **RESPONSE_CODE pattern.** Нові коди додаються в `RESPONSE_CODE` + `RESPONSE_CODE_TYPE` mapping.
 4. **Mongoose `!` operator.** Всі `@Prop()` поля мають `!` (definite assignment).
 5. **Не додавати `paths` до API tsconfig.** Packages/types резолвиться через workspace symlink.
@@ -180,7 +180,7 @@ export * from './contracts/payments';
 // Stripe — required (fail-fast)
 STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
 STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
-STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
+STRIPE_PRICE_ONE_OFF_USD: getEnvVar('STRIPE_PRICE_ONE_OFF_USD'),
 
 // Billing URLs — optional (мають defaults)
 BILLING_SUCCESS_URL: getEnvVar('BILLING_SUCCESS_URL', `${getEnvVar('WEB_URL', 'http://localhost:3000')}/billing/success`),

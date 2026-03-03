@@ -32,7 +32,7 @@ export class StripeService implements IPaymentProvider {
             mode: 'subscription',
             customer_email: input.userEmail,
             line_items: [
-                { price: ENV.STRIPE_PRICE_MONTHLY_USD, quantity: 1 },
+                { price: ENV.STRIPE_PRICE_ONE_OFF_USD, quantity: 1 },
             ],
             metadata: { userId: input.userId, planCode: input.planCode },
             client_reference_id: input.userId,
