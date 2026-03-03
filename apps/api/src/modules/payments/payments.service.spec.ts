@@ -387,14 +387,16 @@ describe('PaymentsService', () => {
                 expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     {
-                        $set: expect.objectContaining({
-                            'billing.provider': 'stripe',
-                            'billing.hasActiveSubscription': true,
-                            'billing.providerCustomerId': 'cus_test',
-                            'billing.providerSubscriptionId': 'sub_test',
-                            'billing.planCode': 'monthly_usd',
-                            'billing.currency': 'usd',
-                        }),
+                        $set: {
+                            billing: expect.objectContaining({
+                                provider: 'stripe',
+                                hasActiveSubscription: true,
+                                providerCustomerId: 'cus_test',
+                                providerSubscriptionId: 'sub_test',
+                                planCode: 'monthly_usd',
+                                currency: 'usd',
+                            }),
+                        },
                     },
                 );
             });
@@ -658,15 +660,17 @@ describe('PaymentsService', () => {
                 expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     {
-                        $set: expect.objectContaining({
-                            'billing.provider': 'stripe',
-                            'billing.providerCustomerId': 'cus_abc',
-                            'billing.providerSubscriptionId': 'sub_abc',
-                            'billing.planCode': 'monthly_usd',
-                            'billing.currency': 'usd',
-                            'billing.hasActiveSubscription': true,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
-                        }),
+                        $set: {
+                            billing: expect.objectContaining({
+                                provider: 'stripe',
+                                providerCustomerId: 'cus_abc',
+                                providerSubscriptionId: 'sub_abc',
+                                planCode: 'monthly_usd',
+                                currency: 'usd',
+                                hasActiveSubscription: true,
+                                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                            }),
+                        },
                     },
                 );
             });
@@ -696,12 +700,14 @@ describe('PaymentsService', () => {
                 expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     {
-                        $set: expect.objectContaining({
-                            'billing.hasActiveSubscription': true,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
-                            'billing.currentPeriodEnd': currentPeriodEnd,
-                            'billing.cancelAtPeriodEnd': false,
-                        }),
+                        $set: {
+                            billing: expect.objectContaining({
+                                hasActiveSubscription: true,
+                                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                                currentPeriodEnd: currentPeriodEnd,
+                                cancelAtPeriodEnd: false,
+                            }),
+                        },
                     },
                 );
             });
@@ -730,10 +736,12 @@ describe('PaymentsService', () => {
                 expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     {
-                        $set: expect.objectContaining({
-                            'billing.hasActiveSubscription': false,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.PAST_DUE,
-                        }),
+                        $set: {
+                            billing: expect.objectContaining({
+                                hasActiveSubscription: false,
+                                subscriptionStatus: SUBSCRIPTION_STATUS.PAST_DUE,
+                            }),
+                        },
                     },
                 );
             });
@@ -762,10 +770,54 @@ describe('PaymentsService', () => {
                 expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     {
+                        $set: {
+                            billing: expect.objectContaining({
+                                subscriptionStatus: SUBSCRIPTION_STATUS.CANCELED,
+                                hasActiveSubscription: false,
+                                providerSubscriptionStatus: 'canceled',
+                            }),
+                        },
+                    },
+                );
+            });
+
+            it('should use dot-notation $set when user already has billing', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_dot',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.PAST_DUE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: { status: 'past_due' },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue(
+                        mockUser({
+                            billing: {
+                                provider: 'stripe',
+                                providerCustomerId: 'cus_existing',
+                                providerSubscriptionId: 'sub_existing',
+                                planCode: 'monthly_usd',
+                                lastProviderEventAt: new Date('2023-01-01'),
+                            },
+                        }),
+                    ),
+                });
+                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    {
                         $set: expect.objectContaining({
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.CANCELED,
                             'billing.hasActiveSubscription': false,
-                            'billing.providerSubscriptionStatus': 'canceled',
+                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.PAST_DUE,
                         }),
                     },
                 );

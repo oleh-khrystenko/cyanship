@@ -84,6 +84,11 @@ jest.mock('../src/config/env', () => ({
         }),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const envModule = require('../src/config/env') as {
+    ENV: Record<string, unknown>;
+};
+
 // ─── Stateful Redis mock ──────────────────────────────────────────────────────
 
 function createStatefulRedisMock() {
@@ -275,6 +280,10 @@ describe('Payments E2E', () => {
         redisMock._clear();
         await userModel.deleteMany({});
         await webhookEventModel.deleteMany({});
+
+        // Reset feature flags to defaults
+        envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
+        envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = true;
 
         // Default mock responses
         mockPaymentProvider.handleWebhookPayload.mockReturnValue(null);
@@ -608,6 +617,53 @@ describe('Payments E2E', () => {
             // Verify credits added
             const updatedUser = await userModel.findById(userId).lean();
             expect(updatedUser?.credits?.balance).toBe(5);
+        });
+    });
+
+    // ─── F. Payment type toggles ─────────────────────────────────────
+
+    describe('payment type toggles', () => {
+        it('should return 400 PAYMENT_TYPE_DISABLED when one-off is disabled', async () => {
+            envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+
+            await createUser('toggle-oneoff@example.com', null);
+            const { accessToken } = await loginAsUser(
+                'toggle-oneoff@example.com',
+            );
+
+            await supertest(app.getHttpServer())
+                .post('/api/payments/checkout-session')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ paymentType: 'one_off', packCode: 'credits_5' })
+                .expect(400)
+                .expect((res: supertest.Response) => {
+                    expect(
+                        (res.body as { error: { code: string } }).error.code,
+                    ).toBe('PAYMENT_TYPE_DISABLED');
+                });
+        });
+
+        it('should return 400 PAYMENT_TYPE_DISABLED when subscription is disabled', async () => {
+            envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+
+            await createUser('toggle-sub@example.com', null);
+            const { accessToken } = await loginAsUser(
+                'toggle-sub@example.com',
+            );
+
+            await supertest(app.getHttpServer())
+                .post('/api/payments/checkout-session')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({
+                    paymentType: 'subscription',
+                    planCode: 'monthly_usd',
+                })
+                .expect(400)
+                .expect((res: supertest.Response) => {
+                    expect(
+                        (res.body as { error: { code: string } }).error.code,
+                    ).toBe('PAYMENT_TYPE_DISABLED');
+                });
         });
     });
 
