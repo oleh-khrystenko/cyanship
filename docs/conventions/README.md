@@ -12,6 +12,7 @@
 | Tone & Style | [tone.md](tone.md) | Тон та стиль user-facing повідомлень |
 | Fail Fast | [fail-fast.md](fail-fast.md) | Політика обов'язкових env vars |
 | i18n | [i18n.md](i18n.md) | Синхронізація мови між фронтом та бекендом |
+| Env Sync | [env-sync.md](env-sync.md) | Синхронізація env vars між env.ts, .env та .env.example |
 
 ## Як додати нове правило
 
