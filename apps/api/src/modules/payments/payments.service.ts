@@ -201,12 +201,12 @@ export class PaymentsService {
             await this.applyOneOffPayment(userId, event);
         } else {
             const billingFields = this.buildBillingUpdate(event, user);
-            const existingBilling = (user.billing ?? {}) as Record<
-                string,
-                unknown
-            >;
+            const dotNotation: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(billingFields)) {
+                dotNotation[`billing.${key}`] = value;
+            }
             await this.userModel.findByIdAndUpdate(userId, {
-                $set: { billing: { ...existingBilling, ...billingFields } },
+                $set: dotNotation,
             });
         }
 
