@@ -142,9 +142,10 @@ export class PaymentsService {
         }
 
         // 6-8. Apply billing state update
-        const billingUpdate = this.buildBillingUpdate(event, user);
+        const billingFields = this.buildBillingUpdate(event, user);
+        const existingBilling = (user.billing ?? {}) as Record<string, unknown>;
         await this.userModel.findByIdAndUpdate(userId, {
-            $set: billingUpdate,
+            $set: { billing: { ...existingBilling, ...billingFields } },
         });
 
         this.logger.log(
@@ -214,51 +215,44 @@ export class PaymentsService {
             event.subscriptionStatus === SUBSCRIPTION_STATUS.ACTIVE ||
             event.subscriptionStatus === SUBSCRIPTION_STATUS.TRIALING;
 
-        const base: Record<string, unknown> = {
-            'billing.subscriptionStatus': event.subscriptionStatus,
-            'billing.hasActiveSubscription': hasActive,
-            'billing.lastProviderEventAt': event.occurredAt,
-            'billing.cancelAtPeriodEnd': event.cancelAtPeriodEnd,
+        const fields: Record<string, unknown> = {
+            subscriptionStatus: event.subscriptionStatus,
+            hasActiveSubscription: hasActive,
+            lastProviderEventAt: event.occurredAt,
+            cancelAtPeriodEnd: event.cancelAtPeriodEnd,
         };
 
         if (event.currentPeriodEnd) {
-            base['billing.currentPeriodEnd'] = event.currentPeriodEnd;
+            fields['currentPeriodEnd'] = event.currentPeriodEnd;
         }
 
         switch (event.type) {
             case BILLING_EVENT_TYPE.CHECKOUT_COMPLETED: {
                 const raw = event.raw as Record<string, unknown>;
                 const metadata = raw.metadata as Record<string, string> | undefined;
-                base['billing.provider'] = 'stripe';
-                base['billing.providerCustomerId'] =
-                    (raw.customer as string) ?? null;
-                base['billing.providerSubscriptionId'] =
-                    (raw.subscription as string) ?? null;
-                base['billing.planCode'] =
-                    metadata?.planCode ?? null;
-                base['billing.currency'] =
-                    (raw.currency as string) ?? null;
-                base['billing.providerSubscriptionStatus'] =
-                    (raw.status as string) ?? null;
+                fields['provider'] = 'stripe';
+                fields['providerCustomerId'] = (raw.customer as string) ?? null;
+                fields['providerSubscriptionId'] = (raw.subscription as string) ?? null;
+                fields['planCode'] = metadata?.planCode ?? null;
+                fields['currency'] = (raw.currency as string) ?? null;
+                fields['providerSubscriptionStatus'] = (raw.status as string) ?? null;
                 break;
             }
 
             case BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED: {
                 const raw = event.raw as Record<string, unknown>;
-                base['billing.providerSubscriptionStatus'] =
-                    (raw.status as string) ?? null;
+                fields['providerSubscriptionStatus'] = (raw.status as string) ?? null;
                 break;
             }
 
             case BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED: {
-                base['billing.subscriptionStatus'] =
-                    SUBSCRIPTION_STATUS.CANCELED;
-                base['billing.hasActiveSubscription'] = false;
-                base['billing.providerSubscriptionStatus'] = 'canceled';
+                fields['subscriptionStatus'] = SUBSCRIPTION_STATUS.CANCELED;
+                fields['hasActiveSubscription'] = false;
+                fields['providerSubscriptionStatus'] = 'canceled';
                 break;
             }
         }
 
-        return base;
+        return fields;
     }
 }
