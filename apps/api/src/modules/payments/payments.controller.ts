@@ -27,11 +27,12 @@ export class PaymentsController {
         @CurrentUser() user: UserDocument,
         @Body() dto: CreateCheckoutSessionDto,
     ): Promise<{ data: { checkoutUrl: string } }> {
-        const result = await this.paymentsService.createCheckoutSession(
-            user._id.toString(),
-            dto.planCode,
-        );
-        return { data: { checkoutUrl: result.checkoutUrl } };
+        const { checkoutUrl } =
+            await this.paymentsService.createCheckoutSession(
+                user._id.toString(),
+                dto,
+            );
+        return { data: { checkoutUrl } };
     }
 
     @UseGuards(JwtAuthGuard)

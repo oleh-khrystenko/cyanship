@@ -81,6 +81,12 @@ export class UsersService {
         });
     }
 
+    async addCredits(userId: string, amount: number): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, {
+            $inc: { 'credits.balance': amount },
+        });
+    }
+
     async deductCredit(userId: string): Promise<boolean> {
         const user = await this.userModel.findById(userId).exec();
         if (!user) return false;

@@ -150,6 +150,14 @@
             "loading": "Processing payment…",
             "success": "Subscription activated",
             "canceled": "Payment canceled"
+        },
+        "credits": {
+            "title": "Credits",
+            "description": "Purchase credits to check vehicles. Each check uses 1 credit.",
+            "balance": "Current balance: {count} cr.",
+            "pack_label": "{count} credits",
+            "buy_button": "Buy",
+            "error": "Failed to create payment session. Please try again."
         }
     },
     "components": {
