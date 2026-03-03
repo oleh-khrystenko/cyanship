@@ -26,6 +26,10 @@ const getEnvVar = (name: string, fallback?: string): string => {
 const nodeEnv = getEnvVar('NODE_ENV', 'development');
 const isProduction = nodeEnv === 'production';
 
+// Compute payment toggles early — credit price env vars are only required when one-off is enabled.
+const oneOffEnabled =
+    getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true';
+
 export const ENV = {
     // --- REQUIRED WITH DEFAULTS ---
     NODE_ENV: nodeEnv,
@@ -56,11 +60,17 @@ export const ENV = {
     STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
 
     // --- STRIPE Credit Pack Prices ---
-    // Required if PAYMENTS_ONE_OFF_ENABLED=true
+    // Required only when PAYMENTS_ONE_OFF_ENABLED=true.
     // Create as one-time prices in Stripe Dashboard (mode: Payment, not Subscription)
-    STRIPE_PRICE_CREDITS_5_USD: getEnvVar('STRIPE_PRICE_CREDITS_5_USD'),
-    STRIPE_PRICE_CREDITS_10_USD: getEnvVar('STRIPE_PRICE_CREDITS_10_USD'),
-    STRIPE_PRICE_CREDITS_20_USD: getEnvVar('STRIPE_PRICE_CREDITS_20_USD'),
+    STRIPE_PRICE_CREDITS_5_USD: oneOffEnabled
+        ? getEnvVar('STRIPE_PRICE_CREDITS_5_USD')
+        : getEnvVar('STRIPE_PRICE_CREDITS_5_USD', ''),
+    STRIPE_PRICE_CREDITS_10_USD: oneOffEnabled
+        ? getEnvVar('STRIPE_PRICE_CREDITS_10_USD')
+        : getEnvVar('STRIPE_PRICE_CREDITS_10_USD', ''),
+    STRIPE_PRICE_CREDITS_20_USD: oneOffEnabled
+        ? getEnvVar('STRIPE_PRICE_CREDITS_20_USD')
+        : getEnvVar('STRIPE_PRICE_CREDITS_20_USD', ''),
 
     // Billing URLs — optional (defaults based on WEB_URL)
     BILLING_SUCCESS_URL: getEnvVar(
@@ -77,8 +87,7 @@ export const ENV = {
     // At least one must be 'true'.
     PAYMENTS_SUBSCRIPTION_ENABLED:
         getEnvVar('PAYMENTS_SUBSCRIPTION_ENABLED', 'true') === 'true',
-    PAYMENTS_ONE_OFF_ENABLED:
-        getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true',
+    PAYMENTS_ONE_OFF_ENABLED: oneOffEnabled,
 
     // --- AUTH CONFIGURATION (optional, with defaults) ---
     AUTH_PASSWORD_MIN_LENGTH: parseInt(
