@@ -183,7 +183,7 @@ raw: Record<string, unknown>  // оригінальний provider payload дл�
 Required (fail-fast, crash if missing):
 - `STRIPE_SECRET_KEY` — Stripe API secret key
 - `STRIPE_WEBHOOK_SECRET` — Webhook endpoint signing secret
-- `STRIPE_PRICE_ONE_OFF_USD` — Stripe Price ID для monthly plan
+- `STRIPE_PRICE_MONTHLY_USD` — Stripe Price ID для monthly plan
 
 Optional (мають defaults):
 - `BILLING_SUCCESS_URL` → `${WEB_URL}/billing/success`

@@ -37,7 +37,7 @@ jest.mock('../src/config/env', () => ({
         RESEND_FROM_EMAIL: 'LucidKit <test@test.com>',
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        STRIPE_PRICE_ONE_OFF_USD: 'price_test_monthly',
+        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
         BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
         BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
     },

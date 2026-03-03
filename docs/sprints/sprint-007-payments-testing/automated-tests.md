@@ -142,7 +142,7 @@
 **Мокування:** Mock весь `stripe` module через `jest.mock('stripe')`. Конструктор повертає mock об'єкт з `checkout.sessions.create`, `billingPortal.sessions.create`, `webhooks.constructEvent` як `jest.fn()`.
 
 **Метод `createCheckoutSession`:**
-- Передає правильний `price` (з `ENV.STRIPE_PRICE_ONE_OFF_USD`), `metadata.userId`, `metadata.planCode`, `client_reference_id`, `success_url`, `cancel_url`
+- Передає правильний `price` (з `ENV.STRIPE_PRICE_MONTHLY_USD`), `metadata.userId`, `metadata.planCode`, `client_reference_id`, `success_url`, `cancel_url`
 - `session.url` є → повертає `{ checkoutUrl: session.url, providerSessionId: session.id }`
 - `session.url` відсутній → кидає Error
 

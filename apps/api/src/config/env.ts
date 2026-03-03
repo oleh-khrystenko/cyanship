@@ -53,7 +53,7 @@ export const ENV = {
     // --- STRIPE (required — crash if missing) ---
     STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
     STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
-    STRIPE_PRICE_ONE_OFF_USD: getEnvVar('STRIPE_PRICE_ONE_OFF_USD'),
+    STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
 
     // Billing URLs — optional (defaults based on WEB_URL)
     BILLING_SUCCESS_URL: getEnvVar(
