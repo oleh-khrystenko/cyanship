@@ -55,6 +55,13 @@ export const ENV = {
     STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
     STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
 
+    // --- STRIPE Credit Pack Prices ---
+    // Required if PAYMENTS_ONE_OFF_ENABLED=true
+    // Create as one-time prices in Stripe Dashboard (mode: Payment, not Subscription)
+    STRIPE_PRICE_CREDITS_5_USD: getEnvVar('STRIPE_PRICE_CREDITS_5_USD'),
+    STRIPE_PRICE_CREDITS_10_USD: getEnvVar('STRIPE_PRICE_CREDITS_10_USD'),
+    STRIPE_PRICE_CREDITS_20_USD: getEnvVar('STRIPE_PRICE_CREDITS_20_USD'),
+
     // Billing URLs — optional (defaults based on WEB_URL)
     BILLING_SUCCESS_URL: getEnvVar(
         'BILLING_SUCCESS_URL',
@@ -64,6 +71,14 @@ export const ENV = {
         'BILLING_CANCEL_URL',
         `${getEnvVar('WEB_URL', 'http://localhost:3000')}/billing/cancel`
     ),
+
+    // --- PAYMENT TYPE TOGGLES ---
+    // Set to 'false' to disable a payment type entirely.
+    // At least one must be 'true'.
+    PAYMENTS_SUBSCRIPTION_ENABLED:
+        getEnvVar('PAYMENTS_SUBSCRIPTION_ENABLED', 'true') === 'true',
+    PAYMENTS_ONE_OFF_ENABLED:
+        getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true',
 
     // --- AUTH CONFIGURATION (optional, with defaults) ---
     AUTH_PASSWORD_MIN_LENGTH: parseInt(
@@ -98,6 +113,34 @@ export const ENV = {
         getEnvVar('ACCOUNT_DELETION_GRACE_DAYS', '30'),
         10
     ),
+};
+
+// Validate payment toggles
+if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
+    throw new Error(
+        '❌ At least one payment type must be enabled. ' +
+            'Set PAYMENTS_SUBSCRIPTION_ENABLED or PAYMENTS_ONE_OFF_ENABLED to "true".'
+    );
+}
+
+// Computed: maps packCode → { priceId, credits }
+// Used in PaymentsService to resolve priceId for one-off checkouts.
+export const STRIPE_CREDIT_PACKS: Record<
+    string,
+    { priceId: string; credits: number }
+> = {
+    credits_5: {
+        priceId: ENV.STRIPE_PRICE_CREDITS_5_USD,
+        credits: 5,
+    },
+    credits_10: {
+        priceId: ENV.STRIPE_PRICE_CREDITS_10_USD,
+        credits: 10,
+    },
+    credits_20: {
+        priceId: ENV.STRIPE_PRICE_CREDITS_20_USD,
+        credits: 20,
+    },
 };
 
 // Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]

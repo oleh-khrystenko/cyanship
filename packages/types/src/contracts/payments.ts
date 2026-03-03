@@ -2,6 +2,24 @@ import { z } from 'zod';
 
 // --- Enums ---
 
+export const PAYMENT_TYPE = {
+    SUBSCRIPTION: 'subscription',
+    ONE_OFF: 'one_off',
+} as const;
+
+export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
+
+// Конфігурація кредитних пакетів для one-off платежів.
+// Key = packCode, value = кількість кредитів.
+// priceId для кожного пакету береться з env: STRIPE_PRICE_CREDITS_{N}_USD
+export const CREDIT_PACK_CONFIG = {
+    credits_5: { credits: 5 },
+    credits_10: { credits: 10 },
+    credits_20: { credits: 20 },
+} as const;
+
+export type CreditPackCode = keyof typeof CREDIT_PACK_CONFIG;
+
 export const SUBSCRIPTION_STATUS = {
     ACTIVE: 'ACTIVE',
     TRIALING: 'TRIALING',
@@ -19,6 +37,7 @@ export const BILLING_EVENT_TYPE = {
     CHECKOUT_COMPLETED: 'CHECKOUT_COMPLETED',
     SUBSCRIPTION_UPDATED: 'SUBSCRIPTION_UPDATED',
     SUBSCRIPTION_DELETED: 'SUBSCRIPTION_DELETED',
+    ONE_OFF_PAYMENT_COMPLETED: 'ONE_OFF_PAYMENT_COMPLETED',
 } as const;
 
 export type BillingEventType =
@@ -26,9 +45,31 @@ export type BillingEventType =
 
 // --- Schemas ---
 
-export const CreateCheckoutSessionSchema = z.object({
-    planCode: z.string().min(1),
-});
+export const CreateCheckoutSessionSchema = z
+    .object({
+        paymentType: z.enum([PAYMENT_TYPE.SUBSCRIPTION, PAYMENT_TYPE.ONE_OFF]),
+        // Для subscription: planCode обов'язковий (наприклад, 'monthly_usd')
+        planCode: z.string().min(1).optional(),
+        // Для one-off: packCode обов'язковий (наприклад, 'credits_5')
+        packCode: z
+            .enum(
+                Object.keys(CREDIT_PACK_CONFIG) as [
+                    CreditPackCode,
+                    ...CreditPackCode[],
+                ]
+            )
+            .optional(),
+    })
+    .refine(
+        (data) =>
+            data.paymentType === PAYMENT_TYPE.SUBSCRIPTION
+                ? !!data.planCode
+                : !!data.packCode,
+        {
+            message:
+                'planCode required for subscription, packCode required for one_off',
+        }
+    );
 
 export type CreateCheckoutSession = z.infer<typeof CreateCheckoutSessionSchema>;
 
@@ -63,21 +104,28 @@ export const BillingWebhookEventSchema = z.object({
         BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
         BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
         BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED,
+        BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
     ]),
     providerEventId: z.string(),
     occurredAt: z.coerce.date(),
     userId: z.string(),
-    subscriptionStatus: z.enum([
-        SUBSCRIPTION_STATUS.ACTIVE,
-        SUBSCRIPTION_STATUS.TRIALING,
-        SUBSCRIPTION_STATUS.PAST_DUE,
-        SUBSCRIPTION_STATUS.CANCELED,
-        SUBSCRIPTION_STATUS.INCOMPLETE,
-        SUBSCRIPTION_STATUS.UNPAID,
-        SUBSCRIPTION_STATUS.UNKNOWN,
-    ]),
-    currentPeriodEnd: z.coerce.date().nullable(),
-    cancelAtPeriodEnd: z.boolean(),
+    // --- Subscription fields (присутні тільки для subscription events) ---
+    subscriptionStatus: z
+        .enum([
+            SUBSCRIPTION_STATUS.ACTIVE,
+            SUBSCRIPTION_STATUS.TRIALING,
+            SUBSCRIPTION_STATUS.PAST_DUE,
+            SUBSCRIPTION_STATUS.CANCELED,
+            SUBSCRIPTION_STATUS.INCOMPLETE,
+            SUBSCRIPTION_STATUS.UNPAID,
+            SUBSCRIPTION_STATUS.UNKNOWN,
+        ])
+        .nullable()
+        .optional(),
+    currentPeriodEnd: z.coerce.date().nullable().optional(),
+    cancelAtPeriodEnd: z.boolean().optional(),
+    // --- One-off fields (присутні тільки для ONE_OFF_PAYMENT_COMPLETED) ---
+    creditsAmount: z.number().int().positive().optional(),
     raw: z.record(z.string(), z.unknown()),
 });
 
