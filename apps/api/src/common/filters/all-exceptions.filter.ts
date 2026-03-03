@@ -12,7 +12,6 @@ import { ERROR_CODE, type ErrorCode } from '@lucidkit/types';
 const HTTP_STATUS_TO_ERROR_CODE: Partial<Record<HttpStatus, ErrorCode>> = {
     [HttpStatus.BAD_REQUEST]: ERROR_CODE.VALIDATION_ERROR,
     [HttpStatus.UNAUTHORIZED]: ERROR_CODE.UNAUTHORIZED,
-    [HttpStatus.FORBIDDEN]: ERROR_CODE.SUBSCRIPTION_REQUIRED,
     [HttpStatus.NOT_FOUND]: ERROR_CODE.NOT_FOUND,
     [HttpStatus.UNPROCESSABLE_ENTITY]: ERROR_CODE.VALIDATION_ERROR,
     [HttpStatus.TOO_MANY_REQUESTS]: ERROR_CODE.RATE_LIMIT_EXCEEDED,
@@ -31,12 +30,26 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 ? exception.getStatus()
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
+        const exceptionResponse =
+            exception instanceof HttpException
+                ? exception.getResponse()
+                : null;
+
         const message =
             exception instanceof HttpException
                 ? exception.message
                 : 'Internal server error';
 
+        // Allow exceptions to carry an explicit error code (e.g. SubscriptionGuard)
+        const explicitCode =
+            exceptionResponse &&
+            typeof exceptionResponse === 'object' &&
+            'code' in exceptionResponse
+                ? (exceptionResponse as { code: string }).code
+                : null;
+
         const code =
+            explicitCode ??
             HTTP_STATUS_TO_ERROR_CODE[status as HttpStatus] ??
             ERROR_CODE.INTERNAL_ERROR;
 

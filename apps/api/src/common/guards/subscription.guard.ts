@@ -5,6 +5,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { RESPONSE_CODE } from '@lucidkit/types';
 import { UserDocument } from '../../modules/users/schemas/user.schema';
 
 @Injectable()
@@ -13,12 +14,11 @@ export class SubscriptionGuard implements CanActivate {
         const request = context.switchToHttp().getRequest<Request>();
         const user = request.user as UserDocument | undefined;
 
-        if (!user) {
-            throw new ForbiddenException('Subscription required');
-        }
-
-        if (!user.billing?.hasActiveSubscription) {
-            throw new ForbiddenException('Subscription required');
+        if (!user || !user.billing?.hasActiveSubscription) {
+            throw new ForbiddenException({
+                code: RESPONSE_CODE.SUBSCRIPTION_REQUIRED,
+                message: 'Subscription required',
+            });
         }
 
         return true;

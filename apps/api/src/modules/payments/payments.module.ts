@@ -8,7 +8,7 @@ import {
     ProcessedWebhookEvent,
     ProcessedWebhookEventSchema,
 } from './schemas/processed-webhook-event.schema';
-import { User, UserSchema } from '../users/schemas/user.schema';
+import { UsersModule } from '../users/users.module';
 
 @Module({
     imports: [
@@ -17,8 +17,8 @@ import { User, UserSchema } from '../users/schemas/user.schema';
                 name: ProcessedWebhookEvent.name,
                 schema: ProcessedWebhookEventSchema,
             },
-            { name: User.name, schema: UserSchema },
         ]),
+        UsersModule,
     ],
     controllers: [PaymentsController],
     providers: [PaymentsService, StripeService, paymentProviderProvider],

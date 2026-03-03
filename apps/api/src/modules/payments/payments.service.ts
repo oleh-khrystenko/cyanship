@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
     BILLING_EVENT_TYPE,
+    RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
 } from '@lucidkit/types';
@@ -48,7 +49,10 @@ export class PaymentsService {
         }
 
         if (user.billing?.hasActiveSubscription) {
-            throw new ConflictException('Already subscribed');
+            throw new ConflictException({
+                code: RESPONSE_CODE.ALREADY_SUBSCRIBED,
+                message: 'Already subscribed',
+            });
         }
 
         const result = await this.paymentProvider.createCheckoutSession({
@@ -71,7 +75,10 @@ export class PaymentsService {
         }
 
         if (!user.billing?.providerCustomerId) {
-            throw new BadRequestException('No billing account');
+            throw new BadRequestException({
+                code: RESPONSE_CODE.NO_BILLING_ACCOUNT,
+                message: 'No billing account',
+            });
         }
 
         const result = await this.paymentProvider.createPortalSession(
@@ -123,10 +130,10 @@ export class PaymentsService {
             return;
         }
 
-        // 5. Out-of-order check
+        // 5. Out-of-order check (strict < to allow same-second events through)
         if (
             user.billing?.lastProviderEventAt &&
-            event.occurredAt <= user.billing.lastProviderEventAt
+            event.occurredAt < user.billing.lastProviderEventAt
         ) {
             this.logger.debug(
                 `Skipping stale event ${event.providerEventId} for user ${userId}`,
@@ -148,7 +155,7 @@ export class PaymentsService {
     private async resolveUserId(
         event: BillingWebhookEvent,
     ): Promise<string | null> {
-        if (event.userId) {
+        if (event.userId.length > 0) {
             return event.userId;
         }
 
@@ -221,13 +228,14 @@ export class PaymentsService {
         switch (event.type) {
             case BILLING_EVENT_TYPE.CHECKOUT_COMPLETED: {
                 const raw = event.raw as Record<string, unknown>;
+                const metadata = raw.metadata as Record<string, string> | undefined;
                 base['billing.provider'] = 'stripe';
                 base['billing.providerCustomerId'] =
                     (raw.customer as string) ?? null;
                 base['billing.providerSubscriptionId'] =
                     (raw.subscription as string) ?? null;
                 base['billing.planCode'] =
-                    ENV.STRIPE_PRICE_MONTHLY_USD;
+                    metadata?.planCode ?? null;
                 base['billing.currency'] =
                     (raw.currency as string) ?? null;
                 base['billing.providerSubscriptionStatus'] =

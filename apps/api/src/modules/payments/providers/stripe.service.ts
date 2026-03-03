@@ -34,7 +34,7 @@ export class StripeService implements IPaymentProvider {
             line_items: [
                 { price: ENV.STRIPE_PRICE_MONTHLY_USD, quantity: 1 },
             ],
-            metadata: { userId: input.userId },
+            metadata: { userId: input.userId, planCode: input.planCode },
             client_reference_id: input.userId,
             success_url: input.successUrl,
             cancel_url: input.cancelUrl,
@@ -104,6 +104,8 @@ export class StripeService implements IPaymentProvider {
             providerEventId: event.id,
             occurredAt: new Date(event.created * 1000),
             userId,
+            // Checkout session doesn't carry subscription status;
+            // the follow-up customer.subscription.updated event will set the real value.
             subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
             currentPeriodEnd: null,
             cancelAtPeriodEnd: false,

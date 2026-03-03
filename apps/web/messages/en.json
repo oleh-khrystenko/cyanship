@@ -55,11 +55,6 @@
             "magic_link_sent": "A sign-in link has been sent to your email",
             "logged_out": "You have been logged out",
             "account_deleted": "Account deleted"
-        },
-        "payments": {
-            "checkout_session_created": "Checkout session created. Proceed to payment.",
-            "portal_session_created": "Redirecting to subscription management portal.",
-            "webhook_processed": "Webhook processed."
         }
     },
     "errors": {
@@ -138,7 +133,8 @@
             "title": "Subscribe",
             "description": "Get access to AI-powered vehicle analysis.",
             "plan_label": "Plan: Monthly",
-            "button": "Subscribe"
+            "button": "Subscribe",
+            "error": "Failed to create checkout session"
         },
         "active": {
             "title": "Your subscription",
@@ -147,7 +143,13 @@
             "plan_label": "Plan: {plan}",
             "next_billing": "Next billing: {date}",
             "cancel_notice": "Your subscription will be canceled at the end of the current period.",
-            "manage_button": "Manage subscription"
+            "manage_button": "Manage subscription",
+            "manage_error": "Failed to open management portal"
+        },
+        "callback": {
+            "loading": "Processing payment…",
+            "success": "Subscription activated",
+            "canceled": "Payment canceled"
         }
     },
     "components": {

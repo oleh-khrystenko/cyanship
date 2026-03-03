@@ -45,6 +45,8 @@ export class PaymentsController {
         return { data: { portalUrl: result.portalUrl } };
     }
 
+    private static readonly SUPPORTED_PROVIDERS = new Set(['stripe']);
+
     @SkipThrottle()
     @Post('webhook/:provider')
     async handleWebhook(
@@ -52,6 +54,12 @@ export class PaymentsController {
         @Req() req: RawBodyRequest<Request>,
         @Headers('stripe-signature') signature: string,
     ): Promise<{ received: true }> {
+        if (!PaymentsController.SUPPORTED_PROVIDERS.has(provider)) {
+            throw new BadRequestException(`Unsupported provider: ${provider}`);
+        }
+        if (!signature) {
+            throw new BadRequestException('Missing webhook signature');
+        }
         const rawBody = req.rawBody;
         if (!rawBody) {
             throw new BadRequestException('Missing raw body');

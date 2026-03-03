@@ -38,7 +38,7 @@ export default function BillingPage() {
             );
             window.location.href = checkoutUrl;
         } catch {
-            toast.error(t('subscribe.button'));
+            toast.error(t('subscribe.error'));
             setIsLoading(false);
         }
     };
@@ -49,7 +49,7 @@ export default function BillingPage() {
             const { portalUrl } = await createPortalSession();
             window.location.href = portalUrl;
         } catch {
-            toast.error(t('active.manage_button'));
+            toast.error(t('active.manage_error'));
             setIsLoading(false);
         }
     };
