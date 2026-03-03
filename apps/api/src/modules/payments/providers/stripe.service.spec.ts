@@ -343,6 +343,25 @@ describe('StripeService', () => {
                 expect(result?.userId).toBe('user123');
             });
 
+            it('should return null for mode=payment + unpaid (async method pending)', () => {
+                mockConstructEvent.mockReturnValue(
+                    makeCheckoutEvent({
+                        mode: 'payment',
+                        payment_status: 'unpaid',
+                        metadata: {
+                            userId: 'user123',
+                            credits: '5',
+                            planCode: 'credits_5',
+                        },
+                        client_reference_id: 'user123',
+                    }),
+                );
+
+                const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+                expect(result).toBeNull();
+            });
+
             it('should return CHECKOUT_COMPLETED for mode=subscription', () => {
                 mockConstructEvent.mockReturnValue(
                     makeCheckoutEvent({ mode: 'subscription' }),
@@ -351,6 +370,62 @@ describe('StripeService', () => {
                 const result = service.handleWebhookPayload(rawBody, sigHeader);
 
                 expect(result?.type).toBe(BILLING_EVENT_TYPE.CHECKOUT_COMPLETED);
+            });
+        });
+
+        // ── checkout.session.async_payment_succeeded ──────────────────
+
+        describe('checkout.session.async_payment_succeeded', () => {
+            it('should return ONE_OFF_PAYMENT_COMPLETED for async payment with mode=payment + paid', () => {
+                mockConstructEvent.mockReturnValue({
+                    id: 'evt_async_paid',
+                    type: 'checkout.session.async_payment_succeeded',
+                    created: 1_700_000_000,
+                    data: {
+                        object: {
+                            id: 'cs_async_xxx',
+                            mode: 'payment',
+                            payment_status: 'paid',
+                            metadata: {
+                                userId: 'user_async',
+                                credits: '10',
+                                planCode: 'credits_10',
+                            },
+                            client_reference_id: 'user_async',
+                        },
+                    },
+                });
+
+                const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+                expect(result).toMatchObject({
+                    type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                    providerEventId: 'evt_async_paid',
+                    userId: 'user_async',
+                    creditsAmount: 10,
+                    packCode: 'credits_10',
+                });
+            });
+
+            it('should return null for async payment with mode=payment + unpaid', () => {
+                mockConstructEvent.mockReturnValue({
+                    id: 'evt_async_unpaid',
+                    type: 'checkout.session.async_payment_succeeded',
+                    created: 1_700_000_000,
+                    data: {
+                        object: {
+                            id: 'cs_async_unpaid',
+                            mode: 'payment',
+                            payment_status: 'unpaid',
+                            metadata: { userId: 'user_async' },
+                            client_reference_id: 'user_async',
+                        },
+                    },
+                });
+
+                const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+                expect(result).toBeNull();
             });
         });
 

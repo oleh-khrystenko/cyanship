@@ -83,6 +83,7 @@ export class StripeService implements IPaymentProvider {
 
         switch (event.type) {
             case 'checkout.session.completed':
+            case 'checkout.session.async_payment_succeeded':
                 return this.handleCheckoutCompleted(event);
             case 'customer.subscription.updated':
                 return this.handleSubscriptionEvent(
