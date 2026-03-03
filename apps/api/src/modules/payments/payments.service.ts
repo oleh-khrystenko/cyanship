@@ -194,46 +194,62 @@ export class PaymentsService {
         event: BillingWebhookEvent,
         userId: string,
     ): Promise<void> {
-        const user = await this.userModel.findById(userId).lean();
-        if (!user) {
-            this.logger.warn(
-                `User ${userId} not found for webhook event ${event.providerEventId}`,
-            );
-            return;
-        }
-
-        // Out-of-order check (тільки для subscription events)
-        // One-off платежі незалежні один від одного, order не важливий
-        if (
-            event.type !== BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED &&
-            user.billing?.lastProviderEventAt &&
-            event.occurredAt < user.billing.lastProviderEventAt
-        ) {
-            this.logger.debug(
-                `Skipping stale event ${event.providerEventId} for user ${userId}`,
-            );
-            return;
-        }
-
-        // Apply event
         if (event.type === BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED) {
+            // One-off: independent events, no ordering concern
+            const user = await this.userModel.findById(userId).lean();
+            if (!user) {
+                this.logger.warn(
+                    `User ${userId} not found for webhook event ${event.providerEventId}`,
+                );
+                return;
+            }
             await this.applyOneOffPayment(userId, event);
         } else {
-            const billingFields = this.buildBillingUpdate(event, user);
-            if (user.billing) {
-                // Dot-notation preserves existing billing fields
-                const dotNotation: Record<string, unknown> = {};
-                for (const [key, value] of Object.entries(billingFields)) {
-                    dotNotation[`billing.${key}`] = value;
+            // Subscription: atomic out-of-order guard + update in one query.
+            // Prevents race condition where two concurrent webhooks read stale
+            // lastProviderEventAt and both pass the ordering check.
+            //
+            // Two-phase approach: MongoDB can't use dot-notation $set on a
+            // field that is explicitly null, so we handle billing=null
+            // (first-ever billing event) separately from billing={...}
+            // (subsequent events).
+            const billingFields = this.buildBillingUpdate(event);
+
+            // Phase 1: try dot-notation update for existing billing object
+            const dotNotation: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(billingFields)) {
+                dotNotation[`billing.${key}`] = value;
+            }
+
+            const updated = await this.userModel.findOneAndUpdate(
+                {
+                    _id: userId,
+                    billing: { $ne: null },
+                    $or: [
+                        { 'billing.lastProviderEventAt': null },
+                        {
+                            'billing.lastProviderEventAt': {
+                                $lte: event.occurredAt,
+                            },
+                        },
+                    ],
+                },
+                { $set: dotNotation },
+            );
+
+            if (!updated) {
+                // Phase 2: billing is null (first billing event) — set full subdocument
+                const initialized = await this.userModel.findOneAndUpdate(
+                    { _id: userId, billing: null },
+                    { $set: { billing: billingFields } },
+                );
+
+                if (!initialized) {
+                    this.logger.debug(
+                        `Skipping stale/orphan event ${event.providerEventId} for user ${userId}`,
+                    );
+                    return;
                 }
-                await this.userModel.findByIdAndUpdate(userId, {
-                    $set: dotNotation,
-                });
-            } else {
-                // billing is null — must set the entire subdocument
-                await this.userModel.findByIdAndUpdate(userId, {
-                    $set: { billing: billingFields },
-                });
             }
         }
 
@@ -361,7 +377,6 @@ export class PaymentsService {
 
     private buildBillingUpdate(
         event: BillingWebhookEvent,
-        user: User & { _id: unknown },
     ): Record<string, unknown> {
         const status =
             event.subscriptionStatus ?? SUBSCRIPTION_STATUS.UNKNOWN;

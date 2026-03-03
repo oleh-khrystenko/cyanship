@@ -56,6 +56,7 @@ const mockUserModel = {
     findById: jest.fn(),
     findOne: jest.fn(),
     findByIdAndUpdate: jest.fn(),
+    findOneAndUpdate: jest.fn(),
 };
 
 const mockWebhookEventModel = {
@@ -355,7 +356,7 @@ describe('PaymentsService', () => {
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
             });
 
-            it('should process CHECKOUT_COMPLETED event and call findByIdAndUpdate with correct billing fields', async () => {
+            it('should process CHECKOUT_COMPLETED event with atomic out-of-order guard', async () => {
                 const occurredAt = new Date('2024-01-01');
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
@@ -376,10 +377,7 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -396,19 +394,17 @@ describe('PaymentsService', () => {
                     { provider: 'stripe', providerEventId: 'evt_test' },
                     { $set: { status: 'applied' } },
                 );
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
                     {
-                        $set: {
-                            billing: expect.objectContaining({
-                                provider: 'stripe',
-                                hasActiveSubscription: true,
-                                providerCustomerId: 'cus_test',
-                                providerSubscriptionId: 'sub_test',
-                                planCode: 'monthly_usd',
-                                currency: 'usd',
-                            }),
-                        },
+                        $set: expect.objectContaining({
+                            'billing.provider': 'stripe',
+                            'billing.hasActiveSubscription': true,
+                            'billing.providerCustomerId': 'cus_test',
+                            'billing.providerSubscriptionId': 'sub_test',
+                            'billing.planCode': 'monthly_usd',
+                            'billing.currency': 'usd',
+                        }),
                     },
                 );
             });
@@ -431,10 +427,7 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -450,7 +443,7 @@ describe('PaymentsService', () => {
                     subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                     currentPeriodEnd: null,
                     cancelAtPeriodEnd: false,
-                    raw: { id: 'sub_test_xxx' },
+                    raw: { id: 'sub_test_xxx', status: 'active' },
                 };
 
                 const foundUser = { _id: { toString: () => MOCK_USER_ID } };
@@ -459,10 +452,7 @@ describe('PaymentsService', () => {
                     lean: jest.fn().mockResolvedValue(foundUser),
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -570,15 +560,12 @@ describe('PaymentsService', () => {
                 mockWebhookEventModel.findOne.mockReturnValue({
                     lean: jest.fn().mockResolvedValue({ status: 'pending' }),
                 });
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
                 mockWebhookEventModel.updateOne.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalled();
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalled();
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_retry' },
                     { $set: { status: 'applied' } },
@@ -653,62 +640,69 @@ describe('PaymentsService', () => {
                 raw: { status: 'active' },
             });
 
-            it('should skip stale event when occurredAt is before lastProviderEventAt', async () => {
-                const lastEventAt = new Date('2024-06-01T00:00:00Z');
+            it('should include atomic out-of-order guard in findOneAndUpdate filter', async () => {
                 const staleAt = new Date('2024-05-31T00:00:00Z');
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(
                     makeEvent(staleAt),
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(
-                        mockUser({ billing: { lastProviderEventAt: lastEventAt } }),
-                    ),
-                });
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    {
+                        _id: MOCK_USER_ID,
+                        billing: { $ne: null },
+                        $or: [
+                            { 'billing.lastProviderEventAt': null },
+                            {
+                                'billing.lastProviderEventAt': {
+                                    $lte: staleAt,
+                                },
+                            },
+                        ],
+                    },
+                    expect.objectContaining({ $set: expect.any(Object) }),
+                );
             });
 
-            it('should process event when occurredAt equals lastProviderEventAt (strict < check)', async () => {
-                const sameAt = new Date('2024-06-01T00:00:00Z');
+            it('should skip when findOneAndUpdate returns null (stale or orphan event)', async () => {
+                const staleAt = new Date('2024-05-31T00:00:00Z');
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                    makeEvent(sameAt),
+                    makeEvent(staleAt),
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(
-                        mockUser({ billing: { lastProviderEventAt: sameAt } }),
-                    ),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                // findOneAndUpdate returns null — atomic guard rejected the update
+                mockUserModel.findOneAndUpdate.mockResolvedValue(null);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalled();
+                // Event is still marked as applied (stale skip is a valid outcome)
+                expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
+                    { provider: 'stripe', providerEventId: 'evt_ooo' },
+                    { $set: { status: 'applied' } },
+                );
             });
 
-            it('should process event when occurredAt is after lastProviderEventAt', async () => {
-                const lastEventAt = new Date('2024-05-01T00:00:00Z');
+            it('should apply when findOneAndUpdate returns document (valid event)', async () => {
                 const newerAt = new Date('2024-06-01T00:00:00Z');
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(
                     makeEvent(newerAt),
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(
-                        mockUser({ billing: { lastProviderEventAt: lastEventAt } }),
-                    ),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalled();
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalled();
+                expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
+                    { provider: 'stripe', providerEventId: 'evt_ooo' },
+                    { $set: { status: 'applied' } },
+                );
             });
         });
 
@@ -737,27 +731,22 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
                     {
-                        $set: {
-                            billing: expect.objectContaining({
-                                provider: 'stripe',
-                                providerCustomerId: 'cus_abc',
-                                providerSubscriptionId: 'sub_abc',
-                                planCode: 'monthly_usd',
-                                currency: 'usd',
-                                hasActiveSubscription: true,
-                                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
-                            }),
-                        },
+                        $set: expect.objectContaining({
+                            'billing.provider': 'stripe',
+                            'billing.providerCustomerId': 'cus_abc',
+                            'billing.providerSubscriptionId': 'sub_abc',
+                            'billing.planCode': 'monthly_usd',
+                            'billing.currency': 'usd',
+                            'billing.hasActiveSubscription': true,
+                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
+                        }),
                     },
                 );
             });
@@ -777,24 +766,19 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
                     {
-                        $set: {
-                            billing: expect.objectContaining({
-                                hasActiveSubscription: true,
-                                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
-                                currentPeriodEnd: currentPeriodEnd,
-                                cancelAtPeriodEnd: false,
-                            }),
-                        },
+                        $set: expect.objectContaining({
+                            'billing.hasActiveSubscription': true,
+                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
+                            'billing.currentPeriodEnd': currentPeriodEnd,
+                            'billing.cancelAtPeriodEnd': false,
+                        }),
                     },
                 );
             });
@@ -813,22 +797,17 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
                     {
-                        $set: {
-                            billing: expect.objectContaining({
-                                hasActiveSubscription: false,
-                                subscriptionStatus: SUBSCRIPTION_STATUS.PAST_DUE,
-                            }),
-                        },
+                        $set: expect.objectContaining({
+                            'billing.hasActiveSubscription': false,
+                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.PAST_DUE,
+                        }),
                     },
                 );
             });
@@ -847,28 +826,77 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
+                    {
+                        $set: expect.objectContaining({
+                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.CANCELED,
+                            'billing.hasActiveSubscription': false,
+                            'billing.providerSubscriptionStatus': 'canceled',
+                        }),
+                    },
+                );
+            });
+
+            it('should fall through to Phase 2 (full subdocument set) when billing is null', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                    providerEventId: 'evt_billing_null',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        customer: 'cus_first',
+                        subscription: 'sub_first',
+                        currency: 'usd',
+                        status: 'complete',
+                        metadata: { planCode: 'monthly_usd' },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                // Phase 1 returns null (billing is null, so $ne: null doesn't match)
+                mockUserModel.findOneAndUpdate
+                    .mockResolvedValueOnce(null)
+                    .mockResolvedValueOnce({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // Phase 1: dot-notation attempt with billing: { $ne: null }
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenNthCalledWith(
+                    1,
+                    expect.objectContaining({
+                        _id: MOCK_USER_ID,
+                        billing: { $ne: null },
+                    }),
+                    { $set: expect.objectContaining({ 'billing.provider': 'stripe' }) },
+                );
+
+                // Phase 2: full subdocument set with billing: null filter
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenNthCalledWith(
+                    2,
+                    { _id: MOCK_USER_ID, billing: null },
                     {
                         $set: {
                             billing: expect.objectContaining({
-                                subscriptionStatus: SUBSCRIPTION_STATUS.CANCELED,
-                                hasActiveSubscription: false,
-                                providerSubscriptionStatus: 'canceled',
+                                provider: 'stripe',
+                                providerCustomerId: 'cus_first',
+                                providerSubscriptionId: 'sub_first',
+                                hasActiveSubscription: true,
                             }),
                         },
                     },
                 );
             });
 
-            it('should use dot-notation $set when user already has billing', async () => {
+            it('should always use dot-notation $set for atomic updates', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_dot',
@@ -882,32 +910,18 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(
-                        mockUser({
-                            billing: {
-                                provider: 'stripe',
-                                providerCustomerId: 'cus_existing',
-                                providerSubscriptionId: 'sub_existing',
-                                planCode: 'monthly_usd',
-                                lastProviderEventAt: new Date('2023-01-01'),
-                            },
-                        }),
-                    ),
-                });
-                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    {
-                        $set: expect.objectContaining({
-                            'billing.hasActiveSubscription': false,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.PAST_DUE,
-                        }),
-                    },
-                );
+                const [, update] = mockUserModel.findOneAndUpdate.mock.calls[0] as [
+                    unknown,
+                    { $set: Record<string, unknown> },
+                ];
+                // All keys in $set must be dot-notation billing paths
+                for (const key of Object.keys(update.$set)) {
+                    expect(key).toMatch(/^billing\./);
+                }
             });
         });
 
@@ -985,7 +999,7 @@ describe('PaymentsService', () => {
         // ── User not found after idempotency ─────────────────────────
 
         describe('user not found after idempotency check', () => {
-            it('should skip billing update but still mark event as applied when findById returns null', async () => {
+            it('should skip subscription billing update and mark applied when findOneAndUpdate returns null (orphan user)', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_ghost_user',
@@ -999,15 +1013,38 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
+                // findOneAndUpdate returns null — user not found or stale
+                mockUserModel.findOneAndUpdate.mockResolvedValue(null);
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
+                    { provider: 'stripe', providerEventId: 'evt_ghost_user' },
+                    { $set: { status: 'applied' } },
+                );
+            });
+
+            it('should skip one-off credits and mark applied when findById returns null', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                    providerEventId: 'evt_ghost_oneoff',
+                    occurredAt: new Date(),
+                    userId: MOCK_USER_ID,
+                    creditsAmount: 5,
+                    raw: {},
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue({
                     lean: jest.fn().mockResolvedValue(null),
                 });
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
-                    { provider: 'stripe', providerEventId: 'evt_ghost_user' },
+                    { provider: 'stripe', providerEventId: 'evt_ghost_oneoff' },
                     { $set: { status: 'applied' } },
                 );
             });
