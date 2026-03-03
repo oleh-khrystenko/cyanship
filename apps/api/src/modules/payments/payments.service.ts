@@ -251,6 +251,7 @@ export class PaymentsService {
                 occurredAt: event.occurredAt,
                 type: event.type,
                 userId,
+                packCode: event.packCode ?? null,
             });
             return false;
         } catch (error: unknown) {

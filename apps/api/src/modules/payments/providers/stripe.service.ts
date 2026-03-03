@@ -124,6 +124,7 @@ export class StripeService implements IPaymentProvider {
                 occurredAt: new Date(event.created * 1000),
                 userId,
                 creditsAmount: credits,
+                packCode: session.metadata?.planCode || undefined,
                 raw: this.toRaw(event.data.object),
             };
         }

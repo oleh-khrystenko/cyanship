@@ -23,6 +23,9 @@ export class ProcessedWebhookEvent {
 
     @Prop({ type: String, default: null })
     userId!: string | null;
+
+    @Prop({ type: String, default: null })
+    packCode!: string | null;
 }
 
 export const ProcessedWebhookEventSchema =

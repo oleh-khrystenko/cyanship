@@ -126,6 +126,7 @@ export const BillingWebhookEventSchema = z.object({
     cancelAtPeriodEnd: z.boolean().optional(),
     // --- One-off fields (присутні тільки для ONE_OFF_PAYMENT_COMPLETED) ---
     creditsAmount: z.number().int().positive().optional(),
+    packCode: z.string().optional(),
     raw: z.record(z.string(), z.unknown()),
 });
 
