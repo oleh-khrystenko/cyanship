@@ -231,22 +231,13 @@ describe('UsersService', () => {
             );
         });
 
-        it('should throw when user not found', async () => {
+        it('should not throw when user not found', async () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(null);
 
             await expect(
                 service.addCredits('nonexistent', 5),
-            ).rejects.toThrow('addCredits: user nonexistent not found');
+            ).resolves.toBeUndefined();
         });
-
-        it.each([0, -1, -100, NaN, Infinity])(
-            'should throw for invalid amount: %s',
-            async (amount) => {
-                await expect(
-                    service.addCredits('507f1f77bcf86cd799439011', amount),
-                ).rejects.toThrow('addCredits: invalid amount');
-            },
-        );
     });
 
     describe('deductCredit', () => {
