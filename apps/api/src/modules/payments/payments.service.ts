@@ -261,7 +261,7 @@ export class PaymentsService {
     private async resolveUserId(
         event: BillingWebhookEvent,
     ): Promise<string | null> {
-        if (event.userId.length > 0) {
+        if (event.userId?.length > 0) {
             return event.userId;
         }
 
