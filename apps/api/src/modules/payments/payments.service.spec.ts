@@ -3,22 +3,39 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import {
     BILLING_EVENT_TYPE,
+    PAYMENT_TYPE,
     RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
+    type CreditPackCode,
 } from '@lucidkit/types';
 
 import { PaymentsService } from './payments.service';
 import { PAYMENT_PROVIDER } from './interfaces/payment-provider.interface';
 import { User } from '../users/schemas/user.schema';
 import { ProcessedWebhookEvent } from './schemas/processed-webhook-event.schema';
+import { UsersService } from '../users/users.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
         BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
         BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
+        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
+        PAYMENTS_SUBSCRIPTION_ENABLED: true,
+        PAYMENTS_ONE_OFF_ENABLED: true,
+    },
+    STRIPE_CREDIT_PACKS: {
+        credits_5: { priceId: 'price_credits5_test', credits: 5 },
+        credits_10: { priceId: 'price_credits10_test', credits: 10 },
+        credits_20: { priceId: 'price_credits20_test', credits: 20 },
     },
 }));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const envModule = require('../../config/env') as {
+    ENV: Record<string, unknown>;
+    STRIPE_CREDIT_PACKS: Record<string, { priceId: string; credits: number }>;
+};
 
 const MOCK_USER_ID = '507f1f77bcf86cd799439011';
 
@@ -45,6 +62,10 @@ const mockWebhookEventModel = {
     create: jest.fn(),
 };
 
+const mockUsersService = {
+    addCredits: jest.fn(),
+};
+
 describe('PaymentsService', () => {
     let service: PaymentsService;
 
@@ -61,16 +82,21 @@ describe('PaymentsService', () => {
                     provide: getModelToken(ProcessedWebhookEvent.name),
                     useValue: mockWebhookEventModel,
                 },
+                { provide: UsersService, useValue: mockUsersService },
             ],
         }).compile();
 
         service = module.get<PaymentsService>(PaymentsService);
         jest.clearAllMocks();
+
+        // Reset feature flags to defaults
+        envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
+        envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = true;
     });
 
-    // ─── createCheckoutSession ───────────────────────────────────────
+    // ─── createCheckoutSession (subscription) ─────────────────────────
 
-    describe('createCheckoutSession', () => {
+    describe('createCheckoutSession (subscription)', () => {
         it('should call paymentProvider with correct args and return checkoutUrl', async () => {
             const user = mockUser({ billing: null });
             mockUserModel.findById.mockReturnValue({
@@ -81,18 +107,22 @@ describe('PaymentsService', () => {
                 providerSessionId: 'cs_test',
             });
 
-            const result = await service.createCheckoutSession(
-                MOCK_USER_ID,
-                'monthly_usd',
-            );
-
-            expect(mockPaymentProvider.createCheckoutSession).toHaveBeenCalledWith({
-                userId: MOCK_USER_ID,
-                userEmail: user.email,
+            const result = await service.createCheckoutSession(MOCK_USER_ID, {
+                paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                 planCode: 'monthly_usd',
-                successUrl: 'http://localhost:3000/billing/success',
-                cancelUrl: 'http://localhost:3000/billing/cancel',
             });
+
+            expect(mockPaymentProvider.createCheckoutSession).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: MOCK_USER_ID,
+                    userEmail: user.email,
+                    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                    planCode: 'monthly_usd',
+                    priceId: 'price_test_monthly',
+                    successUrl: 'http://localhost:3000/billing/success',
+                    cancelUrl: 'http://localhost:3000/billing/cancel',
+                }),
+            );
             expect(result).toEqual({
                 checkoutUrl: 'https://checkout.stripe.com/test',
             });
@@ -108,7 +138,10 @@ describe('PaymentsService', () => {
                 providerSessionId: 'cs_test',
             });
 
-            await service.createCheckoutSession(MOCK_USER_ID, 'monthly_usd');
+            await service.createCheckoutSession(MOCK_USER_ID, {
+                paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                planCode: 'monthly_usd',
+            });
 
             expect(mockPaymentProvider.createCheckoutSession).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -125,7 +158,10 @@ describe('PaymentsService', () => {
             });
 
             const error = await service
-                .createCheckoutSession(MOCK_USER_ID, 'monthly_usd')
+                .createCheckoutSession(MOCK_USER_ID, {
+                    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                    planCode: 'monthly_usd',
+                })
                 .catch((e: unknown) => e);
 
             expect(error).toBeInstanceOf(ConflictException);
@@ -140,7 +176,87 @@ describe('PaymentsService', () => {
             });
 
             await expect(
-                service.createCheckoutSession(MOCK_USER_ID, 'monthly_usd'),
+                service.createCheckoutSession(MOCK_USER_ID, {
+                    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                    planCode: 'monthly_usd',
+                }),
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw when PAYMENTS_SUBSCRIPTION_ENABLED is false', async () => {
+            envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+
+            await expect(
+                service.createCheckoutSession(MOCK_USER_ID, {
+                    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                    planCode: 'monthly_usd',
+                }),
+            ).rejects.toThrow(BadRequestException);
+        });
+    });
+
+    // ─── createCheckoutSession (one-off) ──────────────────────────────
+
+    describe('createCheckoutSession (one-off)', () => {
+        it('should create one-off checkout session for valid packCode', async () => {
+            mockUserModel.findById.mockReturnValue({
+                lean: () =>
+                    Promise.resolve({
+                        _id: MOCK_USER_ID,
+                        email: 'user@test.com',
+                        billing: null,
+                    }),
+            });
+            mockPaymentProvider.createCheckoutSession.mockResolvedValue({
+                checkoutUrl: 'https://checkout.stripe.com/one-off',
+                providerSessionId: 'cs_test_oneoff',
+            });
+
+            const result = await service.createCheckoutSession(MOCK_USER_ID, {
+                paymentType: PAYMENT_TYPE.ONE_OFF,
+                packCode: 'credits_5',
+            });
+
+            expect(result.checkoutUrl).toBe(
+                'https://checkout.stripe.com/one-off',
+            );
+            expect(
+                mockPaymentProvider.createCheckoutSession,
+            ).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paymentType: PAYMENT_TYPE.ONE_OFF,
+                    planCode: 'credits_5',
+                    priceId: 'price_credits5_test',
+                    credits: 5,
+                }),
+            );
+        });
+
+        it('should throw BadRequestException for invalid packCode', async () => {
+            mockUserModel.findById.mockReturnValue({
+                lean: () =>
+                    Promise.resolve({
+                        _id: MOCK_USER_ID,
+                        email: 'user@test.com',
+                    }),
+            });
+
+            await expect(
+                service.createCheckoutSession(MOCK_USER_ID, {
+                    paymentType: PAYMENT_TYPE.ONE_OFF,
+                    packCode: 'invalid_pack' as CreditPackCode,
+                }),
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw when PAYMENTS_ONE_OFF_ENABLED is false', async () => {
+            envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+
+            await expect(
+                service.createCheckoutSession(MOCK_USER_ID, {
+                    paymentType: PAYMENT_TYPE.ONE_OFF,
+                    packCode: 'credits_5',
+                }),
             ).rejects.toThrow(BadRequestException);
         });
     });
@@ -663,6 +779,77 @@ describe('PaymentsService', () => {
                         },
                     },
                 );
+            });
+        });
+
+        // ── One-off webhook flow ─────────────────────────────────────
+
+        describe('one-off webhook flow', () => {
+            const oneOffEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                providerEventId: 'evt_oneoff_123',
+                occurredAt: new Date('2026-03-01'),
+                userId: MOCK_USER_ID,
+                creditsAmount: 5,
+                raw: {},
+            };
+
+            it('should add credits on ONE_OFF_PAYMENT_COMPLETED', async () => {
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(oneOffEvent);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue(mockUser()),
+                });
+                mockUsersService.addCredits.mockResolvedValue(undefined);
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    5,
+                );
+                expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+            });
+
+            it('should NOT apply out-of-order check for one-off events', async () => {
+                const staleUserBilling = {
+                    lastProviderEventAt: new Date('2026-03-15'),
+                };
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                    ...oneOffEvent,
+                    occurredAt: new Date('2026-02-01'),
+                });
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue({
+                    lean: jest
+                        .fn()
+                        .mockResolvedValue(
+                            mockUser({ billing: staleUserBilling }),
+                        ),
+                });
+                mockUsersService.addCredits.mockResolvedValue(undefined);
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    5,
+                );
+            });
+
+            it('should warn and skip if creditsAmount is 0', async () => {
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                    ...oneOffEvent,
+                    creditsAmount: 0,
+                });
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue(mockUser()),
+                });
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
             });
         });
 

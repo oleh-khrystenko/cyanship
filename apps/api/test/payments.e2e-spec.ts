@@ -64,8 +64,18 @@ jest.mock('../src/config/env', () => ({
         STRIPE_SECRET_KEY: 'sk_test_payments_e2e',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
         STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
+        STRIPE_PRICE_CREDITS_5_USD: 'price_credits5_test',
+        STRIPE_PRICE_CREDITS_10_USD: 'price_credits10_test',
+        STRIPE_PRICE_CREDITS_20_USD: 'price_credits20_test',
         BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
         BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
+        PAYMENTS_SUBSCRIPTION_ENABLED: true,
+        PAYMENTS_ONE_OFF_ENABLED: true,
+    },
+    STRIPE_CREDIT_PACKS: {
+        credits_5: { priceId: 'price_credits5_test', credits: 5 },
+        credits_10: { priceId: 'price_credits10_test', credits: 10 },
+        credits_20: { priceId: 'price_credits20_test', credits: 20 },
     },
     parseLockoutThresholds: (raw: string) =>
         raw.split(',').map((entry: string) => {
@@ -319,7 +329,7 @@ describe('Payments E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
                 .expect(201)
                 .expect((res: supertest.Response) => {
                     expect(
@@ -339,7 +349,7 @@ describe('Payments E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
                 .expect(409)
                 .expect((res: supertest.Response) => {
                     expect(
@@ -351,11 +361,11 @@ describe('Payments E2E', () => {
         it('should return 401 when JWT token is missing', async () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
-                .send({ planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
                 .expect(401);
         });
 
-        it('should return 400 when planCode is missing from body', async () => {
+        it('should return 400 when paymentType is missing from body', async () => {
             await createUser('noplan@example.com', null);
             const { accessToken } = await loginAsUser('noplan@example.com');
 
@@ -366,14 +376,14 @@ describe('Payments E2E', () => {
                 .expect(400);
         });
 
-        it('should return 400 when planCode is empty string', async () => {
+        it('should return 400 when planCode is empty string for subscription', async () => {
             await createUser('emptyplan@example.com', null);
             const { accessToken } = await loginAsUser('emptyplan@example.com');
 
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ planCode: '' })
+                .send({ paymentType: 'subscription', planCode: '' })
                 .expect(400);
         });
     });
@@ -497,7 +507,7 @@ describe('Payments E2E', () => {
             const res = await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
                 .expect(201);
 
             expect(res.body).toHaveProperty('data');
@@ -509,7 +519,7 @@ describe('Payments E2E', () => {
         it('error response has { error: { code, message } } shape', async () => {
             const res = await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
-                .send({ planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
                 .expect(401);
 
             const body = res.body as {
@@ -535,6 +545,69 @@ describe('Payments E2E', () => {
             const body = res.body as { error: { code: string } };
             expect(body).toHaveProperty('error');
             expect(body.error).toHaveProperty('code');
+        });
+    });
+
+    // ─── E2. One-off checkout + webhook flow ────────────────────────────
+
+    describe('POST /api/payments/checkout-session (one-off)', () => {
+        it('should return 201 with checkoutUrl for one-off payment', async () => {
+            await createUser('oneoff@example.com', null);
+            const { accessToken } = await loginAsUser('oneoff@example.com');
+
+            await supertest(app.getHttpServer())
+                .post('/api/payments/checkout-session')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ paymentType: 'one_off', packCode: 'credits_5' })
+                .expect(201)
+                .expect((res: supertest.Response) => {
+                    expect(
+                        (res.body as { data: { checkoutUrl: string } }).data
+                            .checkoutUrl,
+                    ).toBe('https://checkout.stripe.com/test_session');
+                });
+        });
+
+        it('should return 400 for invalid packCode', async () => {
+            await createUser('badpack@example.com', null);
+            const { accessToken } = await loginAsUser('badpack@example.com');
+
+            await supertest(app.getHttpServer())
+                .post('/api/payments/checkout-session')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ paymentType: 'one_off', packCode: 'invalid_pack' })
+                .expect(400);
+        });
+
+        it('should credit user on ONE_OFF_PAYMENT_COMPLETED webhook', async () => {
+            const user = await createUser('credits-webhook@example.com', null);
+            const userId = (user._id as object).toString();
+
+            const oneOffEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                providerEventId: 'evt_oneoff_e2e_001',
+                occurredAt: new Date(),
+                userId,
+                creditsAmount: 5,
+                raw: {},
+            };
+
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                oneOffEvent,
+            );
+
+            // Send webhook
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201)
+                .expect({ received: true });
+
+            // Verify credits added
+            const updatedUser = await userModel.findById(userId).lean();
+            expect(updatedUser?.credits?.balance).toBe(5);
         });
     });
 

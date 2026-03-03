@@ -218,6 +218,19 @@ describe('UsersService', () => {
         });
     });
 
+    describe('addCredits', () => {
+        it('should increment credits.balance by amount', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(null);
+
+            await service.addCredits('507f1f77bcf86cd799439011', 10);
+
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011',
+                { $inc: { 'credits.balance': 10 } },
+            );
+        });
+    });
+
     describe('deductCredit', () => {
         it('should deduct from balance when balance > 0', async () => {
             const user = mockUserDoc({

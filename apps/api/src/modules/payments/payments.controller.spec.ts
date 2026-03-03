@@ -40,22 +40,47 @@ describe('PaymentsController', () => {
     // ─── POST /payments/checkout-session ────────────────────────────
 
     describe('POST /payments/checkout-session', () => {
-        it('should call paymentsService.createCheckoutSession with userId and planCode', async () => {
+        it('should create checkout session with subscription type', async () => {
+            const dto = {
+                paymentType: 'subscription' as const,
+                planCode: 'monthly_usd',
+            };
             mockPaymentsService.createCheckoutSession.mockResolvedValue({
                 checkoutUrl: 'https://checkout.stripe.com/test',
             });
 
             const result = await controller.createCheckoutSession(
                 mockUser as any,
-                { planCode: 'monthly_usd' } as any,
+                dto as any,
             );
 
-            expect(mockPaymentsService.createCheckoutSession).toHaveBeenCalledWith(
-                '507f1f77bcf86cd799439011',
-                'monthly_usd',
-            );
+            expect(
+                mockPaymentsService.createCheckoutSession,
+            ).toHaveBeenCalledWith('507f1f77bcf86cd799439011', dto);
             expect(result).toEqual({
                 data: { checkoutUrl: 'https://checkout.stripe.com/test' },
+            });
+        });
+
+        it('should create checkout session with one-off type', async () => {
+            const dto = {
+                paymentType: 'one_off' as const,
+                packCode: 'credits_5' as const,
+            };
+            mockPaymentsService.createCheckoutSession.mockResolvedValue({
+                checkoutUrl: 'https://checkout.stripe.com/oneoff',
+            });
+
+            const result = await controller.createCheckoutSession(
+                mockUser as any,
+                dto as any,
+            );
+
+            expect(
+                mockPaymentsService.createCheckoutSession,
+            ).toHaveBeenCalledWith('507f1f77bcf86cd799439011', dto);
+            expect(result).toEqual({
+                data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' },
             });
         });
     });

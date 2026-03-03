@@ -11,9 +11,14 @@ jest.mock('../../../config/env', () => ({
 
 import Stripe from 'stripe';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BILLING_EVENT_TYPE, SUBSCRIPTION_STATUS } from '@lucidkit/types';
+import {
+    BILLING_EVENT_TYPE,
+    PAYMENT_TYPE,
+    SUBSCRIPTION_STATUS,
+} from '@lucidkit/types';
 
 import { StripeService } from './stripe.service';
+import { CreateCheckoutInput } from '../interfaces/payment-provider.interface';
 
 // ─── Mock instances shared across tests ─────────────────────────────────────
 
@@ -40,7 +45,8 @@ const makeCheckoutEvent = (overrides: Record<string, unknown> = {}) => ({
     data: {
         object: {
             id: 'cs_test_xxx',
-            metadata: { userId: 'user123', planCode: 'monthly_usd' },
+            mode: 'subscription',
+            metadata: { userId: 'user123', planCode: 'monthly_usd', credits: '0' },
             client_reference_id: 'user123',
             customer: 'cus_test_xxx',
             subscription: 'sub_test_xxx',
@@ -70,6 +76,16 @@ const makeSubscriptionEvent = (
     },
 });
 
+const subscriptionInput: CreateCheckoutInput = {
+    userId: 'user123',
+    userEmail: 'test@example.com',
+    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+    planCode: 'monthly_usd',
+    priceId: 'price_test_monthly',
+    successUrl: 'http://localhost:3000/billing/success',
+    cancelUrl: 'http://localhost:3000/billing/cancel',
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('StripeService', () => {
@@ -87,30 +103,26 @@ describe('StripeService', () => {
     // ─── createCheckoutSession ───────────────────────────────────────
 
     describe('createCheckoutSession', () => {
-        const input = {
-            userId: 'user123',
-            userEmail: 'test@example.com',
-            planCode: 'monthly_usd',
-            successUrl: 'http://localhost:3000/billing/success',
-            cancelUrl: 'http://localhost:3000/billing/cancel',
-        };
-
-        it('should pass correct params to stripe.checkout.sessions.create', async () => {
+        it('should pass correct params to stripe.checkout.sessions.create for subscription', async () => {
             mockCheckoutCreate.mockResolvedValue({
                 url: 'https://checkout.stripe.com/test',
                 id: 'cs_test_xxx',
             });
 
-            await service.createCheckoutSession(input);
+            await service.createCheckoutSession(subscriptionInput);
 
             expect(mockCheckoutCreate).toHaveBeenCalledWith({
                 mode: 'subscription',
-                customer_email: input.userEmail,
+                customer_email: subscriptionInput.userEmail,
                 line_items: [{ price: 'price_test_monthly', quantity: 1 }],
-                metadata: { userId: input.userId, planCode: input.planCode },
-                client_reference_id: input.userId,
-                success_url: input.successUrl,
-                cancel_url: input.cancelUrl,
+                metadata: {
+                    userId: subscriptionInput.userId,
+                    planCode: subscriptionInput.planCode,
+                    credits: '0',
+                },
+                client_reference_id: subscriptionInput.userId,
+                success_url: subscriptionInput.successUrl,
+                cancel_url: subscriptionInput.cancelUrl,
             });
         });
 
@@ -120,7 +132,7 @@ describe('StripeService', () => {
                 id: 'cs_test_xxx',
             });
 
-            const result = await service.createCheckoutSession(input);
+            const result = await service.createCheckoutSession(subscriptionInput);
 
             expect(result).toEqual({
                 checkoutUrl: 'https://checkout.stripe.com/test',
@@ -131,8 +143,41 @@ describe('StripeService', () => {
         it('should throw Error when session.url is absent', async () => {
             mockCheckoutCreate.mockResolvedValue({ url: null, id: 'cs_test' });
 
-            await expect(service.createCheckoutSession(input)).rejects.toThrow(
-                Error,
+            await expect(
+                service.createCheckoutSession(subscriptionInput),
+            ).rejects.toThrow(Error);
+        });
+
+        it('should create payment mode session for ONE_OFF', async () => {
+            const oneOffInput: CreateCheckoutInput = {
+                userId: 'user123',
+                userEmail: 'test@example.com',
+                paymentType: PAYMENT_TYPE.ONE_OFF,
+                planCode: 'credits_5',
+                priceId: 'price_credits5_test',
+                credits: 5,
+                successUrl: 'https://example.com/success',
+                cancelUrl: 'https://example.com/cancel',
+            };
+
+            mockCheckoutCreate.mockResolvedValue({
+                id: 'cs_test_oneoff',
+                url: 'https://checkout.stripe.com/pay/oneoff',
+            });
+
+            const result = await service.createCheckoutSession(oneOffInput);
+
+            expect(mockCheckoutCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    mode: 'payment',
+                    line_items: [{ price: 'price_credits5_test', quantity: 1 }],
+                    metadata: expect.objectContaining({
+                        credits: '5',
+                    }),
+                }),
+            );
+            expect(result.checkoutUrl).toBe(
+                'https://checkout.stripe.com/pay/oneoff',
             );
         });
     });
@@ -172,7 +217,7 @@ describe('StripeService', () => {
         const rawBody = Buffer.from('{}');
         const sigHeader = 'stripe-sig';
 
-        it('should return CHECKOUT_COMPLETED event with userId from metadata', () => {
+        it('should return CHECKOUT_COMPLETED event with userId from metadata for subscription checkout', () => {
             mockConstructEvent.mockReturnValue(makeCheckoutEvent());
 
             const result = service.handleWebhookPayload(rawBody, sigHeader);
@@ -189,7 +234,7 @@ describe('StripeService', () => {
         it('should fall back to client_reference_id when metadata.userId is absent', () => {
             mockConstructEvent.mockReturnValue(
                 makeCheckoutEvent({
-                    metadata: { planCode: 'monthly_usd' },
+                    metadata: { planCode: 'monthly_usd', credits: '0' },
                     client_reference_id: 'ref_user456',
                 }),
             );
@@ -270,6 +315,43 @@ describe('StripeService', () => {
             const result = service.handleWebhookPayload(rawBody, sigHeader);
 
             expect(result).toBeNull();
+        });
+
+        // ── One-off checkout completed ────────────────────────────────
+
+        describe('checkout.session.completed (payment mode)', () => {
+            it('should return ONE_OFF_PAYMENT_COMPLETED for mode=payment + paid', () => {
+                mockConstructEvent.mockReturnValue(
+                    makeCheckoutEvent({
+                        mode: 'payment',
+                        payment_status: 'paid',
+                        metadata: {
+                            userId: 'user123',
+                            credits: '5',
+                            planCode: 'credits_5',
+                        },
+                        client_reference_id: 'user123',
+                    }),
+                );
+
+                const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+                expect(result?.type).toBe(
+                    BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                );
+                expect(result?.creditsAmount).toBe(5);
+                expect(result?.userId).toBe('user123');
+            });
+
+            it('should return CHECKOUT_COMPLETED for mode=subscription', () => {
+                mockConstructEvent.mockReturnValue(
+                    makeCheckoutEvent({ mode: 'subscription' }),
+                );
+
+                const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+                expect(result?.type).toBe(BILLING_EVENT_TYPE.CHECKOUT_COMPLETED);
+            });
         });
 
         // ── mapSubscriptionStatus (tested via handleWebhookPayload) ──
