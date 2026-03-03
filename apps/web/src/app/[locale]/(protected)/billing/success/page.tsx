@@ -20,7 +20,7 @@ export default function BillingSuccessPage() {
                 useAuthStore.getState().setUser(user);
                 toast.success(t('success'));
             } catch {
-                // User data will refresh on next page load
+                toast.error(t('refresh_error'));
             }
             router.replace(`/${locale}/billing`);
         };

@@ -27,6 +27,9 @@ import {
 } from './schemas/processed-webhook-event.schema';
 import { UsersService } from '../users/users.service';
 
+/** Max time for any single MongoDB operation in the webhook path (ms). */
+const WEBHOOK_MONGO_TIMEOUT_MS = 10_000;
+
 @Injectable()
 export class PaymentsService {
     private readonly logger = new Logger(PaymentsService.name);
@@ -196,7 +199,10 @@ export class PaymentsService {
     ): Promise<void> {
         if (event.type === BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED) {
             // One-off: independent events, no ordering concern
-            const user = await this.userModel.findById(userId).lean();
+            const user = await this.userModel
+                .findById(userId)
+                .maxTimeMS(WEBHOOK_MONGO_TIMEOUT_MS)
+                .lean();
             if (!user) {
                 this.logger.warn(
                     `User ${userId} not found for webhook event ${event.providerEventId}`,
@@ -235,6 +241,7 @@ export class PaymentsService {
                     ],
                 },
                 { $set: dotNotation },
+                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
             );
 
             if (!updated) {
@@ -242,6 +249,7 @@ export class PaymentsService {
                 const initialized = await this.userModel.findOneAndUpdate(
                     { _id: userId, billing: null },
                     { $set: { billing: billingFields } },
+                    { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
                 );
 
                 if (!initialized) {
@@ -266,9 +274,8 @@ export class PaymentsService {
         }
 
         // For subscription events, look up user by providerSubscriptionId
-        const subscriptionId = (
-            event.raw as Record<string, unknown>
-        )?.id as string | undefined;
+        const subscriptionId =
+            typeof event.raw.id === 'string' ? event.raw.id : undefined;
 
         if (!subscriptionId) {
             return null;
@@ -276,6 +283,7 @@ export class PaymentsService {
 
         const user = await this.userModel
             .findOne({ 'billing.providerSubscriptionId': subscriptionId })
+            .maxTimeMS(WEBHOOK_MONGO_TIMEOUT_MS)
             .lean();
 
         return user?._id?.toString() ?? null;
@@ -335,6 +343,7 @@ export class PaymentsService {
         await this.webhookEventModel.updateOne(
             { provider, providerEventId },
             { $set: { status: 'applied' } },
+            { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
         );
     }
 
@@ -343,11 +352,14 @@ export class PaymentsService {
         providerEventId: string,
     ): Promise<void> {
         try {
-            await this.webhookEventModel.deleteOne({
-                provider,
-                providerEventId,
-                status: 'pending',
-            });
+            await this.webhookEventModel.deleteOne(
+                {
+                    provider,
+                    providerEventId,
+                    status: 'pending',
+                },
+                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
+            );
         } catch (deleteError) {
             this.logger.error(
                 `Failed to rollback pending webhook event ${providerEventId}`,
@@ -395,22 +407,27 @@ export class PaymentsService {
             fields['currentPeriodEnd'] = event.currentPeriodEnd;
         }
 
+        const str = (v: unknown): string | null =>
+            typeof v === 'string' ? v : null;
+
         switch (event.type) {
             case BILLING_EVENT_TYPE.CHECKOUT_COMPLETED: {
-                const raw = event.raw as Record<string, unknown>;
-                const metadata = raw.metadata as Record<string, string> | undefined;
+                const { raw } = event;
+                const metadata =
+                    raw.metadata != null && typeof raw.metadata === 'object'
+                        ? (raw.metadata as Record<string, unknown>)
+                        : undefined;
                 fields['provider'] = 'stripe';
-                fields['providerCustomerId'] = (raw.customer as string) ?? null;
-                fields['providerSubscriptionId'] = (raw.subscription as string) ?? null;
-                fields['planCode'] = metadata?.planCode ?? null;
-                fields['currency'] = (raw.currency as string) ?? null;
-                fields['providerSubscriptionStatus'] = (raw.status as string) ?? null;
+                fields['providerCustomerId'] = str(raw.customer);
+                fields['providerSubscriptionId'] = str(raw.subscription);
+                fields['planCode'] = str(metadata?.planCode) ?? null;
+                fields['currency'] = str(raw.currency);
+                fields['providerSubscriptionStatus'] = str(raw.status);
                 break;
             }
 
             case BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED: {
-                const raw = event.raw as Record<string, unknown>;
-                fields['providerSubscriptionStatus'] = (raw.status as string) ?? null;
+                fields['providerSubscriptionStatus'] = str(event.raw.status);
                 break;
             }
 

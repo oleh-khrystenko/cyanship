@@ -88,7 +88,7 @@ export default function BillingPage() {
                             </p>
                             <UiButton
                                 onClick={handleSubscriptionCheckout}
-                                disabled={loadingAction !== null}
+                                disabled={loadingAction === 'subscribe'}
                             >
                                 {loadingAction === 'subscribe' ? (
                                     <UiSpinner size="sm" />
@@ -138,7 +138,7 @@ export default function BillingPage() {
                             </div>
                             <UiButton
                                 onClick={handlePortal}
-                                disabled={loadingAction !== null}
+                                disabled={loadingAction === 'portal'}
                             >
                                 {loadingAction === 'portal' ? (
                                     <UiSpinner size="sm" />
@@ -185,7 +185,7 @@ export default function BillingPage() {
                                     onClick={() =>
                                         handleOneOffCheckout(packCode)
                                     }
-                                    disabled={loadingAction !== null}
+                                    disabled={loadingAction === `oneoff_${packCode}`}
                                     variant="text"
                                     size="sm"
                                 >

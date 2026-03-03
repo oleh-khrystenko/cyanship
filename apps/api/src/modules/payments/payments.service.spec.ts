@@ -52,6 +52,12 @@ const mockPaymentProvider = {
     handleWebhookPayload: jest.fn(),
 };
 
+/** Build a chainable Mongoose query mock: .maxTimeMS().lean() */
+const chainQuery = (value: unknown) => ({
+    maxTimeMS: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(value) }),
+    lean: jest.fn().mockResolvedValue(value),
+});
+
 const mockUserModel = {
     findById: jest.fn(),
     findOne: jest.fn(),
@@ -393,6 +399,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_test' },
                     { $set: { status: 'applied' } },
+                    { maxTimeMS: 10000 },
                 );
                 expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
                     expect.objectContaining({ _id: MOCK_USER_ID }),
@@ -406,6 +413,7 @@ describe('PaymentsService', () => {
                             'billing.currency': 'usd',
                         }),
                     },
+                    { maxTimeMS: 10000 },
                 );
             });
         });
@@ -448,9 +456,7 @@ describe('PaymentsService', () => {
 
                 const foundUser = { _id: { toString: () => MOCK_USER_ID } };
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
-                mockUserModel.findOne.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(foundUser),
-                });
+                mockUserModel.findOne.mockReturnValue(chainQuery(foundUser));
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -494,9 +500,7 @@ describe('PaymentsService', () => {
                 };
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
-                mockUserModel.findOne.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(null),
-                });
+                mockUserModel.findOne.mockReturnValue(chainQuery(null));
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -569,6 +573,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_retry' },
                     { $set: { status: 'applied' } },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -606,9 +611,7 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
+                mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockRejectedValue(
                     new Error('DB connection lost'),
                 );
@@ -618,11 +621,14 @@ describe('PaymentsService', () => {
                     service.handleWebhook('stripe', rawBody, signature),
                 ).rejects.toThrow('DB connection lost');
 
-                expect(mockWebhookEventModel.deleteOne).toHaveBeenCalledWith({
-                    provider: 'stripe',
-                    providerEventId: 'evt_fail_apply',
-                    status: 'pending',
-                });
+                expect(mockWebhookEventModel.deleteOne).toHaveBeenCalledWith(
+                    {
+                        provider: 'stripe',
+                        providerEventId: 'evt_fail_apply',
+                        status: 'pending',
+                    },
+                    { maxTimeMS: 10000 },
+                );
             });
         });
 
@@ -665,6 +671,7 @@ describe('PaymentsService', () => {
                         ],
                     },
                     expect.objectContaining({ $set: expect.any(Object) }),
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -684,6 +691,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ooo' },
                     { $set: { status: 'applied' } },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -702,6 +710,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ooo' },
                     { $set: { status: 'applied' } },
+                    { maxTimeMS: 10000 },
                 );
             });
         });
@@ -748,6 +757,7 @@ describe('PaymentsService', () => {
                             'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
                         }),
                     },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -780,6 +790,7 @@ describe('PaymentsService', () => {
                             'billing.cancelAtPeriodEnd': false,
                         }),
                     },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -809,6 +820,7 @@ describe('PaymentsService', () => {
                             'billing.subscriptionStatus': SUBSCRIPTION_STATUS.PAST_DUE,
                         }),
                     },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -839,6 +851,7 @@ describe('PaymentsService', () => {
                             'billing.providerSubscriptionStatus': 'canceled',
                         }),
                     },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -877,6 +890,7 @@ describe('PaymentsService', () => {
                         billing: { $ne: null },
                     }),
                     { $set: expect.objectContaining({ 'billing.provider': 'stripe' }) },
+                    { maxTimeMS: 10000 },
                 );
 
                 // Phase 2: full subdocument set with billing: null filter
@@ -893,6 +907,7 @@ describe('PaymentsService', () => {
                             }),
                         },
                     },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -940,9 +955,7 @@ describe('PaymentsService', () => {
             it('should add credits on ONE_OFF_PAYMENT_COMPLETED', async () => {
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(oneOffEvent);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
+                mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
@@ -963,13 +976,9 @@ describe('PaymentsService', () => {
                     occurredAt: new Date('2026-02-01'),
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest
-                        .fn()
-                        .mockResolvedValue(
-                            mockUser({ billing: staleUserBilling }),
-                        ),
-                });
+                mockUserModel.findById.mockReturnValue(
+                    chainQuery(mockUser({ billing: staleUserBilling })),
+                );
                 mockUsersService.addCredits.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
@@ -986,9 +995,7 @@ describe('PaymentsService', () => {
                     creditsAmount: 0,
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(mockUser()),
-                });
+                mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -1021,6 +1028,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ghost_user' },
                     { $set: { status: 'applied' } },
+                    { maxTimeMS: 10000 },
                 );
             });
 
@@ -1036,9 +1044,7 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue({
-                    lean: jest.fn().mockResolvedValue(null),
-                });
+                mockUserModel.findById.mockReturnValue(chainQuery(null));
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -1046,6 +1052,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ghost_oneoff' },
                     { $set: { status: 'applied' } },
+                    { maxTimeMS: 10000 },
                 );
             });
         });

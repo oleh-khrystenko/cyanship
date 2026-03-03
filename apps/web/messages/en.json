@@ -149,11 +149,12 @@
         "callback": {
             "loading": "Processing payment…",
             "success": "Subscription activated",
-            "canceled": "Payment canceled"
+            "canceled": "Payment canceled",
+            "refresh_error": "Failed to update data. Please reload the page."
         },
         "credits": {
             "title": "Credits",
-            "description": "Purchase credits to check vehicles. Each check uses 1 credit.",
+            "description": "Purchase credits to use services. Each action uses 1 credit.",
             "balance": "Current balance: {count} cr.",
             "pack_label": "{count} credits",
             "buy_button": "Buy",
