@@ -82,6 +82,9 @@ export class UsersService {
     }
 
     async addCredits(userId: string, amount: number): Promise<void> {
+        if (!Number.isFinite(amount) || amount <= 0) {
+            throw new Error(`addCredits: invalid amount ${amount}`);
+        }
         const result = await this.userModel.findByIdAndUpdate(userId, {
             $inc: { 'credits.balance': amount },
         });
