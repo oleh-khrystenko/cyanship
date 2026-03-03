@@ -26,6 +26,9 @@ export class ProcessedWebhookEvent {
 
     @Prop({ type: String, default: null })
     packCode!: string | null;
+
+    @Prop({ required: true, default: 'pending' })
+    status!: 'pending' | 'applied';
 }
 
 export const ProcessedWebhookEventSchema =

@@ -60,6 +60,9 @@ const mockUserModel = {
 
 const mockWebhookEventModel = {
     create: jest.fn(),
+    findOne: jest.fn(),
+    updateOne: jest.fn(),
+    deleteOne: jest.fn(),
 };
 
 const mockUsersService = {
@@ -92,6 +95,10 @@ describe('PaymentsService', () => {
         // Reset feature flags to defaults
         envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
         envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = true;
+
+        // Default mocks for two-phase idempotency helpers
+        mockWebhookEventModel.updateOne.mockResolvedValue({});
+        mockWebhookEventModel.deleteOne.mockResolvedValue({});
     });
 
     // ─── createCheckoutSession (subscription) ─────────────────────────
@@ -382,7 +389,12 @@ describe('PaymentsService', () => {
                         providerEventId: 'evt_test',
                         type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                         userId: MOCK_USER_ID,
+                        status: 'pending',
                     }),
+                );
+                expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
+                    { provider: 'stripe', providerEventId: 'evt_test' },
+                    { $set: { status: 'applied' } },
                 );
                 expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                     MOCK_USER_ID,
@@ -506,7 +518,7 @@ describe('PaymentsService', () => {
         // ── Idempotency ──────────────────────────────────────────────
 
         describe('idempotency', () => {
-            it('should return without action when create throws MongoDB duplicate key error (11000)', async () => {
+            it('should skip when duplicate key and existing event is applied', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_dup',
@@ -523,10 +535,54 @@ describe('PaymentsService', () => {
                     code: 11000,
                 });
                 mockWebhookEventModel.create.mockRejectedValue(dupError);
+                mockWebhookEventModel.findOne.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue({ status: 'applied' }),
+                });
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+            });
+
+            it('should retry processing when duplicate key and existing event is pending', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                    providerEventId: 'evt_retry',
+                    occurredAt: new Date(),
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        customer: 'cus_retry',
+                        subscription: 'sub_retry',
+                        currency: 'usd',
+                        status: 'complete',
+                        metadata: { planCode: 'monthly_usd' },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                const dupError = Object.assign(new Error('E11000 duplicate key'), {
+                    code: 11000,
+                });
+                mockWebhookEventModel.create.mockRejectedValue(dupError);
+                mockWebhookEventModel.findOne.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue({ status: 'pending' }),
+                });
+                mockUserModel.findById.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue(mockUser()),
+                });
+                mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+                mockWebhookEventModel.updateOne.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalled();
+                expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
+                    { provider: 'stripe', providerEventId: 'evt_retry' },
+                    { $set: { status: 'applied' } },
+                );
             });
 
             it('should propagate non-duplicate errors from webhookEventModel.create', async () => {
@@ -549,6 +605,37 @@ describe('PaymentsService', () => {
                 await expect(
                     service.handleWebhook('stripe', rawBody, signature),
                 ).rejects.toThrow('connection error');
+            });
+
+            it('should rollback pending event and re-throw when apply fails', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                    providerEventId: 'evt_fail_apply',
+                    occurredAt: new Date(),
+                    userId: MOCK_USER_ID,
+                    creditsAmount: 10,
+                    raw: {},
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue({
+                    lean: jest.fn().mockResolvedValue(mockUser()),
+                });
+                mockUsersService.addCredits.mockRejectedValue(
+                    new Error('DB connection lost'),
+                );
+                mockWebhookEventModel.deleteOne.mockResolvedValue({});
+
+                await expect(
+                    service.handleWebhook('stripe', rawBody, signature),
+                ).rejects.toThrow('DB connection lost');
+
+                expect(mockWebhookEventModel.deleteOne).toHaveBeenCalledWith({
+                    provider: 'stripe',
+                    providerEventId: 'evt_fail_apply',
+                    status: 'pending',
+                });
             });
         });
 
@@ -898,7 +985,7 @@ describe('PaymentsService', () => {
         // ── User not found after idempotency ─────────────────────────
 
         describe('user not found after idempotency check', () => {
-            it('should return without action when findById returns null', async () => {
+            it('should skip billing update but still mark event as applied when findById returns null', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_ghost_user',
@@ -919,6 +1006,10 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+                expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
+                    { provider: 'stripe', providerEventId: 'evt_ghost_user' },
+                    { $set: { status: 'applied' } },
+                );
             });
         });
     });

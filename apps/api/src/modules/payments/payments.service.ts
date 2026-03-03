@@ -164,17 +164,36 @@ export class PaymentsService {
             return;
         }
 
-        // 3. Idempotency: insert into processed_webhook_events
-        const isDuplicate = await this.insertWebhookEvent(
+        // 3. Two-phase idempotency: insert as 'pending', mark 'applied' after success
+        const insertResult = await this.insertWebhookEvent(
             provider,
             event,
             userId,
         );
-        if (isDuplicate) {
+        if (insertResult === 'applied') {
             return;
         }
 
-        // 4. Find user
+        // 4. Process event — rollback idempotency record on failure
+        try {
+            await this.processWebhookEvent(event, userId);
+            await this.markWebhookEventApplied(
+                provider,
+                event.providerEventId,
+            );
+        } catch (error) {
+            await this.rollbackPendingWebhookEvent(
+                provider,
+                event.providerEventId,
+            );
+            throw error;
+        }
+    }
+
+    private async processWebhookEvent(
+        event: BillingWebhookEvent,
+        userId: string,
+    ): Promise<void> {
         const user = await this.userModel.findById(userId).lean();
         if (!user) {
             this.logger.warn(
@@ -183,7 +202,7 @@ export class PaymentsService {
             return;
         }
 
-        // 5. Out-of-order check (тільки для subscription events)
+        // Out-of-order check (тільки для subscription events)
         // One-off платежі незалежні один від одного, order не важливий
         if (
             event.type !== BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED &&
@@ -196,7 +215,7 @@ export class PaymentsService {
             return;
         }
 
-        // 6. Apply event
+        // Apply event
         if (event.type === BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED) {
             await this.applyOneOffPayment(userId, event);
         } else {
@@ -250,7 +269,7 @@ export class PaymentsService {
         provider: string,
         event: BillingWebhookEvent,
         userId: string,
-    ): Promise<boolean> {
+    ): Promise<'new' | 'retry' | 'applied'> {
         try {
             await this.webhookEventModel.create({
                 provider,
@@ -260,8 +279,9 @@ export class PaymentsService {
                 type: event.type,
                 userId,
                 packCode: event.packCode ?? null,
+                status: 'pending',
             });
-            return false;
+            return 'new';
         } catch (error: unknown) {
             // Duplicate key error (MongoDB code 11000)
             if (
@@ -269,12 +289,56 @@ export class PaymentsService {
                 'code' in error &&
                 (error as { code: number }).code === 11000
             ) {
-                this.logger.debug(
-                    `Duplicate webhook event ${event.providerEventId}, skipping`,
+                const existing = await this.webhookEventModel
+                    .findOne({
+                        provider,
+                        providerEventId: event.providerEventId,
+                    })
+                    .lean();
+
+                if (existing?.status === 'applied') {
+                    this.logger.debug(
+                        `Duplicate webhook event ${event.providerEventId}, already applied`,
+                    );
+                    return 'applied';
+                }
+
+                this.logger.warn(
+                    `Retrying pending webhook event ${event.providerEventId}`,
                 );
-                return true;
+                return 'retry';
             }
             throw error;
+        }
+    }
+
+    private async markWebhookEventApplied(
+        provider: string,
+        providerEventId: string,
+    ): Promise<void> {
+        await this.webhookEventModel.updateOne(
+            { provider, providerEventId },
+            { $set: { status: 'applied' } },
+        );
+    }
+
+    private async rollbackPendingWebhookEvent(
+        provider: string,
+        providerEventId: string,
+    ): Promise<void> {
+        try {
+            await this.webhookEventModel.deleteOne({
+                provider,
+                providerEventId,
+                status: 'pending',
+            });
+        } catch (deleteError) {
+            this.logger.error(
+                `Failed to rollback pending webhook event ${providerEventId}`,
+                deleteError instanceof Error
+                    ? deleteError.stack
+                    : String(deleteError),
+            );
         }
     }
 
