@@ -134,23 +134,26 @@ if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
 
 // Computed: maps packCode → { priceId, credits }
 // Used in PaymentsService to resolve priceId for one-off checkouts.
+// Empty when one-off payments are disabled — prevents sending empty priceId to Stripe.
 export const STRIPE_CREDIT_PACKS: Record<
     string,
     { priceId: string; credits: number }
-> = {
-    credits_5: {
-        priceId: ENV.STRIPE_PRICE_CREDITS_5_USD,
-        credits: 5,
-    },
-    credits_10: {
-        priceId: ENV.STRIPE_PRICE_CREDITS_10_USD,
-        credits: 10,
-    },
-    credits_20: {
-        priceId: ENV.STRIPE_PRICE_CREDITS_20_USD,
-        credits: 20,
-    },
-};
+> = oneOffEnabled
+    ? {
+          credits_5: {
+              priceId: ENV.STRIPE_PRICE_CREDITS_5_USD,
+              credits: 5,
+          },
+          credits_10: {
+              priceId: ENV.STRIPE_PRICE_CREDITS_10_USD,
+              credits: 10,
+          },
+          credits_20: {
+              priceId: ENV.STRIPE_PRICE_CREDITS_20_USD,
+              credits: 20,
+          },
+      }
+    : {};
 
 // Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]
 export function parseLockoutThresholds(
