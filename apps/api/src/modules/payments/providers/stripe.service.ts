@@ -36,7 +36,9 @@ export class StripeService implements IPaymentProvider {
 
         const session = await this.stripe.checkout.sessions.create({
             mode,
-            customer_email: input.userEmail,
+            ...(input.providerCustomerId
+                ? { customer: input.providerCustomerId }
+                : { customer_email: input.userEmail }),
             line_items: [{ price: input.priceId, quantity: 1 }],
             metadata: {
                 userId: input.userId,

@@ -3,6 +3,7 @@ import { BillingWebhookEvent, PaymentType } from '@lucidkit/types';
 export interface CreateCheckoutInput {
     userId: string;
     userEmail: string;
+    providerCustomerId?: string;
     paymentType: PaymentType;
     planCode: string;
     priceId: string;

@@ -88,6 +88,8 @@ export class PaymentsService {
                 await this.paymentProvider.createCheckoutSession({
                     userId,
                     userEmail: user.email,
+                    providerCustomerId:
+                        user.billing?.providerCustomerId ?? undefined,
                     paymentType,
                     planCode: planCode!,
                     priceId,
@@ -105,6 +107,8 @@ export class PaymentsService {
         const result = await this.paymentProvider.createCheckoutSession({
             userId,
             userEmail: user.email,
+            providerCustomerId:
+                user.billing?.providerCustomerId ?? undefined,
             paymentType,
             planCode: packCode!,
             priceId: pack.priceId,
