@@ -919,4 +919,16 @@
 | L4 | Cookie attributes | Security | [ ] |
 | L5 | i18n — всі ключі | Security | [ ] |
 
+---
+
+## Після тестування — повернути TTL
+
+Після завершення секції C (Token Lifecycle) відновити production-значення у `apps/api/src/modules/auth/auth.service.ts`:
+
+| Що | Тестове | Production |
+|----|---------|------------|
+| `REFRESH_TOKEN_TTL` | `2 * 60` | `7 * 24 * 60 * 60` |
+| `accessToken expiresIn` | `'1m'` | `'1h'` |
+| `refreshToken expiresIn` | `'2m'` | `'7d'` |
+
 **Total: 52 тести** (51 active + 1 blocked)
