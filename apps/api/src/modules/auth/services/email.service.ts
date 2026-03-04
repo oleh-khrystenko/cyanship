@@ -61,13 +61,13 @@ const TEMPLATES: Record<MagicLinkPurpose, Record<string, EmailTemplate>> = {
     [MAGIC_LINK_PURPOSE.DELETE_ACCOUNT]: {
         [LANG.UK]: {
             subject: 'Підтвердження видалення акаунту',
-            body: 'Натисніть кнопку нижче, щоб підтвердити видалення акаунту. Після підтвердження у вас буде 30 днів, щоб відновити акаунт.',
+            body: 'Натисніть кнопку нижче, щоб підтвердити видалення акаунту. Після підтвердження у вас буде 30 днів, щоб відновити акаунт — просто увійдіть у свій акаунт протягом цього часу.',
             cta: 'Підтвердити видалення',
             footer: 'Посилання дійсне 15 хвилин. Якщо ви не запитували видалення — ігноруйте цей лист.',
         },
         [LANG.EN]: {
             subject: 'Confirm Account Deletion',
-            body: 'Click the button below to confirm account deletion. After confirmation, you will have 30 days to recover your account.',
+            body: 'Click the button below to confirm account deletion. After confirmation, you will have 30 days to recover your account — just sign in during that time.',
             cta: 'Confirm Deletion',
             footer: "This link expires in 15 minutes. If you didn't request deletion — ignore this email.",
         },
