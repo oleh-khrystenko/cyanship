@@ -23,7 +23,12 @@ const AuthInitializer = () => {
             pathname.includes(p)
         );
 
-        if (isSelfAuthRoute) return;
+        if (isSelfAuthRoute) {
+            // Auth pages manage their own session — resolve isLoading immediately
+            // so the header renders correctly. The page itself calls setUser() on success.
+            clearUser();
+            return;
+        }
 
         const init = async () => {
             try {
