@@ -7,14 +7,14 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ERROR_CODE, type ErrorCode } from '@lucidkit/types';
+import { RESPONSE_CODE, type ResponseCode } from '@lucidkit/types';
 
-const HTTP_STATUS_TO_ERROR_CODE: Partial<Record<HttpStatus, ErrorCode>> = {
-    [HttpStatus.BAD_REQUEST]: ERROR_CODE.VALIDATION_ERROR,
-    [HttpStatus.UNAUTHORIZED]: ERROR_CODE.UNAUTHORIZED,
-    [HttpStatus.NOT_FOUND]: ERROR_CODE.NOT_FOUND,
-    [HttpStatus.UNPROCESSABLE_ENTITY]: ERROR_CODE.VALIDATION_ERROR,
-    [HttpStatus.TOO_MANY_REQUESTS]: ERROR_CODE.RATE_LIMIT_EXCEEDED,
+const HTTP_STATUS_TO_ERROR_CODE: Partial<Record<HttpStatus, ResponseCode>> = {
+    [HttpStatus.BAD_REQUEST]: RESPONSE_CODE.VALIDATION_ERROR,
+    [HttpStatus.UNAUTHORIZED]: RESPONSE_CODE.UNAUTHORIZED,
+    [HttpStatus.NOT_FOUND]: RESPONSE_CODE.NOT_FOUND,
+    [HttpStatus.UNPROCESSABLE_ENTITY]: RESPONSE_CODE.VALIDATION_ERROR,
+    [HttpStatus.TOO_MANY_REQUESTS]: RESPONSE_CODE.RATE_LIMIT_EXCEEDED,
 };
 
 @Catch()
@@ -30,14 +30,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 ? exception.getStatus()
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
+        const exceptionResponse =
+            exception instanceof HttpException
+                ? exception.getResponse()
+                : null;
+
         const message =
             exception instanceof HttpException
                 ? exception.message
                 : 'Internal server error';
 
+        // Allow exceptions to carry an explicit error code (e.g. SubscriptionGuard)
+        const explicitCode =
+            exceptionResponse &&
+            typeof exceptionResponse === 'object' &&
+            'code' in exceptionResponse
+                ? (exceptionResponse as { code: string }).code
+                : null;
+
         const code =
+            explicitCode ??
             HTTP_STATUS_TO_ERROR_CODE[status as HttpStatus] ??
-            ERROR_CODE.INTERNAL_ERROR;
+            RESPONSE_CODE.INTERNAL_ERROR;
 
         if (status >= 500) {
             this.logger.error(

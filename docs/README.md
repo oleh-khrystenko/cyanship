@@ -18,6 +18,7 @@
 - `docs/sprints/sprint-003-auth/i18n-sync-plan.md`
 - `docs/sprints/sprint-004-auth/` — повне покриття auth-flow.md (7 фаз)
 - `docs/sprints/sprint-005-auth-testing/` — unit + integration + manual E2E тести
+- `docs/sprints/sprint-006-payments/` — Payments MVP (Stripe Checkout + Webhook + billing state, 5 фаз)
 - `docs/audits/auth/auth-implementation-audit.md`
 - `docs/conventions/README.md`
 - `docs/conventions/fail-fast.md`

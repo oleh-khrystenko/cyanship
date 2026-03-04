@@ -35,6 +35,11 @@ jest.mock('../src/config/env', () => ({
         GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
         RESEND_API_KEY: 're_test_key',
         RESEND_FROM_EMAIL: 'LucidKit <test@test.com>',
+        STRIPE_SECRET_KEY: 'sk_test_xxx',
+        STRIPE_WEBHOOK_SECRET: 'whsec_test',
+        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
+        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
+        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
     },
 }));
 

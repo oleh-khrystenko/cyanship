@@ -47,6 +47,19 @@ export class UsersController {
                 hasPassword: !!user.passwordHash,
                 deletedAt: user.deletedAt ?? null,
                 preferredLang: user.preferredLang,
+                billing: user.billing
+                    ? {
+                          hasActiveSubscription:
+                              user.billing.hasActiveSubscription,
+                          planCode: user.billing.planCode,
+                          subscriptionStatus:
+                              user.billing.subscriptionStatus,
+                          currentPeriodEnd:
+                              user.billing.currentPeriodEnd,
+                          cancelAtPeriodEnd:
+                              user.billing.cancelAtPeriodEnd,
+                      }
+                    : null,
             },
         };
     }

@@ -43,6 +43,7 @@
         "reflect-metadata": "^0.2.2",
         "resend": "^6.9.2",
         "rxjs": "^7.8.2",
+        "stripe": "^20.4.0",
         "zod": "^4.3.6"
     },
     "devDependencies": {
@@ -92,6 +93,7 @@
             "**/*.(t|j)s"
         ],
         "coverageDirectory": "../coverage",
-        "testEnvironment": "node"
+        "testEnvironment": "node",
+        "setupFiles": ["./test-setup.ts"]
     }
 }

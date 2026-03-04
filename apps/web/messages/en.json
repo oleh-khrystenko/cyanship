@@ -1,17 +1,17 @@
 {
     "welcome_page": {
         "head": {
-            "title": "LucidKit – Protect Your Bids",
-            "description": "LucidKit is a reliable service for protecting and managing your bids. We create secure and efficient solutions for your business."
+            "title": "LucidKit – Production-ready SaaS Boilerplate",
+            "description": "LucidKit is a production-ready SaaS boilerplate with auth, payments, i18n, and theming out of the box."
         },
-        "heading": "LucidKit — your trusted partner in the world of bidding.",
-        "description": "Here you'll find tools and solutions for secure bid management.",
+        "heading": "LucidKit — your production-ready SaaS starter.",
+        "description": "Everything you need to ship your web app faster.",
         "cta": "Get Started"
     },
     "auth_page": {
         "signin": {
             "heading": "Sign in to LucidKit",
-            "subheading": "Analyse car photos and detect hidden defects before purchase",
+            "subheading": "Launch your SaaS faster with production-ready auth, payments, and more",
             "email_label": "Email",
             "email_placeholder": "your@email.com",
             "continue_button": "Continue",
@@ -61,6 +61,11 @@
         "auth": {
             "unauthorized": "Your session has expired. Please sign in again",
             "invalid_magic_link": "The link is invalid or has expired"
+        },
+        "payments": {
+            "already_subscribed": "You already have an active subscription.",
+            "subscription_required": "An active subscription is required for access.",
+            "no_billing_account": "No billing account found. Please subscribe first."
         },
         "generic": {
             "validation_error": "Please check the entered data",
@@ -119,6 +124,42 @@
         "magic_link_sent": "Confirmation link sent to your email",
         "deleted": "Account deactivated",
         "invalid_password": "Invalid password"
+    },
+    "billing_page": {
+        "head": {
+            "title": "Subscription"
+        },
+        "subscribe": {
+            "title": "Subscribe",
+            "description": "Unlock all premium features and take your product further.",
+            "plan_label": "Plan: Monthly",
+            "button": "Subscribe",
+            "error": "Failed to create checkout session"
+        },
+        "active": {
+            "title": "Your subscription",
+            "status_active": "Active",
+            "status_canceling": "Active until {date}",
+            "plan_label": "Plan: {plan}",
+            "next_billing": "Next billing: {date}",
+            "cancel_notice": "Your subscription will be canceled at the end of the current period.",
+            "manage_button": "Manage subscription",
+            "manage_error": "Failed to open management portal"
+        },
+        "callback": {
+            "loading": "Processing payment…",
+            "success": "Subscription activated",
+            "canceled": "Payment canceled",
+            "refresh_error": "Failed to update data. Please reload the page."
+        },
+        "credits": {
+            "title": "Credits",
+            "description": "Purchase credits to use services. Each action uses 1 credit.",
+            "balance": "Current balance: {count} cr.",
+            "pack_label": "{count} credits",
+            "buy_button": "Buy",
+            "error": "Failed to create payment session. Please try again."
+        }
     },
     "components": {
         "header": {

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { LANG } from '../constants/lang';
+import { UserBillingSchema } from '../contracts/payments';
 
 export const UserProviderSchema = z.object({
     name: z.string(),
@@ -28,6 +29,7 @@ export const UserSchema = z.object({
     preferredLang: z.enum([LANG.UK, LANG.EN]),
     createdAt: z.coerce.date(),
     lastLoginAt: z.coerce.date().optional(),
+    billing: UserBillingSchema.nullable().optional(),
 });
 
 export const UserProfileSchema = UserSchema.pick({
@@ -38,6 +40,7 @@ export const UserProfileSchema = UserSchema.pick({
     hasPassword: true,
     deletedAt: true,
     preferredLang: true,
+    billing: true,
 });
 
 export type User = z.infer<typeof UserSchema>;

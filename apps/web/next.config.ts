@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 // Load .env from monorepo root — single source of truth for all env vars.
-config({ path: resolve(__dirname, '../../.env'), override: true });
+config({ path: resolve(__dirname, '../../.env') });
 
 // Reverse proxy: all /api requests are forwarded to the backend.
 // This keeps API and Web on the same origin, so cookies (bid_refresh)

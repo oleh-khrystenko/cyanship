@@ -28,3 +28,13 @@ export const ENV = {
         'NEXT_PUBLIC_API_URL'
     ),
 } as const;
+
+// Payment type toggles (sync with backend PAYMENTS_*_ENABLED)
+// Must match backend logic: only 'true' enables, everything else disables.
+// Unset / missing defaults to 'true' (same as backend).
+export const PAYMENTS_SUBSCRIPTION_ENABLED =
+    (process.env.NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED ?? 'true') ===
+    'true';
+
+export const PAYMENTS_ONE_OFF_ENABLED =
+    (process.env.NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED ?? 'true') === 'true';
