@@ -14,6 +14,7 @@ const mockUser = {
     credits: { balance: 5, freeReportUsed: false },
     passwordHash: '$2b$10$hash',
     deletedAt: null as Date | null,
+    accountDeletionRequestedAt: null as Date | null,
     preferredLang: 'uk',
 };
 
@@ -22,6 +23,7 @@ const mockUsersService = {
     updateLang: jest.fn(),
     softDelete: jest.fn(),
     restore: jest.fn(),
+    setDeletionRequested: jest.fn(),
 };
 
 const mockAuthService = {
@@ -59,6 +61,7 @@ describe('UsersController', () => {
                     credits: { balance: 5, freeReportUsed: false },
                     hasPassword: true,
                     deletedAt: null,
+                    accountDeletionRequestedAt: null,
                     preferredLang: 'uk',
                     billing: null,
                 },
@@ -143,12 +146,16 @@ describe('UsersController', () => {
         it('should send magic link and return requiresMagicLink: true when no password', async () => {
             const userNoPass = { ...mockUser, passwordHash: null };
             mockAuthService.sendMagicLink.mockResolvedValue(undefined);
+            mockUsersService.setDeletionRequested.mockResolvedValue(undefined);
 
             const result = await controller.deleteAccount(userNoPass as any);
 
             expect(mockAuthService.sendMagicLink).toHaveBeenCalledWith(
                 'test@gmail.com',
                 MAGIC_LINK_PURPOSE.DELETE_ACCOUNT
+            );
+            expect(mockUsersService.setDeletionRequested).toHaveBeenCalledWith(
+                '507f1f77bcf86cd799439011'
             );
             expect(result).toEqual({
                 data: {

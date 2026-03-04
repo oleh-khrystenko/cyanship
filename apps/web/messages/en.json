@@ -116,7 +116,8 @@
             "heading": "Danger zone",
             "delete_title": "Delete account",
             "delete_description": "After deletion you have 30 days to restore your account.",
-            "delete_button": "Delete account"
+            "delete_button": "Delete account",
+            "resend_button": "Resend"
         }
     },
     "delete_account_modal": {

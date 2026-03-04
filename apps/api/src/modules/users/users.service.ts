@@ -119,14 +119,24 @@ export class UsersService {
         await this.userModel.findByIdAndUpdate(userId, { passwordHash: null });
     }
 
+    async setDeletionRequested(userId: string): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, {
+            accountDeletionRequestedAt: new Date(),
+        });
+    }
+
     async softDelete(userId: string): Promise<void> {
         await this.userModel.findByIdAndUpdate(userId, {
             deletedAt: new Date(),
+            accountDeletionRequestedAt: null,
         });
     }
 
     async restore(userId: string): Promise<void> {
-        await this.userModel.findByIdAndUpdate(userId, { deletedAt: null });
+        await this.userModel.findByIdAndUpdate(userId, {
+            deletedAt: null,
+            accountDeletionRequestedAt: null,
+        });
     }
 
     async updateProfile(

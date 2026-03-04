@@ -26,6 +26,7 @@ export const UserSchema = z.object({
     credits: UserCreditsSchema,
     hasPassword: z.boolean(),
     deletedAt: z.coerce.date().nullable().optional(),
+    accountDeletionRequestedAt: z.coerce.date().nullable().optional(),
     preferredLang: z.enum([LANG.UK, LANG.EN]),
     createdAt: z.coerce.date(),
     lastLoginAt: z.coerce.date().optional(),
@@ -39,6 +40,7 @@ export const UserProfileSchema = UserSchema.pick({
     credits: true,
     hasPassword: true,
     deletedAt: true,
+    accountDeletionRequestedAt: true,
     preferredLang: true,
     billing: true,
 });

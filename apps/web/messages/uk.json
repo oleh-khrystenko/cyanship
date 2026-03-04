@@ -116,7 +116,8 @@
             "heading": "Небезпечна зона",
             "delete_title": "Видалення акаунту",
             "delete_description": "Після видалення у вас є 30 днів для відновлення акаунту.",
-            "delete_button": "Видалити акаунт"
+            "delete_button": "Видалити акаунт",
+            "resend_button": "Надіслати повторно"
         }
     },
     "delete_account_modal": {

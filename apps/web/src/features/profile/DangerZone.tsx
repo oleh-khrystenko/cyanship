@@ -6,7 +6,10 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import { deleteAccount } from '@/shared/api';
+import { useAuthStore } from '@/stores/auth';
 import DeleteAccountModal from './DeleteAccountModal';
+
+const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 
 const DangerZone = () => {
     const t = useTranslations('profile_page.danger_zone');
@@ -14,9 +17,18 @@ const DangerZone = () => {
     const locale = useLocale();
     const router = useRouter();
 
+    const user = useAuthStore((s) => s.user);
+    const setUser = useAuthStore((s) => s.setUser);
+
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [emailSent, setEmailSent] = useState(false);
+
+    const requestedAt = user?.accountDeletionRequestedAt
+        ? new Date(user.accountDeletionRequestedAt)
+        : null;
+    const isPendingDeletion =
+        requestedAt !== null &&
+        Date.now() - requestedAt.getTime() < MAGIC_LINK_TTL_MS;
 
     const handleDelete = async () => {
         setLoading(true);
@@ -26,7 +38,13 @@ const DangerZone = () => {
             if (result.requiresPassword) {
                 setShowModal(true);
             } else if (result.requiresMagicLink) {
-                setEmailSent(true);
+                if (user) {
+                    setUser({
+                        ...user,
+                        accountDeletionRequestedAt: new Date(),
+                    });
+                }
+                toast.success(tModal('magic_link_sent'));
             }
         } catch {
             toast.error(tModal('invalid_password'));
@@ -54,7 +72,8 @@ const DangerZone = () => {
                 <p className="text-text-secondary mt-1 text-sm">
                     {t('delete_description')}
                 </p>
-                {emailSent ? (
+
+                {isPendingDeletion && (
                     <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
                         <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
                             {tModal('magic_link_sent_title')}
@@ -63,17 +82,17 @@ const DangerZone = () => {
                             {tModal('magic_link_sent_description')}
                         </p>
                     </div>
-                ) : (
-                    <UiButton
-                        variant="filled"
-                        size="md"
-                        className="mt-4 rounded-lg bg-red-600 hover:bg-red-700"
-                        onClick={() => void handleDelete()}
-                        disabled={loading}
-                    >
-                        {t('delete_button')}
-                    </UiButton>
                 )}
+
+                <UiButton
+                    variant="filled"
+                    size="md"
+                    className="mt-4 rounded-lg bg-red-600 hover:bg-red-700"
+                    onClick={() => void handleDelete()}
+                    disabled={loading}
+                >
+                    {isPendingDeletion ? t('resend_button') : t('delete_button')}
+                </UiButton>
             </div>
 
             {showModal && (

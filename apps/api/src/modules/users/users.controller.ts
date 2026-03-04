@@ -47,6 +47,8 @@ export class UsersController {
                 credits: user.credits,
                 hasPassword: !!user.passwordHash,
                 deletedAt: user.deletedAt ?? null,
+                accountDeletionRequestedAt:
+                    user.accountDeletionRequestedAt ?? null,
                 preferredLang: user.preferredLang,
                 billing: user.billing
                     ? {
@@ -83,6 +85,8 @@ export class UsersController {
                 credits: updated!.credits,
                 hasPassword: !!updated!.passwordHash,
                 deletedAt: updated!.deletedAt ?? null,
+                accountDeletionRequestedAt:
+                    updated!.accountDeletionRequestedAt ?? null,
                 preferredLang: updated!.preferredLang,
             },
         };
@@ -115,6 +119,7 @@ export class UsersController {
             user.email,
             MAGIC_LINK_PURPOSE.DELETE_ACCOUNT
         );
+        await this.usersService.setDeletionRequested(user._id.toString());
         return {
             data: {
                 requiresMagicLink: true,
