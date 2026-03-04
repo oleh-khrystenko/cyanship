@@ -42,7 +42,7 @@
 - [ ] Після consent API встановлює `bid_refresh` cookie → redirect на `/auth/callback`
 - [ ] Network: `POST /api/auth/refresh` → `200`
 - [ ] Network: `GET /api/users/me` → `200`
-- [ ] Redirect на `/{locale}/check`
+- [ ] Redirect на `/{locale}/profile`
 - [ ] `Application -> Cookies`: `bid_refresh` (httpOnly, path=/, sameSite=lax)
 - [ ] Header показує ім'я/email, avatar, кредити
 
