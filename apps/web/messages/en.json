@@ -40,7 +40,8 @@
             "restored": "Account restored!"
         },
         "callback": {
-            "loading": "Signing you in…"
+            "loading": "Signing you in…",
+            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below."
         },
         "verify": {
             "verifying": "Verifying your link…",

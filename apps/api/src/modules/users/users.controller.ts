@@ -18,6 +18,7 @@ import {
 import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { VerifyPasswordDto } from '../auth/dto/verify-password.dto';
@@ -34,7 +35,7 @@ export class UsersController {
     ) {}
 
     @Get('me')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     getMe(@CurrentUser() user: UserDocument): {
         data: Record<string, unknown>;
     } {
@@ -65,7 +66,7 @@ export class UsersController {
     }
 
     @Patch('me')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async updateProfile(
         @CurrentUser() user: UserDocument,
         @Body() dto: UpdateProfileDto
@@ -88,7 +89,7 @@ export class UsersController {
     }
 
     @Patch('me/lang')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async updateLang(
         @CurrentUser() user: UserDocument,
         @Body() dto: UpdateLangDto
@@ -103,7 +104,7 @@ export class UsersController {
     }
 
     @Post('account/delete')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async deleteAccount(
         @CurrentUser() user: UserDocument
     ): Promise<{ data: Record<string, unknown> }> {
@@ -123,7 +124,7 @@ export class UsersController {
     }
 
     @Post('account/delete/confirm')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async confirmDeleteAccount(
         @CurrentUser() user: UserDocument,
         @Body() dto: VerifyPasswordDto,
