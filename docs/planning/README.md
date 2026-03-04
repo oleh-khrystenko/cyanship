@@ -8,4 +8,4 @@
 
 ## Документи
 
-- [auth-flow.md](auth-flow.md) — повний флоу авторизації (email + пароль + magic link + OAuth, профіль, error states)
+- [auth-flow/](auth-flow/README.md) — повний флоу авторизації (email + пароль + magic link + OAuth, профіль, error states)
