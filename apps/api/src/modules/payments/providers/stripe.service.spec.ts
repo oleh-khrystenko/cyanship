@@ -126,6 +126,29 @@ describe('StripeService', () => {
             });
         });
 
+        it('should pass customer instead of customer_email when providerCustomerId is provided', async () => {
+            mockCheckoutCreate.mockResolvedValue({
+                url: 'https://checkout.stripe.com/existing',
+                id: 'cs_test_existing',
+            });
+
+            await service.createCheckoutSession({
+                ...subscriptionInput,
+                providerCustomerId: 'cus_existing_123',
+            });
+
+            expect(mockCheckoutCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    customer: 'cus_existing_123',
+                }),
+            );
+            expect(mockCheckoutCreate).toHaveBeenCalledWith(
+                expect.not.objectContaining({
+                    customer_email: expect.anything(),
+                }),
+            );
+        });
+
         it('should return checkoutUrl and providerSessionId when session.url exists', async () => {
             mockCheckoutCreate.mockResolvedValue({
                 url: 'https://checkout.stripe.com/test',

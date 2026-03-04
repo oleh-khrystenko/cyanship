@@ -1,6 +1,6 @@
 # Automated Tests — Service Prompt для AI агента
 
-> Промпт для Claude Code або іншого AI агента. Мета: створити автоматизовані тести, які максимально покриють payments flow, реалізований у sprint-006.
+> Промпт для Claude Code або іншого AI агента. Мета: створити автоматизовані тести, які максимально покриють payments flow.
 
 ---
 
@@ -10,9 +10,14 @@
 
 **Scope:**
 
-- Backend unit тести (PaymentsService, PaymentsController, StripeService, SubscriptionGuard)
-- Backend e2e тести (HTTP endpoints через Supertest)
-- Frontend unit тести (API client функції)
+- Backend unit тести (PaymentsService, PaymentsController, StripeService)
+- Backend e2e тести (HTTP endpoints через Supertest) — **ДОПОВНЕННЯ** існуючих
+- Frontend unit тести (API client функції) — **ДОПОВНЕННЯ** існуючих
+
+**Що вже існує (НЕ переписувати, тільки доповнювати):**
+- `apps/api/src/common/guards/subscription.guard.spec.ts` — 6 сценаріїв, повне покриття SubscriptionGuard
+- `apps/api/test/payments.e2e-spec.ts` — 800+ рядків: checkout (sub + one-off), portal, webhook, idempotency, feature flags, response format
+- `apps/web/src/shared/api/payments.spec.ts` — 130 рядків: createSubscriptionCheckout, createOneOffCheckout, createPortalSession
 
 ---
 
@@ -28,32 +33,35 @@
    - `apps/api/src/modules/payments/payments.service.ts` — основна логіка (createCheckoutSession, createPortalSession, handleWebhook + private методи)
    - `apps/api/src/modules/payments/payments.controller.ts` — 3 endpoints, raw body, signature validation
    - `apps/api/src/modules/payments/providers/stripe.service.ts` — Stripe adapter, event parsing, status mapping
-   - `apps/api/src/modules/payments/interfaces/payment-provider.interface.ts` — IPaymentProvider інтерфейс
-   - `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts` — Mongoose schema для idempotency
-   - `apps/api/src/common/guards/subscription.guard.ts` — SubscriptionGuard
+   - `apps/api/src/modules/payments/interfaces/payment-provider.interface.ts` — IPaymentProvider інтерфейс, CreateCheckoutInput
+   - `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts` — Mongoose schema для two-phase idempotency (status: 'pending' | 'applied')
+   - `apps/api/src/common/guards/subscription.guard.ts` — SubscriptionGuard (вже покритий тестами)
    - `apps/api/src/modules/users/schemas/user.schema.ts` — User schema з billing subdocument
+   - `apps/api/src/modules/users/users.service.ts` — addCredits, deductCredit (для one-off)
+   - `apps/api/src/config/env.ts` — ENV, STRIPE_CREDIT_PACKS, feature flags
 2. **Існуючі тести** — зрозумій patterns мокування, структуру, стиль assertions:
    - `apps/api/src/modules/auth/auth.service.spec.ts` — патерн мокування Mongoose Model + Redis
    - `apps/api/src/modules/auth/auth.controller.spec.ts` — патерн мокування Controller + Response object
    - `apps/api/src/modules/users/users.service.spec.ts` — патерн мокування findById, lean()
-   - `apps/api/test/app.e2e-spec.ts` — патерн MongoMemoryServer + NestJS test app
-   - `apps/api/test/auth.e2e-spec.ts` — патерн stateful mocks в e2e
+   - `apps/api/test/payments.e2e-spec.ts` — **ВИВЧИТИ УВАЖНО** — вже покриває: subscription/one-off checkout, portal, webhook basic flow, idempotency, feature flags, response format
+   - `apps/api/src/common/guards/subscription.guard.spec.ts` — **ВЖЕ ПОВНІСТЮ ПОКРИТИЙ** — не дублювати
+   - `apps/web/src/shared/api/payments.spec.ts` — **ВЖЕ ІСНУЄ** — покриває createSubscriptionCheckout, createOneOffCheckout, createPortalSession
 3. **Types з packages/types:**
-   - `packages/types/src/contracts/payments.ts` — SUBSCRIPTION_STATUS, BILLING_EVENT_TYPE, BillingWebhookEvent
-   - `packages/types/src/enums/response-code.ts` — ALREADY_SUBSCRIBED, NO_BILLING_ACCOUNT, SUBSCRIPTION_REQUIRED
+   - `packages/types/src/contracts/payments.ts` — PAYMENT_TYPE, SUBSCRIPTION_STATUS, BILLING_EVENT_TYPE (4 types: CHECKOUT_COMPLETED, SUBSCRIPTION_UPDATED, SUBSCRIPTION_DELETED, ONE_OFF_PAYMENT_COMPLETED), CreateCheckoutSessionSchema (discriminated union), BillingWebhookEventSchema, CREDIT_PACK_CONFIG
+   - `packages/types/src/enums/response-code.ts` — ALREADY_SUBSCRIBED, NO_BILLING_ACCOUNT, SUBSCRIPTION_REQUIRED, PAYMENT_TYPE_DISABLED
 4. **Frontend:**
-   - `apps/web/src/shared/api/payments.ts` — createCheckoutSession, createPortalSession
+   - `apps/web/src/shared/api/payments.ts` — createSubscriptionCheckout(planCode), createOneOffCheckout(packCode), createPortalSession()
    - `apps/web/src/shared/api/client.ts` — apiClient instance
 
 ### Крок 2: Backend unit тести
-### Крок 3: Backend e2e тести
-### Крок 4: Frontend unit тести
+### Крок 3: Backend e2e тести (доповнення)
+### Крок 4: Frontend unit тести (перевірка)
 
 ---
 
 ## Constraints (обов'язкові правила)
 
-1. **НЕ змінюй існуючі тести.** Тільки додавай нові файли.
+1. **НЕ змінюй існуючі тести.** Тільки додавай нові файли або, у випадку e2e, нові `describe`/`it` блоки до існуючого файлу.
 2. **Дотримуйся існуючих patterns.** Мокування Mongoose Model (getModelToken, jest.fn()), mock provider через DI — копіюй з існуючих spec файлів.
 3. **Читай реальний код перед написанням тесту.** Перевіряй сигнатури методів, назви полів, MongoDB error codes, HTTP статуси — бери з імплементації.
 4. **Один тест = одна поведінка.** Не перевіряй кілька речей в одному `it()`.
@@ -70,70 +78,107 @@
 
 Створи новий файл. Прочитай `payments.service.ts` щоб зрозуміти всі залежності та логіку.
 
+**УВАГА: Ключові деталі імплементації:**
+- `createCheckoutSession(userId: string, dto: CreateCheckoutSession)` — приймає повний DTO (НЕ planCode окремо)
+- `handleWebhook` використовує two-phase idempotency: insert 'pending' → process → mark 'applied', rollback на failure
+- Subscription billing update: atomic `findOneAndUpdate` з `$or` guard (НЕ findByIdAndUpdate) + two-phase (dot-notation для existing billing, full object для null billing)
+- One-off payments: `applyOneOffPayment` → `usersService.addCredits`
+
 **Мокування:**
 - `PAYMENT_PROVIDER` token — mock об'єкт з `createCheckoutSession`, `createPortalSession`, `handleWebhookPayload` як `jest.fn()`
-- `userModel` — через `getModelToken(User.name)`, methods: `findById`, `findOne`, `findByIdAndUpdate` як `jest.fn()`
-- `webhookEventModel` — через `getModelToken(ProcessedWebhookEvent.name)`, method: `create` як `jest.fn()`
-- Для методів що повертають документ: `findById().lean()` через chainable mock
+- `userModel` — через `getModelToken(User.name)`, methods: `findById`, `findOne`, `findOneAndUpdate` як `jest.fn()`. Для chainable: `findById().lean()`, `findById().maxTimeMS().lean()`
+- `webhookEventModel` — через `getModelToken(ProcessedWebhookEvent.name)`, methods: `create`, `findOne`, `updateOne`, `deleteOne` як `jest.fn()`. Для chainable: `findOne().lean()`
+- `usersService` — mock з `addCredits` як `jest.fn()`
 
-**Метод `createCheckoutSession`:**
-- Юзер без підписки → викликає `paymentProvider.createCheckoutSession` з правильними аргументами (userId, userEmail, planCode, successUrl, cancelUrl) → повертає `{ checkoutUrl }`
+#### Subscription checkout (`createCheckoutSession` з `paymentType: 'subscription'`)
+
+- Юзер без підписки → викликає `paymentProvider.createCheckoutSession` з правильними аргументами (userId, userEmail, paymentType, planCode, priceId з ENV, successUrl, cancelUrl) → повертає `{ checkoutUrl }`
 - Юзер з активною підпискою (`hasActiveSubscription: true`) → кидає `ConflictException` з `code: RESPONSE_CODE.ALREADY_SUBSCRIBED`
 - Юзер не знайдений → кидає `BadRequestException`
-- Перевір що `successUrl` і `cancelUrl` беруться з `ENV`
+- `PAYMENTS_SUBSCRIPTION_ENABLED = false` → кидає `BadRequestException` з `code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED`
+- Юзер з existing `providerCustomerId` → передає його в `createCheckoutSession` input
 
-**Метод `createPortalSession`:**
+#### One-off checkout (`createCheckoutSession` з `paymentType: 'one_off'`)
+
+- Юзер + valid packCode ('credits_5') → викликає `paymentProvider.createCheckoutSession` з priceId з `STRIPE_CREDIT_PACKS`, credits з pack config → повертає `{ checkoutUrl }`
+- Invalid packCode → кидає `BadRequestException('Invalid packCode')`
+- `PAYMENTS_ONE_OFF_ENABLED = false` → кидає `BadRequestException` з `code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED`
+
+#### Portal (`createPortalSession`)
+
 - Юзер з `providerCustomerId` → викликає `paymentProvider.createPortalSession(providerCustomerId)` → повертає `{ portalUrl }`
 - Юзер без `billing` subdocument → кидає `BadRequestException` з `code: RESPONSE_CODE.NO_BILLING_ACCOUNT`
 - Юзер з `billing.providerCustomerId: null` → кидає `BadRequestException` з `code: RESPONSE_CODE.NO_BILLING_ACCOUNT`
 - Юзер не знайдений → кидає `BadRequestException`
 
-**Метод `handleWebhook` — basic flow:**
+#### Webhook — basic flow (`handleWebhook`)
+
 - `paymentProvider.handleWebhookPayload` повертає `null` → метод повертає без дій (unknown event)
 - Повний happy path для `CHECKOUT_COMPLETED`:
   1. `handleWebhookPayload` повертає event з userId і типом CHECKOUT_COMPLETED
-  2. `webhookEventModel.create` успішно вставляє (не дублікат)
-  3. `userModel.findById` знаходить user без `lastProviderEventAt`
-  4. `userModel.findByIdAndUpdate` викликається з правильним `$set` що включає `billing.provider: 'stripe'`, `billing.hasActiveSubscription: true`, `billing.providerCustomerId`, `billing.providerSubscriptionId`, `billing.planCode`, `billing.currency`
+  2. `webhookEventModel.create` успішно вставляє (не дублікат) зі status 'pending'
+  3. `userModel.findOneAndUpdate` викликається з atomic `$or` guard на `lastProviderEventAt`
+  4. `webhookEventModel.updateOne` маркує event як 'applied'
+  5. Billing update включає: `billing.provider: 'stripe'`, `billing.hasActiveSubscription: true`, `billing.providerCustomerId`, `billing.providerSubscriptionId`, `billing.planCode`, `billing.currency`
 
-**Метод `handleWebhook` — userId resolution:**
+#### Webhook — userId resolution (`resolveUserId`)
+
 - Event з непустим `userId` → використовується напряму, `userModel.findOne` НЕ викликається
-- Event з порожнім `userId` але `raw.id` є → шукає user через `findOne({ 'billing.providerSubscriptionId': raw.id })` → повертає userId
+- Event з порожнім `userId` і `raw.id` є string → шукає user через `findOne({ 'billing.providerSubscriptionId': raw.id })` → повертає userId
 - Event з порожнім `userId` і без `raw.id` → log warning, повертає без дій
 - `findOne` не знаходить user для subscriptionId → log warning, повертає без дій
 
-**Метод `handleWebhook` — idempotency:**
-- `webhookEventModel.create` кидає MongoDB duplicate key error (code 11000) → повертає без дій (already processed)
+#### Webhook — two-phase idempotency (`insertWebhookEvent`)
+
+- `webhookEventModel.create` кидає MongoDB duplicate key error (code 11000):
+  - existing event має `status: 'applied'` → повертає без дій (already processed)
+  - existing event має `status: 'pending'` → продовжує обробку (retry)
 - `webhookEventModel.create` кидає інший error → помилка пропагується
 
-**Метод `handleWebhook` — out-of-order:**
-- `event.occurredAt < user.billing.lastProviderEventAt` → skip (stale event), `findByIdAndUpdate` НЕ викликається
-- `event.occurredAt === user.billing.lastProviderEventAt` → обробляється (рівні timestamps дозволені, логіка `<` а не `<=`)
-- `event.occurredAt > user.billing.lastProviderEventAt` → обробляється нормально
+#### Webhook — rollback on failure
 
-**Метод `handleWebhook` — billing state per event type:**
-- `CHECKOUT_COMPLETED`: `billing.provider = 'stripe'`, `billing.providerCustomerId`, `billing.providerSubscriptionId`, `billing.planCode` з `raw.metadata.planCode`, `billing.currency`, `billing.hasActiveSubscription = true`
-- `SUBSCRIPTION_UPDATED` з status ACTIVE: `billing.hasActiveSubscription = true`, оновлення `subscriptionStatus`, `currentPeriodEnd`, `cancelAtPeriodEnd`
-- `SUBSCRIPTION_UPDATED` з status PAST_DUE: `billing.hasActiveSubscription = false`
-- `SUBSCRIPTION_DELETED`: `billing.subscriptionStatus = 'CANCELED'`, `billing.hasActiveSubscription = false`, `billing.providerSubscriptionStatus = 'canceled'`
+- `processWebhookEvent` кидає помилку → `rollbackPendingWebhookEvent` видаляє pending record (deleteOne з `status: 'pending'`) → помилка re-throw
+- `deleteOne` в rollback теж кидає помилку → логується, оригінальна помилка re-throw
 
-**Метод `handleWebhook` — user not found after idempotency:**
-- `userModel.findById` повертає null → log warning, повертає без дій, `findByIdAndUpdate` НЕ викликається
+#### Webhook — out-of-order (subscription events)
+
+- Atomic MongoDB guard: `findOneAndUpdate` з `$or: [{ lastProviderEventAt: null }, { lastProviderEventAt: { $lte: event.occurredAt } }]`
+- Phase 1 (existing billing): `findOneAndUpdate` з `{ billing: { $ne: null } }` + out-of-order guard → повертає updated doc
+- Phase 2 (null billing, first event): якщо Phase 1 returned null → `findOneAndUpdate` з `{ billing: null }` → sets full billing object
+- Обидві фази returned null → skip (stale/orphan event), logged
+
+#### Webhook — billing state per event type (`buildBillingUpdate`)
+
+- `CHECKOUT_COMPLETED`: `provider = 'stripe'`, `providerCustomerId` з raw.customer, `providerSubscriptionId` з raw.subscription, `planCode` з raw.metadata.planCode, `currency` з raw.currency, `providerSubscriptionStatus` з raw.status, `hasActiveSubscription = true` (status ACTIVE)
+- `SUBSCRIPTION_UPDATED` з status ACTIVE: `hasActiveSubscription = true`, updates `subscriptionStatus`, `currentPeriodEnd`, `cancelAtPeriodEnd`
+- `SUBSCRIPTION_UPDATED` з status TRIALING: `hasActiveSubscription = true`
+- `SUBSCRIPTION_UPDATED` з status PAST_DUE: `hasActiveSubscription = false`
+- `SUBSCRIPTION_DELETED`: `subscriptionStatus = 'CANCELED'`, `hasActiveSubscription = false`, `providerSubscriptionStatus = 'canceled'`
+
+#### Webhook — one-off payment (`applyOneOffPayment`)
+
+- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: 5` → `usersService.addCredits(userId, 5)` called
+- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: 0` → skip, addCredits NOT called, log warning
+- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: undefined` → skip (fallback to 0)
+- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: -5` → skip (not positive)
+- User not found for one-off event → log warning, return without calling addCredits
 
 ### 2.2 НОВИЙ: `apps/api/src/modules/payments/payments.controller.spec.ts`
 
 Створи новий файл. Прочитай `payments.controller.ts`.
 
+**УВАГА:** Контролер передає повний DTO в service, не окремі поля.
+
 **Мокування:** Mock `PaymentsService` повністю. Mock `Request` object з `rawBody` (Buffer), `headers`. Mock `@CurrentUser()` через `request.user`.
 
 | Endpoint | Що тестувати |
 |---|---|
-| `POST /payments/checkout-session` | Виклик `paymentsService.createCheckoutSession(user._id.toString(), dto.planCode)`. Response format `{ data: { checkoutUrl } }`. Без JWT guard (мокований на рівні unit тесту). |
+| `POST /payments/checkout-session` | Виклик `paymentsService.createCheckoutSession(user._id.toString(), dto)` з повним DTO. Response format `{ data: { checkoutUrl } }`. |
 | `POST /payments/portal-session` | Виклик `paymentsService.createPortalSession(user._id.toString())`. Response format `{ data: { portalUrl } }`. |
-| `POST /payments/webhook/stripe` | Успішна обробка — передає `provider='stripe'`, `rawBody`, `signature` в `paymentsService.handleWebhook`; повертає `{ received: true }`. |
-| `POST /payments/webhook/stripe` | Missing `rawBody` (req.rawBody = undefined) → кидає `BadRequestException`. |
-| `POST /payments/webhook/stripe` | Missing `signature` (header відсутній) → кидає `BadRequestException`. |
-| `POST /payments/webhook/unknown` | Unsupported provider → кидає `BadRequestException` з message `Unsupported provider: unknown`. |
+| `POST /payments/webhook/stripe` | Успішна обробка — передає `provider='stripe'`, `rawBody` (Buffer), `signature` в `paymentsService.handleWebhook`; повертає `{ received: true }`. |
+| `POST /payments/webhook/stripe` | Missing `rawBody` (req.rawBody = undefined) → кидає `BadRequestException('Missing raw body')`. |
+| `POST /payments/webhook/stripe` | Missing `signature` (header відсутній) → кидає `BadRequestException('Missing webhook signature')`. |
+| `POST /payments/webhook/unknown` | Unsupported provider → кидає `BadRequestException('Unsupported provider: unknown')`. Provider перевіряється через `static SUPPORTED_PROVIDERS = new Set(['stripe'])`. |
 
 ### 2.3 НОВИЙ: `apps/api/src/modules/payments/providers/stripe.service.spec.ts`
 
@@ -142,24 +187,27 @@
 **Мокування:** Mock весь `stripe` module через `jest.mock('stripe')`. Конструктор повертає mock об'єкт з `checkout.sessions.create`, `billingPortal.sessions.create`, `webhooks.constructEvent` як `jest.fn()`.
 
 **Метод `createCheckoutSession`:**
-- Передає правильний `price` (з `ENV.STRIPE_PRICE_MONTHLY_USD`), `metadata.userId`, `metadata.planCode`, `client_reference_id`, `success_url`, `cancel_url`
+- Subscription: mode='subscription', передає правильний `price`, `metadata.userId`, `metadata.planCode`, `client_reference_id`, `success_url`, `cancel_url`. З `providerCustomerId` → `customer`. Без → `customer_email`.
+- One-off: mode='payment', `metadata.credits` = String(credits), `metadata.planCode` = packCode
 - `session.url` є → повертає `{ checkoutUrl: session.url, providerSessionId: session.id }`
-- `session.url` відсутній → кидає Error
+- `session.url` відсутній → кидає Error('Stripe checkout session created without URL')
 
 **Метод `createPortalSession`:**
 - Передає `customer: providerCustomerId`, `return_url: ENV.BILLING_SUCCESS_URL`
 - Повертає `{ portalUrl: session.url }`
 
 **Метод `handleWebhookPayload`:**
-- `checkout.session.completed` → повертає event з `type: CHECKOUT_COMPLETED`, `userId` з `metadata.userId`, `raw` містить session object
+- `checkout.session.completed` mode=subscription → `type: CHECKOUT_COMPLETED`, `userId` з `metadata.userId`, `subscriptionStatus: ACTIVE`
+- `checkout.session.completed` mode=payment, paid → `type: ONE_OFF_PAYMENT_COMPLETED`, `creditsAmount` з metadata.credits, `packCode` з metadata.planCode
+- `checkout.session.completed` mode=payment, unpaid → повертає `null`
 - `checkout.session.completed` без `metadata.userId` → fallback до `client_reference_id`
-- `customer.subscription.updated` з status `active` → повертає event з `type: SUBSCRIPTION_UPDATED`, `subscriptionStatus: ACTIVE`, `userId: ''` (порожній, бо subscription event)
+- `checkout.session.async_payment_succeeded` → same handling as `checkout.session.completed`
+- `customer.subscription.updated` з status `active` → `type: SUBSCRIPTION_UPDATED`, `subscriptionStatus: ACTIVE`, `userId: ''` (порожній)
 - `customer.subscription.updated` з status `past_due` → `subscriptionStatus: PAST_DUE`
-- `customer.subscription.updated` з status `canceled` → `subscriptionStatus: CANCELED`
-- `customer.subscription.deleted` → повертає event з `type: SUBSCRIPTION_DELETED`, `subscriptionStatus: CANCELED`
+- `customer.subscription.deleted` → `type: SUBSCRIPTION_DELETED`, `subscriptionStatus: CANCELED`
 - Невідомий event type (напр. `payment_intent.created`) → повертає `null`
 
-**Метод `mapSubscriptionStatus` (через handleWebhookPayload):**
+**`mapSubscriptionStatus` (через handleWebhookPayload):**
 - `'active'` → `ACTIVE`
 - `'trialing'` → `TRIALING`
 - `'past_due'` → `PAST_DUE`
@@ -170,101 +218,53 @@
 - `'paused'` → `UNKNOWN`
 - Невідомий статус → `UNKNOWN`
 
-### 2.4 НОВИЙ: `apps/api/src/common/guards/subscription.guard.spec.ts`
+### 2.4 ~~НОВИЙ~~ ВЖЕ ІСНУЄ: `apps/api/src/common/guards/subscription.guard.spec.ts`
 
-Створи новий файл. Прочитай `subscription.guard.ts`.
-
-**Мокування:** Mock `ExecutionContext` → `switchToHttp().getRequest()` повертає mock Request з `user`.
-
-| Сценарій | Expected |
-|---|---|
-| `user.billing.hasActiveSubscription === true` | `canActivate` повертає `true` |
-| `user.billing.hasActiveSubscription === false` | Кидає `ForbiddenException` з `{ code: RESPONSE_CODE.SUBSCRIPTION_REQUIRED }` |
-| `user.billing === null` | Кидає `ForbiddenException` |
-| `user.billing === undefined` | Кидає `ForbiddenException` |
-| `user === undefined` (no JWT user) | Кидає `ForbiddenException` |
-| `user.billing.hasActiveSubscription === true` (TRIALING) | `canActivate` повертає `true` — Guard тільки перевіряє `hasActiveSubscription`, не розрізняє статуси |
+**НЕ СТВОРЮВАТИ.** Файл вже існує з повним покриттям (6 сценаріїв):
+- `hasActiveSubscription === true` → true
+- `hasActiveSubscription === false` → ForbiddenException(SUBSCRIPTION_REQUIRED)
+- `billing === null` → ForbiddenException
+- `billing === undefined` → ForbiddenException
+- `user === undefined` → ForbiddenException
+- `hasActiveSubscription === true` (TRIALING) → true
 
 ---
 
-## Крок 3: Backend E2E Tests
+## Крок 3: Backend E2E Tests — доповнення
 
-### Файл: `apps/api/test/payments.e2e-spec.ts`
+### Файл: `apps/api/test/payments.e2e-spec.ts` (ВЖЕ ІСНУЄ)
 
-Прочитай існуючий `apps/api/test/app.e2e-spec.ts` та `apps/api/test/auth.e2e-spec.ts`. Зрозумій:
-- Як налаштований `MongoMemoryServer`
-- Як мокується Redis (`REDIS_CLIENT` provider override)
-- Як ініціалізується NestJS app з `overrideProvider`
+**НЕ ПЕРЕПИСУВАТИ.** Файл вже містить 800+ рядків тестів. Прочитай його УВАЖНО перед додаванням.
 
-**КРИТИЧНО:** Stripe SDK у e2e НЕ можна використовувати з реальними credentials. Замінити `PAYMENT_PROVIDER` через `overrideProvider(PAYMENT_PROVIDER).useValue(mockPaymentProvider)` де `mockPaymentProvider` — простий mock об'єкт.
+**Що вже покрито (НЕ дублювати):**
+- A. `POST /api/payments/checkout-session` — 5 тестів (sub + auth + validation)
+- B. `POST /api/payments/portal-session` — 4 тести (success + no billing + null customerId + auth)
+- C. `POST /api/payments/webhook/:provider` — 3 тести (valid + no signature + bad provider)
+- D. Response format — 3 тести
+- E. One-off checkout — 3 тести (success + bad pack + credits webhook)
+- F. Feature flags — 2 тести (disabled subscription + disabled one-off)
+- G. Webhook idempotency — 2 тести (duplicate skip + rollback/retry)
 
-**Налаштування:**
+**Що МОЖНА додати (тільки якщо відсутнє після вивчення файлу):**
 
-```
-beforeAll:
-  - MongoMemoryServer.create()
-  - Test.createTestingModule(AppModule)
-  - overrideProvider(PAYMENT_PROVIDER).useValue({
-      createCheckoutSession: jest.fn().mockResolvedValue({ checkoutUrl: 'https://checkout.stripe.com/...', providerSessionId: 'cs_test_xxx' }),
-      createPortalSession: jest.fn().mockResolvedValue({ portalUrl: 'https://billing.stripe.com/...' }),
-      handleWebhookPayload: jest.fn().mockReturnValue(null),
-    })
-  - mock ENV.STRIPE_* vars (вже в process.env з test setup або .env.test)
-  - Скористатись helper loginAsMagicLink або loginWithPassword з auth.e2e-spec.ts
-```
-
-**Хелпер-функції (аналогічно auth.e2e-spec.ts):**
-- `createUserWithBilling(email, billingData?)` — створює user в MongoDB з опціональним billing subdocument
-- `loginAsUser(email)` — повертає `{ accessToken }` для захищених запитів
-
-**Сценарії:**
-
-**А. `POST /api/payments/checkout-session` (JWT protected):**
-- Авторизований, без активної підписки, валідний planCode → 201, `{ data: { checkoutUrl: '...' } }`
-- Авторизований, вже має активну підписку → 409, `{ error: { code: 'ALREADY_SUBSCRIBED' } }`
-- Без JWT token → 401
-- Невалідний body (без planCode) → 400
-- Порожній planCode (`""`) → 400
-
-**Б. `POST /api/payments/portal-session` (JWT protected):**
-- Авторизований, є `billing.providerCustomerId` → 201, `{ data: { portalUrl: '...' } }`
-- Авторизований, немає billing subdocument → 400, `{ error: { code: 'NO_BILLING_ACCOUNT' } }`
-- Авторизований, `billing.providerCustomerId === null` → 400, `{ error: { code: 'NO_BILLING_ACCOUNT' } }`
-- Без JWT token → 401
-
-**В. `POST /api/payments/webhook/stripe` (NO auth, NO throttle):**
-- **ВАЖЛИВО:** У e2e mock `handleWebhookPayload` щоб повертав BillingWebhookEvent для перевірки idempotency та billing state.
-- Валідний request (rawBody + signature) → mock `handleWebhookPayload` повертає null (unknown event) → 200/201, `{ received: true }`
-- Missing `stripe-signature` header → 400
-- Missing rawBody (неможливо напряму в Supertest — перевірити fallback)
-- Unsupported provider (`/webhook/monobank`) → 400
-
-**Г. Response format (cross-cutting):**
-- Success: `{ data: { ... } }`
-- Error: `{ error: { code: string, message: string } }`
-- Validation error (невалідний body) → 400 з правильним форматом
-
-**Д. Webhook idempotency (якщо mock підтримує state):**
-- Налаштувати `handleWebhookPayload` mock повертати реальний CHECKOUT_COMPLETED event
-- Перший webhook → 201, billing оновлюється в MongoDB
-- Той самий webhook повторно → 201 (idempotent), `{ received: true }`, duplicate key error handling
+- **Out-of-order event handling:** Надіслати два SUBSCRIPTION_UPDATED events — новіший, потім старіший. Перевірити що старіший skip (billing state = newer event).
+- **Subscription lifecycle:** CHECKOUT_COMPLETED → SUBSCRIPTION_UPDATED(past_due) → SUBSCRIPTION_DELETED. Перевірити billing state на кожному етапі.
+- **One-off idempotency:** Повторний ONE_OFF_PAYMENT_COMPLETED з тим самим providerEventId → credits НЕ додаються вдруге.
+- **userId resolution via subscription lookup:** SUBSCRIPTION_UPDATED з порожнім userId але existing user з `billing.providerSubscriptionId` → userId resolved, billing updated.
 
 ---
 
-## Крок 4: Frontend Unit Tests
+## Крок 4: Frontend Unit Tests — перевірка
 
-### 4.1 НОВИЙ: `apps/web/src/shared/api/payments.spec.ts`
+### ~~НОВИЙ~~ ВЖЕ ІСНУЄ: `apps/web/src/shared/api/payments.spec.ts`
 
-Прочитай `apps/web/src/shared/api/payments.ts` та існуючий `apps/web/src/shared/api/auth.spec.ts` щоб зрозуміти pattern мокування.
+**НЕ СТВОРЮВАТИ.** Файл вже існує з покриттям:
+- `createSubscriptionCheckout(planCode)` — POST `/api/payments/checkout-session` з `{ paymentType: 'subscription', planCode }`
+- `createOneOffCheckout(packCode)` — POST `/api/payments/checkout-session` з `{ paymentType: 'one_off', packCode }`
+- `createPortalSession()` — POST `/api/payments/portal-session`
+- Error propagation для кожної функції
 
-Mock `apiClient` через jest.mock('./client') або через moduleNameMapper в jest config.
-
-| Функція | Що перевірити |
-|---|---|
-| `createCheckoutSession(planCode)` | POST `/api/payments/checkout-session` з `{ planCode }` в body. Повертає `data.data` (тобто `{ checkoutUrl }`). |
-| `createCheckoutSession('monthly_usd')` | Правильний planCode передається в тіло запиту. |
-| `createPortalSession()` | POST `/api/payments/portal-session` без body. Повертає `{ portalUrl }`. |
-| API error | Якщо `apiClient.post` відкидає — error пропагується (не поглинається). |
+**Перевір:** Запусти `pnpm --filter web test` і переконайся що всі тести проходять.
 
 ---
 
@@ -292,7 +292,7 @@ pnpm build
 
 **Критерії успіху:**
 - Всі тести проходять (exit code 0)
-- Нові тести покривають всі payments flows: checkout, portal, webhook (всі event types), idempotency, out-of-order, guard
+- Нові unit тести покривають: PaymentsService (checkout sub + one-off, portal, webhook all 4 event types, two-phase idempotency, out-of-order, rollback, userId resolution, applyOneOffPayment edge cases), PaymentsController (3 endpoints + validation), StripeService (checkout, portal, webhook parsing + status mapping)
 - Існуючі тести не змінені та все ще проходять
 - Жоден тест не залежить від зовнішніх сервісів (Stripe API, MongoDB Atlas)
 - Coverage payments module > 80%

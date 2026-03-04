@@ -1,15 +1,15 @@
 # Manual E2E Test Plan: повний payments flow
 
-> Покрокові сценарії для ручного тестування. Покриває всю платіжну підсистему: Stripe Checkout, Billing Portal, Webhook handling, SubscriptionGuard, Billing page UI.
+> Покрокові сценарії для ручного тестування. Покриває всю платіжну підсистему: Stripe Checkout (subscription + one-off), Billing Portal, Webhook handling, SubscriptionGuard, Billing page UI (subscription + credits sections).
 
-Дата: 2026-03-03
+Дата: 2026-03-04
 
 ---
 
 ## Підготовка
 
 - DevTools відкриті (вкладки: `Network`, `Application -> Cookies`, `Console`)
-- У `Network` увімкнути `Preserve log`
+- У `Network` увімкнити `Preserve log`
 - **Stripe CLI встановлений** (для webhook тестів: `stripe listen --forward-to localhost:4000/api/payments/webhook/stripe`)
 - **Stripe Dashboard** відкритий (для перевірки customer, subscription, events)
 - Тестовий акаунт авторизований
@@ -28,7 +28,7 @@
 
 ---
 
-## A. Checkout Flow
+## A. Subscription Checkout Flow
 
 ### Тест A1: Успішна підписка — повний flow
 
@@ -61,7 +61,7 @@
 
 **Steps:**
 1. Відкрити DevTools Console
-2. Виконати: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ planCode: 'monthly_usd' }) }).then(r => r.json()).then(console.log)`
+2. Виконати: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ paymentType: 'subscription', planCode: 'monthly_usd' }) }).then(r => r.json()).then(console.log)`
 
 **Expected:**
 - [ ] Response: 409, `{ error: { code: 'ALREADY_SUBSCRIBED', message: '...' } }`
@@ -146,7 +146,7 @@
 
 ## C. Webhook Handling
 
-> **Увага:** Тести C1-C4 виконуються через Stripe CLI або Stripe Dashboard.
+> **Увага:** Тести C1-C5 виконуються через Stripe CLI або Stripe Dashboard.
 
 ### Тест C1: checkout.session.completed → billing state
 
@@ -163,7 +163,23 @@
 
 ---
 
-### Тест C2: customer.subscription.updated (canceled) → billing state
+### Тест C2: customer.subscription.updated → status change
+
+**Precondition:** Юзер має активну підписку.
+
+**Steps:**
+1. Stripe Dashboard → Subscriptions → знайти підписку → Past due (або через API)
+2. Перевірити webhook та billing state
+
+**Expected:**
+- [ ] Webhook → 201
+- [ ] `billing.subscriptionStatus` оновлено відповідно до нового Stripe статусу
+- [ ] `billing.hasActiveSubscription` = true для ACTIVE/TRIALING, false для PAST_DUE/CANCELED/etc
+- [ ] `billing.cancelAtPeriodEnd` та `billing.currentPeriodEnd` оновлені
+
+---
+
+### Тест C3: customer.subscription.deleted → billing state
 
 **Precondition:** Юзер має активну підписку.
 
@@ -178,7 +194,7 @@
 
 ---
 
-### Тест C3: Webhook idempotency (дублікати)
+### Тест C4: Webhook idempotency (дублікати)
 
 **Precondition:** Stripe CLI запущений.
 
@@ -190,12 +206,12 @@
 **Expected:**
 - [ ] Перший webhook → 201 (processed)
 - [ ] Повторний webhook → 201 (idempotent, не double-process)
-- [ ] `apps/api` logs: `Duplicate webhook event evt_xxx, skipping`
+- [ ] `apps/api` logs: `Duplicate webhook event evt_xxx, already applied`
 - [ ] MongoDB: billing state НЕ змінився вдруге
 
 ---
 
-### Тест C4: Webhook — невідомий provider
+### Тест C5: Webhook — невідомий provider
 
 **Steps:**
 1. `curl -X POST http://localhost:4000/api/payments/webhook/monobank -H "Content-Type: application/json" -d '{}'`
@@ -205,7 +221,7 @@
 
 ---
 
-### Тест C5: Webhook — відсутній signature
+### Тест C6: Webhook — відсутній signature
 
 **Steps:**
 1. `curl -X POST http://localhost:4000/api/payments/webhook/stripe -H "Content-Type: application/json" -d '{}'`
@@ -215,7 +231,7 @@
 
 ---
 
-### Тест C6: Webhook — неправильна signature
+### Тест C7: Webhook — неправильна signature
 
 **Steps:**
 1. `curl -X POST http://localhost:4000/api/payments/webhook/stripe -H "stripe-signature: t=fake,v1=fake" -H "Content-Type: application/json" -d '{}'`
@@ -226,9 +242,98 @@
 
 ---
 
-## D. SubscriptionGuard
+## D. One-Off Payments (Credit Packs)
 
-### Тест D1: Захищений endpoint — без підписки
+### Тест D1: Успішна купівля кредитного пакету
+
+**Precondition:** Авторизований юзер. Stripe CLI запущений. Початковий credits.balance = 0.
+
+**Steps:**
+1. Перейти на `/{locale}/billing`
+2. У секції "Кредити" натиснути кнопку купівлі для пакету 5 кредитів
+3. На Stripe Checkout заповнити картку `4242 4242 4242 4242`
+4. Підтвердити оплату
+
+**Expected:**
+- [ ] Network: `POST /api/payments/checkout-session` → 201 з `{ data: { checkoutUrl } }`
+- [ ] Request body: `{ paymentType: 'one_off', packCode: 'credits_5' }`
+- [ ] Browser переходить на Stripe Checkout (mode=payment)
+- [ ] Після оплати → redirect на `/billing/success`
+- [ ] Stripe CLI: `checkout.session.completed` webhook → 201
+- [ ] MongoDB: `credits.balance` = 5 (was 0)
+- [ ] Header: credits badge показує 5
+
+---
+
+### Тест D2: Купівля кредитів — другий пакет (accumulation)
+
+**Precondition:** Юзер вже має 5 кредитів (після D1).
+
+**Steps:**
+1. Купити ще один пакет (10 кредитів)
+
+**Expected:**
+- [ ] MongoDB: `credits.balance` = 15 (5 + 10)
+- [ ] Credits accumulate, не перезаписуються
+
+---
+
+### Тест D3: Невалідний packCode
+
+**Steps:**
+1. DevTools Console: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ paymentType: 'one_off', packCode: 'credits_999' }) }).then(r => r.json()).then(console.log)`
+
+**Expected:**
+- [ ] Response: 400 (validation error від Zod — packCode not in allowed enum)
+
+---
+
+### Тест D4: One-off не вимагає відсутності підписки
+
+**Precondition:** Юзер з активною підпискою.
+
+**Steps:**
+1. Купити кредитний пакет
+
+**Expected:**
+- [ ] Checkout створюється успішно (one-off не перевіряє hasActiveSubscription)
+- [ ] Кредити додаються нормально
+
+---
+
+## E. Feature Flags
+
+### Тест E1: Subscription disabled
+
+**Precondition:** `PAYMENTS_SUBSCRIPTION_ENABLED=false` в env, `PAYMENTS_ONE_OFF_ENABLED=true`.
+
+**Steps:**
+1. Перейти на `/{locale}/billing`
+
+**Expected:**
+- [ ] Subscription секція НЕ відображається (conditionally rendered via `PAYMENTS_SUBSCRIPTION_ENABLED`)
+- [ ] Credits секція відображається
+- [ ] API: `POST /checkout-session` з `paymentType: 'subscription'` → 400, code `PAYMENT_TYPE_DISABLED`
+
+---
+
+### Тест E2: One-off disabled
+
+**Precondition:** `PAYMENTS_ONE_OFF_ENABLED=false`, `PAYMENTS_SUBSCRIPTION_ENABLED=true`.
+
+**Steps:**
+1. Перейти на `/{locale}/billing`
+
+**Expected:**
+- [ ] Credits секція НЕ відображається
+- [ ] Subscription секція відображається
+- [ ] API: `POST /checkout-session` з `paymentType: 'one_off'` → 400, code `PAYMENT_TYPE_DISABLED`
+
+---
+
+## F. SubscriptionGuard
+
+### Тест F1: Захищений endpoint — без підписки
 
 **Precondition:** Авторизований юзер без активної підписки. Необхідний захищений endpoint з `@UseGuards(JwtAuthGuard, SubscriptionGuard)` — якщо такий є в Reports/Storage, використати його. Інакше тест виконати через unit тест.
 
@@ -240,7 +345,7 @@
 
 ---
 
-### Тест D2: Захищений endpoint — з активною підпискою
+### Тест F2: Захищений endpoint — з активною підпискою
 
 **Precondition:** Авторизований юзер з `billing.hasActiveSubscription: true`.
 
@@ -249,7 +354,7 @@
 
 ---
 
-### Тест D3: SubscriptionGuard — без JWT
+### Тест F3: SubscriptionGuard — без JWT
 
 **Steps:**
 1. Запит без `Authorization` header.
@@ -259,9 +364,9 @@
 
 ---
 
-## E. Billing Page UI
+## G. Billing Page UI
 
-### Тест E1: Стан A — немає підписки
+### Тест G1: Стан A — немає підписки
 
 **Precondition:** Авторизований юзер, `billing === null` або `hasActiveSubscription: false`.
 
@@ -269,15 +374,13 @@
 1. Перейти на `/{locale}/billing`
 
 **Expected:**
-- [ ] Відображається заголовок з ключа `billing_page.subscribe.title`
-- [ ] Опис підписки (`subscribe.description`)
-- [ ] Назва плану (`subscribe.plan_label`)
-- [ ] Кнопка "Оформити підписку" (`subscribe.button`)
+- [ ] Subscription секція: заголовок `billing_page.subscribe.title`, опис, назва плану, кнопка "Оформити підписку"
 - [ ] НЕ відображається інформація про поточну підписку
+- [ ] Credits секція: заголовок, опис, поточний баланс (`credits.balance`), кнопки для кожного пакету (5, 10, 20 кредитів)
 
 ---
 
-### Тест E2: Стан B — активна підписка
+### Тест G2: Стан B — активна підписка
 
 **Precondition:** Авторизований юзер, `billing.hasActiveSubscription: true`, `billing.cancelAtPeriodEnd: false`.
 
@@ -285,16 +388,17 @@
 1. Перейти на `/{locale}/billing`
 
 **Expected:**
-- [ ] Заголовок `billing_page.active.title`
+- [ ] Subscription секція: заголовок `billing_page.active.title`
 - [ ] Статус: "Активна" (`active.status_active`)
 - [ ] Назва плану (`active.plan_label` з planCode)
 - [ ] Наступне списання (`active.next_billing` з датою)
 - [ ] Кнопка "Керувати підпискою" (`active.manage_button`)
 - [ ] НЕ відображається `cancel_notice`
+- [ ] Credits секція: також відображається (one-off незалежний від subscription)
 
 ---
 
-### Тест E3: Стан C — підписка скасована, але активна до кінця periodу
+### Тест G3: Стан C — підписка скасована, але активна до кінця періоду
 
 **Precondition:** `billing.hasActiveSubscription: true`, `billing.cancelAtPeriodEnd: true`.
 
@@ -309,19 +413,33 @@
 
 ---
 
-### Тест E4: Loading state кнопки
+### Тест G4: Credits секція — відображення балансу
+
+**Precondition:** Юзер з `credits.balance: 15`.
 
 **Steps:**
-1. Натиснути "Оформити підписку" (або "Керувати підпискою")
+1. Перейти на `/{locale}/billing`
+
+**Expected:**
+- [ ] Credits секція показує "Баланс: 15 кредитів" (або відповідний i18n ключ `credits.balance`)
+- [ ] Три кнопки купівлі: 5, 10, 20 кредитів (з `CREDIT_PACK_CONFIG`)
+
+---
+
+### Тест G5: Loading state кнопок
+
+**Steps:**
+1. Натиснути "Оформити підписку" (або "Купити" кредитний пакет, або "Керувати підпискою")
 
 **Expected:**
 - [ ] Кнопка показує spinner (`UiSpinner`) замість тексту
 - [ ] Кнопка disabled під час API call
 - [ ] Після redirect (або помилки) кнопка повертається в нормальний стан
+- [ ] Інші кнопки не блокуються (loadingAction specific per action)
 
 ---
 
-### Тест E5: Error handling
+### Тест G6: Error handling
 
 **Steps:**
 1. Заблокувати `POST /api/payments/checkout-session` через Network tab → Block request URL
@@ -329,13 +447,13 @@
 
 **Expected:**
 - [ ] Toast з error повідомленням (`subscribe.error` ключ)
-- [ ] Кнопка знову активна (isLoading = false)
+- [ ] Кнопка знову активна (loadingAction = null)
 
 ---
 
-## F. Route Protection
+## H. Route Protection
 
-### Тест F1: /billing — неавторизований
+### Тест H1: /billing — неавторизований
 
 **Precondition:** Немає `bid_refresh` cookie.
 
@@ -348,7 +466,7 @@
 
 ---
 
-### Тест F2: /billing — авторизований
+### Тест H2: /billing — авторизований
 
 **Precondition:** Є `bid_refresh` cookie.
 
@@ -361,7 +479,7 @@
 
 ---
 
-### Тест F3: /billing/success та /billing/cancel
+### Тест H3: /billing/success та /billing/cancel
 
 **Steps:**
 1. Відкрити `/{locale}/billing/success`
@@ -373,9 +491,9 @@
 
 ---
 
-## G. Billing State — getMe response
+## I. Billing State — getMe response
 
-### Тест G1: getMe — billing field після підписки
+### Тест I1: getMe — billing field після підписки
 
 **Precondition:** Юзер з активною підпискою.
 
@@ -393,11 +511,11 @@
     "cancelAtPeriodEnd": false
   }
   ```
-- [ ] Response НЕ містить `billing.providerCustomerId`, `billing.providerSubscriptionId`, `billing.providerSubscriptionStatus` (internal fields)
+- [ ] Response НЕ містить `billing.providerCustomerId`, `billing.providerSubscriptionId`, `billing.providerSubscriptionStatus` (internal fields filtered by controller)
 
 ---
 
-### Тест G2: getMe — billing field без підписки
+### Тест I2: getMe — billing field без підписки
 
 **Precondition:** Юзер без підписки.
 
@@ -405,26 +523,38 @@
 1. `GET /api/users/me`
 
 **Expected:**
-- [ ] `billing: null` або відсутній
-- [ ] Жодних внутрішніх Stripe полів
+- [ ] `billing: null`
 
 ---
 
-## H. i18n
+### Тест I3: getMe — credits field після one-off
 
-### Тест H1: Billing page — Ukrainian
+**Precondition:** Юзер з `credits.balance: 10`.
+
+**Steps:**
+1. `GET /api/users/me`
+
+**Expected:**
+- [ ] Response містить `credits: { balance: 10, freeReportUsed: false }`
+
+---
+
+## J. i18n
+
+### Тест J1: Billing page — Ukrainian
 
 **Steps:**
 1. Перейти на `/uk/billing`
-2. Перевірити всі тексти
+2. Перевірити всі тексти (включно з credits секцією)
 
 **Expected:**
 - [ ] Заголовки, описи, кнопки — українською
 - [ ] Дати форматуються у форматі uk-UA (напр. "15 березня 2026")
+- [ ] Credits секція: "Кредити", баланс, кнопки купівлі — українською
 
 ---
 
-### Тест H2: Billing page — English
+### Тест J2: Billing page — English
 
 **Steps:**
 1. Перейти на `/en/billing`
@@ -432,10 +562,11 @@
 **Expected:**
 - [ ] Заголовки, описи, кнопки — англійською
 - [ ] Дати у форматі en-US (напр. "March 15, 2026")
+- [ ] Credits секція: "Credits", balance, buy buttons — англійською
 
 ---
 
-### Тест H3: Toast повідомлення — payments errors
+### Тест J3: Toast повідомлення — payments errors
 
 **Steps:**
 1. Спробувати checkout при існуючій підписці (через UI або API)
@@ -448,9 +579,9 @@
 
 ---
 
-## I. Security
+## K. Security
 
-### Тест I1: Checkout — JWT required
+### Тест K1: Checkout — JWT required
 
 **Steps:**
 1. `POST /api/payments/checkout-session` без Authorization header
@@ -460,7 +591,7 @@
 
 ---
 
-### Тест I2: Portal — JWT required
+### Тест K2: Portal — JWT required
 
 **Steps:**
 1. `POST /api/payments/portal-session` без Authorization header
@@ -470,7 +601,7 @@
 
 ---
 
-### Тест I3: Webhook — не підпадає під rate limiting
+### Тест K3: Webhook — не підпадає під rate limiting
 
 **Precondition:** ThrottlerGuard глобально обмежує 60 req/60s.
 
@@ -483,7 +614,7 @@
 
 ---
 
-### Тест I4: Webhook — `rawBody: true` не ламає інші endpoints
+### Тест K4: Webhook — `rawBody: true` не ламає інші endpoints
 
 **Precondition:** `NestFactory.create(AppModule, { rawBody: true })` в main.ts.
 
@@ -501,38 +632,47 @@
 
 | # | Тест | Категорія | Статус |
 |---|------|-----------|--------|
-| A1 | Успішна підписка — повний flow | Checkout | [ ] |
-| A2 | Checkout — вже є підписка | Checkout | [ ] |
-| A3 | Checkout — відмова від оплати | Checkout | [ ] |
-| A4 | Checkout — картка відхилена | Checkout | [ ] |
+| A1 | Успішна підписка — повний flow | Subscription Checkout | [ ] |
+| A2 | Checkout — вже є підписка | Subscription Checkout | [ ] |
+| A3 | Checkout — відмова від оплати | Subscription Checkout | [ ] |
+| A4 | Checkout — картка відхилена | Subscription Checkout | [ ] |
 | B1 | Billing portal — відкриття | Billing Portal | [ ] |
 | B2 | Portal — немає billing account | Billing Portal | [ ] |
 | B3 | Скасування підписки через portal | Billing Portal | [ ] |
 | C1 | checkout.session.completed → billing state | Webhook | [ ] |
-| C2 | subscription.deleted → billing state | Webhook | [ ] |
-| C3 | Webhook idempotency | Webhook | [ ] |
-| C4 | Webhook — невідомий provider | Webhook | [ ] |
-| C5 | Webhook — відсутній signature | Webhook | [ ] |
-| C6 | Webhook — неправильна signature | Webhook | [ ] |
-| D1 | SubscriptionGuard — без підписки | Access Guard | [ ] |
-| D2 | SubscriptionGuard — з підпискою | Access Guard | [ ] |
-| D3 | SubscriptionGuard — без JWT | Access Guard | [ ] |
-| E1 | Billing page — стан A (no subscription) | Billing Page UI | [ ] |
-| E2 | Billing page — стан B (active) | Billing Page UI | [ ] |
-| E3 | Billing page — стан C (canceling) | Billing Page UI | [ ] |
-| E4 | Loading state кнопки | Billing Page UI | [ ] |
-| E5 | Error handling (network error) | Billing Page UI | [ ] |
-| F1 | /billing — неавторизований | Route Protection | [ ] |
-| F2 | /billing — авторизований | Route Protection | [ ] |
-| F3 | /billing/success та /billing/cancel | Route Protection | [ ] |
-| G1 | getMe — billing field після підписки | Billing State | [ ] |
-| G2 | getMe — billing field без підписки | Billing State | [ ] |
-| H1 | Billing page — Ukrainian | i18n | [ ] |
-| H2 | Billing page — English | i18n | [ ] |
-| H3 | Toast — payments errors | i18n | [ ] |
-| I1 | Checkout — JWT required | Security | [ ] |
-| I2 | Portal — JWT required | Security | [ ] |
-| I3 | Webhook — без rate limiting | Security | [ ] |
-| I4 | rawBody: true — не ламає інші endpoints | Security | [ ] |
+| C2 | subscription.updated → status change | Webhook | [ ] |
+| C3 | subscription.deleted → billing state | Webhook | [ ] |
+| C4 | Webhook idempotency | Webhook | [ ] |
+| C5 | Webhook — невідомий provider | Webhook | [ ] |
+| C6 | Webhook — відсутній signature | Webhook | [ ] |
+| C7 | Webhook — неправильна signature | Webhook | [ ] |
+| D1 | Купівля кредитного пакету — повний flow | One-Off Payments | [ ] |
+| D2 | Купівля кредитів — accumulation | One-Off Payments | [ ] |
+| D3 | Невалідний packCode | One-Off Payments | [ ] |
+| D4 | One-off з активною підпискою | One-Off Payments | [ ] |
+| E1 | Subscription disabled (feature flag) | Feature Flags | [ ] |
+| E2 | One-off disabled (feature flag) | Feature Flags | [ ] |
+| F1 | SubscriptionGuard — без підписки | Access Guard | [ ] |
+| F2 | SubscriptionGuard — з підпискою | Access Guard | [ ] |
+| F3 | SubscriptionGuard — без JWT | Access Guard | [ ] |
+| G1 | Billing page — стан A (no subscription) | Billing Page UI | [ ] |
+| G2 | Billing page — стан B (active) | Billing Page UI | [ ] |
+| G3 | Billing page — стан C (canceling) | Billing Page UI | [ ] |
+| G4 | Credits секція — баланс та пакети | Billing Page UI | [ ] |
+| G5 | Loading state кнопок | Billing Page UI | [ ] |
+| G6 | Error handling (network error) | Billing Page UI | [ ] |
+| H1 | /billing — неавторизований | Route Protection | [ ] |
+| H2 | /billing — авторизований | Route Protection | [ ] |
+| H3 | /billing/success та /billing/cancel | Route Protection | [ ] |
+| I1 | getMe — billing field після підписки | Billing State | [ ] |
+| I2 | getMe — billing field без підписки | Billing State | [ ] |
+| I3 | getMe — credits field після one-off | Billing State | [ ] |
+| J1 | Billing page — Ukrainian | i18n | [ ] |
+| J2 | Billing page — English | i18n | [ ] |
+| J3 | Toast — payments errors | i18n | [ ] |
+| K1 | Checkout — JWT required | Security | [ ] |
+| K2 | Portal — JWT required | Security | [ ] |
+| K3 | Webhook — без rate limiting | Security | [ ] |
+| K4 | rawBody: true — не ламає інші endpoints | Security | [ ] |
 
-**Total: 34 тести**
+**Total: 40 тестів**

@@ -800,4 +800,274 @@ describe('Payments E2E', () => {
             expect(storedEvent2?.status).toBe('applied');
         });
     });
+
+    // ─── Out-of-order event handling ──────────────────────────────────
+
+    describe('out-of-order event handling', () => {
+        it('should apply newer event and skip older event for same user', async () => {
+            const user = await createUser('ooo@example.com', null);
+            const userId = (user._id as object).toString();
+
+            const newerEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                providerEventId: 'evt_ooo_newer',
+                occurredAt: new Date('2024-06-01T00:00:00Z'),
+                userId,
+                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: {
+                    customer: 'cus_ooo',
+                    subscription: 'sub_ooo',
+                    currency: 'usd',
+                    status: 'complete',
+                    metadata: { planCode: 'monthly_usd' },
+                },
+            };
+
+            const olderEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                providerEventId: 'evt_ooo_older',
+                occurredAt: new Date('2024-05-01T00:00:00Z'),
+                userId,
+                subscriptionStatus: SUBSCRIPTION_STATUS.PAST_DUE,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: { id: 'sub_ooo', status: 'past_due' },
+            };
+
+            // Send newer event first
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                newerEvent,
+            );
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterNewer = await userModel.findById(userId).lean();
+            expect(afterNewer?.billing?.hasActiveSubscription).toBe(true);
+            expect(afterNewer?.billing?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.ACTIVE,
+            );
+
+            // Send older event — should be skipped by out-of-order guard
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                olderEvent,
+            );
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterOlder = await userModel.findById(userId).lean();
+            // Billing state should remain from the newer event
+            expect(afterOlder?.billing?.hasActiveSubscription).toBe(true);
+            expect(afterOlder?.billing?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.ACTIVE,
+            );
+        });
+    });
+
+    // ─── Subscription lifecycle ───────────────────────────────────────
+
+    describe('subscription lifecycle', () => {
+        it('should track full lifecycle: CHECKOUT_COMPLETED → SUBSCRIPTION_UPDATED(past_due) → SUBSCRIPTION_DELETED', async () => {
+            const user = await createUser('lifecycle@example.com', null);
+            const userId = (user._id as object).toString();
+
+            // Step 1: CHECKOUT_COMPLETED — user subscribes
+            const checkoutEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                providerEventId: 'evt_lifecycle_1',
+                occurredAt: new Date('2024-01-01T00:00:00Z'),
+                userId,
+                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: {
+                    customer: 'cus_lifecycle',
+                    subscription: 'sub_lifecycle',
+                    currency: 'usd',
+                    status: 'complete',
+                    metadata: { planCode: 'monthly_usd' },
+                },
+            };
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                checkoutEvent,
+            );
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterCheckout = await userModel.findById(userId).lean();
+            expect(afterCheckout?.billing?.hasActiveSubscription).toBe(true);
+            expect(afterCheckout?.billing?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.ACTIVE,
+            );
+            expect(afterCheckout?.billing?.providerCustomerId).toBe(
+                'cus_lifecycle',
+            );
+
+            // Step 2: SUBSCRIPTION_UPDATED(past_due) — payment fails
+            const pastDueEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                providerEventId: 'evt_lifecycle_2',
+                occurredAt: new Date('2024-02-01T00:00:00Z'),
+                userId,
+                subscriptionStatus: SUBSCRIPTION_STATUS.PAST_DUE,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: { id: 'sub_lifecycle', status: 'past_due' },
+            };
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                pastDueEvent,
+            );
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterPastDue = await userModel.findById(userId).lean();
+            expect(afterPastDue?.billing?.hasActiveSubscription).toBe(false);
+            expect(afterPastDue?.billing?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.PAST_DUE,
+            );
+
+            // Step 3: SUBSCRIPTION_DELETED — subscription canceled
+            const deletedEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED,
+                providerEventId: 'evt_lifecycle_3',
+                occurredAt: new Date('2024-03-01T00:00:00Z'),
+                userId,
+                subscriptionStatus: SUBSCRIPTION_STATUS.CANCELED,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: { id: 'sub_lifecycle', status: 'canceled' },
+            };
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                deletedEvent,
+            );
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterDeleted = await userModel.findById(userId).lean();
+            expect(afterDeleted?.billing?.hasActiveSubscription).toBe(false);
+            expect(afterDeleted?.billing?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.CANCELED,
+            );
+            expect(afterDeleted?.billing?.providerSubscriptionStatus).toBe(
+                'canceled',
+            );
+        });
+    });
+
+    // ─── One-off idempotency ──────────────────────────────────────────
+
+    describe('one-off idempotency', () => {
+        it('should not add credits twice for duplicate ONE_OFF_PAYMENT_COMPLETED event', async () => {
+            const user = await createUser('oneoff-idemp@example.com', null);
+            const userId = (user._id as object).toString();
+
+            const oneOffEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                providerEventId: 'evt_oneoff_dup_001',
+                occurredAt: new Date(),
+                userId,
+                creditsAmount: 10,
+                packCode: 'credits_10',
+                raw: {},
+            };
+
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                oneOffEvent,
+            );
+
+            // First call — should add 10 credits
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterFirst = await userModel.findById(userId).lean();
+            expect(afterFirst?.credits?.balance).toBe(10);
+
+            // Second call with same providerEventId — idempotent, credits should stay at 10
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterSecond = await userModel.findById(userId).lean();
+            expect(afterSecond?.credits?.balance).toBe(10);
+        });
+    });
+
+    // ─── userId resolution via subscription lookup ────────────────────
+
+    describe('userId resolution via subscription lookup', () => {
+        it('should resolve userId from billing.providerSubscriptionId when event.userId is empty', async () => {
+            // Create user with existing billing (already has a subscription)
+            const user = await createUser('resolve@example.com', {
+                provider: 'stripe',
+                providerCustomerId: 'cus_resolve',
+                providerSubscriptionId: 'sub_resolve_xxx',
+                planCode: 'monthly_usd',
+                currency: 'usd',
+                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                hasActiveSubscription: true,
+                providerSubscriptionStatus: 'active',
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                lastProviderEventAt: new Date('2024-01-01T00:00:00Z'),
+            });
+            const userId = (user._id as object).toString();
+
+            // SUBSCRIPTION_UPDATED with empty userId — should look up by raw.id
+            const updateEvent: BillingWebhookEvent = {
+                type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                providerEventId: 'evt_resolve_lookup',
+                occurredAt: new Date('2024-02-01T00:00:00Z'),
+                userId: '',
+                subscriptionStatus: SUBSCRIPTION_STATUS.PAST_DUE,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                raw: { id: 'sub_resolve_xxx', status: 'past_due' },
+            };
+
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                updateEvent,
+            );
+
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const updated = await userModel.findById(userId).lean();
+            expect(updated?.billing?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.PAST_DUE,
+            );
+            expect(updated?.billing?.hasActiveSubscription).toBe(false);
+        });
+    });
 });

@@ -1,17 +1,17 @@
-# Sprint 007 — Payments Testing: повне покриття payments flow тестами
+# Sprint 008 — Payments Testing: повне покриття payments flow тестами
 
 ## Контекст
 
-Після реалізації sprint-006 (Stripe Checkout, Webhook handling, SubscriptionGuard, Billing page) потрібне комплексне тестування всієї платіжної підсистеми. Цей спринт створює повне покриття: automated (unit + e2e) та manual E2E тести.
+Після реалізації payments (Stripe Checkout subscription + one-off credit packs, Webhook handling, SubscriptionGuard, Billing page) потрібне комплексне тестування всієї платіжної підсистеми. Цей спринт створює повне покриття: automated (unit + e2e) та manual E2E тести.
 
-Спринт покриває ВСЮ payments підсистему: PaymentsService (checkout, portal, webhook idempotency flow), StripeService (adapter, event mapping), SubscriptionGuard, PaymentsController, frontend API client та billing page.
+Спринт покриває ВСЮ payments підсистему: PaymentsService (checkout sub + one-off, portal, two-phase webhook idempotency, out-of-order protection, one-off credit flow), StripeService (adapter, event mapping, 4 event types), SubscriptionGuard, PaymentsController, frontend API client та billing page (subscription + credits sections).
 
 ## Документи
 
 | Файл | Опис |
 |------|------|
-| [automated-tests.md](./automated-tests.md) | Service prompt для AI агента: створення unit та e2e тестів |
-| [manual-test-plan.md](./manual-test-plan.md) | Покрокові сценарії для ручного тестування з чеклистами |
+| [automated-tests.md](./automated-tests.md) | Service prompt для AI агента: створення unit тестів + доповнення e2e |
+| [manual-test-plan.md](./manual-test-plan.md) | 40 покрокових сценаріїв для ручного тестування з чеклистами |
 
 ## Scope
 
@@ -19,31 +19,39 @@
 
 Service prompt для AI агента (Claude Code). Описує що тестувати, а не як — агент сам читає кодову базу та пише тести.
 
-- **Backend unit тести:**
-  - `payments.service.spec.ts` (новий) — createCheckoutSession, createPortalSession, handleWebhook (idempotency, out-of-order, billing state updates)
-  - `payments.controller.spec.ts` (новий) — 3 endpoints, raw body validation, signature check, response format
-  - `stripe.service.spec.ts` (новий) — webhook parsing, event type mapping, status mapping, checkout/portal session creation
-  - `subscription.guard.spec.ts` (новий) — active/inactive subscription, no user
+- **Backend unit тести (НОВІ):**
+  - `payments.service.spec.ts` — createCheckoutSession (sub + one-off + feature flags), createPortalSession, handleWebhook (two-phase idempotency, out-of-order atomic guard, billing state per 4 event types, userId resolution, rollback, applyOneOffPayment edge cases)
+  - `payments.controller.spec.ts` — 3 endpoints, raw body validation, signature check, provider validation
+  - `stripe.service.spec.ts` — webhook parsing (4 Stripe event types → 4 canonical types), status mapping (9 statuses), checkout/portal session creation (sub + one-off modes)
 
-- **Backend e2e тести:**
-  - `payments.e2e-spec.ts` (новий) — HTTP endpoints через Supertest, mocked Stripe + MongoDB
+- **Backend unit тести (ВЖЕ ІСНУЮТЬ, не чіпати):**
+  - `subscription.guard.spec.ts` — 6 сценаріїв, повне покриття
 
-- **Frontend unit тести:**
-  - `payments.spec.ts` (новий) — createCheckoutSession, createPortalSession API functions
+- **Backend e2e тести (ВЖЕ ІСНУЮТЬ, можливе доповнення):**
+  - `payments.e2e-spec.ts` — 800+ рядків. Можливі додаткові тести: out-of-order events, subscription lifecycle, one-off idempotency, userId resolution via subscription lookup
+
+- **Frontend unit тести (ВЖЕ ІСНУЮТЬ, перевірка):**
+  - `payments.spec.ts` — createSubscriptionCheckout, createOneOffCheckout, createPortalSession
 
 ### manual-test-plan.md
 
-- **A. Checkout Flow** — підписка, вже підписаний, redirect
-- **B. Billing Portal** — керування підпискою, no billing account
-- **C. Webhook Handling** — checkout.session.completed, subscription.updated, subscription.deleted, idempotency, out-of-order
-- **D. SubscriptionGuard** — доступ з/без підписки, 403 response format
-- **E. Billing Page UI** — 3 стани (no subscription / active / canceling), i18n
-- **F. Route Protection** — /billing protected, redirect
-- **G. Billing state after webhooks** — getMe response містить billing
+40 сценаріїв у 11 категоріях:
+
+- **A. Subscription Checkout** — підписка, вже підписаний, cancel, declined card
+- **B. Billing Portal** — керування підпискою, no billing account, cancellation
+- **C. Webhook Handling** — checkout.completed, subscription.updated, subscription.deleted, idempotency, invalid provider/signature
+- **D. One-Off Payments** — credit pack purchase, accumulation, invalid pack, one-off with active subscription
+- **E. Feature Flags** — disabled subscription, disabled one-off
+- **F. SubscriptionGuard** — доступ з/без підписки, 403 response format
+- **G. Billing Page UI** — 3 subscription states + credits section + loading + error
+- **H. Route Protection** — /billing protected, redirect
+- **I. Billing State** — getMe response (billing + credits)
+- **J. i18n** — Ukrainian/English localization
+- **K. Security** — JWT, rate limiting bypass, rawBody
 
 ## Залежності
 
-Sprint 007 виконується після повної реалізації sprint-006 (всі 5 фаз).
+Sprint 008 виконується після повної реалізації payments (sprint-006 + sprint-007).
 
 ## Verification
 
@@ -52,4 +60,4 @@ Sprint 007 виконується після повної реалізації s
 3. `pnpm --filter api test:e2e` — всі backend e2e тести pass
 4. `pnpm --filter web test` — всі frontend unit тести pass
 5. `pnpm build` — повний build без помилок
-6. Manual: пройти весь чеклист з manual-test-plan.md
+6. Manual: пройти весь чеклист з manual-test-plan.md (40 тестів)

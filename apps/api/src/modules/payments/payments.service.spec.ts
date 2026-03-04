@@ -630,6 +630,31 @@ describe('PaymentsService', () => {
                     { maxTimeMS: 10000 },
                 );
             });
+
+            it('should re-throw original error even when rollback deleteOne fails', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                    providerEventId: 'evt_double_fail',
+                    occurredAt: new Date(),
+                    userId: MOCK_USER_ID,
+                    creditsAmount: 10,
+                    raw: {},
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
+                mockUsersService.addCredits.mockRejectedValue(
+                    new Error('Original error'),
+                );
+                mockWebhookEventModel.deleteOne.mockRejectedValue(
+                    new Error('Rollback failed'),
+                );
+
+                await expect(
+                    service.handleWebhook('stripe', rawBody, signature),
+                ).rejects.toThrow('Original error');
+            });
         });
 
         // ── Out-of-order protection ──────────────────────────────────
@@ -788,6 +813,36 @@ describe('PaymentsService', () => {
                             'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
                             'billing.currentPeriodEnd': currentPeriodEnd,
                             'billing.cancelAtPeriodEnd': false,
+                        }),
+                    },
+                    { maxTimeMS: 10000 },
+                );
+            });
+
+            it('should set hasActiveSubscription=true for SUBSCRIPTION_UPDATED with TRIALING status', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_trialing',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.TRIALING,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: { status: 'trialing' },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
+                    {
+                        $set: expect.objectContaining({
+                            'billing.hasActiveSubscription': true,
+                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.TRIALING,
                         }),
                     },
                     { maxTimeMS: 10000 },
@@ -993,6 +1048,32 @@ describe('PaymentsService', () => {
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue({
                     ...oneOffEvent,
                     creditsAmount: 0,
+                });
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+            });
+
+            it('should skip if creditsAmount is undefined', async () => {
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                    ...oneOffEvent,
+                    creditsAmount: undefined,
+                });
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+            });
+
+            it('should skip if creditsAmount is negative', async () => {
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                    ...oneOffEvent,
+                    creditsAmount: -5,
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
