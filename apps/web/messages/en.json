@@ -48,7 +48,10 @@
             "redirecting": "Redirecting…",
             "error_heading": "Link is invalid or expired",
             "error_description": "The sign-in link you used is no longer valid. Please request a new one.",
-            "retry_button": "Try again"
+            "retry_button": "Try again",
+            "deleted_heading": "Account deleted",
+            "deleted_description": "Your account has been deactivated. You have 30 days to restore it — just sign in during that time.",
+            "deleted_signin_button": "Sign in"
         }
     },
     "notifications": {
