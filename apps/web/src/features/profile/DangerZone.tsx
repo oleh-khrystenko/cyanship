@@ -16,6 +16,7 @@ const DangerZone = () => {
 
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
 
     const handleDelete = async () => {
         setLoading(true);
@@ -25,7 +26,7 @@ const DangerZone = () => {
             if (result.requiresPassword) {
                 setShowModal(true);
             } else if (result.requiresMagicLink) {
-                toast.success(tModal('magic_link_sent'));
+                setEmailSent(true);
             }
         } catch {
             toast.error(tModal('invalid_password'));
@@ -53,15 +54,26 @@ const DangerZone = () => {
                 <p className="text-text-secondary mt-1 text-sm">
                     {t('delete_description')}
                 </p>
-                <UiButton
-                    variant="filled"
-                    size="md"
-                    className="mt-4 rounded-lg bg-red-600 hover:bg-red-700"
-                    onClick={() => void handleDelete()}
-                    disabled={loading}
-                >
-                    {t('delete_button')}
-                </UiButton>
+                {emailSent ? (
+                    <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                            {tModal('magic_link_sent_title')}
+                        </p>
+                        <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
+                            {tModal('magic_link_sent_description')}
+                        </p>
+                    </div>
+                ) : (
+                    <UiButton
+                        variant="filled"
+                        size="md"
+                        className="mt-4 rounded-lg bg-red-600 hover:bg-red-700"
+                        onClick={() => void handleDelete()}
+                        disabled={loading}
+                    >
+                        {t('delete_button')}
+                    </UiButton>
+                )}
             </div>
 
             {showModal && (
