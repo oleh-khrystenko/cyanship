@@ -117,7 +117,8 @@
             "delete_title": "Delete account",
             "delete_description": "After deletion you have 30 days to restore your account.",
             "delete_button": "Delete account",
-            "resend_button": "Resend"
+            "resend_button": "Resend",
+            "resend_button_cooldown": "Resend ({seconds}s)"
         }
     },
     "delete_account_modal": {
@@ -127,6 +128,7 @@
         "cancel_button": "Cancel",
         "confirm_button": "Delete account",
         "magic_link_sent": "Confirmation link sent to your email",
+        "rate_limit": "Too many requests. Please try again in 15 minutes",
         "magic_link_sent_title": "Check your email",
         "magic_link_sent_description": "A confirmation link to delete your account has been sent to your address. The link is valid for 15 minutes.",
         "deleted": "Account deactivated",
