@@ -76,12 +76,12 @@ describe('auth API functions', () => {
         it('sends POST to /auth/magic-link/send with all params', async () => {
             mockPost.mockResolvedValue({});
 
-            await sendMagicLink('test@example.com', 'uk', 'LOGIN');
+            await sendMagicLink('test@example.com', 'uk', 'login');
 
             expect(mockPost).toHaveBeenCalledWith('/auth/magic-link/send', {
                 email: 'test@example.com',
                 lang: 'uk',
-                purpose: 'LOGIN',
+                purpose: 'login',
             });
         });
 

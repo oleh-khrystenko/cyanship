@@ -4,6 +4,7 @@ import type {
     MagicLinkPurpose,
     UpdateProfileDto,
     UserProfile,
+    VerifyMagicLinkResponse,
 } from '@lucidkit/types';
 
 import { apiClient, setAccessToken } from './client';
@@ -102,13 +103,17 @@ export async function restoreAccount(): Promise<void> {
     await apiClient.post('/users/account/restore');
 }
 
-export async function verifyMagicLink(token: string): Promise<AuthResponse> {
-    const { data } = await apiClient.post<{ data: AuthResponse }>(
+export async function verifyMagicLink(
+    token: string
+): Promise<VerifyMagicLinkResponse> {
+    const { data } = await apiClient.post<{ data: VerifyMagicLinkResponse }>(
         '/auth/magic-link/verify',
         { token }
     );
 
-    setAccessToken(data.data.accessToken);
+    if ('accessToken' in data.data) {
+        setAccessToken(data.data.accessToken);
+    }
     return data.data;
 }
 

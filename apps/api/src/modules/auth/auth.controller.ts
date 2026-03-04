@@ -139,7 +139,11 @@ export class AuthController {
         if (result.deleted) {
             res.clearCookie('bid_refresh', { path: '/' });
             return {
-                data: { deleted: true, message: result.message },
+                data: {
+                    deleted: true,
+                    purpose: MAGIC_LINK_PURPOSE.DELETE_ACCOUNT,
+                    message: result.message,
+                },
             };
         }
 
