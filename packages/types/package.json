@@ -7,6 +7,10 @@
         ".": {
             "types": "./src/index.ts",
             "default": "./dist/index.js"
+        },
+        "./agency": {
+            "types": "./src/agency.ts",
+            "default": "./dist/agency.js"
         }
     },
     "scripts": {
