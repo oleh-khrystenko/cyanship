@@ -429,15 +429,15 @@ This section contains the contents of the repository's files.
       "Bash(ls:*)",
       "Bash(git checkout:*)",
       "Bash(grep:*)",
-      "Bash(cd /Users/KhOlAn/Projects/lucid-kit/apps/api && npx jest --testPathPattern=cleanup 2>&1)",
-      "Bash(cd /Users/KhOlAn/Projects/lucid-kit/apps/api && npx jest cleanup.service.spec 2>&1)",
+      "Bash(cd /Users/KhOlAn/Projects/lucid-ship/apps/api && npx jest --testPathPattern=cleanup 2>&1)",
+      "Bash(cd /Users/KhOlAn/Projects/lucid-ship/apps/api && npx jest cleanup.service.spec 2>&1)",
       "Bash(npx jest:*)",
       "Bash(find:*)",
       "Bash(tail:*)",
       "Bash(git stash:*)",
       "Bash(pnpm --filter web lint 2>&1 && npx tsc --noEmit 2>&1)",
-      "Bash(cd /Users/KhOlAn/Projects/lucid-kit/apps/api && cat package.json | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(f'{k}: {v}'\\) for k,v in sorted\\(deps.items\\(\\)\\)]\" 2>/dev/null)",
-      "Bash(cd /Users/KhOlAn/Projects/lucid-kit/apps/web && cat package.json | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(f'{k}: {v}'\\) for k,v in sorted\\(deps.items\\(\\)\\)]\" 2>/dev/null)",
+      "Bash(cd /Users/KhOlAn/Projects/lucid-ship/apps/api && cat package.json | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(f'{k}: {v}'\\) for k,v in sorted\\(deps.items\\(\\)\\)]\" 2>/dev/null)",
+      "Bash(cd /Users/KhOlAn/Projects/lucid-ship/apps/web && cat package.json | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(f'{k}: {v}'\\) for k,v in sorted\\(deps.items\\(\\)\\)]\" 2>/dev/null)",
       "Bash(git branch:*)",
       "Bash(git worktree:*)",
       "Bash(lsof:*)",
@@ -3090,6 +3090,16 @@ export const RESPONSE_TYPE = {
 } as const;
 
 export type ResponseType = (typeof RESPONSE_TYPE)[keyof typeof RESPONSE_TYPE];
+</file>
+
+<file path="packages/types/src/validation/common.ts">
+import { z } from 'zod';
+
+export const emailSchema = z.string().email();
+
+export const passwordSchema = z.string().min(8);
+
+export const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i);
 </file>
 
 <file path="packages/types/src/validation/index.ts">
@@ -9577,16 +9587,6 @@ export type UpdateLangDto = z.infer<typeof UpdateLangSchema>;
 export type UpdateProfileDto = z.infer<typeof UpdateProfileSchema>;
 </file>
 
-<file path="packages/types/src/validation/common.ts">
-import { z } from 'zod';
-
-export const emailSchema = z.string().email();
-
-export const passwordSchema = z.string().min(8);
-
-export const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i);
-</file>
-
 <file path="docker-compose.dev.yml">
 services:
     mongo:
@@ -14187,6 +14187,133 @@ pnpm --filter web test                 # web тести проходять
 **Total: 40 тестів**
 </file>
 
+<file path="packages/types/src/contracts/auth.ts">
+import { z } from 'zod';
+
+import { LANG } from '../constants/lang';
+import { UserProfileSchema } from '../entities/user';
+import { emailSchema, passwordSchema } from '../validation/common';
+
+const langValues = Object.values(LANG) as [string, ...string[]];
+
+// --- Magic Link Purpose ---
+
+export const MAGIC_LINK_PURPOSE = {
+    LOGIN: 'login',
+    REGISTER: 'register',
+    RESET_PASSWORD: 'reset-password',
+    DELETE_ACCOUNT: 'delete-account',
+} as const;
+
+export type MagicLinkPurpose =
+    (typeof MAGIC_LINK_PURPOSE)[keyof typeof MAGIC_LINK_PURPOSE];
+
+export const MagicLinkPurposeSchema = z.enum([
+    MAGIC_LINK_PURPOSE.LOGIN,
+    MAGIC_LINK_PURPOSE.REGISTER,
+    MAGIC_LINK_PURPOSE.RESET_PASSWORD,
+    MAGIC_LINK_PURPOSE.DELETE_ACCOUNT,
+]);
+
+// --- Magic Link ---
+
+export const SendMagicLinkSchema = z.object({
+    email: z.string().email(),
+    lang: z.enum(langValues).optional(),
+    purpose: MagicLinkPurposeSchema.optional(),
+});
+
+export const VerifyMagicLinkSchema = z.object({
+    token: z.string().min(1),
+});
+
+// --- Auth Response ---
+
+export const AuthResponseSchema = z.object({
+    user: UserProfileSchema,
+    accessToken: z.string(),
+    purpose: MagicLinkPurposeSchema.optional(),
+    accountDeleted: z.boolean().optional(),
+});
+
+// --- Check Email ---
+
+export const CheckEmailSchema = z.object({
+    email: emailSchema,
+});
+
+export const CheckEmailResponseSchema = z.object({
+    hasPassword: z.boolean(),
+    isNewUser: z.boolean(),
+});
+
+// --- Password Auth ---
+
+export const LoginPasswordSchema = z.object({
+    email: emailSchema,
+    password: z.string(),
+});
+
+export const SetPasswordSchema = z.object({
+    password: passwordSchema,
+});
+
+export const ChangePasswordSchema = z.object({
+    currentPassword: z.string(),
+    newPassword: passwordSchema,
+});
+
+export const VerifyPasswordSchema = z.object({
+    password: z.string(),
+});
+
+// --- Delete Account Verify Response ---
+
+export const DeleteAccountVerifyResponseSchema = z.object({
+    deleted: z.literal(true),
+    purpose: z.literal(MAGIC_LINK_PURPOSE.DELETE_ACCOUNT),
+    message: z.string(),
+});
+
+// --- Types ---
+
+export type SendMagicLinkDto = z.infer<typeof SendMagicLinkSchema>;
+export type VerifyMagicLinkDto = z.infer<typeof VerifyMagicLinkSchema>;
+export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+export type DeleteAccountVerifyResponse = z.infer<
+    typeof DeleteAccountVerifyResponseSchema
+>;
+export type VerifyMagicLinkResponse = AuthResponse | DeleteAccountVerifyResponse;
+export type CheckEmailDto = z.infer<typeof CheckEmailSchema>;
+export type CheckEmailResponse = z.infer<typeof CheckEmailResponseSchema>;
+export type LoginPasswordDto = z.infer<typeof LoginPasswordSchema>;
+export type SetPasswordDto = z.infer<typeof SetPasswordSchema>;
+export type ChangePasswordDto = z.infer<typeof ChangePasswordSchema>;
+export type VerifyPasswordDto = z.infer<typeof VerifyPasswordSchema>;
+</file>
+
+<file path="packages/types/src/enums/error-code.ts">
+import { RESPONSE_CODE, type ResponseCode } from './response-code';
+
+/**
+ * @deprecated Use RESPONSE_CODE instead. Kept for backward compatibility with AllExceptionsFilter.
+ */
+export const ERROR_CODE = {
+    ACCOUNT_DELETED: RESPONSE_CODE.ACCOUNT_DELETED,
+    UNAUTHORIZED: RESPONSE_CODE.UNAUTHORIZED,
+    VALIDATION_ERROR: RESPONSE_CODE.VALIDATION_ERROR,
+    NOT_FOUND: RESPONSE_CODE.NOT_FOUND,
+    RATE_LIMIT_EXCEEDED: RESPONSE_CODE.RATE_LIMIT_EXCEEDED,
+    INSUFFICIENT_CREDITS: RESPONSE_CODE.INSUFFICIENT_CREDITS,
+    INTERNAL_ERROR: RESPONSE_CODE.INTERNAL_ERROR,
+} as const;
+
+/**
+ * @deprecated Use ResponseCode instead.
+ */
+export type ErrorCode = ResponseCode;
+</file>
+
 <file path="packages/types/src/agency.ts">
 // Agency-specific types entry point
 // Core imports from '@lucidship/types', agency imports from '@lucidship/types/agency'
@@ -17957,111 +18084,6 @@ Sprint 008 виконується після повної реалізації p
 6. Manual: пройти весь чеклист з manual-test-plan.md (40 тестів)
 </file>
 
-<file path="packages/types/src/contracts/auth.ts">
-import { z } from 'zod';
-
-import { LANG } from '../constants/lang';
-import { UserProfileSchema } from '../entities/user';
-import { emailSchema, passwordSchema } from '../validation/common';
-
-const langValues = Object.values(LANG) as [string, ...string[]];
-
-// --- Magic Link Purpose ---
-
-export const MAGIC_LINK_PURPOSE = {
-    LOGIN: 'login',
-    REGISTER: 'register',
-    RESET_PASSWORD: 'reset-password',
-    DELETE_ACCOUNT: 'delete-account',
-} as const;
-
-export type MagicLinkPurpose =
-    (typeof MAGIC_LINK_PURPOSE)[keyof typeof MAGIC_LINK_PURPOSE];
-
-export const MagicLinkPurposeSchema = z.enum([
-    MAGIC_LINK_PURPOSE.LOGIN,
-    MAGIC_LINK_PURPOSE.REGISTER,
-    MAGIC_LINK_PURPOSE.RESET_PASSWORD,
-    MAGIC_LINK_PURPOSE.DELETE_ACCOUNT,
-]);
-
-// --- Magic Link ---
-
-export const SendMagicLinkSchema = z.object({
-    email: z.string().email(),
-    lang: z.enum(langValues).optional(),
-    purpose: MagicLinkPurposeSchema.optional(),
-});
-
-export const VerifyMagicLinkSchema = z.object({
-    token: z.string().min(1),
-});
-
-// --- Auth Response ---
-
-export const AuthResponseSchema = z.object({
-    user: UserProfileSchema,
-    accessToken: z.string(),
-    purpose: MagicLinkPurposeSchema.optional(),
-    accountDeleted: z.boolean().optional(),
-});
-
-// --- Check Email ---
-
-export const CheckEmailSchema = z.object({
-    email: emailSchema,
-});
-
-export const CheckEmailResponseSchema = z.object({
-    hasPassword: z.boolean(),
-    isNewUser: z.boolean(),
-});
-
-// --- Password Auth ---
-
-export const LoginPasswordSchema = z.object({
-    email: emailSchema,
-    password: z.string(),
-});
-
-export const SetPasswordSchema = z.object({
-    password: passwordSchema,
-});
-
-export const ChangePasswordSchema = z.object({
-    currentPassword: z.string(),
-    newPassword: passwordSchema,
-});
-
-export const VerifyPasswordSchema = z.object({
-    password: z.string(),
-});
-
-// --- Delete Account Verify Response ---
-
-export const DeleteAccountVerifyResponseSchema = z.object({
-    deleted: z.literal(true),
-    purpose: z.literal(MAGIC_LINK_PURPOSE.DELETE_ACCOUNT),
-    message: z.string(),
-});
-
-// --- Types ---
-
-export type SendMagicLinkDto = z.infer<typeof SendMagicLinkSchema>;
-export type VerifyMagicLinkDto = z.infer<typeof VerifyMagicLinkSchema>;
-export type AuthResponse = z.infer<typeof AuthResponseSchema>;
-export type DeleteAccountVerifyResponse = z.infer<
-    typeof DeleteAccountVerifyResponseSchema
->;
-export type VerifyMagicLinkResponse = AuthResponse | DeleteAccountVerifyResponse;
-export type CheckEmailDto = z.infer<typeof CheckEmailSchema>;
-export type CheckEmailResponse = z.infer<typeof CheckEmailResponseSchema>;
-export type LoginPasswordDto = z.infer<typeof LoginPasswordSchema>;
-export type SetPasswordDto = z.infer<typeof SetPasswordSchema>;
-export type ChangePasswordDto = z.infer<typeof ChangePasswordSchema>;
-export type VerifyPasswordDto = z.infer<typeof VerifyPasswordSchema>;
-</file>
-
 <file path="packages/types/src/contracts/payments.ts">
 import { z } from 'zod';
 
@@ -18198,26 +18220,56 @@ export const BillingWebhookEventSchema = z.object({
 export type BillingWebhookEvent = z.infer<typeof BillingWebhookEventSchema>;
 </file>
 
-<file path="packages/types/src/enums/error-code.ts">
-import { RESPONSE_CODE, type ResponseCode } from './response-code';
+<file path="packages/types/src/entities/user.ts">
+import { z } from 'zod';
 
-/**
- * @deprecated Use RESPONSE_CODE instead. Kept for backward compatibility with AllExceptionsFilter.
- */
-export const ERROR_CODE = {
-    ACCOUNT_DELETED: RESPONSE_CODE.ACCOUNT_DELETED,
-    UNAUTHORIZED: RESPONSE_CODE.UNAUTHORIZED,
-    VALIDATION_ERROR: RESPONSE_CODE.VALIDATION_ERROR,
-    NOT_FOUND: RESPONSE_CODE.NOT_FOUND,
-    RATE_LIMIT_EXCEEDED: RESPONSE_CODE.RATE_LIMIT_EXCEEDED,
-    INSUFFICIENT_CREDITS: RESPONSE_CODE.INSUFFICIENT_CREDITS,
-    INTERNAL_ERROR: RESPONSE_CODE.INTERNAL_ERROR,
-} as const;
+import { LANG } from '../constants/lang';
+import { UserBillingSchema } from '../contracts/payments';
 
-/**
- * @deprecated Use ResponseCode instead.
- */
-export type ErrorCode = ResponseCode;
+export const UserProviderSchema = z.object({
+    name: z.string(),
+    id: z.string(),
+});
+
+export const UserProfileDataSchema = z.object({
+    name: z.string().optional(),
+    avatar: z.string().url().optional(),
+});
+
+export const UserCreditsSchema = z.object({
+    balance: z.number().int().min(0),
+    freeReportUsed: z.boolean(),
+});
+
+export const UserSchema = z.object({
+    id: z.string(),
+    email: z.string().email(),
+    provider: UserProviderSchema.optional(),
+    profile: UserProfileDataSchema,
+    credits: UserCreditsSchema,
+    hasPassword: z.boolean(),
+    deletedAt: z.coerce.date().nullable().optional(),
+    accountDeletionRequestedAt: z.coerce.date().nullable().optional(),
+    preferredLang: z.enum([LANG.UK, LANG.EN]),
+    createdAt: z.coerce.date(),
+    lastLoginAt: z.coerce.date().optional(),
+    billing: UserBillingSchema.nullable().optional(),
+});
+
+export const UserProfileSchema = UserSchema.pick({
+    id: true,
+    email: true,
+    profile: true,
+    credits: true,
+    hasPassword: true,
+    deletedAt: true,
+    accountDeletionRequestedAt: true,
+    preferredLang: true,
+    billing: true,
+});
+
+export type User = z.infer<typeof UserSchema>;
+export type UserProfile = z.infer<typeof UserProfileSchema>;
 </file>
 
 <file path="AGENTS.md">
@@ -19812,58 +19864,6 @@ export const paymentProviderProvider: Provider = {
 3. `StripeService` не має жодного public методу що повертає Stripe-specific types
 4. `PAYMENT_PROVIDER` token експортується з interface файлу
 5. Жоден файл поза `providers/stripe.service.ts` не імпортує `stripe` SDK
-</file>
-
-<file path="packages/types/src/entities/user.ts">
-import { z } from 'zod';
-
-import { LANG } from '../constants/lang';
-import { UserBillingSchema } from '../contracts/payments';
-
-export const UserProviderSchema = z.object({
-    name: z.string(),
-    id: z.string(),
-});
-
-export const UserProfileDataSchema = z.object({
-    name: z.string().optional(),
-    avatar: z.string().url().optional(),
-});
-
-export const UserCreditsSchema = z.object({
-    balance: z.number().int().min(0),
-    freeReportUsed: z.boolean(),
-});
-
-export const UserSchema = z.object({
-    id: z.string(),
-    email: z.string().email(),
-    provider: UserProviderSchema.optional(),
-    profile: UserProfileDataSchema,
-    credits: UserCreditsSchema,
-    hasPassword: z.boolean(),
-    deletedAt: z.coerce.date().nullable().optional(),
-    accountDeletionRequestedAt: z.coerce.date().nullable().optional(),
-    preferredLang: z.enum([LANG.UK, LANG.EN]),
-    createdAt: z.coerce.date(),
-    lastLoginAt: z.coerce.date().optional(),
-    billing: UserBillingSchema.nullable().optional(),
-});
-
-export const UserProfileSchema = UserSchema.pick({
-    id: true,
-    email: true,
-    profile: true,
-    credits: true,
-    hasPassword: true,
-    deletedAt: true,
-    accountDeletionRequestedAt: true,
-    preferredLang: true,
-    billing: true,
-});
-
-export type User = z.infer<typeof UserSchema>;
-export type UserProfile = z.infer<typeof UserProfileSchema>;
 </file>
 
 <file path="apps/api/src/common/filters/all-exceptions.filter.ts">
