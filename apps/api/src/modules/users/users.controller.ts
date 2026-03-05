@@ -14,7 +14,7 @@ import {
     MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
     type ApiMessageResponse,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';

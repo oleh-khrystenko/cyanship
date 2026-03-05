@@ -21,7 +21,7 @@
 4. **Webhook route — без JWT auth, без ThrottlerGuard.** Тільки provider signature verification.
 5. **Idempotency:** `processed_webhook_events` unique index як primary dedup mechanism.
 6. **Out-of-order:** `occurredAt <= lastProviderEventAt` → skip.
-7. **DTOs через `createZodDto()` з `nestjs-zod`.** Схеми з `@lucidkit/types`.
+7. **DTOs через `createZodDto()` з `nestjs-zod`.** Схеми з `@lucidship/types`.
 
 ## Крок 1: Raw body в bootstrap
 
@@ -45,7 +45,7 @@ const app = await NestFactory.create(AppModule, { rawBody: true });
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { CreateCheckoutSessionSchema } from '@lucidkit/types';
+import { CreateCheckoutSessionSchema } from '@lucidship/types';
 
 export class CreateCheckoutSessionDto extends createZodDto(
     CreateCheckoutSessionSchema,

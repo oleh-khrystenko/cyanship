@@ -76,7 +76,7 @@ const handleForgotPassword = async (email: string) => {
 **State: email**
 ```
 ┌─────────────────────────────┐
-│        Вхід до LucidKit     │
+│        Вхід до LucidShip     │
 │                             │
 │  ┌───────────────────────┐  │
 │  │ Email                 │  │
@@ -93,7 +93,7 @@ const handleForgotPassword = async (email: string) => {
 **State: password (Scenario A)**
 ```
 ┌─────────────────────────────┐
-│        Вхід до LucidKit     │
+│        Вхід до LucidShip     │
 │                             │
 │  ┌───────────────────────┐  │
 │  │ user@email.com [Змін] │  │ ← readonly, з кнопкою "Змінити"
@@ -271,7 +271,7 @@ switch (result.purpose) {
 
 ### `apps/web/src/stores/auth/authStore.ts`
 
-Оновити тип `UserProfile` — додати нові поля (вони вже є в `@lucidkit/types`):
+Оновити тип `UserProfile` — додати нові поля (вони вже є в `@lucidship/types`):
 
 ```typescript
 interface UserProfile {
@@ -295,7 +295,7 @@ interface UserProfile {
 {
     "auth_page": {
         "signin": {
-            "title": "Вхід до LucidKit",
+            "title": "Вхід до LucidShip",
             "email_label": "Email",
             "email_placeholder": "your@email.com",
             "continue_button": "Продовжити",
@@ -332,7 +332,7 @@ interface UserProfile {
 {
     "auth_page": {
         "signin": {
-            "title": "Sign in to LucidKit",
+            "title": "Sign in to LucidShip",
             "email_label": "Email",
             "email_placeholder": "your@email.com",
             "continue_button": "Continue",

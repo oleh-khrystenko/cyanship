@@ -8,7 +8,7 @@
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { SetPasswordSchema } from '@lucidkit/types';
+import { SetPasswordSchema } from '@lucidship/types';
 
 export class SetPasswordDto extends createZodDto(SetPasswordSchema) {}
 ```
@@ -17,7 +17,7 @@ export class SetPasswordDto extends createZodDto(SetPasswordSchema) {}
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { ChangePasswordSchema } from '@lucidkit/types';
+import { ChangePasswordSchema } from '@lucidship/types';
 
 export class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}
 ```
@@ -26,7 +26,7 @@ export class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { VerifyPasswordSchema } from '@lucidkit/types';
+import { VerifyPasswordSchema } from '@lucidship/types';
 
 export class VerifyPasswordDto extends createZodDto(VerifyPasswordSchema) {}
 ```

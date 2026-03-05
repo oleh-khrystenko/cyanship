@@ -1,16 +1,16 @@
 {
     "welcome_page": {
         "head": {
-            "title": "LucidKit – Готовий SaaS-бойлерплейт",
-            "description": "LucidKit – готовий SaaS-бойлерплейт з auth, payments, i18n та темами з коробки."
+            "title": "LucidShip – Готовий SaaS-бойлерплейт",
+            "description": "LucidShip – готовий SaaS-бойлерплейт з auth, payments, i18n та темами з коробки."
         },
-        "heading": "LucidKit — ваш готовий SaaS-стартер.",
+        "heading": "LucidShip — ваш готовий SaaS-стартер.",
         "description": "Все необхідне для швидкого запуску вашого web-додатка.",
         "cta": "Розпочати"
     },
     "auth_page": {
         "signin": {
-            "heading": "Вхід до LucidKit",
+            "heading": "Вхід до LucidShip",
             "subheading": "Запустіть свій SaaS швидше — auth, payments та i18n з коробки",
             "email_label": "Email",
             "email_placeholder": "your@email.com",

@@ -23,7 +23,7 @@
 
 ```typescript
 import client from './client';
-import { PAYMENT_TYPE, type CreditPackCode } from '@lucidkit/types';
+import { PAYMENT_TYPE, type CreditPackCode } from '@lucidship/types';
 
 export const createSubscriptionCheckout = async (
     planCode: string,
@@ -91,7 +91,7 @@ import {
     createPortalSession,
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
-import { CREDIT_PACK_CONFIG, type CreditPackCode } from '@lucidkit/types';
+import { CREDIT_PACK_CONFIG, type CreditPackCode } from '@lucidship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
 
@@ -280,7 +280,7 @@ export default function BillingPage() {
 
 **Примітки:**
 - `loadingAction` зберігає ключ активної дії для granular loading states
-- `CREDIT_PACK_CONFIG` з `@lucidkit/types` — итерується для рендеру пакетів
+- `CREDIT_PACK_CONFIG` з `@lucidship/types` — итерується для рендеру пакетів
 - `UiButton` потрібен `variant="secondary"` та `size="sm"` — перевір що ці варіанти існують у `UiButton` CVA. Якщо ні — використовуй наявні
 - Секції огорнуті в `<section>` для semantics
 - Розбивка `space-y-12` між секціями

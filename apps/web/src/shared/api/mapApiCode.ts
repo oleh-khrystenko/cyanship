@@ -1,4 +1,4 @@
-import { RESPONSE_CODE_TYPE, RESPONSE_TYPE } from '@lucidkit/types';
+import { RESPONSE_CODE_TYPE, RESPONSE_TYPE } from '@lucidship/types';
 
 /**
  * Returns an i18n key for the given API response code.

@@ -5,7 +5,7 @@ import { EmailService } from './email.service';
 jest.mock('../../../config/env', () => ({
     ENV: {
         RESEND_API_KEY: 'test-key',
-        RESEND_FROM_EMAIL: 'LucidKit <test@resend.dev>',
+        RESEND_FROM_EMAIL: 'LucidShip <test@resend.dev>',
         WEB_URL: 'http://localhost:3000',
     },
 }));
@@ -42,7 +42,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     to: email,
-                    subject: 'Вхід до LucidKit',
+                    subject: 'Вхід до LucidShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -55,7 +55,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Ласкаво просимо до LucidKit',
+                    subject: 'Ласкаво просимо до LucidShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -102,7 +102,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Sign in to LucidKit',
+                    subject: 'Sign in to LucidShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -114,7 +114,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Welcome to LucidKit',
+                    subject: 'Welcome to LucidShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -150,7 +150,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Вхід до LucidKit',
+                    subject: 'Вхід до LucidShip',
                 })
             );
         });

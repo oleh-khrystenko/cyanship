@@ -1,10 +1,10 @@
-# Аудит імплементації авторизації (Lucid Kit)
+# Аудит імплементації авторизації (Lucid Ship)
 
 Дата аудиту: 23 лютого 2026
 Останнє оновлення: 23 лютого 2026
 Гілка: `feature/auth`
-Проєкт: `lucid-kit`
-Контекст: імплементація авторизації була перенесена з BidGuard у Lucid Kit.
+Проєкт: `lucid-ship`
+Контекст: імплементація авторизації була перенесена з BidGuard у Lucid Ship.
 
 ## 1. Мета і scope
 
@@ -13,7 +13,7 @@
 - backend auth-флоу (`Google OAuth`, `Magic Link`, `JWT access/refresh`, rotation/revocation);
 - frontend auth-флоу (`middleware`, `AuthInitializer`, `AuthGuard`, callback/verify/signin pages);
 - безпекові ризики після міграції;
-- узгодженість API/FE контрактів (`@lucidkit/types`);
+- узгодженість API/FE контрактів (`@lucidship/types`);
 - CI/runtime працездатність через `lint`, `test`, `build`, `test:e2e`.
 
 Цей документ **не вносить кодові правки**; це технічний звіт із конкретним планом виправлень.
@@ -61,7 +61,7 @@
 - Medium: 4
 - Low: 3
 
-Найважливіше: спочатку виправити ізоляцію середовищ (BidGuard vs Lucid Kit), одноразовість magic-link, OAuth hardening, та e2e-стенд.
+Найважливіше: спочатку виправити ізоляцію середовищ (BidGuard vs Lucid Ship), одноразовість magic-link, OAuth hardening, та e2e-стенд.
 
 ## 4. Детальні findings
 
@@ -82,7 +82,7 @@
 - перехресне змішання даних між двома проєктами;
 - випадкові записи/видалення у чужому прод-середовищі;
 - неконтрольовані витоки секретів;
-- хибний результат тестів (ти тестуєш не Lucid Kit інфраструктуру).
+- хибний результат тестів (ти тестуєш не Lucid Ship інфраструктуру).
 
 ### Як відтворюється
 
@@ -98,7 +98,7 @@
 ### Критерій готовності
 
 - E2E не звертається до BidGuard інфраструктури.
-- Всі інтеграційні auth-тести працюють на ізольованих ресурсах Lucid Kit.
+- Всі інтеграційні auth-тести працюють на ізольованих ресурсах Lucid Ship.
 
 ## F-02 (High) — magic-link не strictly одноразовий (race condition)
 
@@ -387,7 +387,7 @@ Unused vars у UI button та unsafe argument warnings у spec.
 
 ## P0 (негайно)
 
-1. Розвести `.env`/секрети Lucid Kit і BidGuard, зробити ротацію ключів.
+1. Розвести `.env`/секрети Lucid Ship і BidGuard, зробити ротацію ключів.
 2. Виправити одноразовість magic-link (atomic consume — `GETDEL` або Lua).
 3. Додати OAuth hardening (`state`, обов'язковий email, перевірка `email_verified`).
 

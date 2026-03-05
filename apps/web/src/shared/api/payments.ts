@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { PAYMENT_TYPE, type CreditPackCode } from '@lucidkit/types';
+import { PAYMENT_TYPE, type CreditPackCode } from '@lucidship/types';
 
 export async function createSubscriptionCheckout(
     planCode: string,

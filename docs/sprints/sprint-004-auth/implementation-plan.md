@@ -70,7 +70,7 @@
 
 ## Verification
 
-1. `pnpm --filter @lucidkit/types build` — types компілюються
+1. `pnpm --filter @lucidship/types build` — types компілюються
 2. `pnpm --filter api test` — всі unit тести pass
 3. `pnpm --filter api test:e2e` — E2E тести pass
 4. `pnpm build` — повний build без помилок

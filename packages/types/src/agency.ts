@@ -1,3 +1,3 @@
 // Agency-specific types entry point
-// Core imports from '@lucidkit/types', agency imports from '@lucidkit/types/agency'
+// Core imports from '@lucidship/types', agency imports from '@lucidship/types/agency'
 export * from './agency/index';

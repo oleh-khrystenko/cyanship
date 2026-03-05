@@ -8,7 +8,7 @@
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { CheckEmailSchema } from '@lucidkit/types';
+import { CheckEmailSchema } from '@lucidship/types';
 
 export class CheckEmailDto extends createZodDto(CheckEmailSchema) {}
 ```
@@ -17,7 +17,7 @@ export class CheckEmailDto extends createZodDto(CheckEmailSchema) {}
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { LoginPasswordSchema } from '@lucidkit/types';
+import { LoginPasswordSchema } from '@lucidship/types';
 
 export class LoginPasswordDto extends createZodDto(LoginPasswordSchema) {}
 ```

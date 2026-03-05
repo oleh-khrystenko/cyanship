@@ -21,7 +21,7 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "@lucidkit/types": ["../../packages/types/src/index.ts"]
+            "@lucidship/types": ["../../packages/types/src/index.ts"]
         }
     },
     "include": [

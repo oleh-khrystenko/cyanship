@@ -24,7 +24,7 @@
 **Файл:** `apps/api/src/modules/payments/interfaces/payment-provider.interface.ts` — **NEW**
 
 ```typescript
-import { BillingWebhookEvent } from '@lucidkit/types';
+import { BillingWebhookEvent } from '@lucidship/types';
 
 export interface CreateCheckoutInput {
     userId: string;
@@ -71,7 +71,7 @@ import {
     BILLING_EVENT_TYPE,
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { ENV } from '../../../config/env';
 import {
     IPaymentProvider,

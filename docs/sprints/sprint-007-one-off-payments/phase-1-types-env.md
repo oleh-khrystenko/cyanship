@@ -242,7 +242,7 @@ PAYMENTS_ONE_OFF_ENABLED=true
 ## Verification Phase 1
 
 ```bash
-pnpm --filter @lucidkit/types build
+pnpm --filter @lucidship/types build
 # Має компілюватись без помилок
 
 pnpm --filter api build

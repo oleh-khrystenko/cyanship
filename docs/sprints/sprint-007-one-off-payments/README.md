@@ -137,7 +137,7 @@ apps/web/messages/uk.json + en.json
 ## Verification після всіх фаз
 
 ```bash
-pnpm --filter @lucidkit/types build    # types компілюються
+pnpm --filter @lucidship/types build    # types компілюються
 pnpm --filter api build                # API компілюється
 pnpm --filter web build                # Web компілюється
 pnpm lint                              # без помилок

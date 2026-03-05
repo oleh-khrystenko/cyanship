@@ -158,13 +158,13 @@ async sendMagicLink(
 
 | Purpose | Subject (UK) | Subject (EN) | CTA (UK) | CTA (EN) |
 |---|---|---|---|---|
-| `register` | Ласкаво просимо до LucidKit | Welcome to LucidKit | Завершити реєстрацію | Complete Registration |
-| `login` | Вхід до LucidKit | Sign in to LucidKit | Увійти | Sign In |
+| `register` | Ласкаво просимо до LucidShip | Welcome to LucidShip | Завершити реєстрацію | Complete Registration |
+| `login` | Вхід до LucidShip | Sign in to LucidShip | Увійти | Sign In |
 | `reset-password` | Скидання пароля | Reset Your Password | Скинути пароль | Reset Password |
 | `delete-account` | Підтвердження видалення акаунту | Confirm Account Deletion | Підтвердити видалення | Confirm Deletion |
 
 Кожен template:
-- HTML format з LucidKit брендингом (як існуючий)
+- HTML format з LucidShip брендингом (як існуючий)
 - CTA button з link
 - Пояснювальний текст
 - Примітка "Посилання дійсне 15 хвилин" / "Link valid for 15 minutes"
@@ -176,12 +176,12 @@ async sendMagicLink(
 private getEmailTemplate(purpose: MagicLinkPurpose, lang: string, link: string) {
     const templates = {
         register: {
-            uk: { subject: 'Ласкаво просимо до LucidKit', /* html */ },
-            en: { subject: 'Welcome to LucidKit', /* html */ },
+            uk: { subject: 'Ласкаво просимо до LucidShip', /* html */ },
+            en: { subject: 'Welcome to LucidShip', /* html */ },
         },
         login: {
-            uk: { subject: 'Вхід до LucidKit', /* html */ },
-            en: { subject: 'Sign in to LucidKit', /* html */ },
+            uk: { subject: 'Вхід до LucidShip', /* html */ },
+            en: { subject: 'Sign in to LucidShip', /* html */ },
         },
         'reset-password': {
             uk: { subject: 'Скидання пароля', /* html */ },

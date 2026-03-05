@@ -96,7 +96,7 @@
 - [ ] Network: `POST /api/auth/check-email` → `200`, `{ hasPassword: false, isNewUser: false }`
 - [ ] Network: `POST /api/auth/magic-link/send` → `200` (purpose: `login`)
 - [ ] UI: "Перевірте пошту" з email юзера + "Інший email"
-- [ ] Email отримано з subject "Вхід до LucidKit" (uk) або "Sign in to LucidKit" (en)
+- [ ] Email отримано з subject "Вхід до LucidShip" (uk) або "Sign in to LucidShip" (en)
 
 ---
 
@@ -113,7 +113,7 @@
 - [ ] Network: `POST /api/auth/check-email` → `200`, `{ hasPassword: false, isNewUser: true }`
 - [ ] Network: `POST /api/auth/magic-link/send` → `200` (purpose: `register`)
 - [ ] UI: "Перевірте пошту" (ідентичний Сценарію B)
-- [ ] Email отримано з subject "Ласкаво просимо до LucidKit" (uk) або "Welcome to LucidKit" (en)
+- [ ] Email отримано з subject "Ласкаво просимо до LucidShip" (uk) або "Welcome to LucidShip" (en)
 
 ---
 
@@ -751,16 +751,16 @@
 2. Зареєструвати нового юзера (preferredLang=en)
 
 **Expected:**
-- [ ] UK: subject "Ласкаво просимо до LucidKit", CTA "Завершити реєстрацію"
-- [ ] EN: subject "Welcome to LucidKit", CTA "Complete Registration"
-- [ ] HTML: LucidKit брендинг, лінк з token, "Посилання дійсне 15 хвилин"
+- [ ] UK: subject "Ласкаво просимо до LucidShip", CTA "Завершити реєстрацію"
+- [ ] EN: subject "Welcome to LucidShip", CTA "Complete Registration"
+- [ ] HTML: LucidShip брендинг, лінк з token, "Посилання дійсне 15 хвилин"
 
 ---
 
 ### Тест K2: Login email (UK + EN)
 
-- [ ] UK: subject "Вхід до LucidKit", CTA "Увійти"
-- [ ] EN: subject "Sign in to LucidKit", CTA "Sign In"
+- [ ] UK: subject "Вхід до LucidShip", CTA "Увійти"
+- [ ] EN: subject "Sign in to LucidShip", CTA "Sign In"
 
 ---
 

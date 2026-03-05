@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
-import { CreateCheckoutSessionSchema } from '@lucidkit/types';
+import { CreateCheckoutSessionSchema } from '@lucidship/types';
 
 export class CreateCheckoutSessionDto extends createZodDto(
     CreateCheckoutSessionSchema

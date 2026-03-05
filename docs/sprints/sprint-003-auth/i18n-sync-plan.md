@@ -128,9 +128,9 @@ export interface ApiMessageResponse {
 
 | Елемент | UK | EN |
 |---------|----|----|
-| Subject | Вхід у LucidKit | Sign in to LucidKit |
+| Subject | Вхід у LucidShip | Sign in to LucidShip |
 | Body text | Натисніть кнопку нижче, щоб увійти у ваш акаунт. | Click the button below to sign in to your account. |
-| CTA | Увійти в LucidKit | Sign in to LucidKit |
+| CTA | Увійти в LucidShip | Sign in to LucidShip |
 | Footer | Посилання дійсне 15 хвилин. Якщо ви не запитували вхід — ігноруйте цей лист. | This link expires in 15 minutes. If you didn't request this — ignore this email. |
 
 - `html lang="{lang}"` динамічно

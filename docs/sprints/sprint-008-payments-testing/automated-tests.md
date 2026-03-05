@@ -6,7 +6,7 @@
 
 ## Мета
 
-Створити unit та e2e тести для повного покриття платіжної підсистеми LucidKit. Source of truth для всіх сценаріїв — реальний код у `apps/api/src/modules/payments/` та `apps/web/src/shared/api/payments.ts`.
+Створити unit та e2e тести для повного покриття платіжної підсистеми LucidShip. Source of truth для всіх сценаріїв — реальний код у `apps/api/src/modules/payments/` та `apps/web/src/shared/api/payments.ts`.
 
 **Scope:**
 

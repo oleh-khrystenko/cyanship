@@ -11,7 +11,7 @@
     },
     "dependencies": {
         "@headlessui/react": "^2.2.9",
-        "@lucidkit/types": "workspace:*",
+        "@lucidship/types": "workspace:*",
         "@radix-ui/react-tooltip": "^1.2.8",
         "axios": "^1.13.5",
         "class-variance-authority": "^0.7.1",

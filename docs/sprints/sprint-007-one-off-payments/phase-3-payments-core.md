@@ -43,7 +43,7 @@ import {
     RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { ENV, STRIPE_CREDIT_PACKS } from '../../config/env';
 ```
 
@@ -78,7 +78,7 @@ constructor(
 Нова сигнатура: `createCheckoutSession(userId: string, dto: CreateCheckoutSession)`
 
 ```typescript
-import { type CreateCheckoutSession } from '@lucidkit/types';
+import { type CreateCheckoutSession } from '@lucidship/types';
 
 async createCheckoutSession(
     userId: string,

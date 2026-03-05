@@ -5,7 +5,7 @@ import type {
     UpdateProfileDto,
     UserProfile,
     VerifyMagicLinkResponse,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 
 import { apiClient, setAccessToken } from './client';
 

@@ -13,7 +13,7 @@ export default function HomePage() {
     return (
         <main className="container flex h-full min-h-screen flex-col justify-center gap-6 py-12">
             <p className="text-text-secondary text-sm tracking-[0.25em] uppercase">
-                LucidKit
+                LucidShip
             </p>
             <h1 className="text-text-primary text-4xl font-semibold">
                 {welcomeT('heading')}

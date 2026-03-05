@@ -3,7 +3,7 @@ import {
     LANG,
     MAGIC_LINK_PURPOSE,
     type MagicLinkPurpose,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { Resend } from 'resend';
 
 import { ENV } from '../../../config/env';
@@ -18,13 +18,13 @@ interface EmailTemplate {
 const TEMPLATES: Record<MagicLinkPurpose, Record<string, EmailTemplate>> = {
     [MAGIC_LINK_PURPOSE.LOGIN]: {
         [LANG.UK]: {
-            subject: 'Вхід до LucidKit',
+            subject: 'Вхід до LucidShip',
             body: 'Натисніть кнопку нижче, щоб увійти у ваш акаунт.',
             cta: 'Увійти',
             footer: 'Посилання дійсне 15 хвилин. Якщо ви не запитували вхід — ігноруйте цей лист.',
         },
         [LANG.EN]: {
-            subject: 'Sign in to LucidKit',
+            subject: 'Sign in to LucidShip',
             body: 'Click the button below to sign in to your account.',
             cta: 'Sign In',
             footer: "This link expires in 15 minutes. If you didn't request this — ignore this email.",
@@ -32,13 +32,13 @@ const TEMPLATES: Record<MagicLinkPurpose, Record<string, EmailTemplate>> = {
     },
     [MAGIC_LINK_PURPOSE.REGISTER]: {
         [LANG.UK]: {
-            subject: 'Ласкаво просимо до LucidKit',
+            subject: 'Ласкаво просимо до LucidShip',
             body: 'Натисніть кнопку нижче, щоб завершити реєстрацію.',
             cta: 'Завершити реєстрацію',
             footer: 'Посилання дійсне 15 хвилин. Якщо ви не реєструвалися — ігноруйте цей лист.',
         },
         [LANG.EN]: {
-            subject: 'Welcome to LucidKit',
+            subject: 'Welcome to LucidShip',
             body: 'Click the button below to complete your registration.',
             cta: 'Complete Registration',
             footer: "This link expires in 15 minutes. If you didn't sign up — ignore this email.",
@@ -98,7 +98,7 @@ export class EmailService {
 <head><meta charset="UTF-8"></head>
 <body style="font-family: sans-serif; background: #f4f4f5; padding: 40px 0;">
   <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 40px; text-align: center;">
-    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidKit</h1>
+    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidShip</h1>
     <p style="color: #52525b; font-size: 16px; margin-bottom: 32px;">
       ${t.body}
     </p>
@@ -139,7 +139,7 @@ export class EmailService {
             lang === LANG.UK
                 ? {
                       subject: 'Ваш акаунт деактивовано',
-                      body: `Ваш акаунт LucidKit деактивовано. Усі дані буде остаточно видалено <strong>${formattedDate}</strong>.`,
+                      body: `Ваш акаунт LucidShip деактивовано. Усі дані буде остаточно видалено <strong>${formattedDate}</strong>.`,
                       instruction:
                           'Щоб відновити акаунт, просто увійдіть протягом 30 днів.',
                       cta: 'Увійти',
@@ -147,7 +147,7 @@ export class EmailService {
                   }
                 : {
                       subject: 'Your account has been deactivated',
-                      body: `Your LucidKit account has been deactivated. All data will be permanently deleted on <strong>${formattedDate}</strong>.`,
+                      body: `Your LucidShip account has been deactivated. All data will be permanently deleted on <strong>${formattedDate}</strong>.`,
                       instruction:
                           'To restore your account, simply sign in within 30 days.',
                       cta: 'Sign In',
@@ -164,7 +164,7 @@ export class EmailService {
 <head><meta charset="UTF-8"></head>
 <body style="font-family: sans-serif; background: #f4f4f5; padding: 40px 0;">
   <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 40px; text-align: center;">
-    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidKit</h1>
+    <h1 style="font-size: 24px; color: #18181b; margin-bottom: 8px;">LucidShip</h1>
     <p style="color: #52525b; font-size: 16px; margin-bottom: 16px;">
       ${t.body}
     </p>

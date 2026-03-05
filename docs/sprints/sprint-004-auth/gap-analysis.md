@@ -119,8 +119,8 @@ Purpose визначає:
 
 | Purpose | Тема | CTA |
 |---|---|---|
-| `register` | Welcome to LucidKit | "Complete Registration" |
-| `login` | Sign in to LucidKit | "Sign In" |
+| `register` | Welcome to LucidShip | "Complete Registration" |
+| `login` | Sign in to LucidShip | "Sign In" |
 | `reset-password` | Reset Your Password | "Reset Password" |
 | `delete-account` | Confirm Account Deletion | "Confirm Deletion" |
 | (confirmation) | Account Scheduled for Deletion | "Sign in (to restore)" |

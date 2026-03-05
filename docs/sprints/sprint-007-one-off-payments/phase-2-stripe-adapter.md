@@ -18,7 +18,7 @@
 Оновити `CreateCheckoutInput` — додати `paymentType`, `priceId`, `credits`:
 
 ```typescript
-import { BillingWebhookEvent, PaymentType } from '@lucidkit/types';
+import { BillingWebhookEvent, PaymentType } from '@lucidship/types';
 
 export interface CreateCheckoutInput {
     userId: string;
@@ -53,7 +53,7 @@ import {
     PAYMENT_TYPE,
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 ```
 
 #### 2.2.2 `createCheckoutSession` — mode + priceId з input

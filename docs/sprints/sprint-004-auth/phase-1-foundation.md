@@ -206,6 +206,6 @@ return {
 
 ## Verification
 
-1. `pnpm --filter @lucidkit/types build` — компіляція без помилок
+1. `pnpm --filter @lucidship/types build` — компіляція без помилок
 2. `pnpm --filter api test` — всі існуючі тести проходять
 3. `pnpm build` — повний build без помилок

@@ -292,7 +292,7 @@ pnpm --filter api add stripe
 2. Крок 2 — entities/user.ts (EDIT, залежить від 1)
 3. Крок 3 — response-code.ts (EDIT, незалежний)
 4. Крок 4 — index.ts (EDIT, залежить від 1)
-5. pnpm --filter @lucidkit/types build — перевірити що types збираються
+5. pnpm --filter @lucidship/types build — перевірити що types збираються
 6. Крок 5 — env.ts (EDIT, незалежний)
 7. Крок 6 — user.schema.ts (EDIT, незалежний від types build)
 8. Крок 7 — processed-webhook-event.schema.ts (NEW, незалежний)
@@ -302,8 +302,8 @@ pnpm --filter api add stripe
 
 ## Verification
 
-1. `pnpm --filter @lucidkit/types build` — без помилок
+1. `pnpm --filter @lucidship/types build` — без помилок
 2. `pnpm --filter api build` — без помилок
 3. `pnpm lint` — без помилок
 4. `pnpm --filter api test` — існуючі тести проходять
-5. Перевірити що `UserBillingSchema`, `SUBSCRIPTION_STATUS`, `BILLING_EVENT_TYPE`, `CreateCheckoutSessionSchema`, `BillingWebhookEventSchema` експортуються з `@lucidkit/types`
+5. Перевірити що `UserBillingSchema`, `SUBSCRIPTION_STATUS`, `BILLING_EVENT_TYPE`, `CreateCheckoutSessionSchema`, `BillingWebhookEventSchema` експортуються з `@lucidship/types`

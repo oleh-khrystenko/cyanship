@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UserProfile } from '@lucidkit/types';
+import type { UserProfile } from '@lucidship/types';
 
 interface AuthState {
     user: UserProfile | null;

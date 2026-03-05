@@ -1,4 +1,4 @@
-# LucidKit
+# LucidShip
 
 > Production-ready SaaS boilerplate — все, що потрібно для швидкого запуску web-додатка: auth, payments, i18n, theming та модульна архітектура з коробки.
 
@@ -58,7 +58,7 @@ Turborepo monorepo з 2 apps + 1 shared package. Auth (Google OAuth + Magic Link
 ## Project Structure
 
 ```
-lucidkit/
+lucidship/
 ├── apps/
 │   ├── api/                              # NestJS backend
 │   │   ├── src/
@@ -79,7 +79,7 @@ lucidkit/
 │   │   │       │   ├── auth.module.ts    # PassportModule, JwtModule(1h), UsersModule(forwardRef), OnModuleInit(ping Redis), OnModuleDestroy(close Redis)
 │   │   │       │   ├── auth.controller.ts # 12 endpoints: Google OAuth, magic-link, password, refresh, logout
 │   │   │       │   ├── auth.service.ts   # Tokens, magic links, rate limiting, brute force, password, rotation
-│   │   │       │   ├── services/email.service.ts          # Resend: 4 email templates × 2 langs (HTML with LucidKit branding)
+│   │   │       │   ├── services/email.service.ts          # Resend: 4 email templates × 2 langs (HTML with LucidShip branding)
 │   │   │       │   ├── strategies/jwt.strategy.ts         # fromAuthHeaderAsBearerToken -> findById
 │   │   │       │   ├── strategies/google.strategy.ts      # scope:[email,profile], state:false, verifies email
 │   │   │       │   └── dto/              # 7 Zod DTOs (check-email, send-magic-link, login-password, set/change/verify-password, verify-magic-link)
@@ -131,7 +131,7 @@ lucidkit/
 │       │   │               ├── layout.tsx    # SEO metadata
 │       │   │               ├── success/page.tsx  # Post-checkout: getMe -> update store -> toast -> /billing
 │       │   │               └── cancel/page.tsx   # Cancel: toast -> /billing
-│       │   ├── entities/brand/Logo.tsx   # "LucidKit" text logo (text-5xl, bold, primary)
+│       │   ├── entities/brand/Logo.tsx   # "LucidShip" text logo (text-5xl, bold, primary)
 │       │   ├── features/
 │       │   │   ├── auth/                 # AuthInitializer (silent refresh, skips /auth/callback & /auth/verify), AuthGuard
 │       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiSelect, updates URL + backend pref)
@@ -158,7 +158,7 @@ lucidkit/
 │       └── messages/                     # uk.json, en.json (namespaces: welcome_page, auth_page, notifications, errors, profile_page, billing_page, components)
 │
 ├── packages/
-│   └── types/                            # @lucidkit/types
+│   └── types/                            # @lucidship/types
 │       └── src/
 │           ├── index.ts                  # Re-exports all 5 modules
 │           ├── constants/lang.ts         # LANG { UK:'uk', EN:'en' }, Lang type
@@ -342,7 +342,7 @@ async createCheckoutSession(
 export class CreateCheckoutSessionDto extends createZodDto(CreateCheckoutSessionSchema) {}
 ```
 
-Схеми в `@lucidkit/types`, DTOs через `createZodDto()` з `nestjs-zod`.
+Схеми в `@lucidship/types`, DTOs через `createZodDto()` з `nestjs-zod`.
 
 ### Авторизація (Guards)
 
@@ -522,7 +522,7 @@ Prefix: `/api`. Rate limit: 60 req/60s (ThrottlerGuard global).
 - `REDIS_URL` -- Redis
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` -- Google OAuth
 - `RESEND_API_KEY` -- Resend email service
-- `RESEND_FROM_EMAIL` -- **Required in production**, dev fallback: `LucidKit <onboarding@resend.dev>`
+- `RESEND_FROM_EMAIL` -- **Required in production**, dev fallback: `LucidShip <onboarding@resend.dev>`
 - `STRIPE_SECRET_KEY` -- Stripe API key
 - `STRIPE_WEBHOOK_SECRET` -- Webhook signature verification
 - `STRIPE_PRICE_MONTHLY_USD` -- Stripe price ID for subscription
@@ -585,8 +585,8 @@ docker compose -f docker-compose.dev.yml up --build   # Dev: mongo:7 + redis:7-a
 docker compose up --build -d                          # Prod
 
 # packages/types
-pnpm --filter @lucidkit/types build                   # Compile to CJS in dist/
-pnpm --filter @lucidkit/types dev                     # Watch mode
+pnpm --filter @lucidship/types build                   # Compile to CJS in dist/
+pnpm --filter @lucidship/types dev                     # Watch mode
 ```
 
 ## Rules & Conventions
@@ -604,14 +604,14 @@ pnpm --filter @lucidkit/types dev                     # Watch mode
 - **Zod = single source of truth**: схеми в `packages/types`, types через `z.infer`, валідація на API і Web
 - DTOs на API: `createZodDto(ZodSchema)` з `nestjs-zod` (НЕ class-validator)
 - API response format: `{ data: {...} }` для success, `{ error: { code, message } }` для errors
-- API message responses: `{ data: { code: ResponseCode, message: string } }` -- `RESPONSE_CODE` з `@lucidkit/types`
+- API message responses: `{ data: { code: ResponseCode, message: string } }` -- `RESPONSE_CODE` з `@lucidship/types`
 - Access token: в пам'яті (closure), refresh token: httpOnly cookie
 - Zustand stores без Provider -- працюють напряму; initial `isLoading=true`
 - Prettier: singleQuote, tabWidth 4, trailingComma es5, semi true, printWidth 80
 - Web: prettier-plugin-tailwindcss для сортування класів
 - i18n message keys: `{page}_page.{section}.{key}` або `components.{component}.{key}`
 - i18n notifications: `notifications.{module}.{code}`, errors: `errors.{module}.{code}`, fallback: `errors.generic.{code}`
-- Web path aliases: `@/*` -> `./src/*`, `@lucidkit/types` -> `../../packages/types/src/index.ts`
+- Web path aliases: `@/*` -> `./src/*`, `@lucidship/types` -> `../../packages/types/src/index.ts`
 - Server components за замовчуванням, `'use client'` лише де потрібно
 - **Tone convention**: classic-polite (формальне "ви", без емодзі, 1-2 речення, минулий час для success)
 - **i18n convention**: Backend тільки англійська (code + message), frontend маппить code -> i18n key; emails -- виняток (user language)
@@ -646,7 +646,7 @@ Subscription billing update uses atomic MongoDB query with guard: only updates i
 
 ### packages/types build order
 
-`packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker (enforced в docker-compose.dev.yml). **НІКОЛИ** не додавати `paths: { "@lucidkit/types": [...] }` до API tsconfig -- ламає структуру output. API резолвить через workspace symlink -> `dist/`. Web може мати `paths` (Next.js бандлер, points to source `../../packages/types/src/index.ts`).
+`packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker (enforced в docker-compose.dev.yml). **НІКОЛИ** не додавати `paths: { "@lucidship/types": [...] }` до API tsconfig -- ламає структуру output. API резолвить через workspace symlink -> `dist/`. Web може мати `paths` (Next.js бандлер, points to source `../../packages/types/src/index.ts`).
 
 ### UsersModule <-> AuthModule circular dependency
 

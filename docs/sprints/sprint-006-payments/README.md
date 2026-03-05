@@ -49,7 +49,7 @@ Phase 1 (Foundation)
 
 ## Verification
 
-1. `pnpm --filter @lucidkit/types build` — types збираються без помилок
+1. `pnpm --filter @lucidship/types build` — types збираються без помилок
 2. `pnpm --filter api build` — API збирається
 3. `pnpm --filter web build` — Web збирається
 4. `pnpm lint` — без помилок
