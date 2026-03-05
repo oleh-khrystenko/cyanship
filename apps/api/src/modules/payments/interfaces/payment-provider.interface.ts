@@ -26,7 +26,7 @@ export interface IPaymentProvider {
     createPortalSession(providerCustomerId: string): Promise<PortalResult>;
     handleWebhookPayload(
         rawBody: Buffer,
-        signatureHeader: string,
+        signatureHeader: string
     ): BillingWebhookEvent | null;
 }
 

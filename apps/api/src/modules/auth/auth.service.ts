@@ -144,9 +144,7 @@ export class AuthService {
         }
     }
 
-    async handleGoogleAuth(
-        googleProfile: GoogleValidatedUser
-    ): Promise<{
+    async handleGoogleAuth(googleProfile: GoogleValidatedUser): Promise<{
         user: UserDocument;
         tokens: TokenPair;
         accountDeleted?: boolean;
@@ -207,9 +205,7 @@ export class AuthService {
         );
     }
 
-    async verifyMagicLink(
-        token: string
-    ): Promise<
+    async verifyMagicLink(token: string): Promise<
         | {
               user: UserDocument;
               tokens: TokenPair;
@@ -274,9 +270,7 @@ export class AuthService {
         );
     }
 
-    private async handleDeleteAccountVerification(
-        email: string
-    ): Promise<{
+    private async handleDeleteAccountVerification(email: string): Promise<{
         deleted: true;
         message: string;
         purpose: typeof MAGIC_LINK_PURPOSE.DELETE_ACCOUNT;
@@ -405,10 +399,7 @@ export class AuthService {
         await this.usersService.clearPasswordHash(userId);
     }
 
-    async verifyPassword(
-        userId: string,
-        password: string
-    ): Promise<boolean> {
+    async verifyPassword(userId: string, password: string): Promise<boolean> {
         const user = await this.usersService.findById(userId);
         if (!user || !user.passwordHash) return false;
         return bcrypt.compare(password, user.passwordHash);
@@ -428,18 +419,13 @@ export class AuthService {
         await pipeline.exec();
     }
 
-    private async checkBruteForce(
-        ip: string,
-        email: string
-    ): Promise<void> {
+    private async checkBruteForce(ip: string, email: string): Promise<void> {
         const key = `login_attempts:${ip}:${email}`;
         const attemptsStr = await this.redis.get(key);
         if (!attemptsStr) return;
 
         const attempts = parseInt(attemptsStr, 10);
-        const thresholds = parseLockoutThresholds(
-            ENV.AUTH_LOCKOUT_THRESHOLDS
-        );
+        const thresholds = parseLockoutThresholds(ENV.AUTH_LOCKOUT_THRESHOLDS);
 
         // Find the highest threshold that has been exceeded
         const activeThreshold = [...thresholds]
@@ -465,10 +451,7 @@ export class AuthService {
         await pipeline.exec();
     }
 
-    private async clearLoginAttempts(
-        ip: string,
-        email: string
-    ): Promise<void> {
+    private async clearLoginAttempts(ip: string, email: string): Promise<void> {
         const key = `login_attempts:${ip}:${email}`;
         await this.redis.del(key);
     }

@@ -277,11 +277,7 @@ describe('EmailService', () => {
             });
 
             await expect(
-                emailService.sendDeletionConfirmation(
-                    email,
-                    deletionDate,
-                    'uk'
-                )
+                emailService.sendDeletionConfirmation(email, deletionDate, 'uk')
             ).rejects.toThrow('Failed to send email: Send failed');
         });
     });

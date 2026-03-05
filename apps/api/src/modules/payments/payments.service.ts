@@ -44,12 +44,12 @@ export class PaymentsService {
         @InjectModel(ProcessedWebhookEvent.name)
         private readonly webhookEventModel: Model<ProcessedWebhookEventDocument>,
 
-        private readonly usersService: UsersService,
+        private readonly usersService: UsersService
     ) {}
 
     async createCheckoutSession(
         userId: string,
-        dto: CreateCheckoutSession,
+        dto: CreateCheckoutSession
     ): Promise<{ checkoutUrl: string }> {
         const { paymentType, planCode, packCode } = dto;
 
@@ -87,18 +87,17 @@ export class PaymentsService {
                 });
             }
             const priceId = ENV.STRIPE_PRICE_MONTHLY_USD;
-            const result =
-                await this.paymentProvider.createCheckoutSession({
-                    userId,
-                    userEmail: user.email,
-                    providerCustomerId:
-                        user.billing?.providerCustomerId ?? undefined,
-                    paymentType,
-                    planCode: planCode!,
-                    priceId,
-                    successUrl: ENV.BILLING_SUCCESS_URL,
-                    cancelUrl: ENV.BILLING_CANCEL_URL,
-                });
+            const result = await this.paymentProvider.createCheckoutSession({
+                userId,
+                userEmail: user.email,
+                providerCustomerId:
+                    user.billing?.providerCustomerId ?? undefined,
+                paymentType,
+                planCode: planCode!,
+                priceId,
+                successUrl: ENV.BILLING_SUCCESS_URL,
+                cancelUrl: ENV.BILLING_CANCEL_URL,
+            });
             return { checkoutUrl: result.checkoutUrl };
         }
 
@@ -110,8 +109,7 @@ export class PaymentsService {
         const result = await this.paymentProvider.createCheckoutSession({
             userId,
             userEmail: user.email,
-            providerCustomerId:
-                user.billing?.providerCustomerId ?? undefined,
+            providerCustomerId: user.billing?.providerCustomerId ?? undefined,
             paymentType,
             planCode: packCode!,
             priceId: pack.priceId,
@@ -122,9 +120,7 @@ export class PaymentsService {
         return { checkoutUrl: result.checkoutUrl };
     }
 
-    async createPortalSession(
-        userId: string,
-    ): Promise<{ portalUrl: string }> {
+    async createPortalSession(userId: string): Promise<{ portalUrl: string }> {
         const user = await this.userModel.findById(userId).lean();
         if (!user) {
             throw new BadRequestException('User not found');
@@ -138,7 +134,7 @@ export class PaymentsService {
         }
 
         const result = await this.paymentProvider.createPortalSession(
-            user.billing.providerCustomerId,
+            user.billing.providerCustomerId
         );
 
         return { portalUrl: result.portalUrl };
@@ -147,12 +143,12 @@ export class PaymentsService {
     async handleWebhook(
         provider: string,
         rawBody: Buffer,
-        signatureHeader: string,
+        signatureHeader: string
     ): Promise<void> {
         // 1. Parse and verify webhook payload
         const event = this.paymentProvider.handleWebhookPayload(
             rawBody,
-            signatureHeader,
+            signatureHeader
         );
         if (!event) {
             return;
@@ -162,7 +158,7 @@ export class PaymentsService {
         const userId = await this.resolveUserId(event);
         if (!userId) {
             this.logger.warn(
-                `Cannot resolve userId for webhook event ${event.providerEventId}`,
+                `Cannot resolve userId for webhook event ${event.providerEventId}`
             );
             return;
         }
@@ -171,7 +167,7 @@ export class PaymentsService {
         const insertResult = await this.insertWebhookEvent(
             provider,
             event,
-            userId,
+            userId
         );
         if (insertResult === 'applied') {
             return;
@@ -180,14 +176,11 @@ export class PaymentsService {
         // 4. Process event — rollback idempotency record on failure
         try {
             await this.processWebhookEvent(event, userId);
-            await this.markWebhookEventApplied(
-                provider,
-                event.providerEventId,
-            );
+            await this.markWebhookEventApplied(provider, event.providerEventId);
         } catch (error) {
             await this.rollbackPendingWebhookEvent(
                 provider,
-                event.providerEventId,
+                event.providerEventId
             );
             throw error;
         }
@@ -195,7 +188,7 @@ export class PaymentsService {
 
     private async processWebhookEvent(
         event: BillingWebhookEvent,
-        userId: string,
+        userId: string
     ): Promise<void> {
         if (event.type === BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED) {
             // One-off: independent events, no ordering concern
@@ -205,7 +198,7 @@ export class PaymentsService {
                 .lean();
             if (!user) {
                 this.logger.warn(
-                    `User ${userId} not found for webhook event ${event.providerEventId}`,
+                    `User ${userId} not found for webhook event ${event.providerEventId}`
                 );
                 return;
             }
@@ -241,7 +234,7 @@ export class PaymentsService {
                     ],
                 },
                 { $set: dotNotation },
-                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
+                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
             );
 
             if (!updated) {
@@ -249,12 +242,12 @@ export class PaymentsService {
                 const initialized = await this.userModel.findOneAndUpdate(
                     { _id: userId, billing: null },
                     { $set: { billing: billingFields } },
-                    { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
+                    { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
                 );
 
                 if (!initialized) {
                     this.logger.debug(
-                        `Skipping stale/orphan event ${event.providerEventId} for user ${userId}`,
+                        `Skipping stale/orphan event ${event.providerEventId} for user ${userId}`
                     );
                     return;
                 }
@@ -262,12 +255,12 @@ export class PaymentsService {
         }
 
         this.logger.log(
-            `Processed ${event.type} for user ${userId} (event: ${event.providerEventId})`,
+            `Processed ${event.type} for user ${userId} (event: ${event.providerEventId})`
         );
     }
 
     private async resolveUserId(
-        event: BillingWebhookEvent,
+        event: BillingWebhookEvent
     ): Promise<string | null> {
         if (event.userId?.length > 0) {
             return event.userId;
@@ -292,7 +285,7 @@ export class PaymentsService {
     private async insertWebhookEvent(
         provider: string,
         event: BillingWebhookEvent,
-        userId: string,
+        userId: string
     ): Promise<'new' | 'retry' | 'applied'> {
         try {
             await this.webhookEventModel.create({
@@ -322,13 +315,13 @@ export class PaymentsService {
 
                 if (existing?.status === 'applied') {
                     this.logger.debug(
-                        `Duplicate webhook event ${event.providerEventId}, already applied`,
+                        `Duplicate webhook event ${event.providerEventId}, already applied`
                     );
                     return 'applied';
                 }
 
                 this.logger.warn(
-                    `Retrying pending webhook event ${event.providerEventId}`,
+                    `Retrying pending webhook event ${event.providerEventId}`
                 );
                 return 'retry';
             }
@@ -338,18 +331,18 @@ export class PaymentsService {
 
     private async markWebhookEventApplied(
         provider: string,
-        providerEventId: string,
+        providerEventId: string
     ): Promise<void> {
         await this.webhookEventModel.updateOne(
             { provider, providerEventId },
             { $set: { status: 'applied' } },
-            { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
+            { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
         );
     }
 
     private async rollbackPendingWebhookEvent(
         provider: string,
-        providerEventId: string,
+        providerEventId: string
     ): Promise<void> {
         try {
             await this.webhookEventModel.deleteOne(
@@ -358,40 +351,39 @@ export class PaymentsService {
                     providerEventId,
                     status: 'pending',
                 },
-                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS },
+                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
             );
         } catch (deleteError) {
             this.logger.error(
                 `Failed to rollback pending webhook event ${providerEventId}`,
                 deleteError instanceof Error
                     ? deleteError.stack
-                    : String(deleteError),
+                    : String(deleteError)
             );
         }
     }
 
     private async applyOneOffPayment(
         userId: string,
-        event: BillingWebhookEvent,
+        event: BillingWebhookEvent
     ): Promise<void> {
         const credits = event.creditsAmount ?? 0;
         if (!Number.isFinite(credits) || credits <= 0) {
             this.logger.warn(
-                `ONE_OFF_PAYMENT_COMPLETED event ${event.providerEventId} has no creditsAmount`,
+                `ONE_OFF_PAYMENT_COMPLETED event ${event.providerEventId} has no creditsAmount`
             );
             return;
         }
         await this.usersService.addCredits(userId, credits);
         this.logger.log(
-            `Added ${credits} credits to user ${userId} (event: ${event.providerEventId})`,
+            `Added ${credits} credits to user ${userId} (event: ${event.providerEventId})`
         );
     }
 
     private buildBillingUpdate(
-        event: BillingWebhookEvent,
+        event: BillingWebhookEvent
     ): Record<string, unknown> {
-        const status =
-            event.subscriptionStatus ?? SUBSCRIPTION_STATUS.UNKNOWN;
+        const status = event.subscriptionStatus ?? SUBSCRIPTION_STATUS.UNKNOWN;
         const hasActive =
             status === SUBSCRIPTION_STATUS.ACTIVE ||
             status === SUBSCRIPTION_STATUS.TRIALING;

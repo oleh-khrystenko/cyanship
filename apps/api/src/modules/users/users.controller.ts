@@ -55,12 +55,9 @@ export class UsersController {
                           hasActiveSubscription:
                               user.billing.hasActiveSubscription,
                           planCode: user.billing.planCode,
-                          subscriptionStatus:
-                              user.billing.subscriptionStatus,
-                          currentPeriodEnd:
-                              user.billing.currentPeriodEnd,
-                          cancelAtPeriodEnd:
-                              user.billing.cancelAtPeriodEnd,
+                          subscriptionStatus: user.billing.subscriptionStatus,
+                          currentPeriodEnd: user.billing.currentPeriodEnd,
+                          cancelAtPeriodEnd: user.billing.cancelAtPeriodEnd,
                       }
                     : null,
             },

@@ -143,8 +143,7 @@ export class EmailService {
                       instruction:
                           'Щоб відновити акаунт, просто увійдіть протягом 30 днів.',
                       cta: 'Увійти',
-                      footer:
-                          'Якщо ви не запитували видалення — увійдіть у свій акаунт якомога швидше.',
+                      footer: 'Якщо ви не запитували видалення — увійдіть у свій акаунт якомога швидше.',
                   }
                 : {
                       subject: 'Your account has been deactivated',
@@ -152,8 +151,7 @@ export class EmailService {
                       instruction:
                           'To restore your account, simply sign in within 30 days.',
                       cta: 'Sign In',
-                      footer:
-                          "If you didn't request deletion — sign in to your account as soon as possible.",
+                      footer: "If you didn't request deletion — sign in to your account as soon as possible.",
                   };
 
         const { error } = await this.resend.emails.send({

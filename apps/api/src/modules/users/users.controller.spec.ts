@@ -96,10 +96,13 @@ describe('UsersController', () => {
             };
             mockUsersService.updateProfile.mockResolvedValue(updated);
 
-            const result = await controller.updateProfile(mockUser as any, {
-                name: 'New Name',
-                avatar: 'https://new.url',
-            } as any);
+            const result = await controller.updateProfile(
+                mockUser as any,
+                {
+                    name: 'New Name',
+                    avatar: 'https://new.url',
+                } as any
+            );
 
             expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
@@ -116,9 +119,12 @@ describe('UsersController', () => {
         it('should call updateLang and return LANG_UPDATED', async () => {
             mockUsersService.updateLang.mockResolvedValue(undefined);
 
-            const result = await controller.updateLang(mockUser as any, {
-                lang: 'en',
-            } as any);
+            const result = await controller.updateLang(
+                mockUser as any,
+                {
+                    lang: 'en',
+                } as any
+            );
 
             expect(mockUsersService.updateLang).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
@@ -229,9 +235,7 @@ describe('UsersController', () => {
             };
             mockUsersService.restore.mockResolvedValue(undefined);
 
-            const result = await controller.restoreAccount(
-                deletedUser as any
-            );
+            const result = await controller.restoreAccount(deletedUser as any);
 
             expect(mockUsersService.restore).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011'

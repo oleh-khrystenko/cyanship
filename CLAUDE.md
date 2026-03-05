@@ -16,6 +16,7 @@ All AI agents MUST read and follow rules in `docs/conventions/`:
 - **[Tone & Style](docs/conventions/tone.md)** — tone and style for all user-facing messages (toasts, errors, confirmations)
 - **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
 - **[Env Sync](docs/conventions/env-sync.md)** — always update env.ts, .env, and .env.example together
+- **[Modular Boundaries](docs/conventions/modular-boundaries.md)** — core/agency separation, one-way dependencies, fork checklist
 
 Full index: [docs/conventions/README.md](docs/conventions/README.md)
   <!-- MANUAL:END -->

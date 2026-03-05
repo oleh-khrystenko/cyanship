@@ -92,7 +92,7 @@ export class UsersService {
         const paid = await this.userModel.findOneAndUpdate(
             { _id: userId, 'credits.balance': { $gt: 0 } },
             { $inc: { 'credits.balance': -1 } },
-            { new: true },
+            { new: true }
         );
         if (paid) return true;
 
@@ -100,7 +100,7 @@ export class UsersService {
         const free = await this.userModel.findOneAndUpdate(
             { _id: userId, 'credits.freeReportUsed': false },
             { $set: { 'credits.freeReportUsed': true } },
-            { new: true },
+            { new: true }
         );
         return free !== null;
     }

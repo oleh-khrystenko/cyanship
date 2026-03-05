@@ -175,10 +175,7 @@ export class AuthController {
         @CurrentUser() user: UserDocument,
         @Body() dto: SetPasswordDto
     ): Promise<ApiMessageResponse> {
-        await this.authService.setPassword(
-            user._id.toString(),
-            dto.password
-        );
+        await this.authService.setPassword(user._id.toString(), dto.password);
         return {
             data: {
                 code: RESPONSE_CODE.PASSWORD_SET,

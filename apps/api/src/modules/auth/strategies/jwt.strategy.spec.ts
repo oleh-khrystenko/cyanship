@@ -29,10 +29,17 @@ describe('JwtStrategy', () => {
     });
 
     describe('validate', () => {
-        const payload = { sub: '507f1f77bcf86cd799439011', email: 'test@example.com' };
+        const payload = {
+            sub: '507f1f77bcf86cd799439011',
+            email: 'test@example.com',
+        };
 
         it('should return user for valid payload', async () => {
-            const user = { _id: payload.sub, email: payload.email, deletedAt: null };
+            const user = {
+                _id: payload.sub,
+                email: payload.email,
+                deletedAt: null,
+            };
             mockUsersService.findById.mockResolvedValue(user);
 
             const result = await strategy.validate(payload);

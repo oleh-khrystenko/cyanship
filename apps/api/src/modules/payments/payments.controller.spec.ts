@@ -51,11 +51,11 @@ describe('PaymentsController', () => {
 
             const result = await controller.createCheckoutSession(
                 mockUser as any,
-                dto as any,
+                dto as any
             );
 
             expect(
-                mockPaymentsService.createCheckoutSession,
+                mockPaymentsService.createCheckoutSession
             ).toHaveBeenCalledWith('507f1f77bcf86cd799439011', dto);
             expect(result).toEqual({
                 data: { checkoutUrl: 'https://checkout.stripe.com/test' },
@@ -73,11 +73,11 @@ describe('PaymentsController', () => {
 
             const result = await controller.createCheckoutSession(
                 mockUser as any,
-                dto as any,
+                dto as any
             );
 
             expect(
-                mockPaymentsService.createCheckoutSession,
+                mockPaymentsService.createCheckoutSession
             ).toHaveBeenCalledWith('507f1f77bcf86cd799439011', dto);
             expect(result).toEqual({
                 data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' },
@@ -94,12 +94,12 @@ describe('PaymentsController', () => {
             });
 
             const result = await controller.createPortalSession(
-                mockUser as any,
+                mockUser as any
             );
 
-            expect(mockPaymentsService.createPortalSession).toHaveBeenCalledWith(
-                '507f1f77bcf86cd799439011',
-            );
+            expect(
+                mockPaymentsService.createPortalSession
+            ).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
             expect(result).toEqual({
                 data: { portalUrl: 'https://billing.stripe.com/test' },
             });
@@ -110,7 +110,9 @@ describe('PaymentsController', () => {
 
     describe('POST /payments/webhook/:provider', () => {
         it('should pass provider, rawBody, and signature to paymentsService.handleWebhook and return { received: true }', async () => {
-            const rawBody = Buffer.from('{"type":"checkout.session.completed"}');
+            const rawBody = Buffer.from(
+                '{"type":"checkout.session.completed"}'
+            );
             const signature = 'stripe-sig-test';
             const req = { rawBody } as any;
 
@@ -119,13 +121,13 @@ describe('PaymentsController', () => {
             const result = await controller.handleWebhook(
                 'stripe',
                 req,
-                signature,
+                signature
             );
 
             expect(mockPaymentsService.handleWebhook).toHaveBeenCalledWith(
                 'stripe',
                 rawBody,
-                signature,
+                signature
             );
             expect(result).toEqual({ received: true });
         });
@@ -134,7 +136,7 @@ describe('PaymentsController', () => {
             const req = { rawBody: undefined } as any;
 
             await expect(
-                controller.handleWebhook('stripe', req, 'stripe-sig'),
+                controller.handleWebhook('stripe', req, 'stripe-sig')
             ).rejects.toThrow(BadRequestException);
         });
 
@@ -142,7 +144,7 @@ describe('PaymentsController', () => {
             const req = { rawBody: Buffer.from('{}') } as any;
 
             await expect(
-                controller.handleWebhook('stripe', req, undefined as any),
+                controller.handleWebhook('stripe', req, undefined as any)
             ).rejects.toThrow(BadRequestException);
         });
 
@@ -150,7 +152,7 @@ describe('PaymentsController', () => {
             const req = { rawBody: Buffer.from('{}') } as any;
 
             await expect(
-                controller.handleWebhook('unknown', req, 'some-sig'),
+                controller.handleWebhook('unknown', req, 'some-sig')
             ).rejects.toThrow(BadRequestException);
         });
 
@@ -163,7 +165,7 @@ describe('PaymentsController', () => {
 
             expect(error).toBeInstanceOf(BadRequestException);
             expect((error as BadRequestException).message).toBe(
-                'Unsupported provider: monobank',
+                'Unsupported provider: monobank'
             );
         });
     });

@@ -28,8 +28,7 @@ const nodeEnv = getEnvVar('NODE_ENV', 'development');
 const isProduction = nodeEnv === 'production';
 
 // Compute payment toggles early — credit price env vars are only required when one-off is enabled.
-const oneOffEnabled =
-    getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true';
+const oneOffEnabled = getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true';
 
 export const ENV = {
     // --- REQUIRED WITH DEFAULTS ---

@@ -33,7 +33,7 @@ const mockStripeInstance = {
 };
 
 (Stripe as jest.MockedClass<typeof Stripe>).mockImplementation(
-    () => mockStripeInstance as unknown as Stripe,
+    () => mockStripeInstance as unknown as Stripe
 );
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -46,7 +46,11 @@ const makeCheckoutEvent = (overrides: Record<string, unknown> = {}) => ({
         object: {
             id: 'cs_test_xxx',
             mode: 'subscription',
-            metadata: { userId: 'user123', planCode: 'monthly_usd', credits: '0' },
+            metadata: {
+                userId: 'user123',
+                planCode: 'monthly_usd',
+                credits: '0',
+            },
             client_reference_id: 'user123',
             customer: 'cus_test_xxx',
             subscription: 'sub_test_xxx',
@@ -60,7 +64,7 @@ const makeCheckoutEvent = (overrides: Record<string, unknown> = {}) => ({
 const makeSubscriptionEvent = (
     type: string,
     status: string,
-    extraOverrides: Record<string, unknown> = {},
+    extraOverrides: Record<string, unknown> = {}
 ) => ({
     id: 'evt_sub_test',
     type,
@@ -140,12 +144,12 @@ describe('StripeService', () => {
             expect(mockCheckoutCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     customer: 'cus_existing_123',
-                }),
+                })
             );
             expect(mockCheckoutCreate).toHaveBeenCalledWith(
                 expect.not.objectContaining({
                     customer_email: expect.anything(),
-                }),
+                })
             );
         });
 
@@ -155,7 +159,8 @@ describe('StripeService', () => {
                 id: 'cs_test_xxx',
             });
 
-            const result = await service.createCheckoutSession(subscriptionInput);
+            const result =
+                await service.createCheckoutSession(subscriptionInput);
 
             expect(result).toEqual({
                 checkoutUrl: 'https://checkout.stripe.com/test',
@@ -167,7 +172,7 @@ describe('StripeService', () => {
             mockCheckoutCreate.mockResolvedValue({ url: null, id: 'cs_test' });
 
             await expect(
-                service.createCheckoutSession(subscriptionInput),
+                service.createCheckoutSession(subscriptionInput)
             ).rejects.toThrow(Error);
         });
 
@@ -197,10 +202,10 @@ describe('StripeService', () => {
                     metadata: expect.objectContaining({
                         credits: '5',
                     }),
-                }),
+                })
             );
             expect(result.checkoutUrl).toBe(
-                'https://checkout.stripe.com/pay/oneoff',
+                'https://checkout.stripe.com/pay/oneoff'
             );
         });
     });
@@ -259,7 +264,7 @@ describe('StripeService', () => {
                 makeCheckoutEvent({
                     metadata: { planCode: 'monthly_usd', credits: '0' },
                     client_reference_id: 'ref_user456',
-                }),
+                })
             );
 
             const result = service.handleWebhookPayload(rawBody, sigHeader);
@@ -269,10 +274,7 @@ describe('StripeService', () => {
 
         it('should return SUBSCRIPTION_UPDATED event with ACTIVE status and empty userId', () => {
             mockConstructEvent.mockReturnValue(
-                makeSubscriptionEvent(
-                    'customer.subscription.updated',
-                    'active',
-                ),
+                makeSubscriptionEvent('customer.subscription.updated', 'active')
             );
 
             const result = service.handleWebhookPayload(rawBody, sigHeader);
@@ -288,34 +290,38 @@ describe('StripeService', () => {
             mockConstructEvent.mockReturnValue(
                 makeSubscriptionEvent(
                     'customer.subscription.updated',
-                    'past_due',
-                ),
+                    'past_due'
+                )
             );
 
             const result = service.handleWebhookPayload(rawBody, sigHeader);
 
-            expect(result?.subscriptionStatus).toBe(SUBSCRIPTION_STATUS.PAST_DUE);
+            expect(result?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.PAST_DUE
+            );
         });
 
         it('should return SUBSCRIPTION_UPDATED with CANCELED when stripe status is canceled', () => {
             mockConstructEvent.mockReturnValue(
                 makeSubscriptionEvent(
                     'customer.subscription.updated',
-                    'canceled',
-                ),
+                    'canceled'
+                )
             );
 
             const result = service.handleWebhookPayload(rawBody, sigHeader);
 
-            expect(result?.subscriptionStatus).toBe(SUBSCRIPTION_STATUS.CANCELED);
+            expect(result?.subscriptionStatus).toBe(
+                SUBSCRIPTION_STATUS.CANCELED
+            );
         });
 
         it('should return SUBSCRIPTION_DELETED event with CANCELED status', () => {
             mockConstructEvent.mockReturnValue(
                 makeSubscriptionEvent(
                     'customer.subscription.deleted',
-                    'canceled',
-                ),
+                    'canceled'
+                )
             );
 
             const result = service.handleWebhookPayload(rawBody, sigHeader);
@@ -354,13 +360,13 @@ describe('StripeService', () => {
                             planCode: 'credits_5',
                         },
                         client_reference_id: 'user123',
-                    }),
+                    })
                 );
 
                 const result = service.handleWebhookPayload(rawBody, sigHeader);
 
                 expect(result?.type).toBe(
-                    BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                    BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED
                 );
                 expect(result?.creditsAmount).toBe(5);
                 expect(result?.userId).toBe('user123');
@@ -377,7 +383,7 @@ describe('StripeService', () => {
                             planCode: 'credits_5',
                         },
                         client_reference_id: 'user123',
-                    }),
+                    })
                 );
 
                 const result = service.handleWebhookPayload(rawBody, sigHeader);
@@ -387,12 +393,14 @@ describe('StripeService', () => {
 
             it('should return CHECKOUT_COMPLETED for mode=subscription', () => {
                 mockConstructEvent.mockReturnValue(
-                    makeCheckoutEvent({ mode: 'subscription' }),
+                    makeCheckoutEvent({ mode: 'subscription' })
                 );
 
                 const result = service.handleWebhookPayload(rawBody, sigHeader);
 
-                expect(result?.type).toBe(BILLING_EVENT_TYPE.CHECKOUT_COMPLETED);
+                expect(result?.type).toBe(
+                    BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
+                );
             });
         });
 
@@ -455,21 +463,18 @@ describe('StripeService', () => {
         // ── mapSubscriptionStatus (tested via handleWebhookPayload) ──
 
         describe('mapSubscriptionStatus', () => {
-            const testMapping = (
-                stripeStatus: string,
-                expected: string,
-            ) => {
+            const testMapping = (stripeStatus: string, expected: string) => {
                 it(`should map '${stripeStatus}' to ${expected}`, () => {
                     mockConstructEvent.mockReturnValue(
                         makeSubscriptionEvent(
                             'customer.subscription.updated',
-                            stripeStatus,
-                        ),
+                            stripeStatus
+                        )
                     );
 
                     const result = service.handleWebhookPayload(
                         rawBody,
-                        sigHeader,
+                        sigHeader
                     );
 
                     expect(result?.subscriptionStatus).toBe(expected);
