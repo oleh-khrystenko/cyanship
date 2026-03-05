@@ -40,14 +40,18 @@
             "restored": "Account restored!"
         },
         "callback": {
-            "loading": "Signing you in…"
+            "loading": "Signing you in…",
+            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below."
         },
         "verify": {
             "verifying": "Verifying your link…",
             "redirecting": "Redirecting…",
             "error_heading": "Link is invalid or expired",
             "error_description": "The sign-in link you used is no longer valid. Please request a new one.",
-            "retry_button": "Try again"
+            "retry_button": "Try again",
+            "deleted_heading": "Account deleted",
+            "deleted_description": "Your account has been deactivated. You have 30 days to restore it — just sign in during that time.",
+            "deleted_signin_button": "Sign in"
         }
     },
     "notifications": {
@@ -112,7 +116,9 @@
             "heading": "Danger zone",
             "delete_title": "Delete account",
             "delete_description": "After deletion you have 30 days to restore your account.",
-            "delete_button": "Delete account"
+            "delete_button": "Delete account",
+            "resend_button": "Resend",
+            "resend_button_cooldown": "Resend ({seconds}s)"
         }
     },
     "delete_account_modal": {
@@ -122,6 +128,9 @@
         "cancel_button": "Cancel",
         "confirm_button": "Delete account",
         "magic_link_sent": "Confirmation link sent to your email",
+        "rate_limit": "Too many requests. Please try again in 15 minutes",
+        "magic_link_sent_title": "Check your email",
+        "magic_link_sent_description": "A confirmation link to delete your account has been sent to your address. The link is valid for 15 minutes.",
         "deleted": "Account deactivated",
         "invalid_password": "Invalid password"
     },

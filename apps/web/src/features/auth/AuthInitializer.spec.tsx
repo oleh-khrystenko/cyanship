@@ -47,7 +47,7 @@ describe('AuthInitializer', () => {
         expect(mockSetUser).toHaveBeenCalledWith(user);
     });
 
-    it('does NOT call refresh on /auth/callback path', async () => {
+    it('calls clearUser immediately on /auth/callback path without refresh', async () => {
         mockPathname = '/uk/auth/callback';
 
         render(<AuthInitializer />);
@@ -55,15 +55,17 @@ describe('AuthInitializer', () => {
 
         expect(mockRefreshToken).not.toHaveBeenCalled();
         expect(mockGetMe).not.toHaveBeenCalled();
+        expect(mockClearUser).toHaveBeenCalled();
     });
 
-    it('does NOT call refresh on /auth/verify path', async () => {
+    it('calls clearUser immediately on /auth/verify path without refresh', async () => {
         mockPathname = '/uk/auth/verify';
 
         render(<AuthInitializer />);
         await new Promise((r) => setTimeout(r, 50));
 
         expect(mockRefreshToken).not.toHaveBeenCalled();
+        expect(mockClearUser).toHaveBeenCalled();
     });
 
     it('calls clearUser on refresh error', async () => {

@@ -1,12 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import { deleteAccount } from '@/shared/api';
+import { useAuthStore } from '@/stores/auth';
 import DeleteAccountModal from './DeleteAccountModal';
+
+const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
+const RESEND_COOLDOWN_SEC = 60;
 
 const DangerZone = () => {
     const t = useTranslations('profile_page.danger_zone');
@@ -14,8 +19,27 @@ const DangerZone = () => {
     const locale = useLocale();
     const router = useRouter();
 
+    const user = useAuthStore((s) => s.user);
+    const setUser = useAuthStore((s) => s.setUser);
+
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [cooldownSec, setCooldownSec] = useState(0);
+
+    useEffect(() => {
+        if (cooldownSec <= 0) return;
+        const timer = setInterval(() => {
+            setCooldownSec((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [cooldownSec]);
+
+    const requestedAt = user?.accountDeletionRequestedAt
+        ? new Date(user.accountDeletionRequestedAt)
+        : null;
+    const isPendingDeletion =
+        requestedAt !== null &&
+        Date.now() - requestedAt.getTime() < MAGIC_LINK_TTL_MS;
 
     const handleDelete = async () => {
         setLoading(true);
@@ -25,10 +49,19 @@ const DangerZone = () => {
             if (result.requiresPassword) {
                 setShowModal(true);
             } else if (result.requiresMagicLink) {
+                if (user) {
+                    setUser({
+                        ...user,
+                        accountDeletionRequestedAt: new Date(),
+                    });
+                }
+                setCooldownSec(RESEND_COOLDOWN_SEC);
                 toast.success(tModal('magic_link_sent'));
             }
-        } catch {
-            toast.error(tModal('invalid_password'));
+        } catch (error) {
+            const is429 =
+                error instanceof AxiosError && error.response?.status === 429;
+            toast.error(is429 ? tModal('rate_limit') : tModal('invalid_password'));
         } finally {
             setLoading(false);
         }
@@ -39,6 +72,8 @@ const DangerZone = () => {
         toast.success(tModal('deleted'));
         router.push(`/${locale}/auth/signin`);
     };
+
+    const resendDisabled = loading || cooldownSec > 0;
 
     return (
         <section className="space-y-4">
@@ -53,14 +88,32 @@ const DangerZone = () => {
                 <p className="text-text-secondary mt-1 text-sm">
                     {t('delete_description')}
                 </p>
+
+                {isPendingDeletion && (
+                    <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                            {tModal('magic_link_sent_title')}
+                        </p>
+                        <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
+                            {tModal('magic_link_sent_description')}
+                        </p>
+                    </div>
+                )}
+
                 <UiButton
                     variant="filled"
                     size="md"
                     className="mt-4 rounded-lg bg-red-600 hover:bg-red-700"
                     onClick={() => void handleDelete()}
-                    disabled={loading}
+                    disabled={isPendingDeletion ? resendDisabled : loading}
                 >
-                    {t('delete_button')}
+                    {isPendingDeletion
+                        ? cooldownSec > 0
+                            ? t('resend_button_cooldown', {
+                                  seconds: cooldownSec,
+                              })
+                            : t('resend_button')
+                        : t('delete_button')}
                 </UiButton>
             </div>
 

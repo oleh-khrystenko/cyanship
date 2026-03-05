@@ -401,7 +401,10 @@ describe('UsersService', () => {
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { deletedAt: expect.any(Date) }
+                {
+                    deletedAt: expect.any(Date),
+                    accountDeletionRequestedAt: null,
+                }
             );
         });
     });
@@ -414,7 +417,7 @@ describe('UsersService', () => {
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { deletedAt: null }
+                { deletedAt: null, accountDeletionRequestedAt: null }
             );
         });
     });

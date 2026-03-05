@@ -20,6 +20,7 @@ import {
 import { CookieOptions, Request, Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ENV } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -138,7 +139,11 @@ export class AuthController {
         if (result.deleted) {
             res.clearCookie('bid_refresh', { path: '/' });
             return {
-                data: { deleted: true, message: result.message },
+                data: {
+                    deleted: true,
+                    purpose: MAGIC_LINK_PURPOSE.DELETE_ACCOUNT,
+                    message: result.message,
+                },
             };
         }
 
@@ -165,7 +170,7 @@ export class AuthController {
     }
 
     @Post('password/set')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async setPassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: SetPasswordDto
@@ -183,7 +188,7 @@ export class AuthController {
     }
 
     @Post('password/change')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async changePassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: ChangePasswordDto,
@@ -202,7 +207,7 @@ export class AuthController {
     }
 
     @Post('password/delete')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async deletePassword(
         @CurrentUser() user: UserDocument
     ): Promise<ApiMessageResponse> {
@@ -216,7 +221,7 @@ export class AuthController {
     }
 
     @Post('password/verify')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     async verifyPassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: VerifyPasswordDto

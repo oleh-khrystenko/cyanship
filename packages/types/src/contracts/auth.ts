@@ -77,11 +77,23 @@ export const VerifyPasswordSchema = z.object({
     password: z.string(),
 });
 
+// --- Delete Account Verify Response ---
+
+export const DeleteAccountVerifyResponseSchema = z.object({
+    deleted: z.literal(true),
+    purpose: z.literal(MAGIC_LINK_PURPOSE.DELETE_ACCOUNT),
+    message: z.string(),
+});
+
 // --- Types ---
 
 export type SendMagicLinkDto = z.infer<typeof SendMagicLinkSchema>;
 export type VerifyMagicLinkDto = z.infer<typeof VerifyMagicLinkSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+export type DeleteAccountVerifyResponse = z.infer<
+    typeof DeleteAccountVerifyResponseSchema
+>;
+export type VerifyMagicLinkResponse = AuthResponse | DeleteAccountVerifyResponse;
 export type CheckEmailDto = z.infer<typeof CheckEmailSchema>;
 export type CheckEmailResponse = z.infer<typeof CheckEmailResponseSchema>;
 export type LoginPasswordDto = z.infer<typeof LoginPasswordSchema>;

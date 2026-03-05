@@ -3,18 +3,17 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { CheckCircle } from 'lucide-react';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import UiButton from '@/shared/ui/UiButton';
 import { verifyMagicLink, getMe, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
-type VerifyStatus = 'verifying' | 'success' | 'error';
+type VerifyStatus = 'verifying' | 'success' | 'deleted' | 'error';
 
 function VerifyContent() {
     const t = useTranslations('auth_page.verify');
-    const tNotifications = useTranslations('notifications.auth');
     const tErrors = useTranslations();
     const router = useRouter();
     const { locale } = useParams<{ locale: string }>();
@@ -58,9 +57,7 @@ function VerifyContent() {
                     }
 
                     case 'delete-account': {
-                        toast.success(tNotifications('account_deleted'));
-                        setStatus('success');
-                        router.replace(`/${locale}/auth/signin`);
+                        setStatus('deleted');
                         break;
                     }
 
@@ -86,7 +83,30 @@ function VerifyContent() {
         };
 
         void verify();
-    }, [token, router, locale, tErrors, tNotifications]);
+    }, [token, router, locale, tErrors]);
+
+    if (status === 'deleted') {
+        return (
+            <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+                <CheckCircle className="h-12 w-12 text-green-500" />
+                <p className="text-text-primary text-lg font-semibold">
+                    {t('deleted_heading')}
+                </p>
+                <p className="text-text-secondary max-w-sm text-center text-sm">
+                    {t('deleted_description')}
+                </p>
+                <UiButton
+                    as="link"
+                    href={`/${locale}/auth/signin`}
+                    variant="filled"
+                    size="md"
+                    className="rounded-lg"
+                >
+                    {t('deleted_signin_button')}
+                </UiButton>
+            </main>
+        );
+    }
 
     if (status === 'error') {
         return (

@@ -11,7 +11,7 @@ import {
 import { SkipThrottle } from '@nestjs/throttler';
 import { RawBodyRequest } from '@nestjs/common/interfaces';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
 import { PaymentsService } from './payments.service';
@@ -21,7 +21,7 @@ import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) {}
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     @Post('checkout-session')
     async createCheckoutSession(
         @CurrentUser() user: UserDocument,
@@ -35,7 +35,7 @@ export class PaymentsController {
         return { data: { checkoutUrl } };
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtActiveGuard)
     @Post('portal-session')
     async createPortalSession(
         @CurrentUser() user: UserDocument,
