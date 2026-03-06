@@ -5,8 +5,8 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import { CheckCircle } from 'lucide-react';
-import UiSpinner from '@/shared/ui/UiSpinner';
 import UiButton from '@/shared/ui/UiButton';
+import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { verifyMagicLink, getMe, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -88,7 +88,7 @@ function VerifyContent() {
     if (status === 'deleted') {
         return (
             <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
-                <CheckCircle className="h-12 w-12 text-green-500" />
+                <CheckCircle className="h-12 w-12 text-success" />
                 <p className="text-text-primary text-lg font-semibold">
                     {t('deleted_heading')}
                 </p>
@@ -131,24 +131,15 @@ function VerifyContent() {
     }
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-            <UiSpinner size="lg" />
-            <p className="text-text-secondary text-lg">
-                {status === 'success' ? t('redirecting') : t('verifying')}
-            </p>
-        </main>
+        <UiFullPageLoader
+            message={status === 'success' ? t('redirecting') : t('verifying')}
+        />
     );
 }
 
 export default function VerifyPage() {
     return (
-        <Suspense
-            fallback={
-                <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-                    <UiSpinner size="lg" />
-                </main>
-            }
-        >
+        <Suspense fallback={<UiFullPageLoader />}>
             <VerifyContent />
         </Suspense>
     );

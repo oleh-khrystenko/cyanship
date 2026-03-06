@@ -3,11 +3,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
+import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
@@ -41,7 +42,6 @@ export default function SigninPage() {
     const [state, setState] = useState<SigninState>('email');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showMagicLinkSuggestion, setShowMagicLinkSuggestion] =
@@ -241,11 +241,11 @@ export default function SigninPage() {
             </form>
 
             <div className="flex items-center gap-4">
-                <div className="h-px flex-1 bg-neutral-300 dark:bg-neutral-600" />
+                <div className="h-px flex-1 bg-border" />
                 <span className="text-text-secondary text-sm">
                     {t('or_divider')}
                 </span>
-                <div className="h-px flex-1 bg-neutral-300 dark:bg-neutral-600" />
+                <div className="h-px flex-1 bg-border" />
             </div>
 
             <UiButton
@@ -253,7 +253,7 @@ export default function SigninPage() {
                 href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
                 variant="filled"
                 size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+                className="w-full justify-center gap-3 rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
                 IconLeft={GoogleIcon}
             >
                 {t('google_button')}
@@ -280,49 +280,36 @@ export default function SigninPage() {
                     size="lg"
                     className="pr-20"
                 />
-                <button
-                    type="button"
+                <UiButton
+                    variant="text"
+                    size="sm"
                     onClick={goBackToEmail}
                     className="text-primary absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium hover:underline"
                 >
                     {t('change_email')}
-                </button>
+                </UiButton>
             </div>
 
-            <div className="relative">
-                <UiInput
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={t('password_placeholder')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    error={errorMessage || undefined}
-                    required
-                    size="lg"
-                    autoFocus
-                    className="pr-12"
-                />
-                <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-text-secondary hover:text-text-primary absolute right-3 top-[18px] -translate-y-1/2"
-                >
-                    {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                    ) : (
-                        <Eye className="h-5 w-5" />
-                    )}
-                </button>
-            </div>
+            <UiPasswordInput
+                placeholder={t('password_placeholder')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={errorMessage || undefined}
+                required
+                size="lg"
+                autoFocus
+            />
 
             <div className="text-right">
-                <button
-                    type="button"
+                <UiButton
+                    variant="text"
+                    size="sm"
                     onClick={handleForgotPassword}
                     disabled={submitting}
                     className="text-primary text-sm font-medium hover:underline"
                 >
                     {t('forgot_password')}
-                </button>
+                </UiButton>
             </div>
 
             <UiButton
@@ -344,7 +331,7 @@ export default function SigninPage() {
                     type="button"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+                    className="w-full justify-center rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
                     IconLeft={Mail}
@@ -358,8 +345,8 @@ export default function SigninPage() {
     // --- State: magic-link-sent ---
     const renderMagicLinkSentState = () => (
         <div className="space-y-6">
-            <div className="rounded-lg border border-green-300 bg-green-50 p-6 text-center dark:border-green-700 dark:bg-green-900/20">
-                <Mail className="mx-auto mb-3 h-10 w-10 text-green-600 dark:text-green-400" />
+            <div className="rounded-lg border border-success/30 bg-success/10 p-6 text-center">
+                <Mail className="mx-auto mb-3 h-10 w-10 text-success" />
                 <h2 className="text-text-primary text-lg font-semibold">
                     {t('magic_link_sent_title')}
                 </h2>
@@ -368,13 +355,14 @@ export default function SigninPage() {
                 </p>
             </div>
 
-            <button
-                type="button"
+            <UiButton
+                variant="text"
+                size="sm"
                 onClick={goBackToEmail}
                 className="text-primary mx-auto block text-sm font-medium hover:underline"
             >
                 &larr; {t('other_email')}
-            </button>
+            </UiButton>
         </div>
     );
 
@@ -416,7 +404,7 @@ export default function SigninPage() {
     // --- State: error ---
     const renderErrorState = () => (
         <div className="space-y-4">
-            <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center dark:border-red-700 dark:bg-red-900/20">
+            <div className="rounded-lg border border-error/30 bg-error/10 p-6 text-center">
                 <p className="text-error text-sm font-medium">
                     {errorMessage || t('error_generic')}
                 </p>

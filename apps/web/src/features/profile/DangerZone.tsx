@@ -81,7 +81,7 @@ const DangerZone = () => {
                 {t('heading')}
             </h2>
 
-            <div className="rounded-lg border border-red-300 bg-red-50 p-6 dark:border-red-700 dark:bg-red-900/20">
+            <div className="rounded-lg border border-error/30 bg-error/10 p-6">
                 <h3 className="text-text-primary font-medium">
                     {t('delete_title')}
                 </h3>
@@ -90,11 +90,11 @@ const DangerZone = () => {
                 </p>
 
                 {isPendingDeletion && (
-                    <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    <div className="mt-4 rounded-lg border border-primary/30 bg-primary/10 p-4">
+                        <p className="text-primary text-sm font-medium">
                             {tModal('magic_link_sent_title')}
                         </p>
-                        <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
+                        <p className="text-primary mt-1 text-sm">
                             {tModal('magic_link_sent_description')}
                         </p>
                     </div>
@@ -103,7 +103,7 @@ const DangerZone = () => {
                 <UiButton
                     variant="filled"
                     size="md"
-                    className="mt-4 rounded-lg bg-red-600 hover:bg-red-700"
+                    className="mt-4 rounded-lg bg-error"
                     onClick={() => void handleDelete()}
                     disabled={isPendingDeletion ? resendDisabled : loading}
                 >

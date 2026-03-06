@@ -31,6 +31,16 @@ export default function middleware(request: NextRequest) {
         );
     }
 
+    const isAuthPath = AUTH_PATHS.some(
+        (p) => path === p || path.startsWith(`${p}/`)
+    );
+
+    if (isAuthPath && hasRefreshCookie) {
+        return NextResponse.redirect(
+            new URL(`/${locale}/profile`, request.url)
+        );
+    }
+
     return intlMiddleware(request);
 }
 

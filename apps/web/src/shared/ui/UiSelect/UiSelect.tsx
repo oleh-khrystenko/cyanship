@@ -22,15 +22,15 @@ const sizeStyles: Record<UiSelectSize, string> = {
  * Override via className prop for custom design systems
  */
 const variantStyles: Record<UiSelectVariant, string> = {
-    filled: 'bg-neutral-800 text-white hover:bg-neutral-700 disabled:bg-neutral-300 disabled:text-neutral-500',
+    filled: 'bg-primary text-white hover:bg-primary-dark',
     outlined:
-        'bg-transparent text-neutral-600 dark:text-neutral-300 border border-neutral-300 hover:border-neutral-400 disabled:border-neutral-200 disabled:text-neutral-400',
+        'bg-transparent text-text-primary border border-border hover:border-text-secondary',
 };
 
 const optionStyles: Record<UiSelectVariant, string> = {
-    filled: 'bg-neutral-800 text-white data-[focus]:bg-neutral-700 data-[selected]:bg-neutral-900',
+    filled: 'bg-primary text-white data-[focus]:bg-primary-dark data-[selected]:bg-primary-dark',
     outlined:
-        'bg-transparent text-neutral-600 dark:text-neutral-300 border border-neutral-300 data-[focus]:bg-neutral-100 data-[selected]:bg-neutral-200',
+        'bg-transparent text-text-primary data-[focus]:bg-surface-hover data-[selected]:bg-surface-hover',
 };
 
 const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {

@@ -2,12 +2,11 @@
 
 import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserProfile } from '@lucidship/types';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
-import UiInput from '@/shared/ui/UiInput';
+import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import {
     setPassword,
@@ -31,8 +30,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
-    const [showCurrent, setShowCurrent] = useState(false);
-    const [showNew, setShowNew] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -140,33 +137,15 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     <p className="text-text-secondary text-sm">
                         {getHeading()}
                     </p>
-                    <div className="relative">
-                        <UiInput
-                            type={showNew ? 'text' : 'password'}
-                            placeholder={t('password_placeholder')}
-                            value={newPwd}
-                            onChange={(e) => setNewPwd(e.target.value)}
-                            required={isPasswordRequired}
-                            size="lg"
-                            className="pr-12"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowNew(!showNew)}
-                            className="text-text-secondary hover:text-text-primary absolute right-3 top-[18px] -translate-y-1/2"
-                            aria-label={
-                                showNew
-                                    ? t('hide_password')
-                                    : t('show_password')
-                            }
-                        >
-                            {showNew ? (
-                                <EyeOff className="h-5 w-5" />
-                            ) : (
-                                <Eye className="h-5 w-5" />
-                            )}
-                        </button>
-                    </div>
+                    <UiPasswordInput
+                        placeholder={t('password_placeholder')}
+                        value={newPwd}
+                        onChange={(e) => setNewPwd(e.target.value)}
+                        required={isPasswordRequired}
+                        size="lg"
+                        showLabel={t('show_password')}
+                        hideLabel={t('hide_password')}
+                    />
                     <UiButton
                         type="submit"
                         variant="filled"
@@ -195,12 +174,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
                     {/* Current password — only in change mode, not reset */}
                     {isChangeMode && (
-                        <div className="relative">
+                        <div>
                             <label className="text-text-secondary mb-1 block text-sm">
                                 {t('current_password_label')}
                             </label>
-                            <UiInput
-                                type={showCurrent ? 'text' : 'password'}
+                            <UiPasswordInput
                                 placeholder={t('password_placeholder')}
                                 value={currentPwd}
                                 onChange={(e) =>
@@ -208,58 +186,25 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                                 }
                                 required
                                 size="lg"
-                                className="pr-12"
+                                showLabel={t('show_password')}
+                                hideLabel={t('hide_password')}
                             />
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setShowCurrent(!showCurrent)
-                                }
-                                className="text-text-secondary hover:text-text-primary absolute bottom-[18px] right-3 -translate-y-1/2"
-                                aria-label={
-                                    showCurrent
-                                        ? t('hide_password')
-                                        : t('show_password')
-                                }
-                            >
-                                {showCurrent ? (
-                                    <EyeOff className="h-5 w-5" />
-                                ) : (
-                                    <Eye className="h-5 w-5" />
-                                )}
-                            </button>
                         </div>
                     )}
 
-                    <div className="relative">
+                    <div>
                         <label className="text-text-secondary mb-1 block text-sm">
                             {t('new_password_label')}
                         </label>
-                        <UiInput
-                            type={showNew ? 'text' : 'password'}
+                        <UiPasswordInput
                             placeholder={t('password_placeholder')}
                             value={newPwd}
                             onChange={(e) => setNewPwd(e.target.value)}
                             required
                             size="lg"
-                            className="pr-12"
+                            showLabel={t('show_password')}
+                            hideLabel={t('hide_password')}
                         />
-                        <button
-                            type="button"
-                            onClick={() => setShowNew(!showNew)}
-                            className="text-text-secondary hover:text-text-primary absolute bottom-[18px] right-3 -translate-y-1/2"
-                            aria-label={
-                                showNew
-                                    ? t('hide_password')
-                                    : t('show_password')
-                            }
-                        >
-                            {showNew ? (
-                                <EyeOff className="h-5 w-5" />
-                            ) : (
-                                <Eye className="h-5 w-5" />
-                            )}
-                        </button>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -299,7 +244,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Delete password confirmation */}
             {confirmDelete && (
-                <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
+                <div className="rounded-lg border border-error/30 bg-error/10 p-4">
                     <p className="text-text-primary mb-3 text-sm">
                         {t('delete_password_confirm')}
                     </p>
@@ -307,7 +252,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         <UiButton
                             variant="filled"
                             size="sm"
-                            className="rounded-lg bg-red-600 hover:bg-red-700"
+                            className="rounded-lg bg-error"
                             onClick={() => void handleDeletePassword()}
                             disabled={submitting}
                         >

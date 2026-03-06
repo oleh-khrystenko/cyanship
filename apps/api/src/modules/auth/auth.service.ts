@@ -36,7 +36,7 @@ interface JwtPayload {
     jti?: string;
 }
 
-const REFRESH_TOKEN_TTL = 2 * 60; // [TEST] 2 minutes — production: 7 * 24 * 60 * 60
+const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
 const ROTATION_GRACE_PERIOD = 10; // 10 seconds for concurrent tab requests
 
 @Injectable()
@@ -56,11 +56,11 @@ export class AuthService {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(accessPayload, {
                 secret: ENV.JWT_ACCESS_SECRET,
-                expiresIn: '1m', // [TEST] 1 minute — production: '1h'
+                expiresIn: '1h',
             }),
             this.jwtService.signAsync(refreshPayload, {
                 secret: ENV.JWT_REFRESH_SECRET,
-                expiresIn: '2m', // [TEST] 2 minutes — production: '7d'
+                expiresIn: '7d',
             }),
         ]);
 

@@ -18,12 +18,11 @@ const sizeStyles: Record<UiInputSize, string> = {
 
 const variantStyles: Record<UiInputVariant, string> = {
     outlined:
-        'bg-transparent text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus:border-neutral-500 dark:focus:border-neutral-400 disabled:border-neutral-200 disabled:text-neutral-400',
-    filled: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-transparent hover:bg-neutral-200 dark:hover:bg-neutral-700 focus:bg-neutral-50 dark:focus:bg-neutral-900 disabled:bg-neutral-100 disabled:text-neutral-400',
+        'bg-transparent text-text-primary border border-border hover:border-text-secondary focus-within:border-primary',
+    filled: 'bg-surface-hover text-text-primary border border-transparent hover:bg-surface focus-within:bg-surface',
 };
 
-const errorStyles =
-    'border-red-500 dark:border-red-400 hover:border-red-600 dark:hover:border-red-300 focus:border-red-500 dark:focus:border-red-400';
+const errorStyles = 'border-error hover:border-error focus-within:border-error';
 
 const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
     const {
@@ -60,7 +59,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     <IconLeft
                         width={iconSize}
                         height={iconSize}
-                        className="shrink-0 text-neutral-400"
+                        className="shrink-0 text-text-secondary"
                         aria-hidden
                     />
                 )}
@@ -68,19 +67,19 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     {...inputProps}
                     ref={ref}
                     disabled={disabled}
-                    className="w-full bg-transparent outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed"
+                    className="w-full bg-transparent outline-none placeholder:text-text-secondary disabled:cursor-not-allowed"
                 />
                 {IconRight && (
                     <IconRight
                         width={iconSize}
                         height={iconSize}
-                        className="shrink-0 text-neutral-400"
+                        className="shrink-0 text-text-secondary"
                         aria-hidden
                     />
                 )}
             </label>
             {error && (
-                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                <p className="mt-1 text-sm text-error">
                     {error}
                 </p>
             )}

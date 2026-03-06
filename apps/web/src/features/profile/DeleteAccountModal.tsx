@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
-import UiInput from '@/shared/ui/UiInput';
+import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { confirmDeleteAccount } from '@/shared/api';
 
@@ -87,8 +87,7 @@ const DeleteAccountModal = ({
                         <label className="text-text-secondary mb-1 block text-sm">
                             {t('password_label')}
                         </label>
-                        <UiInput
-                            type="password"
+                        <UiPasswordInput
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             error={error || undefined}
@@ -112,7 +111,7 @@ const DeleteAccountModal = ({
                             type="submit"
                             variant="filled"
                             size="md"
-                            className="rounded-lg bg-red-600 hover:bg-red-700"
+                            className="rounded-lg bg-error"
                             disabled={submitting || !password}
                         >
                             {submitting ? (

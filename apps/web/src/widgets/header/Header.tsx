@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { LogOut } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
@@ -32,40 +31,52 @@ const Header = () => {
     return (
         <header className="bg-background sticky top-0 z-50 shadow-sm">
             <div className="container flex items-center justify-between gap-6 py-4">
-                <Link href={`/${locale}`} aria-label="Go to home page">
+                <UiButton
+                    as="link"
+                    href={`/${locale}`}
+                    variant="text"
+                    size="md"
+                    aria-label="Go to home page"
+                    className="p-0"
+                >
                     <Logo />
-                </Link>
+                </UiButton>
 
                 <div className="flex items-center gap-4">
                     {isLoading ? (
-                        <div className="h-8 w-20 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="bg-surface-hover h-8 w-20 animate-pulse rounded-lg" />
                     ) : isAuthenticated && user ? (
                         <>
-                            <Link
+                            <UiButton
+                                as="link"
                                 href={`/${locale}/profile`}
-                                className="flex items-center gap-2 transition-opacity hover:opacity-80"
+                                variant="text"
+                                size="sm"
+                                className="flex items-center gap-2 p-0 transition-opacity hover:opacity-80"
                             >
-                                {user.profile.avatar ? (
-                                    <Image
-                                        src={user.profile.avatar}
-                                        alt={user.profile.name || ''}
-                                        width={32}
-                                        height={32}
-                                        className="rounded-full"
-                                    />
-                                ) : (
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-sm font-semibold text-neutral-700 dark:bg-neutral-600 dark:text-neutral-200">
-                                        {(user.profile.name ||
-                                            user.email)[0]?.toUpperCase()}
-                                    </div>
-                                )}
-                                <span className="text-text-primary hidden text-sm sm:block">
-                                    {user.profile.name || user.email}
+                                <span className="flex items-center gap-3">
+                                    {user.profile.avatar ? (
+                                        <Image
+                                            src={user.profile.avatar}
+                                            alt={user.profile.name || ''}
+                                            width={32}
+                                            height={32}
+                                            className="rounded-full"
+                                        />
+                                    ) : (
+                                        <div className="bg-surface-hover text-text-primary flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold">
+                                            {(user.profile.name ||
+                                                user.email)[0]?.toUpperCase()}
+                                        </div>
+                                    )}
+                                    <span className="text-text-primary hidden text-sm sm:block">
+                                        {user.profile.name || user.email}
+                                    </span>
+                                    <span className="bg-surface-hover text-text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                                        {user.credits.balance} {t('credits')}
+                                    </span>
                                 </span>
-                                <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200">
-                                    {user.credits.balance} {t('credits')}
-                                </span>
-                            </Link>
+                            </UiButton>
                             <UiButton
                                 variant="icon-compact"
                                 size="sm"

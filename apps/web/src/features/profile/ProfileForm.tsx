@@ -1,12 +1,11 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import type { Lang, UserProfile } from '@lucidship/types';
+import type { UserProfile } from '@lucidship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
-import UiSelect from '@/shared/ui/UiSelect';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { updateProfile, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
@@ -17,11 +16,6 @@ interface ProfileFormProps {
     nameRequired: boolean;
     onSaved?: () => void;
 }
-
-const LANG_OPTIONS = [
-    { value: 'uk', label: 'Українська' },
-    { value: 'en', label: 'English' },
-];
 
 function parseName(fullName?: string): { firstName: string; lastName: string } {
     if (!fullName) return { firstName: '', lastName: '' };
@@ -43,16 +37,11 @@ const ProfileForm = ({
     onSaved,
 }: ProfileFormProps) => {
     const t = useTranslations('profile_page.form');
-    const locale = useLocale();
     const setUser = useAuthStore((s) => s.setUser);
 
     const parsed = parseName(user.profile.name);
     const [firstName, setFirstName] = useState(parsed.firstName);
     const [lastName, setLastName] = useState(parsed.lastName);
-    const [avatar, setAvatar] = useState(user.profile.avatar ?? '');
-    const [lang, setLang] = useState<Lang>(
-        (user.preferredLang as Lang) ?? (locale as Lang)
-    );
     const [submitting, setSubmitting] = useState(false);
     const [nameError, setNameError] = useState('');
 
@@ -71,8 +60,6 @@ const ProfileForm = ({
             const fullName = combineName(firstName, lastName);
             await updateProfile({
                 name: fullName || undefined,
-                avatar: avatar.trim() || undefined,
-                preferredLang: lang,
             });
             const me = await getMe();
             setUser(me);
@@ -119,35 +106,6 @@ const ProfileForm = ({
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={!editable}
                     size="lg"
-                />
-            </div>
-
-            <div>
-                <label className="text-text-secondary mb-1 block text-sm">
-                    {t('avatar_label')}
-                </label>
-                <UiInput
-                    type="url"
-                    placeholder={t('avatar_placeholder')}
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
-                    disabled={!editable}
-                    size="lg"
-                />
-            </div>
-
-            <div>
-                <label className="text-text-secondary mb-1 block text-sm">
-                    {t('language_label')}
-                </label>
-                <UiSelect
-                    options={LANG_OPTIONS}
-                    value={lang}
-                    onChange={(v: string) => setLang(v as Lang)}
-                    disabled={!editable}
-                    variant="outlined"
-                    size="lg"
-                    className="w-full rounded-md"
                 />
             </div>
 
