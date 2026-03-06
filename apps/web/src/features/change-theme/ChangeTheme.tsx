@@ -26,16 +26,16 @@ const ChangeTheme: FC = () => {
                 return (
                     <UiButton
                         key={value}
-                        variant="icon-compact"
+                        variant="icon"
                         size="sm"
                         aria-label={label}
                         aria-pressed={isActive}
                         onClick={() => setTheme(value)}
-                        className={`rounded-full p-1.5 transition-colors duration-200 ${
+                        className={
                             isActive
-                                ? 'bg-primary/15 text-primary'
-                                : 'text-text-secondary hover:text-text-primary'
-                        }`}
+                                ? 'rounded-full bg-primary/15 !text-primary'
+                                : 'rounded-full !text-text-secondary hover:!text-text-primary'
+                        }
                         IconLeft={Icon}
                     />
                 );

@@ -44,7 +44,7 @@ const Header = () => {
 
                 <div className="flex items-center gap-4">
                     {isLoading ? (
-                        <div className="h-8 w-20 animate-pulse rounded-lg bg-surface-hover" />
+                        <div className="bg-surface-hover h-8 w-20 animate-pulse rounded-lg" />
                     ) : isAuthenticated && user ? (
                         <>
                             <UiButton
@@ -54,25 +54,27 @@ const Header = () => {
                                 size="sm"
                                 className="flex items-center gap-2 p-0 transition-opacity hover:opacity-80"
                             >
-                                {user.profile.avatar ? (
-                                    <Image
-                                        src={user.profile.avatar}
-                                        alt={user.profile.name || ''}
-                                        width={32}
-                                        height={32}
-                                        className="rounded-full"
-                                    />
-                                ) : (
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-hover text-sm font-semibold text-text-primary">
-                                        {(user.profile.name ||
-                                            user.email)[0]?.toUpperCase()}
-                                    </div>
-                                )}
-                                <span className="text-text-primary hidden text-sm sm:block">
-                                    {user.profile.name || user.email}
-                                </span>
-                                <span className="rounded-full bg-surface-hover px-2 py-0.5 text-xs font-medium text-text-primary">
-                                    {user.credits.balance} {t('credits')}
+                                <span className="flex items-center gap-3">
+                                    {user.profile.avatar ? (
+                                        <Image
+                                            src={user.profile.avatar}
+                                            alt={user.profile.name || ''}
+                                            width={32}
+                                            height={32}
+                                            className="rounded-full"
+                                        />
+                                    ) : (
+                                        <div className="bg-surface-hover text-text-primary flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold">
+                                            {(user.profile.name ||
+                                                user.email)[0]?.toUpperCase()}
+                                        </div>
+                                    )}
+                                    <span className="text-text-primary hidden text-sm sm:block">
+                                        {user.profile.name || user.email}
+                                    </span>
+                                    <span className="bg-surface-hover text-text-primary rounded-full px-2 py-0.5 text-xs font-medium">
+                                        {user.credits.balance} {t('credits')}
+                                    </span>
                                 </span>
                             </UiButton>
                             <UiButton
