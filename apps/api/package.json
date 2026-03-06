@@ -21,14 +21,30 @@
         "test:e2e": "jest --config test/jest-e2e.json"
     },
     "dependencies": {
+        "@lucidship/types": "workspace:*",
         "@nestjs/common": "^11.1.8",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^11.1.8",
+        "@nestjs/jwt": "^11.0.2",
         "@nestjs/mongoose": "^11.0.3",
+        "@nestjs/passport": "^11.0.5",
         "@nestjs/platform-express": "^11.1.8",
+        "@nestjs/schedule": "^6.1.1",
+        "@nestjs/throttler": "^6.5.0",
+        "bcrypt": "^6.0.0",
+        "cookie-parser": "^1.4.7",
+        "dotenv": "^17.3.1",
+        "ioredis": "^5.9.3",
         "mongoose": "^8.19.2",
+        "nestjs-zod": "^5.1.1",
+        "passport": "^0.7.0",
+        "passport-google-oauth20": "^2.0.0",
+        "passport-jwt": "^4.0.1",
         "reflect-metadata": "^0.2.2",
-        "rxjs": "^7.8.2"
+        "resend": "^6.9.2",
+        "rxjs": "^7.8.2",
+        "stripe": "^20.4.0",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.1",
@@ -38,15 +54,20 @@
         "@nestjs/testing": "^11.1.8",
         "@swc/cli": "^0.7.8",
         "@swc/core": "^1.13.5",
+        "@types/bcrypt": "^6.0.0",
+        "@types/cookie-parser": "^1.4.10",
         "@types/express": "^5.0.5",
         "@types/jest": "^30.0.0",
         "@types/node": "^24.9.2",
+        "@types/passport-google-oauth20": "^2.0.17",
+        "@types/passport-jwt": "^4.0.1",
         "@types/supertest": "^6.0.3",
         "eslint": "^9.38.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
         "globals": "^16.4.0",
         "jest": "^30.2.0",
+        "mongodb-memory-server": "^11.0.1",
         "prettier": "^3.6.2",
         "source-map-support": "^0.5.21",
         "supertest": "^7.1.4",
@@ -72,6 +93,11 @@
             "**/*.(t|j)s"
         ],
         "coverageDirectory": "../coverage",
-        "testEnvironment": "node"
+        "testEnvironment": "node",
+        "setupFiles": ["./test-setup.ts"],
+        "moduleNameMapper": {
+            "^@lucidship/types$": "<rootDir>/../../../packages/types/src/index.ts",
+            "^@lucidship/types/(.*)$": "<rootDir>/../../../packages/types/src/$1"
+        }
     }
 }

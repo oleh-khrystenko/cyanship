@@ -1,53 +1,46 @@
 'use client';
 
-import { FC, useEffect } from 'react';
-import { useSettingsStore } from '@/stores/settings';
-import { CTheme, TTheme } from '@/shared/types/settings';
-import { SunIcon, MoonIcon } from '@/shared/icons';
-import UiSwitch from '@/shared/ui/UiSwitch';
+import { FC } from 'react';
+import { useTheme } from 'next-themes';
+import { Sun, Moon, SunMoon } from 'lucide-react';
+import { THEME, Theme } from '@/shared/types/settings';
+import UiButton from '@/shared/ui/UiButton';
+
+const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
+    { value: THEME.LIGHT, icon: Sun, label: 'Light' },
+    { value: THEME.SYSTEM, icon: SunMoon, label: 'System' },
+    { value: THEME.DARK, icon: Moon, label: 'Dark' },
+];
 
 const ChangeTheme: FC = () => {
-    const theme = useSettingsStore((state) => state.theme);
-    const setTheme = useSettingsStore((state) => state.setTheme);
-
-    const handleToggleTheme = () => {
-        const newTheme = theme === CTheme.LIGHT ? CTheme.DARK : CTheme.LIGHT;
-        setTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
-        document.documentElement.classList.remove(theme);
-        document.documentElement.classList.add(newTheme);
-    };
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            setTheme(savedTheme as TTheme);
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.documentElement.classList.add(savedTheme);
-        } else {
-            const prefersDark = window.matchMedia(
-                '(prefers-color-scheme: dark)'
-            ).matches;
-            const defaultTheme = prefersDark ? CTheme.DARK : CTheme.LIGHT;
-            setTheme(defaultTheme);
-            document.documentElement.setAttribute('data-theme', defaultTheme);
-            document.documentElement.classList.add(defaultTheme);
-        }
-    }, [setTheme]);
+    const { theme, setTheme } = useTheme();
 
     return (
-        <>
-            <UiSwitch
-                id="theme-switcher"
-                name="theme-switcher"
-                checked={theme === CTheme.DARK}
-                onChange={handleToggleTheme}
-            >
-                <SunIcon />
-                <MoonIcon />
-            </UiSwitch>
-        </>
+        <div
+            role="group"
+            aria-label="Theme"
+            className="bg-surface border-border flex items-center rounded-full border p-0.5"
+        >
+            {THEME_OPTIONS.map(({ value, icon: Icon, label }) => {
+                const isActive = theme === value;
+                return (
+                    <UiButton
+                        key={value}
+                        variant="icon"
+                        size="sm"
+                        aria-label={label}
+                        aria-pressed={isActive}
+                        onClick={() => setTheme(value)}
+                        className={
+                            isActive
+                                ? 'rounded-full bg-primary/15 !text-primary'
+                                : 'rounded-full !text-text-secondary hover:!text-text-primary'
+                        }
+                        IconLeft={Icon}
+                    />
+                );
+            })}
+        </div>
     );
 };
 

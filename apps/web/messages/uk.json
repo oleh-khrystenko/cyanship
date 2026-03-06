@@ -1,11 +1,183 @@
 {
-    "all_pages": {
-        "slogan": "Створи відчуття, що не зникає."
-    },
     "welcome_page": {
         "head": {
-            "title": "Lucid Kit — Створи відчуття, що не зникає",
-            "description": "Онлайн-сервіс для створення персоналізованих wow-привітань у вигляді красивих сторінок. Без реєстрацій і зайвого — просто обери подію, введи ім’я та отримай емоційне привітання за кілька секунд."
+            "title": "LucidShip – Готовий SaaS-бойлерплейт",
+            "description": "LucidShip – готовий SaaS-бойлерплейт з auth, payments, i18n та темами з коробки."
+        },
+        "heading": "LucidShip — ваш готовий SaaS-стартер.",
+        "description": "Все необхідне для швидкого запуску вашого web-додатка.",
+        "cta": "Розпочати"
+    },
+    "auth_page": {
+        "signin": {
+            "heading": "Вхід до LucidShip",
+            "subheading": "Запустіть свій SaaS швидше — auth, payments та i18n з коробки",
+            "email_label": "Email",
+            "email_placeholder": "your@email.com",
+            "continue_button": "Продовжити",
+            "or_divider": "або",
+            "google_button": "Увійти через Google",
+            "password_label": "Пароль",
+            "password_placeholder": "Введіть пароль",
+            "signin_button": "Увійти",
+            "forgot_password": "Забули пароль?",
+            "forgot_password_sent": "Якщо акаунт з цією адресою існує, ми надіслали посилання для зміни пароля",
+            "change_email": "Змінити",
+            "other_email": "Інший email",
+            "magic_link_sent_title": "Перевірте пошту",
+            "magic_link_sent_description": "Ми надіслали посилання на {email}. Перевірте папку \"Вхідні\" та натисніть на посилання для входу.",
+            "invalid_credentials": "Невірний email або пароль",
+            "too_many_attempts": "Забагато спроб. Спробуйте через {minutes} хвилин або скористайтесь посиланням «Забули пароль?»",
+            "login_via_email_link": "Увійти через email-посилання",
+            "session_revoked": "Сесію завершено. Увійдіть знову",
+            "error_generic": "Щось пішло не так. Спробуйте ще раз"
+        },
+        "recovery": {
+            "title": "Акаунт деактивовано",
+            "description": "Ваш акаунт було видалено {date}. Він буде остаточно видалено через {days} днів.",
+            "restore_button": "Відновити акаунт",
+            "logout_button": "Вийти",
+            "restored": "Акаунт відновлено!"
+        },
+        "callback": {
+            "loading": "Авторизація…",
+            "account_deleted_description": "Ваш акаунт заплановано до видалення. Відновіть його, натиснувши кнопку нижче."
+        },
+        "verify": {
+            "verifying": "Перевіряємо посилання…",
+            "redirecting": "Перенаправлення…",
+            "error_heading": "Посилання недійсне або прострочене",
+            "error_description": "Посилання для входу, яке ви використали, більше не дійсне. Будь ласка, запросіть нове.",
+            "retry_button": "Спробувати знову",
+            "deleted_heading": "Акаунт видалено",
+            "deleted_description": "Ваш акаунт деактивовано. Протягом 30 днів ви можете відновити його — просто увійдіть до системи.",
+            "deleted_signin_button": "Увійти"
+        }
+    },
+    "notifications": {
+        "auth": {
+            "magic_link_sent": "Посилання надіслано на вашу пошту",
+            "logged_out": "Ви вийшли з акаунту",
+            "account_deleted": "Акаунт видалено"
+        }
+    },
+    "errors": {
+        "auth": {
+            "unauthorized": "Час сесії вичерпано. Увійдіть знову",
+            "invalid_magic_link": "Посилання недійсне або прострочене"
+        },
+        "payments": {
+            "already_subscribed": "У вас вже є активна підписка.",
+            "subscription_required": "Для доступу потрібна активна підписка.",
+            "no_billing_account": "Платіжний акаунт не знайдено. Оформіть підписку."
+        },
+        "generic": {
+            "validation_error": "Перевірте введені дані",
+            "rate_limit_exceeded": "Забагато запитів. Спробуйте через 15 хвилин",
+            "internal_error": "Сталася помилка. Спробуйте пізніше",
+            "unknown": "Сталася помилка. Спробуйте пізніше"
+        }
+    },
+    "profile_page": {
+        "heading": "Профіль",
+        "new_heading": "Заповніть профіль",
+        "form": {
+            "name_label": "Ім'я",
+            "name_placeholder": "Ваше ім'я",
+            "name_required": "Ім'я обов'язкове",
+            "last_name_label": "Прізвище",
+            "last_name_placeholder": "Ваше прізвище",
+            "avatar_label": "Аватар (URL)",
+            "avatar_placeholder": "https://example.com/photo.jpg",
+            "language_label": "Мова",
+            "save_button": "Зберегти",
+            "saved": "Профіль оновлено",
+            "save_error": "Не вдалося зберегти профіль"
+        },
+        "security": {
+            "heading": "Безпека",
+            "set_password": "Встановити пароль",
+            "set_password_optional": "Встановити пароль (опціонально)",
+            "change_password": "Змінити пароль",
+            "delete_password": "Видалити пароль",
+            "current_password_label": "Поточний пароль",
+            "new_password_label": "Новий пароль",
+            "password_placeholder": "Мінімум 8 символів",
+            "show_password": "Показати пароль",
+            "hide_password": "Сховати пароль",
+            "password_set": "Пароль встановлено",
+            "password_changed": "Пароль змінено. Інші пристрої було відключено",
+            "password_deleted": "Пароль видалено",
+            "password_invalid": "Невірний пароль",
+            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google.",
+            "cancel": "Скасувати"
+        },
+        "danger_zone": {
+            "heading": "Небезпечна зона",
+            "delete_title": "Видалення акаунту",
+            "delete_description": "Після видалення у вас є 30 днів для відновлення акаунту.",
+            "delete_button": "Видалити акаунт",
+            "resend_button": "Надіслати повторно",
+            "resend_button_cooldown": "Надіслати повторно ({seconds}с)"
+        }
+    },
+    "delete_account_modal": {
+        "title": "Видалення акаунту",
+        "description": "Ви впевнені? Ваш акаунт буде деактивовано. У вас буде 30 днів для відновлення.",
+        "password_label": "Введіть пароль для підтвердження",
+        "cancel_button": "Скасувати",
+        "confirm_button": "Видалити акаунт",
+        "magic_link_sent": "Посилання для підтвердження надіслано на пошту",
+        "rate_limit": "Забагато запитів. Спробуйте через 15 хвилин",
+        "magic_link_sent_title": "Перевірте пошту",
+        "magic_link_sent_description": "Посилання для підтвердження видалення акаунту надіслано на вашу адресу. Посилання дійсне 15 хвилин.",
+        "deleted": "Акаунт деактивовано",
+        "invalid_password": "Невірний пароль"
+    },
+    "billing_page": {
+        "head": {
+            "title": "Підписка"
+        },
+        "subscribe": {
+            "title": "Оформіть підписку",
+            "description": "Відкрийте преміум-можливості для свого продукту.",
+            "plan_label": "План: Monthly",
+            "button": "Оформити підписку",
+            "error": "Не вдалося створити сесію оплати"
+        },
+        "active": {
+            "title": "Ваша підписка",
+            "status_active": "Активна",
+            "status_canceling": "Активна до {date}",
+            "plan_label": "План: {plan}",
+            "next_billing": "Наступне списання: {date}",
+            "cancel_notice": "Підписку буде скасовано після завершення поточного періоду.",
+            "manage_button": "Керувати підпискою",
+            "manage_error": "Не вдалося відкрити портал керування"
+        },
+        "callback": {
+            "loading": "Обробка оплати…",
+            "success": "Підписку оформлено",
+            "canceled": "Оплату скасовано",
+            "refresh_error": "Не вдалося оновити дані. Перезавантажте сторінку."
+        },
+        "credits": {
+            "title": "Кредити",
+            "description": "Придбайте кредити для використання послуг. Кожна дія списує 1 кредит.",
+            "balance": "Поточний баланс: {count} кр.",
+            "pack_label": "{count} кредитів",
+            "buy_button": "Придбати",
+            "error": "Не вдалося створити сесію оплати. Спробуйте ще раз."
+        }
+    },
+    "components": {
+        "header": {
+            "signin": "Увійти",
+            "logout": "Вийти",
+            "credits": "кредитів"
+        },
+        "change_lang": {
+            "label": "Змінити мову"
         }
     }
 }

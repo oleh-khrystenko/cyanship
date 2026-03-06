@@ -1,11 +1,25 @@
 {
-    "name": "@acw/types",
+    "name": "@lucidship/types",
     "version": "1.0.0",
-    "types": "src/index.ts",
-    "scripts": {},
+    "main": "./dist/index.js",
+    "types": "./src/index.ts",
     "exports": {
-        ".": "./src/index.ts"
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./dist/index.js"
+        },
+        "./agency": {
+            "types": "./src/agency.ts",
+            "default": "./dist/agency.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "dev": "tsc -p tsconfig.build.json --watch"
     },
     "license": "MIT",
-    "packageManager": "pnpm@10.12.1"
+    "packageManager": "pnpm@10.12.1",
+    "dependencies": {
+        "zod": "^4.3.6"
+    }
 }

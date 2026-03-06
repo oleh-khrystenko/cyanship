@@ -2,52 +2,58 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import { Mulish } from 'next/font/google';
+import localFont from 'next/font/local';
 import '@/app/globals.css';
-import { IPageParams } from '@/shared/types/settings';
+import { PageParams } from '@/shared/types/settings';
+import { Header } from '@/widgets/header';
+import { AuthInitializer } from '@/features/auth';
+import { Providers } from '@/app/providers';
 
-const setInitialTheme = `
-    (function() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.documentElement.classList.add(savedTheme);
-        } else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const defaultTheme = prefersDark ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', defaultTheme);
-            document.documentElement.classList.add(defaultTheme);
-        }
-    })();
-`;
-
-const mulish = Mulish({
-    subsets: ['cyrillic', 'latin'],
-    weight: ['300', '400', '700'],
+const mulish = localFont({
+    src: [
+        {
+            path: '../../shared/fonts/mulish-cyrillic.woff2',
+            style: 'normal',
+        },
+        {
+            path: '../../shared/fonts/mulish-latin.woff2',
+            style: 'normal',
+        },
+    ],
+    display: 'swap',
 });
 
-interface ILocaleLayoutProps extends IPageParams {
+interface LocaleLayoutProps extends PageParams {
     children: ReactNode;
 }
 
 export default async function LocaleLayout({
     children,
     params,
-}: ILocaleLayoutProps) {
+}: LocaleLayoutProps) {
     const { locale } = await params;
     if (!hasLocale(routing.locales, locale)) {
         notFound();
     }
 
     return (
-        <html lang={locale}>
+        <html lang={locale} suppressHydrationWarning>
             <head>
+                <meta name="darkreader-lock" />
+                <meta name="color-scheme" content="light dark" />
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-                <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
             </head>
 
-            <body className={`${mulish.className} bg-onyx text-snow`}>
-                <NextIntlClientProvider>{children}</NextIntlClientProvider>
+            <body
+                className={`${mulish.className} bg-background text-text-primary`}
+            >
+                <Providers>
+                    <NextIntlClientProvider>
+                        <AuthInitializer />
+                        <Header />
+                        {children}
+                    </NextIntlClientProvider>
+                </Providers>
             </body>
         </html>
     );

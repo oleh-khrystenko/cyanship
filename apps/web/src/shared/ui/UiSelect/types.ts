@@ -1,13 +1,24 @@
 import { ReactNode } from 'react';
 
-interface IOption {
+export type UiSelectVariant = 'filled' | 'outlined';
+export type UiSelectSize = 'sm' | 'md' | 'lg';
+
+export interface UiSelectOption {
     label: ReactNode;
     value: string;
 }
 
-export interface IProps {
-    options: IOption[];
+/**
+ * Base props for UiSelect component
+ */
+export interface UiSelectProps {
+    options: UiSelectOption[];
+    value: string;
+    onChange: (value: string) => void;
+    variant?: UiSelectVariant;
+    size?: UiSelectSize;
+    className?: string;
+    disabled?: boolean;
+    placeholder?: string;
     label?: string;
-    value: IOption['value'];
-    onChange: (value: IOption['value']) => void;
 }

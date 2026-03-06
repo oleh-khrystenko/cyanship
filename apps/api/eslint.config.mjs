@@ -30,5 +30,37 @@ export default tseslint.config(
             '@typescript-eslint/no-floating-promises': 'warn',
             '@typescript-eslint/no-unsafe-argument': 'warn',
         },
+    },
+    {
+        ignores: ['src/modules/agency/**'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['**/modules/agency/**', '../agency/**', './agency/**'],
+                            message:
+                                'Core modules must not import from agency. See docs/conventions/modular-boundaries.md',
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
+        rules: {
+            '@typescript-eslint/unbound-method': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-unsafe-return': 'off',
+            '@typescript-eslint/require-await': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                { argsIgnorePattern: '^_' },
+            ],
+        },
     }
 );

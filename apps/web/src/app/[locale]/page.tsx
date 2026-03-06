@@ -1,35 +1,26 @@
 import { useTranslations } from 'next-intl';
 import { Metadata } from 'next';
-import ChangeLang from '@/features/change-lang';
 import { fetchMetadata } from '@/shared/seo/metadata';
-import { IMetaProps } from '@/shared/types/settings';
-import ChangeTheme from '@/features/change-theme';
-import UiLogo from '@/shared/ui/UiLogo';
+import { MetaProps } from '@/shared/types/settings';
 
-export async function generateMetadata(props: IMetaProps): Promise<Metadata> {
+export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     return await fetchMetadata({ ...props, page: 'welcome', href: 'welcome' });
 }
 
 export default function HomePage() {
-    const allPagesT = useTranslations('all_pages');
+    const welcomeT = useTranslations('welcome_page');
 
     return (
-        <main className="tablet-md:p-0 flex h-full min-h-screen flex-col pb-14">
-            <header>
-                <div className="container flex items-center justify-between gap-6 py-4">
-                    <UiLogo />
-
-                    <div className="flex items-center gap-4">
-                        <ChangeTheme />
-
-                        <ChangeLang />
-                    </div>
-                </div>
-            </header>
-
-            <section className="container text-4xl">
-                <h1>{allPagesT('slogan')}</h1>
-            </section>
+        <main className="container flex h-full min-h-screen flex-col justify-center gap-6 py-12">
+            <p className="text-text-secondary text-sm tracking-[0.25em] uppercase">
+                LucidShip
+            </p>
+            <h1 className="text-text-primary text-4xl font-semibold">
+                {welcomeT('heading')}
+            </h1>
+            <p className="text-text-secondary max-w-2xl text-lg">
+                {welcomeT('description')}
+            </p>
         </main>
     );
 }

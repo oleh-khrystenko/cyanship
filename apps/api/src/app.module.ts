@@ -1,22 +1,41 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ENV } from './config/env';
+import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
         }),
-        MongooseModule.forRoot(ENV.MONGODB_URI, {
-            dbName: ENV.MONGODB_DB_NAME,
+        ThrottlerModule.forRoot({
+            throttlers: [{ ttl: 60000, limit: 60 }],
         }),
+        ScheduleModule.forRoot(),
+        MongooseModule.forRoot(ENV.MONGODB_URI),
+        AuthModule,
         UsersModule,
+        ReportsModule,
+        StorageModule,
+        PaymentsModule,
     ],
     controllers: [AppController],
-    providers: [AppService],
+    providers: [
+        AppService,
+        {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+        },
+    ],
 })
 export class AppModule {}

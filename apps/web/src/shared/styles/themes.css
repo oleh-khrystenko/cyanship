@@ -1,39 +1,60 @@
 /* 🌞 Light theme — за замовчуванням */
 :root {
-    --onyx: #f9fafb;
-    --ash: #f3f4f6;
-    --graphite: #d1d5db;
+    /* Primary */
+    --primary: #3b82f6;
+    --primary-dark: #1e3a8a;
+    --primary-light: #93c5fd;
 
-    --snow: #101820;
+    /* Neutrals */
+    --background: #f9fafb;
+    --surface: #ffffff;
+    --surface-hover: #f3f4f6;
+    --border: #e5e7eb;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
 
-    --ember: #e63921;
-
-    --ocean: #377dff;
+    /* Status */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
 }
 
 /* 🌚 Темна тема через клас .dark */
 .dark,
 [data-theme='dark'] {
-    --onyx: #101820;
-    --ash: #1a2b34;
-    --graphite: #2b3a42;
+    /* Primary */
+    --primary: #60a5fa;
+    --primary-dark: #1e40af;
+    --primary-light: #bfdbfe;
 
-    --snow: #f8faf9;
+    /* Neutrals */
+    --background: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #273449;
+    --border: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
 
-    --ember: #ff5e45;
-
-    --ocean: #5794ff;
+    /* Status */
+    --success: #22c55e;
+    --warning: #fbbf24;
+    --error: #f87171;
 }
 
 /* 🎨 Прив’язка змінних до Tailwind токенів */
 @theme inline {
-    --color-onyx: var(--onyx);
-    --color-ash: var(--ash);
-    --color-graphite: var(--graphite);
+    --color-primary: var(--primary);
+    --color-primary-dark: var(--primary-dark);
+    --color-primary-light: var(--primary-light);
 
-    --color-snow: var(--snow);
+    --color-background: var(--background);
+    --color-surface: var(--surface);
+    --color-surface-hover: var(--surface-hover);
+    --color-border: var(--border);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
 
-    --color-ember: var(--ember);
-
-    --color-ocean: var(--ocean);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-error: var(--error);
 }

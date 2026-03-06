@@ -1,11 +1,183 @@
 {
-    "all_pages": {
-        "slogan": "Make them feel it forever."
-    },
     "welcome_page": {
         "head": {
-            "title": "Lucid Kit — Make them feel it forever",
-            "description": "An online service for creating personalized wow greetings as beautiful web pages. No registration, no hassle — just pick an occasion, enter a name, and get an emotional greeting in seconds."
+            "title": "LucidShip – Production-ready SaaS Boilerplate",
+            "description": "LucidShip is a production-ready SaaS boilerplate with auth, payments, i18n, and theming out of the box."
+        },
+        "heading": "LucidShip — your production-ready SaaS starter.",
+        "description": "Everything you need to ship your web app faster.",
+        "cta": "Get Started"
+    },
+    "auth_page": {
+        "signin": {
+            "heading": "Sign in to LucidShip",
+            "subheading": "Launch your SaaS faster with production-ready auth, payments, and more",
+            "email_label": "Email",
+            "email_placeholder": "your@email.com",
+            "continue_button": "Continue",
+            "or_divider": "or",
+            "google_button": "Sign in with Google",
+            "password_label": "Password",
+            "password_placeholder": "Enter password",
+            "signin_button": "Sign In",
+            "forgot_password": "Forgot password?",
+            "forgot_password_sent": "If an account with this email exists, we sent a password reset link",
+            "change_email": "Change",
+            "other_email": "Different email",
+            "magic_link_sent_title": "Check your email",
+            "magic_link_sent_description": "We sent a link to {email}. Check your inbox and click the link to sign in.",
+            "invalid_credentials": "Invalid email or password",
+            "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
+            "login_via_email_link": "Sign in via email link",
+            "session_revoked": "Session ended. Please sign in again",
+            "error_generic": "Something went wrong. Please try again"
+        },
+        "recovery": {
+            "title": "Account deactivated",
+            "description": "Your account was deleted on {date}. It will be permanently removed in {days} days.",
+            "restore_button": "Restore account",
+            "logout_button": "Sign out",
+            "restored": "Account restored!"
+        },
+        "callback": {
+            "loading": "Signing you in…",
+            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below."
+        },
+        "verify": {
+            "verifying": "Verifying your link…",
+            "redirecting": "Redirecting…",
+            "error_heading": "Link is invalid or expired",
+            "error_description": "The sign-in link you used is no longer valid. Please request a new one.",
+            "retry_button": "Try again",
+            "deleted_heading": "Account deleted",
+            "deleted_description": "Your account has been deactivated. You have 30 days to restore it — just sign in during that time.",
+            "deleted_signin_button": "Sign in"
+        }
+    },
+    "notifications": {
+        "auth": {
+            "magic_link_sent": "A sign-in link has been sent to your email",
+            "logged_out": "You have been logged out",
+            "account_deleted": "Account deleted"
+        }
+    },
+    "errors": {
+        "auth": {
+            "unauthorized": "Your session has expired. Please sign in again",
+            "invalid_magic_link": "The link is invalid or has expired"
+        },
+        "payments": {
+            "already_subscribed": "You already have an active subscription.",
+            "subscription_required": "An active subscription is required for access.",
+            "no_billing_account": "No billing account found. Please subscribe first."
+        },
+        "generic": {
+            "validation_error": "Please check the entered data",
+            "rate_limit_exceeded": "Too many requests. Please try again in 15 minutes",
+            "internal_error": "Something went wrong. Please try again later",
+            "unknown": "Something went wrong. Please try again later"
+        }
+    },
+    "profile_page": {
+        "heading": "Profile",
+        "new_heading": "Complete your profile",
+        "form": {
+            "name_label": "First name",
+            "name_placeholder": "Your name",
+            "name_required": "Name is required",
+            "last_name_label": "Last name",
+            "last_name_placeholder": "Your last name",
+            "avatar_label": "Avatar (URL)",
+            "avatar_placeholder": "https://example.com/photo.jpg",
+            "language_label": "Language",
+            "save_button": "Save",
+            "saved": "Profile updated",
+            "save_error": "Failed to save profile"
+        },
+        "security": {
+            "heading": "Security",
+            "set_password": "Set password",
+            "set_password_optional": "Set password (optional)",
+            "change_password": "Change password",
+            "delete_password": "Delete password",
+            "current_password_label": "Current password",
+            "new_password_label": "New password",
+            "password_placeholder": "Minimum 8 characters",
+            "show_password": "Show password",
+            "hide_password": "Hide password",
+            "password_set": "Password set",
+            "password_changed": "Password changed. Other devices have been signed out",
+            "password_deleted": "Password deleted",
+            "password_invalid": "Invalid password",
+            "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google.",
+            "cancel": "Cancel"
+        },
+        "danger_zone": {
+            "heading": "Danger zone",
+            "delete_title": "Delete account",
+            "delete_description": "After deletion you have 30 days to restore your account.",
+            "delete_button": "Delete account",
+            "resend_button": "Resend",
+            "resend_button_cooldown": "Resend ({seconds}s)"
+        }
+    },
+    "delete_account_modal": {
+        "title": "Delete account",
+        "description": "Are you sure? Your account will be deactivated. You will have 30 days to restore it.",
+        "password_label": "Enter password to confirm",
+        "cancel_button": "Cancel",
+        "confirm_button": "Delete account",
+        "magic_link_sent": "Confirmation link sent to your email",
+        "rate_limit": "Too many requests. Please try again in 15 minutes",
+        "magic_link_sent_title": "Check your email",
+        "magic_link_sent_description": "A confirmation link to delete your account has been sent to your address. The link is valid for 15 minutes.",
+        "deleted": "Account deactivated",
+        "invalid_password": "Invalid password"
+    },
+    "billing_page": {
+        "head": {
+            "title": "Subscription"
+        },
+        "subscribe": {
+            "title": "Subscribe",
+            "description": "Unlock all premium features and take your product further.",
+            "plan_label": "Plan: Monthly",
+            "button": "Subscribe",
+            "error": "Failed to create checkout session"
+        },
+        "active": {
+            "title": "Your subscription",
+            "status_active": "Active",
+            "status_canceling": "Active until {date}",
+            "plan_label": "Plan: {plan}",
+            "next_billing": "Next billing: {date}",
+            "cancel_notice": "Your subscription will be canceled at the end of the current period.",
+            "manage_button": "Manage subscription",
+            "manage_error": "Failed to open management portal"
+        },
+        "callback": {
+            "loading": "Processing payment…",
+            "success": "Subscription activated",
+            "canceled": "Payment canceled",
+            "refresh_error": "Failed to update data. Please reload the page."
+        },
+        "credits": {
+            "title": "Credits",
+            "description": "Purchase credits to use services. Each action uses 1 credit.",
+            "balance": "Current balance: {count} cr.",
+            "pack_label": "{count} credits",
+            "buy_button": "Buy",
+            "error": "Failed to create payment session. Please try again."
+        }
+    },
+    "components": {
+        "header": {
+            "signin": "Sign in",
+            "logout": "Log out",
+            "credits": "credits"
+        },
+        "change_lang": {
+            "label": "Change language"
         }
     }
 }
