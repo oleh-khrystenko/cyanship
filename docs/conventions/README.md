@@ -15,6 +15,7 @@
 | Env Sync | [env-sync.md](env-sync.md) | Синхронізація env vars між env.ts, .env та .env.example |
 | Modular Boundaries | [modular-boundaries.md](modular-boundaries.md) | Core/Agency розділення, однонаправлені залежності, fork checklist |
 | UI Primitives | [ui-primitives.md](ui-primitives.md) | Заборона нативних HTML-елементів, єдиний набір Ui-компонентів |
+| Design Tokens | [design-tokens.md](design-tokens.md) | Заборона хардкоджених кольорів/шрифтів, використання дизайн-токенів |
 
 ## Як додати нове правило
 
