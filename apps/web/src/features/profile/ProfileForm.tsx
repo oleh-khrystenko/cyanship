@@ -42,7 +42,6 @@ const ProfileForm = ({
     const parsed = parseName(user.profile.name);
     const [firstName, setFirstName] = useState(parsed.firstName);
     const [lastName, setLastName] = useState(parsed.lastName);
-    const [avatar, setAvatar] = useState(user.profile.avatar ?? '');
     const [submitting, setSubmitting] = useState(false);
     const [nameError, setNameError] = useState('');
 
@@ -61,7 +60,6 @@ const ProfileForm = ({
             const fullName = combineName(firstName, lastName);
             await updateProfile({
                 name: fullName || undefined,
-                avatar: avatar.trim() || undefined,
             });
             const me = await getMe();
             setUser(me);
@@ -106,20 +104,6 @@ const ProfileForm = ({
                     placeholder={t('last_name_placeholder')}
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    disabled={!editable}
-                    size="lg"
-                />
-            </div>
-
-            <div>
-                <label className="text-text-secondary mb-1 block text-sm">
-                    {t('avatar_label')}
-                </label>
-                <UiInput
-                    type="url"
-                    placeholder={t('avatar_placeholder')}
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
                     disabled={!editable}
                     size="lg"
                 />
