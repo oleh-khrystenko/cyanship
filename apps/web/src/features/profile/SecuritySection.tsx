@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserProfile } from '@lucidship/types';
 import { AxiosError } from 'axios';
@@ -150,22 +150,18 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             size="lg"
                             className="pr-12"
                         />
-                        <button
-                            type="button"
+                        <UiButton
+                            variant="icon-compact"
+                            size="md"
                             onClick={() => setShowNew(!showNew)}
-                            className="text-text-secondary hover:text-text-primary absolute right-3 top-[18px] -translate-y-1/2"
+                            className="absolute right-3 top-[18px] -translate-y-1/2"
                             aria-label={
                                 showNew
                                     ? t('hide_password')
                                     : t('show_password')
                             }
-                        >
-                            {showNew ? (
-                                <EyeOff className="h-5 w-5" />
-                            ) : (
-                                <Eye className="h-5 w-5" />
-                            )}
-                        </button>
+                            IconLeft={(showNew ? EyeOff : Eye) as LucideIcon}
+                        />
                     </div>
                     <UiButton
                         type="submit"
@@ -210,24 +206,20 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                                 size="lg"
                                 className="pr-12"
                             />
-                            <button
-                                type="button"
+                            <UiButton
+                                variant="icon-compact"
+                                size="md"
                                 onClick={() =>
                                     setShowCurrent(!showCurrent)
                                 }
-                                className="text-text-secondary hover:text-text-primary absolute bottom-[18px] right-3 -translate-y-1/2"
+                                className="absolute bottom-[18px] right-3 -translate-y-1/2"
                                 aria-label={
                                     showCurrent
                                         ? t('hide_password')
                                         : t('show_password')
                                 }
-                            >
-                                {showCurrent ? (
-                                    <EyeOff className="h-5 w-5" />
-                                ) : (
-                                    <Eye className="h-5 w-5" />
-                                )}
-                            </button>
+                                IconLeft={(showCurrent ? EyeOff : Eye) as LucideIcon}
+                            />
                         </div>
                     )}
 
@@ -244,22 +236,18 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             size="lg"
                             className="pr-12"
                         />
-                        <button
-                            type="button"
+                        <UiButton
+                            variant="icon-compact"
+                            size="md"
                             onClick={() => setShowNew(!showNew)}
-                            className="text-text-secondary hover:text-text-primary absolute bottom-[18px] right-3 -translate-y-1/2"
+                            className="absolute bottom-[18px] right-3 -translate-y-1/2"
                             aria-label={
                                 showNew
                                     ? t('hide_password')
                                     : t('show_password')
                             }
-                        >
-                            {showNew ? (
-                                <EyeOff className="h-5 w-5" />
-                            ) : (
-                                <Eye className="h-5 w-5" />
-                            )}
-                        </button>
+                            IconLeft={(showNew ? EyeOff : Eye) as LucideIcon}
+                        />
                     </div>
 
                     <div className="flex items-center gap-3">

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Eye, EyeOff, Mail, type LucideIcon } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
@@ -280,13 +280,14 @@ export default function SigninPage() {
                     size="lg"
                     className="pr-20"
                 />
-                <button
-                    type="button"
+                <UiButton
+                    variant="text"
+                    size="sm"
                     onClick={goBackToEmail}
                     className="text-primary absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium hover:underline"
                 >
                     {t('change_email')}
-                </button>
+                </UiButton>
             </div>
 
             <div className="relative">
@@ -301,28 +302,25 @@ export default function SigninPage() {
                     autoFocus
                     className="pr-12"
                 />
-                <button
-                    type="button"
+                <UiButton
+                    variant="icon-compact"
+                    size="md"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-text-secondary hover:text-text-primary absolute right-3 top-[18px] -translate-y-1/2"
-                >
-                    {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                    ) : (
-                        <Eye className="h-5 w-5" />
-                    )}
-                </button>
+                    className="absolute right-3 top-[18px] -translate-y-1/2"
+                    IconLeft={(showPassword ? EyeOff : Eye) as LucideIcon}
+                />
             </div>
 
             <div className="text-right">
-                <button
-                    type="button"
+                <UiButton
+                    variant="text"
+                    size="sm"
                     onClick={handleForgotPassword}
                     disabled={submitting}
                     className="text-primary text-sm font-medium hover:underline"
                 >
                     {t('forgot_password')}
-                </button>
+                </UiButton>
             </div>
 
             <UiButton
@@ -368,13 +366,14 @@ export default function SigninPage() {
                 </p>
             </div>
 
-            <button
-                type="button"
+            <UiButton
+                variant="text"
+                size="sm"
                 onClick={goBackToEmail}
                 className="text-primary mx-auto block text-sm font-medium hover:underline"
             >
                 &larr; {t('other_email')}
-            </button>
+            </UiButton>
         </div>
     );
 

@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { LogOut } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
@@ -32,18 +31,28 @@ const Header = () => {
     return (
         <header className="bg-background sticky top-0 z-50 shadow-sm">
             <div className="container flex items-center justify-between gap-6 py-4">
-                <Link href={`/${locale}`} aria-label="Go to home page">
+                <UiButton
+                    as="link"
+                    href={`/${locale}`}
+                    variant="text"
+                    size="md"
+                    aria-label="Go to home page"
+                    className="p-0"
+                >
                     <Logo />
-                </Link>
+                </UiButton>
 
                 <div className="flex items-center gap-4">
                     {isLoading ? (
                         <div className="h-8 w-20 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-700" />
                     ) : isAuthenticated && user ? (
                         <>
-                            <Link
+                            <UiButton
+                                as="link"
                                 href={`/${locale}/profile`}
-                                className="flex items-center gap-2 transition-opacity hover:opacity-80"
+                                variant="text"
+                                size="sm"
+                                className="flex items-center gap-2 p-0 transition-opacity hover:opacity-80"
                             >
                                 {user.profile.avatar ? (
                                     <Image
@@ -65,7 +74,7 @@ const Header = () => {
                                 <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200">
                                     {user.credits.balance} {t('credits')}
                                 </span>
-                            </Link>
+                            </UiButton>
                             <UiButton
                                 variant="icon-compact"
                                 size="sm"
