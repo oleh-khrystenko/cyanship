@@ -8,7 +8,7 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreditPackCode,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 
 import { PaymentsService } from './payments.service';
 import { PAYMENT_PROVIDER } from './interfaces/payment-provider.interface';
@@ -54,7 +54,9 @@ const mockPaymentProvider = {
 
 /** Build a chainable Mongoose query mock: .maxTimeMS().lean() */
 const chainQuery = (value: unknown) => ({
-    maxTimeMS: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(value) }),
+    maxTimeMS: jest
+        .fn()
+        .mockReturnValue({ lean: jest.fn().mockResolvedValue(value) }),
     lean: jest.fn().mockResolvedValue(value),
 });
 
@@ -126,7 +128,9 @@ describe('PaymentsService', () => {
                 planCode: 'monthly_usd',
             });
 
-            expect(mockPaymentProvider.createCheckoutSession).toHaveBeenCalledWith(
+            expect(
+                mockPaymentProvider.createCheckoutSession
+            ).toHaveBeenCalledWith(
                 expect.objectContaining({
                     userId: MOCK_USER_ID,
                     userEmail: user.email,
@@ -135,7 +139,7 @@ describe('PaymentsService', () => {
                     priceId: 'price_test_monthly',
                     successUrl: 'http://localhost:3000/billing/success',
                     cancelUrl: 'http://localhost:3000/billing/cancel',
-                }),
+                })
             );
             expect(result).toEqual({
                 checkoutUrl: 'https://checkout.stripe.com/test',
@@ -157,11 +161,13 @@ describe('PaymentsService', () => {
                 planCode: 'monthly_usd',
             });
 
-            expect(mockPaymentProvider.createCheckoutSession).toHaveBeenCalledWith(
+            expect(
+                mockPaymentProvider.createCheckoutSession
+            ).toHaveBeenCalledWith(
                 expect.objectContaining({
                     successUrl: 'http://localhost:3000/billing/success',
                     cancelUrl: 'http://localhost:3000/billing/cancel',
-                }),
+                })
             );
         });
 
@@ -193,7 +199,7 @@ describe('PaymentsService', () => {
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                     planCode: 'monthly_usd',
-                }),
+                })
             ).rejects.toThrow(BadRequestException);
         });
 
@@ -204,7 +210,7 @@ describe('PaymentsService', () => {
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                     planCode: 'monthly_usd',
-                }),
+                })
             ).rejects.toThrow(BadRequestException);
         });
     });
@@ -232,17 +238,17 @@ describe('PaymentsService', () => {
             });
 
             expect(result.checkoutUrl).toBe(
-                'https://checkout.stripe.com/one-off',
+                'https://checkout.stripe.com/one-off'
             );
             expect(
-                mockPaymentProvider.createCheckoutSession,
+                mockPaymentProvider.createCheckoutSession
             ).toHaveBeenCalledWith(
                 expect.objectContaining({
                     paymentType: PAYMENT_TYPE.ONE_OFF,
                     planCode: 'credits_5',
                     priceId: 'price_credits5_test',
                     credits: 5,
-                }),
+                })
             );
         });
 
@@ -259,7 +265,7 @@ describe('PaymentsService', () => {
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
                     packCode: 'invalid_pack' as CreditPackCode,
-                }),
+                })
             ).rejects.toThrow(BadRequestException);
         });
 
@@ -270,7 +276,7 @@ describe('PaymentsService', () => {
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
                     packCode: 'credits_5',
-                }),
+                })
             ).rejects.toThrow(BadRequestException);
         });
     });
@@ -291,9 +297,9 @@ describe('PaymentsService', () => {
 
             const result = await service.createPortalSession(MOCK_USER_ID);
 
-            expect(mockPaymentProvider.createPortalSession).toHaveBeenCalledWith(
-                'cus_test_xxx',
-            );
+            expect(
+                mockPaymentProvider.createPortalSession
+            ).toHaveBeenCalledWith('cus_test_xxx');
             expect(result).toEqual({
                 portalUrl: 'https://billing.stripe.com/test',
             });
@@ -339,7 +345,7 @@ describe('PaymentsService', () => {
             });
 
             await expect(
-                service.createPortalSession(MOCK_USER_ID),
+                service.createPortalSession(MOCK_USER_ID)
             ).rejects.toThrow(BadRequestException);
         });
     });
@@ -394,12 +400,12 @@ describe('PaymentsService', () => {
                         type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                         userId: MOCK_USER_ID,
                         status: 'pending',
-                    }),
+                    })
                 );
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_test' },
                     { $set: { status: 'applied' } },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
                 expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
                     expect.objectContaining({ _id: MOCK_USER_ID }),
@@ -413,7 +419,7 @@ describe('PaymentsService', () => {
                             'billing.currency': 'usd',
                         }),
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
         });
@@ -525,9 +531,12 @@ describe('PaymentsService', () => {
                 };
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
-                const dupError = Object.assign(new Error('E11000 duplicate key'), {
-                    code: 11000,
-                });
+                const dupError = Object.assign(
+                    new Error('E11000 duplicate key'),
+                    {
+                        code: 11000,
+                    }
+                );
                 mockWebhookEventModel.create.mockRejectedValue(dupError);
                 mockWebhookEventModel.findOne.mockReturnValue({
                     lean: jest.fn().mockResolvedValue({ status: 'applied' }),
@@ -557,9 +566,12 @@ describe('PaymentsService', () => {
                 };
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
-                const dupError = Object.assign(new Error('E11000 duplicate key'), {
-                    code: 11000,
-                });
+                const dupError = Object.assign(
+                    new Error('E11000 duplicate key'),
+                    {
+                        code: 11000,
+                    }
+                );
                 mockWebhookEventModel.create.mockRejectedValue(dupError);
                 mockWebhookEventModel.findOne.mockReturnValue({
                     lean: jest.fn().mockResolvedValue({ status: 'pending' }),
@@ -573,7 +585,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_retry' },
                     { $set: { status: 'applied' } },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -591,11 +603,11 @@ describe('PaymentsService', () => {
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
                 mockWebhookEventModel.create.mockRejectedValue(
-                    new Error('connection error'),
+                    new Error('connection error')
                 );
 
                 await expect(
-                    service.handleWebhook('stripe', rawBody, signature),
+                    service.handleWebhook('stripe', rawBody, signature)
                 ).rejects.toThrow('connection error');
             });
 
@@ -613,12 +625,12 @@ describe('PaymentsService', () => {
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockRejectedValue(
-                    new Error('DB connection lost'),
+                    new Error('DB connection lost')
                 );
                 mockWebhookEventModel.deleteOne.mockResolvedValue({});
 
                 await expect(
-                    service.handleWebhook('stripe', rawBody, signature),
+                    service.handleWebhook('stripe', rawBody, signature)
                 ).rejects.toThrow('DB connection lost');
 
                 expect(mockWebhookEventModel.deleteOne).toHaveBeenCalledWith(
@@ -627,7 +639,7 @@ describe('PaymentsService', () => {
                         providerEventId: 'evt_fail_apply',
                         status: 'pending',
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -645,14 +657,14 @@ describe('PaymentsService', () => {
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockRejectedValue(
-                    new Error('Original error'),
+                    new Error('Original error')
                 );
                 mockWebhookEventModel.deleteOne.mockRejectedValue(
-                    new Error('Rollback failed'),
+                    new Error('Rollback failed')
                 );
 
                 await expect(
-                    service.handleWebhook('stripe', rawBody, signature),
+                    service.handleWebhook('stripe', rawBody, signature)
                 ).rejects.toThrow('Original error');
             });
         });
@@ -675,7 +687,7 @@ describe('PaymentsService', () => {
                 const staleAt = new Date('2024-05-31T00:00:00Z');
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                    makeEvent(staleAt),
+                    makeEvent(staleAt)
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
@@ -696,7 +708,7 @@ describe('PaymentsService', () => {
                         ],
                     },
                     expect.objectContaining({ $set: expect.any(Object) }),
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -704,7 +716,7 @@ describe('PaymentsService', () => {
                 const staleAt = new Date('2024-05-31T00:00:00Z');
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                    makeEvent(staleAt),
+                    makeEvent(staleAt)
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 // findOneAndUpdate returns null — atomic guard rejected the update
@@ -716,7 +728,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ooo' },
                     { $set: { status: 'applied' } },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -724,7 +736,7 @@ describe('PaymentsService', () => {
                 const newerAt = new Date('2024-06-01T00:00:00Z');
 
                 mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                    makeEvent(newerAt),
+                    makeEvent(newerAt)
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
@@ -735,7 +747,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ooo' },
                     { $set: { status: 'applied' } },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
         });
@@ -779,10 +791,11 @@ describe('PaymentsService', () => {
                             'billing.planCode': 'monthly_usd',
                             'billing.currency': 'usd',
                             'billing.hasActiveSubscription': true,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
+                            'billing.subscriptionStatus':
+                                SUBSCRIPTION_STATUS.ACTIVE,
                         }),
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -810,12 +823,13 @@ describe('PaymentsService', () => {
                     {
                         $set: expect.objectContaining({
                             'billing.hasActiveSubscription': true,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.ACTIVE,
+                            'billing.subscriptionStatus':
+                                SUBSCRIPTION_STATUS.ACTIVE,
                             'billing.currentPeriodEnd': currentPeriodEnd,
                             'billing.cancelAtPeriodEnd': false,
                         }),
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -842,10 +856,11 @@ describe('PaymentsService', () => {
                     {
                         $set: expect.objectContaining({
                             'billing.hasActiveSubscription': true,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.TRIALING,
+                            'billing.subscriptionStatus':
+                                SUBSCRIPTION_STATUS.TRIALING,
                         }),
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -872,10 +887,11 @@ describe('PaymentsService', () => {
                     {
                         $set: expect.objectContaining({
                             'billing.hasActiveSubscription': false,
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.PAST_DUE,
+                            'billing.subscriptionStatus':
+                                SUBSCRIPTION_STATUS.PAST_DUE,
                         }),
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -901,12 +917,13 @@ describe('PaymentsService', () => {
                     expect.objectContaining({ _id: MOCK_USER_ID }),
                     {
                         $set: expect.objectContaining({
-                            'billing.subscriptionStatus': SUBSCRIPTION_STATUS.CANCELED,
+                            'billing.subscriptionStatus':
+                                SUBSCRIPTION_STATUS.CANCELED,
                             'billing.hasActiveSubscription': false,
                             'billing.providerSubscriptionStatus': 'canceled',
                         }),
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -944,8 +961,12 @@ describe('PaymentsService', () => {
                         _id: MOCK_USER_ID,
                         billing: { $ne: null },
                     }),
-                    { $set: expect.objectContaining({ 'billing.provider': 'stripe' }) },
-                    { maxTimeMS: 10000 },
+                    {
+                        $set: expect.objectContaining({
+                            'billing.provider': 'stripe',
+                        }),
+                    },
+                    { maxTimeMS: 10000 }
                 );
 
                 // Phase 2: full subdocument set with billing: null filter
@@ -962,7 +983,7 @@ describe('PaymentsService', () => {
                             }),
                         },
                     },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -984,10 +1005,8 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                const [, update] = mockUserModel.findOneAndUpdate.mock.calls[0] as [
-                    unknown,
-                    { $set: Record<string, unknown> },
-                ];
+                const [, update] = mockUserModel.findOneAndUpdate.mock
+                    .calls[0] as [unknown, { $set: Record<string, unknown> }];
                 // All keys in $set must be dot-notation billing paths
                 for (const key of Object.keys(update.$set)) {
                     expect(key).toMatch(/^billing\./);
@@ -1008,7 +1027,9 @@ describe('PaymentsService', () => {
             };
 
             it('should add credits on ONE_OFF_PAYMENT_COMPLETED', async () => {
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(oneOffEvent);
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                    oneOffEvent
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockResolvedValue(undefined);
@@ -1017,7 +1038,7 @@ describe('PaymentsService', () => {
 
                 expect(mockUsersService.addCredits).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    5,
+                    5
                 );
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
             });
@@ -1032,7 +1053,7 @@ describe('PaymentsService', () => {
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(
-                    chainQuery(mockUser({ billing: staleUserBilling })),
+                    chainQuery(mockUser({ billing: staleUserBilling }))
                 );
                 mockUsersService.addCredits.mockResolvedValue(undefined);
 
@@ -1040,7 +1061,7 @@ describe('PaymentsService', () => {
 
                 expect(mockUsersService.addCredits).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    5,
+                    5
                 );
             });
 
@@ -1109,7 +1130,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ghost_user' },
                     { $set: { status: 'applied' } },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
 
@@ -1133,7 +1154,7 @@ describe('PaymentsService', () => {
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ghost_oneoff' },
                     { $set: { status: 'applied' } },
-                    { maxTimeMS: 10000 },
+                    { maxTimeMS: 10000 }
                 );
             });
         });

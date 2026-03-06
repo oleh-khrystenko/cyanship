@@ -12,6 +12,33 @@ const eslintConfig = [
             ],
         },
     },
+    {
+        ignores: [
+            'src/app/**/\\(agency\\)/**',
+            'src/features/agency/**',
+            'src/entities/agency/**',
+            'src/widgets/agency/**',
+        ],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                '**/features/agency/**',
+                                '**/entities/agency/**',
+                                '**/widgets/agency/**',
+                                '**/(agency)/**',
+                            ],
+                            message:
+                                'Core modules must not import from agency. See docs/conventions/modular-boundaries.md',
+                        },
+                    ],
+                },
+            ],
+        },
+    },
 ];
 
 export default eslintConfig;

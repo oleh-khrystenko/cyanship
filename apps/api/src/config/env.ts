@@ -9,7 +9,7 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import type { CreditPackCode } from '@lucidkit/types';
+import type { CreditPackCode } from '@lucidship/types';
 
 // Load .env from monorepo root before reading process.env.
 // Use __dirname (relative to this file) instead of process.cwd() which varies by runner.
@@ -28,8 +28,7 @@ const nodeEnv = getEnvVar('NODE_ENV', 'development');
 const isProduction = nodeEnv === 'production';
 
 // Compute payment toggles early — credit price env vars are only required when one-off is enabled.
-const oneOffEnabled =
-    getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true';
+const oneOffEnabled = getEnvVar('PAYMENTS_ONE_OFF_ENABLED', 'true') === 'true';
 
 export const ENV = {
     // --- REQUIRED WITH DEFAULTS ---
@@ -53,7 +52,7 @@ export const ENV = {
     // Production: MUST set real sender (verified domain). Dev: uses Resend test sender.
     RESEND_FROM_EMAIL: isProduction
         ? getEnvVar('RESEND_FROM_EMAIL')
-        : getEnvVar('RESEND_FROM_EMAIL', 'LucidKit <onboarding@resend.dev>'),
+        : getEnvVar('RESEND_FROM_EMAIL', 'LucidShip <onboarding@resend.dev>'),
 
     // --- STRIPE (required — crash if missing) ---
     STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),

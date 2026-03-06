@@ -134,9 +134,9 @@ describe('CleanupService', () => {
             await service.handleExpiredAccounts();
 
             // First user: revoke called but failed, so findByIdAndDelete NOT called for user-1
-            expect(
-                mockAuthService.revokeAllUserTokens
-            ).toHaveBeenCalledTimes(2);
+            expect(mockAuthService.revokeAllUserTokens).toHaveBeenCalledTimes(
+                2
+            );
             // Second user: both revoke and delete called
             expect(mockModel.findByIdAndDelete).toHaveBeenCalledWith('user-2');
             expect(mockModel.findByIdAndDelete).toHaveBeenCalledTimes(1);

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import type { Lang, UserProfile } from '@lucidkit/types';
+import type { Lang, UserProfile } from '@lucidship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
 import UiSelect from '@/shared/ui/UiSelect';

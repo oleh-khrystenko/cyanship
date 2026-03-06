@@ -1,6 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { RESPONSE_CODE, MAGIC_LINK_PURPOSE } from '@lucidkit/types';
+import { RESPONSE_CODE, MAGIC_LINK_PURPOSE } from '@lucidship/types';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -57,9 +57,7 @@ describe('AuthController', () => {
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [AuthController],
-            providers: [
-                { provide: AuthService, useValue: mockAuthService },
-            ],
+            providers: [{ provide: AuthService, useValue: mockAuthService }],
         }).compile();
 
         controller = module.get<AuthController>(AuthController);

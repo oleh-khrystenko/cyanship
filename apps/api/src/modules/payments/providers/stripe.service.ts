@@ -6,7 +6,7 @@ import {
     PAYMENT_TYPE,
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { ENV } from '../../../config/env';
 import {
     IPaymentProvider,
@@ -27,7 +27,7 @@ export class StripeService implements IPaymentProvider {
     }
 
     async createCheckoutSession(
-        input: CreateCheckoutInput,
+        input: CreateCheckoutInput
     ): Promise<CheckoutResult> {
         const mode =
             input.paymentType === PAYMENT_TYPE.ONE_OFF
@@ -61,7 +61,7 @@ export class StripeService implements IPaymentProvider {
     }
 
     async createPortalSession(
-        providerCustomerId: string,
+        providerCustomerId: string
     ): Promise<PortalResult> {
         const session = await this.stripe.billingPortal.sessions.create({
             customer: providerCustomerId,
@@ -73,12 +73,12 @@ export class StripeService implements IPaymentProvider {
 
     handleWebhookPayload(
         rawBody: Buffer,
-        signatureHeader: string,
+        signatureHeader: string
     ): BillingWebhookEvent | null {
         const event = this.stripe.webhooks.constructEvent(
             rawBody,
             signatureHeader,
-            ENV.STRIPE_WEBHOOK_SECRET,
+            ENV.STRIPE_WEBHOOK_SECRET
         );
 
         switch (event.type) {
@@ -88,12 +88,12 @@ export class StripeService implements IPaymentProvider {
             case 'customer.subscription.updated':
                 return this.handleSubscriptionEvent(
                     event,
-                    BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED
                 );
             case 'customer.subscription.deleted':
                 return this.handleSubscriptionEvent(
                     event,
-                    BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED,
+                    BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED
                 );
             default:
                 this.logger.debug(`Ignoring Stripe event: ${event.type}`);
@@ -102,23 +102,15 @@ export class StripeService implements IPaymentProvider {
     }
 
     private handleCheckoutCompleted(
-        event: Stripe.Event,
+        event: Stripe.Event
     ): BillingWebhookEvent | null {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId =
-            session.metadata?.userId ||
-            session.client_reference_id ||
-            '';
+            session.metadata?.userId || session.client_reference_id || '';
 
         // One-off payment (mode=payment, paid)
-        if (
-            session.mode === 'payment' &&
-            session.payment_status === 'paid'
-        ) {
-            const credits = parseInt(
-                session.metadata?.credits ?? '0',
-                10,
-            );
+        if (session.mode === 'payment' && session.payment_status === 'paid') {
+            const credits = parseInt(session.metadata?.credits ?? '0', 10);
             return {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                 providerEventId: event.id,
@@ -146,14 +138,16 @@ export class StripeService implements IPaymentProvider {
 
         // Unexpected mode/status — e.g. async payment not yet paid
         this.logger.debug(
-            `Ignoring checkout.session.completed with mode=${session.mode} payment_status=${session.payment_status}`,
+            `Ignoring checkout.session.completed with mode=${session.mode} payment_status=${session.payment_status}`
         );
         return null;
     }
 
     private handleSubscriptionEvent(
         event: Stripe.Event,
-        type: typeof BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED,
+        type:
+            | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED
+            | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED
     ): BillingWebhookEvent {
         const subscription = event.data.object as Stripe.Subscription;
         const periodEnd =
@@ -164,12 +158,8 @@ export class StripeService implements IPaymentProvider {
             providerEventId: event.id,
             occurredAt: new Date(event.created * 1000),
             userId: '',
-            subscriptionStatus: this.mapSubscriptionStatus(
-                subscription.status,
-            ),
-            currentPeriodEnd: periodEnd
-                ? new Date(periodEnd * 1000)
-                : null,
+            subscriptionStatus: this.mapSubscriptionStatus(subscription.status),
+            currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
             cancelAtPeriodEnd: subscription.cancel_at_period_end,
             raw: this.toRaw(event.data.object),
         };

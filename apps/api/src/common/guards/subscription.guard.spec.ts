@@ -1,6 +1,6 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { RESPONSE_CODE } from '@lucidkit/types';
+import { RESPONSE_CODE } from '@lucidship/types';
 
 import { SubscriptionGuard } from './subscription.guard';
 

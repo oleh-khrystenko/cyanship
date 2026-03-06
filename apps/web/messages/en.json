@@ -1,16 +1,16 @@
 {
     "welcome_page": {
         "head": {
-            "title": "LucidKit – Production-ready SaaS Boilerplate",
-            "description": "LucidKit is a production-ready SaaS boilerplate with auth, payments, i18n, and theming out of the box."
+            "title": "LucidShip – Production-ready SaaS Boilerplate",
+            "description": "LucidShip is a production-ready SaaS boilerplate with auth, payments, i18n, and theming out of the box."
         },
-        "heading": "LucidKit — your production-ready SaaS starter.",
+        "heading": "LucidShip — your production-ready SaaS starter.",
         "description": "Everything you need to ship your web app faster.",
         "cta": "Get Started"
     },
     "auth_page": {
         "signin": {
-            "heading": "Sign in to LucidKit",
+            "heading": "Sign in to LucidShip",
             "subheading": "Launch your SaaS faster with production-ready auth, payments, and more",
             "email_label": "Email",
             "email_placeholder": "your@email.com",

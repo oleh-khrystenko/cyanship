@@ -7,7 +7,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { RESPONSE_CODE, type ResponseCode } from '@lucidkit/types';
+import { RESPONSE_CODE, type ResponseCode } from '@lucidship/types';
 
 const HTTP_STATUS_TO_ERROR_CODE: Partial<Record<HttpStatus, ResponseCode>> = {
     [HttpStatus.BAD_REQUEST]: RESPONSE_CODE.VALIDATION_ERROR,
@@ -31,9 +31,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
         const exceptionResponse =
-            exception instanceof HttpException
-                ? exception.getResponse()
-                : null;
+            exception instanceof HttpException ? exception.getResponse() : null;
 
         const message =
             exception instanceof HttpException

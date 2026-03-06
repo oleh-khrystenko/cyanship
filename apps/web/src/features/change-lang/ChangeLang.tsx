@@ -4,7 +4,7 @@ import { FC } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { UA, US } from 'country-flag-icons/react/3x2';
-import { LANG } from '@lucidkit/types';
+import { LANG } from '@lucidship/types';
 import { ChangeLangProps } from './types';
 import UiSelect from '@/shared/ui/UiSelect';
 import type { UiSelectOption } from '@/shared/ui/UiSelect';

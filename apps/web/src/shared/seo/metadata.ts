@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { MetaProps } from '@/shared/types/settings';
-import { LANG } from '@lucidkit/types';
+import { LANG } from '@lucidship/types';
 import { ENV } from '@/shared/config';
 
 const BASE_URL = ENV.NEXT_PUBLIC_BASE_URL;
@@ -22,9 +22,9 @@ export async function fetchMetadata({
         locale = LANG.UK;
     }
 
-    let title = 'LucidKit – Захист ваших ставок';
+    let title = 'LucidShip – Захист ваших ставок';
     let description =
-        'LucidKit – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу.';
+        'LucidShip – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу.';
 
     if (page === null) {
         if (meta) {

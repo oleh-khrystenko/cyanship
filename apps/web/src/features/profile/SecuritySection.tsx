@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import type { UserProfile } from '@lucidkit/types';
+import type { UserProfile } from '@lucidship/types';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';

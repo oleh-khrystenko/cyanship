@@ -102,7 +102,9 @@ describe('AuthService', () => {
                         findOrCreateByGoogle: jest.fn(),
                         findOrCreateByEmail: jest.fn(),
                         setPasswordHash: jest.fn().mockResolvedValue(undefined),
-                        clearPasswordHash: jest.fn().mockResolvedValue(undefined),
+                        clearPasswordHash: jest
+                            .fn()
+                            .mockResolvedValue(undefined),
                         softDelete: jest.fn().mockResolvedValue(undefined),
                     },
                 },
@@ -110,8 +112,9 @@ describe('AuthService', () => {
                     provide: EmailService,
                     useValue: {
                         sendMagicLink: jest.fn().mockResolvedValue(undefined),
-                        sendDeletionConfirmation:
-                            jest.fn().mockResolvedValue(undefined),
+                        sendDeletionConfirmation: jest
+                            .fn()
+                            .mockResolvedValue(undefined),
                     },
                 },
                 {
@@ -429,9 +432,7 @@ describe('AuthService', () => {
             const after = new Date();
             after.setDate(after.getDate() + 30);
 
-            expect(
-                emailService.sendDeletionConfirmation
-            ).toHaveBeenCalledWith(
+            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith(
                 'test@gmail.com',
                 expect.any(Date),
                 'uk'
@@ -443,9 +444,7 @@ describe('AuthService', () => {
             expect(calledDate.getTime()).toBeGreaterThanOrEqual(
                 before.getTime()
             );
-            expect(calledDate.getTime()).toBeLessThanOrEqual(
-                after.getTime()
-            );
+            expect(calledDate.getTime()).toBeLessThanOrEqual(after.getTime());
         });
 
         it('should pass lang parameter to emailService', async () => {
@@ -454,9 +453,11 @@ describe('AuthService', () => {
                 'en'
             );
 
-            expect(
-                emailService.sendDeletionConfirmation
-            ).toHaveBeenCalledWith('test@gmail.com', expect.any(Date), 'en');
+            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith(
+                'test@gmail.com',
+                expect.any(Date),
+                'en'
+            );
         });
     });
 
@@ -767,9 +768,9 @@ describe('AuthService', () => {
             );
             jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
 
-            await expect(
-                authService.verifyMagicLink(token)
-            ).rejects.toThrow(NotFoundException);
+            await expect(authService.verifyMagicLink(token)).rejects.toThrow(
+                NotFoundException
+            );
         });
 
         it('should not create user for delete-account purpose', async () => {
@@ -853,7 +854,10 @@ describe('AuthService', () => {
         });
 
         it('should return hasPassword: true for existing user with password', async () => {
-            const userWithPassword = { ...mockUser, passwordHash: '$2b$10$hash' };
+            const userWithPassword = {
+                ...mockUser,
+                passwordHash: '$2b$10$hash',
+            };
             jest.spyOn(usersService, 'findByEmail').mockResolvedValue(
                 userWithPassword as never
             );
@@ -914,9 +918,7 @@ describe('AuthService', () => {
 
             await authService.checkEmail('test@gmail.com', ip);
 
-            expect(mockPipeline.incr).toHaveBeenCalledWith(
-                `check_email:${ip}`
-            );
+            expect(mockPipeline.incr).toHaveBeenCalledWith(`check_email:${ip}`);
             expect(mockPipeline.expire).toHaveBeenCalledWith(
                 `check_email:${ip}`,
                 60
@@ -1304,17 +1306,17 @@ describe('AuthService', () => {
                 passwordHash: null,
             } as never);
 
-            await expect(
-                authService.deletePassword(userId)
-            ).rejects.toThrow(BadRequestException);
+            await expect(authService.deletePassword(userId)).rejects.toThrow(
+                BadRequestException
+            );
         });
 
         it('should throw BadRequestException if user not found', async () => {
             jest.spyOn(usersService, 'findById').mockResolvedValue(null);
 
-            await expect(
-                authService.deletePassword(userId)
-            ).rejects.toThrow(BadRequestException);
+            await expect(authService.deletePassword(userId)).rejects.toThrow(
+                BadRequestException
+            );
         });
     });
 

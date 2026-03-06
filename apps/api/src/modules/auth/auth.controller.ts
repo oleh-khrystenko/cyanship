@@ -16,7 +16,7 @@ import {
     MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
     type ApiMessageResponse,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { CookieOptions, Request, Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -175,10 +175,7 @@ export class AuthController {
         @CurrentUser() user: UserDocument,
         @Body() dto: SetPasswordDto
     ): Promise<ApiMessageResponse> {
-        await this.authService.setPassword(
-            user._id.toString(),
-            dto.password
-        );
+        await this.authService.setPassword(user._id.toString(), dto.password);
         return {
             data: {
                 code: RESPONSE_CODE.PASSWORD_SET,

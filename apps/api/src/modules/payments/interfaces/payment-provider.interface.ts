@@ -1,4 +1,4 @@
-import { BillingWebhookEvent, PaymentType } from '@lucidkit/types';
+import { BillingWebhookEvent, PaymentType } from '@lucidship/types';
 
 export interface CreateCheckoutInput {
     userId: string;
@@ -26,7 +26,7 @@ export interface IPaymentProvider {
     createPortalSession(providerCustomerId: string): Promise<PortalResult>;
     handleWebhookPayload(
         rawBody: Buffer,
-        signatureHeader: string,
+        signatureHeader: string
     ): BillingWebhookEvent | null;
 }
 

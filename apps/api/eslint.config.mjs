@@ -32,6 +32,23 @@ export default tseslint.config(
         },
     },
     {
+        ignores: ['src/modules/agency/**'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['**/modules/agency/**', '../agency/**', './agency/**'],
+                            message:
+                                'Core modules must not import from agency. See docs/conventions/modular-boundaries.md',
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+    {
         files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
         rules: {
             '@typescript-eslint/unbound-method': 'off',

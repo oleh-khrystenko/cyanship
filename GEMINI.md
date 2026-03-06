@@ -1,4 +1,4 @@
-# LucidKit
+# LucidShip
 > Modern monorepo SaaS boilerplate with Next.js 16, NestJS 11, and Feature-Sliced Design.
 
 ## Tech Stack
@@ -29,8 +29,8 @@
 - **Types:** `packages/types/src/entities/user.ts`.
 
 ## Module Dependency Map
-- `apps/web` → `@lucidkit/types`
-- `apps/api` → `@lucidkit/types`
+- `apps/web` → `@lucidship/types`
+- `apps/api` → `@lucidship/types`
 - `packages/types` → Standalone (Zod для валідації).
 
 ## Key Patterns (CodeDNA)

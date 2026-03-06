@@ -3,7 +3,7 @@ jest.mock('./client', () => ({
 }));
 
 import { apiClient } from './client';
-import { PAYMENT_TYPE } from '@lucidkit/types';
+import { PAYMENT_TYPE } from '@lucidship/types';
 import {
     createSubscriptionCheckout,
     createOneOffCheckout,

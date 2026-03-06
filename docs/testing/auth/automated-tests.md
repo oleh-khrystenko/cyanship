@@ -1,12 +1,12 @@
-# Automated Tests — Service Prompt для AI агента
+# Automated Tests — Auth
 
-> Промпт для Claude Code або іншого AI агента. Мета: створити автоматизовані тести, які максимально покриють auth flow, описаний у `docs/planning/auth-flow.md`.
+> Опис покриття та структури автоматизованих тестів для auth flow. Всі тести реалізовані та проходять. Source of truth для auth сценаріїв — `docs/planning/auth-flow/`.
 
 ---
 
-## Мета
+## Покриття
 
-Створити unit, integration (e2e) та frontend unit тести для повного покриття авторизаційного потоку LucidKit. Source of truth для всіх auth сценаріїв — `docs/planning/auth-flow.md`.
+Unit, integration (e2e) та frontend unit тести для повного покриття авторизаційного потоку LucidShip.
 
 **Scope:**
 
@@ -26,7 +26,7 @@
 
 1. **Специфікацію:** `docs/planning/auth-flow.md` — повний опис всіх auth flows, edge cases, security mechanisms
 2. **Існуючі тести** — зрозумій patterns мокування, структуру, стиль assertions:
-   - `apps/api/src/modules/auth/auth.service.spec.ts` (~55 тестів)
+   - `apps/api/src/modules/auth/auth.service.spec.ts` (~77 тестів)
    - `apps/api/src/modules/users/users.service.spec.ts` (~24 тести)
    - `apps/api/src/modules/auth/services/email.service.spec.ts` (~9 тестів)
    - `apps/api/src/modules/users/cleanup.service.spec.ts` (~5 тестів)
@@ -130,9 +130,9 @@
 - EN template для `reset-password` — перевір subject
 - EN template для `delete-account` — перевір subject
 
-### 2.4 НОВИЙ: `apps/api/src/modules/auth/auth.controller.spec.ts`
+### 2.4 `apps/api/src/modules/auth/auth.controller.spec.ts`
 
-Створи новий файл. Прочитай `auth.controller.ts` щоб зрозуміти:
+Файл покриває:
 - Які endpoints є
 - Як встановлюються cookies
 - Як формуються response objects
@@ -156,9 +156,9 @@
 
 **Мокування:** Mock `AuthService` повністю. Mock `Request` та `Response` objects (cookie, ip, headers).
 
-### 2.5 НОВИЙ: `apps/api/src/modules/users/users.controller.spec.ts`
+### 2.5 `apps/api/src/modules/users/users.controller.spec.ts`
 
-Створи новий файл. Прочитай `users.controller.ts`.
+Файл покриває:
 
 | Endpoint | Що тестувати |
 |---|---|
@@ -273,7 +273,7 @@ createMagicLinkToken(email, purpose) → зберігає token в mocked Redis,
 4. Налаштуй path aliases (`@/*` → `./src/*`)
 5. Налаштуй мокування Next.js modules (`next/navigation`, `next/headers`, `next-intl`)
 
-**ВАЖЛИВО:** Перевір `apps/web/tsconfig.json` та `apps/web/next.config.ts` для правильних path aliases. Переконайся, що jest конфіг резолвить `@lucidkit/types` правильно (може потребувати `moduleNameMapper`).
+**ВАЖЛИВО:** Перевір `apps/web/tsconfig.json` та `apps/web/next.config.ts` для правильних path aliases. Переконайся, що jest конфіг резолвить `@lucidship/types` правильно (може потребувати `moduleNameMapper`).
 
 ### 4.2 `apps/web/src/shared/api/client.spec.ts`
 
@@ -331,7 +331,7 @@ createMagicLinkToken(email, purpose) → зберігає token в mocked Redis,
 | Error code без module | `getApiMessageKey('UNAUTHORIZED')` | `'errors.generic.unauthorized'` |
 | Невідомий code без module | `getApiMessageKey('UNKNOWN_CODE')` | `'errors.generic.unknown_code'` |
 
-**Мокування:** Потрібно мокнути `RESPONSE_CODE_TYPE` з `@lucidkit/types`.
+**Мокування:** Потрібно мокнути `RESPONSE_CODE_TYPE` з `@lucidship/types`.
 
 ### 4.5 `apps/web/src/stores/auth/authStore.spec.ts`
 

@@ -1,4 +1,4 @@
-# LucidKit
+# LucidShip
 > Monorepo-monolith на Next.js 16 + NestJS 11, де auth/session lifecycle централізований у API, а FE/BE працюють через shared Zod/TypeScript contracts.
 
 ## Tech Stack
@@ -13,7 +13,7 @@ Monorepo-monolith із трьома основними зонами: `apps/api`,
 - **API:** NestJS module graph (`AppModule` -> `AuthModule`, `UsersModule`, scaffold `Reports/Payments/Storage`), global `/api` prefix, global `ZodValidationPipe`, global `AllExceptionsFilter`, global `ThrottlerGuard`.
 - **Auth model:** access JWT (1h) у пам’яті фронта + refresh JWT (7d) у httpOnly cookie `bid_refresh`; Redis token family (`refresh:*`, `refresh_family:*`) з rotation/reuse-detection через `GETDEL`.
 - **Web:** App Router + locale segment routing (`app/[locale]`), edge middleware з cookie gate, client bootstrap через `AuthInitializer`, route guard через `AuthGuard`.
-- **FE/BE sync:** DTO/contracts/enums з `@lucidkit/types` використовуються і в Nest DTO (`createZodDto`), і у web API wrappers.
+- **FE/BE sync:** DTO/contracts/enums з `@lucidship/types` використовуються і в Nest DTO (`createZodDto`), і у web API wrappers.
 
 ## Project Structure
 - `apps/api/src/main.ts` — API bootstrap (prefix/cors/cookie-parser/global pipes & filters).
@@ -52,7 +52,7 @@ Monorepo-monolith із трьома основними зонами: `apps/api`,
 - `check_email:{ip}` -> check-email rate limit
 - `login_attempts:{ip}:{email}` -> progressive brute-force lockout
 
-**Shared contracts (`@lucidkit/types`):**
+**Shared contracts (`@lucidship/types`):**
 - Auth schemas: `CheckEmailSchema`, `LoginPasswordSchema`, `SendMagicLinkSchema`, `VerifyMagicLinkSchema`, `SetPasswordSchema`, `ChangePasswordSchema`, `VerifyPasswordSchema`.
 - User schemas: `UpdateProfileSchema`, `UpdateLangSchema`, `UserProfileSchema`.
 - Enums/constants: `RESPONSE_CODE`, `RESPONSE_CODE_TYPE`, `ERROR_CODE` (compat), `LANG`, `MAGIC_LINK_PURPOSE`.
@@ -75,7 +75,7 @@ Monorepo-monolith із трьома основними зонами: `apps/api`,
 - `shared/api/client.ts` -> axios interceptors -> refresh dedup (`refreshPromise`) + retry original request.
 
 **Cross-app graph**
-- `apps/api` + `apps/web` -> `@lucidkit/types`.
+- `apps/api` + `apps/web` -> `@lucidship/types`.
 
 ## Key Patterns (CodeDNA)
 - **Створення Endpoint:** `apps/api/src/modules/auth/auth.controller.ts`, `apps/api/src/modules/users/users.controller.ts`.
@@ -176,7 +176,7 @@ This is a pnpm/Turborepo monorepo. Primary locations:
 
 - `apps/web/` — Next.js frontend (App Router, `src/app/[locale]/` for pages and i18n).
 - `apps/api/` — NestJS backend (`src/modules/` for feature modules).
-- `packages/types/` — Shared TypeScript types (`@lucidkit/types`).
+- `packages/types/` — Shared TypeScript types (`@lucidship/types`).
 - Root configs: `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.json`, `.prettierrc`.
 
 Frontend follows Feature-Sliced Design in `apps/web/src/`:

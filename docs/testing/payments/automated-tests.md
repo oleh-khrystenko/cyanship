@@ -1,12 +1,12 @@
-# Automated Tests — Service Prompt для AI агента
+# Automated Tests — Payments
 
-> Промпт для Claude Code або іншого AI агента. Мета: створити автоматизовані тести, які максимально покриють payments flow.
+> Опис покриття та структури автоматизованих тестів для payments flow. Всі тести реалізовані та проходять. Source of truth — реальний код у `apps/api/src/modules/payments/` та `apps/web/src/shared/api/payments.ts`.
 
 ---
 
-## Мета
+## Покриття
 
-Створити unit та e2e тести для повного покриття платіжної підсистеми LucidKit. Source of truth для всіх сценаріїв — реальний код у `apps/api/src/modules/payments/` та `apps/web/src/shared/api/payments.ts`.
+Unit та e2e тести для повного покриття платіжної підсистеми LucidShip.
 
 **Scope:**
 
@@ -74,9 +74,9 @@
 
 ## Крок 2: Backend Unit Tests
 
-### 2.1 НОВИЙ: `apps/api/src/modules/payments/payments.service.spec.ts`
+### 2.1 `apps/api/src/modules/payments/payments.service.spec.ts` (40 тестів)
 
-Створи новий файл. Прочитай `payments.service.ts` щоб зрозуміти всі залежності та логіку.
+Покриває всі залежності та логіку `payments.service.ts`.
 
 **УВАГА: Ключові деталі імплементації:**
 - `createCheckoutSession(userId: string, dto: CreateCheckoutSession)` — приймає повний DTO (НЕ planCode окремо)
@@ -163,9 +163,9 @@
 - `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: -5` → skip (not positive)
 - User not found for one-off event → log warning, return without calling addCredits
 
-### 2.2 НОВИЙ: `apps/api/src/modules/payments/payments.controller.spec.ts`
+### 2.2 `apps/api/src/modules/payments/payments.controller.spec.ts` (8 тестів)
 
-Створи новий файл. Прочитай `payments.controller.ts`.
+Покриває `payments.controller.ts`.
 
 **УВАГА:** Контролер передає повний DTO в service, не окремі поля.
 
@@ -180,9 +180,9 @@
 | `POST /payments/webhook/stripe` | Missing `signature` (header відсутній) → кидає `BadRequestException('Missing webhook signature')`. |
 | `POST /payments/webhook/unknown` | Unsupported provider → кидає `BadRequestException('Unsupported provider: unknown')`. Provider перевіряється через `static SUPPORTED_PROVIDERS = new Set(['stripe'])`. |
 
-### 2.3 НОВИЙ: `apps/api/src/modules/payments/providers/stripe.service.spec.ts`
+### 2.3 `apps/api/src/modules/payments/providers/stripe.service.spec.ts`
 
-Створи новий файл. Прочитай `stripe.service.ts`.
+Покриває `stripe.service.ts`.
 
 **Мокування:** Mock весь `stripe` module через `jest.mock('stripe')`. Конструктор повертає mock об'єкт з `checkout.sessions.create`, `billingPortal.sessions.create`, `webhooks.constructEvent` як `jest.fn()`.
 
@@ -218,9 +218,9 @@
 - `'paused'` → `UNKNOWN`
 - Невідомий статус → `UNKNOWN`
 
-### 2.4 ~~НОВИЙ~~ ВЖЕ ІСНУЄ: `apps/api/src/common/guards/subscription.guard.spec.ts`
+### 2.4 `apps/api/src/common/guards/subscription.guard.spec.ts` (6 тестів)
 
-**НЕ СТВОРЮВАТИ.** Файл вже існує з повним покриттям (6 сценаріїв):
+Повне покриття:
 - `hasActiveSubscription === true` → true
 - `hasActiveSubscription === false` → ForbiddenException(SUBSCRIPTION_REQUIRED)
 - `billing === null` → ForbiddenException
@@ -232,11 +232,11 @@
 
 ## Крок 3: Backend E2E Tests — доповнення
 
-### Файл: `apps/api/test/payments.e2e-spec.ts` (ВЖЕ ІСНУЄ)
+### Файл: `apps/api/test/payments.e2e-spec.ts` (29 тестів)
 
-**НЕ ПЕРЕПИСУВАТИ.** Файл вже містить 800+ рядків тестів. Прочитай його УВАЖНО перед додаванням.
+Файл містить 1000+ рядків тестів.
 
-**Що вже покрито (НЕ дублювати):**
+**Покриття:**
 - A. `POST /api/payments/checkout-session` — 5 тестів (sub + auth + validation)
 - B. `POST /api/payments/portal-session` — 4 тести (success + no billing + null customerId + auth)
 - C. `POST /api/payments/webhook/:provider` — 3 тести (valid + no signature + bad provider)
@@ -245,20 +245,20 @@
 - F. Feature flags — 2 тести (disabled subscription + disabled one-off)
 - G. Webhook idempotency — 2 тести (duplicate skip + rollback/retry)
 
-**Що МОЖНА додати (тільки якщо відсутнє після вивчення файлу):**
+**Додатково покрито:**
 
-- **Out-of-order event handling:** Надіслати два SUBSCRIPTION_UPDATED events — новіший, потім старіший. Перевірити що старіший skip (billing state = newer event).
-- **Subscription lifecycle:** CHECKOUT_COMPLETED → SUBSCRIPTION_UPDATED(past_due) → SUBSCRIPTION_DELETED. Перевірити billing state на кожному етапі.
-- **One-off idempotency:** Повторний ONE_OFF_PAYMENT_COMPLETED з тим самим providerEventId → credits НЕ додаються вдруге.
-- **userId resolution via subscription lookup:** SUBSCRIPTION_UPDATED з порожнім userId але existing user з `billing.providerSubscriptionId` → userId resolved, billing updated.
+- **Out-of-order event handling:** два SUBSCRIPTION_UPDATED events — новіший, потім старіший. Старіший skip.
+- **Subscription lifecycle:** CHECKOUT_COMPLETED → SUBSCRIPTION_UPDATED(past_due) → SUBSCRIPTION_DELETED.
+- **One-off idempotency:** повторний ONE_OFF_PAYMENT_COMPLETED з тим самим providerEventId → credits НЕ додаються вдруге.
+- **userId resolution via subscription lookup:** SUBSCRIPTION_UPDATED з порожнім userId → resolved через `billing.providerSubscriptionId`.
 
 ---
 
 ## Крок 4: Frontend Unit Tests — перевірка
 
-### ~~НОВИЙ~~ ВЖЕ ІСНУЄ: `apps/web/src/shared/api/payments.spec.ts`
+### `apps/web/src/shared/api/payments.spec.ts` (9 тестів)
 
-**НЕ СТВОРЮВАТИ.** Файл вже існує з покриттям:
+Покриття:
 - `createSubscriptionCheckout(planCode)` — POST `/api/payments/checkout-session` з `{ paymentType: 'subscription', planCode }`
 - `createOneOffCheckout(packCode)` — POST `/api/payments/checkout-session` з `{ paymentType: 'one_off', packCode }`
 - `createPortalSession()` — POST `/api/payments/portal-session`

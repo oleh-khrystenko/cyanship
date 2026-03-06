@@ -25,12 +25,12 @@ export class PaymentsController {
     @Post('checkout-session')
     async createCheckoutSession(
         @CurrentUser() user: UserDocument,
-        @Body() dto: CreateCheckoutSessionDto,
+        @Body() dto: CreateCheckoutSessionDto
     ): Promise<{ data: { checkoutUrl: string } }> {
         const { checkoutUrl } =
             await this.paymentsService.createCheckoutSession(
                 user._id.toString(),
-                dto,
+                dto
             );
         return { data: { checkoutUrl } };
     }
@@ -38,10 +38,10 @@ export class PaymentsController {
     @UseGuards(JwtActiveGuard)
     @Post('portal-session')
     async createPortalSession(
-        @CurrentUser() user: UserDocument,
+        @CurrentUser() user: UserDocument
     ): Promise<{ data: { portalUrl: string } }> {
         const result = await this.paymentsService.createPortalSession(
-            user._id.toString(),
+            user._id.toString()
         );
         return { data: { portalUrl: result.portalUrl } };
     }
@@ -53,7 +53,7 @@ export class PaymentsController {
     async handleWebhook(
         @Param('provider') provider: string,
         @Req() req: RawBodyRequest<Request>,
-        @Headers('stripe-signature') signature: string,
+        @Headers('stripe-signature') signature: string
     ): Promise<{ received: true }> {
         if (!PaymentsController.SUPPORTED_PROVIDERS.has(provider)) {
             throw new BadRequestException(`Unsupported provider: ${provider}`);
@@ -65,11 +65,7 @@ export class PaymentsController {
         if (!rawBody) {
             throw new BadRequestException('Missing raw body');
         }
-        await this.paymentsService.handleWebhook(
-            provider,
-            rawBody,
-            signature,
-        );
+        await this.paymentsService.handleWebhook(provider, rawBody, signature);
         return { received: true };
     }
 }

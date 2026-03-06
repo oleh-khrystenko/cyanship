@@ -31,10 +31,11 @@ export class ProcessedWebhookEvent {
     status!: 'pending' | 'applied';
 }
 
-export const ProcessedWebhookEventSchema =
-    SchemaFactory.createForClass(ProcessedWebhookEvent);
+export const ProcessedWebhookEventSchema = SchemaFactory.createForClass(
+    ProcessedWebhookEvent
+);
 
 ProcessedWebhookEventSchema.index(
     { provider: 1, providerEventId: 1 },
-    { unique: true },
+    { unique: true }
 );

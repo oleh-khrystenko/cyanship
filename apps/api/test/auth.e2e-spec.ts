@@ -21,10 +21,7 @@ import { UsersModule } from '../src/modules/users/users.module';
 import { ReportsModule } from '../src/modules/reports/reports.module';
 import { StorageModule } from '../src/modules/storage/storage.module';
 import { PaymentsModule } from '../src/modules/payments/payments.module';
-import {
-    User,
-    UserDocument,
-} from '../src/modules/users/schemas/user.schema';
+import { User, UserDocument } from '../src/modules/users/schemas/user.schema';
 import { EmailService } from '../src/modules/auth/services/email.service';
 
 // Mock ENV
@@ -41,7 +38,7 @@ jest.mock('../src/config/env', () => ({
         GOOGLE_CLIENT_SECRET: 'GOCSPX-test-secret',
         GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
         RESEND_API_KEY: 're_test_key',
-        RESEND_FROM_EMAIL: 'LucidKit <test@test.com>',
+        RESEND_FROM_EMAIL: 'LucidShip <test@test.com>',
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
         STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
@@ -295,10 +292,7 @@ describe('Auth E2E', () => {
         );
     }
 
-    function createMagicLinkToken(
-        email: string,
-        purpose = 'login'
-    ): string {
+    function createMagicLinkToken(email: string, purpose = 'login'): string {
         const token = require('crypto').randomBytes(32).toString('hex');
         const payload = JSON.stringify({
             email: email.toLowerCase(),
@@ -562,10 +556,7 @@ describe('Auth E2E', () => {
         });
 
         it('should rate limit after 3 requests for same email', async () => {
-            redisMock._store.set(
-                'ratelimit:magic:rate@example.com',
-                '3'
-            );
+            redisMock._store.set('ratelimit:magic:rate@example.com', '3');
 
             await supertest(app.getHttpServer())
                 .post('/api/auth/magic-link/send')
@@ -697,9 +688,8 @@ describe('Auth E2E', () => {
         describe('POST /api/auth/password/set', () => {
             it('should set password for user without password', async () => {
                 await createUserWithoutPassword('user@example.com');
-                const { accessToken } = await loginViaMagicLink(
-                    'user@example.com'
-                );
+                const { accessToken } =
+                    await loginViaMagicLink('user@example.com');
 
                 await supertest(app.getHttpServer())
                     .post('/api/auth/password/set')
@@ -715,10 +705,7 @@ describe('Auth E2E', () => {
             });
 
             it('should return 400 if password already set', async () => {
-                await createUserWithPassword(
-                    'user@example.com',
-                    'existing1'
-                );
+                await createUserWithPassword('user@example.com', 'existing1');
                 const { accessToken } = await loginWithPassword(
                     'user@example.com',
                     'existing1'
@@ -741,10 +728,7 @@ describe('Auth E2E', () => {
 
         describe('POST /api/auth/password/change', () => {
             it('should change password and return new tokens', async () => {
-                await createUserWithPassword(
-                    'user@example.com',
-                    'oldpass12'
-                );
+                await createUserWithPassword('user@example.com', 'oldpass12');
                 const { accessToken } = await loginWithPassword(
                     'user@example.com',
                     'oldpass12'
@@ -765,20 +749,16 @@ describe('Auth E2E', () => {
                 expect(body.data.accessToken).toBeDefined();
 
                 // Cookie should be updated
-                const cookies =
-                    res.headers['set-cookie'] as unknown as string[];
+                const cookies = res.headers[
+                    'set-cookie'
+                ] as unknown as string[];
                 expect(
-                    cookies?.some((c: string) =>
-                        c.startsWith('bid_refresh=')
-                    )
+                    cookies?.some((c: string) => c.startsWith('bid_refresh='))
                 ).toBe(true);
             });
 
             it('should return 401 on wrong current password', async () => {
-                await createUserWithPassword(
-                    'user@example.com',
-                    'correct1'
-                );
+                await createUserWithPassword('user@example.com', 'correct1');
                 const { accessToken } = await loginWithPassword(
                     'user@example.com',
                     'correct1'
@@ -807,10 +787,7 @@ describe('Auth E2E', () => {
 
         describe('POST /api/auth/password/delete', () => {
             it('should delete password', async () => {
-                await createUserWithPassword(
-                    'user@example.com',
-                    'password123'
-                );
+                await createUserWithPassword('user@example.com', 'password123');
                 const { accessToken } = await loginWithPassword(
                     'user@example.com',
                     'password123'
@@ -829,9 +806,8 @@ describe('Auth E2E', () => {
 
             it('should return 400 when no password to delete', async () => {
                 await createUserWithoutPassword('user@example.com');
-                const { accessToken } = await loginViaMagicLink(
-                    'user@example.com'
-                );
+                const { accessToken } =
+                    await loginViaMagicLink('user@example.com');
 
                 await supertest(app.getHttpServer())
                     .post('/api/auth/password/delete')
@@ -848,10 +824,7 @@ describe('Auth E2E', () => {
 
         describe('POST /api/auth/password/verify', () => {
             it('should return isValid: true for correct password', async () => {
-                await createUserWithPassword(
-                    'user@example.com',
-                    'password123'
-                );
+                await createUserWithPassword('user@example.com', 'password123');
                 const { accessToken } = await loginWithPassword(
                     'user@example.com',
                     'password123'
@@ -867,10 +840,7 @@ describe('Auth E2E', () => {
             });
 
             it('should return isValid: false for wrong password', async () => {
-                await createUserWithPassword(
-                    'user@example.com',
-                    'password123'
-                );
+                await createUserWithPassword('user@example.com', 'password123');
                 const { accessToken } = await loginWithPassword(
                     'user@example.com',
                     'password123'
@@ -1009,9 +979,7 @@ describe('Auth E2E', () => {
 
         it('should return requiresMagicLink for user without password', async () => {
             await createUserWithoutPassword('user@example.com');
-            const { accessToken } = await loginViaMagicLink(
-                'user@example.com'
-            );
+            const { accessToken } = await loginViaMagicLink('user@example.com');
 
             const res = await supertest(app.getHttpServer())
                 .post('/api/users/account/delete')
@@ -1050,8 +1018,7 @@ describe('Auth E2E', () => {
             expect(user?.deletedAt).toBeTruthy();
 
             // Verify cookie cleared
-            const cookies =
-                res.headers['set-cookie'] as unknown as string[];
+            const cookies = res.headers['set-cookie'] as unknown as string[];
             const cleared = cookies?.find((c: string) =>
                 c.includes('bid_refresh=;')
             );
@@ -1143,12 +1110,9 @@ describe('Auth E2E', () => {
             const body = res.body as { data: { accessToken: string } };
             expect(body.data.accessToken).toBeDefined();
 
-            const newCookies =
-                res.headers['set-cookie'] as unknown as string[];
+            const newCookies = res.headers['set-cookie'] as unknown as string[];
             expect(
-                newCookies?.some((c: string) =>
-                    c.startsWith('bid_refresh=')
-                )
+                newCookies?.some((c: string) => c.startsWith('bid_refresh='))
             ).toBe(true);
         });
 
@@ -1174,8 +1138,7 @@ describe('Auth E2E', () => {
             const body = res.body as { data: { code: string } };
             expect(body.data.code).toBe('LOGGED_OUT');
 
-            const resCookies =
-                res.headers['set-cookie'] as unknown as string[];
+            const resCookies = res.headers['set-cookie'] as unknown as string[];
             const cleared = resCookies?.find((c: string) =>
                 c.includes('bid_refresh=;')
             );

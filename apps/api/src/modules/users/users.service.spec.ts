@@ -227,7 +227,7 @@ describe('UsersService', () => {
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { $inc: { 'credits.balance': 10 } },
+                { $inc: { 'credits.balance': 10 } }
             );
         });
 
@@ -235,7 +235,7 @@ describe('UsersService', () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(null);
 
             await expect(
-                service.addCredits('nonexistent', 5),
+                service.addCredits('nonexistent', 5)
             ).resolves.toBeUndefined();
         });
     });
@@ -243,7 +243,7 @@ describe('UsersService', () => {
     describe('deductCredit', () => {
         it('should deduct from balance atomically when balance > 0', async () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(
-                mockUserDoc({ credits: { balance: 2, freeReportUsed: false } }),
+                mockUserDoc({ credits: { balance: 2, freeReportUsed: false } })
             );
 
             const result = await service.deductCredit(
@@ -252,9 +252,12 @@ describe('UsersService', () => {
 
             expect(result).toBe(true);
             expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', 'credits.balance': { $gt: 0 } },
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    'credits.balance': { $gt: 0 },
+                },
                 { $inc: { 'credits.balance': -1 } },
-                { new: true },
+                { new: true }
             );
         });
 
@@ -263,7 +266,7 @@ describe('UsersService', () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
             // Second call (free report) succeeds
             mockModel.findOneAndUpdate.mockResolvedValueOnce(
-                mockUserDoc({ credits: { balance: 0, freeReportUsed: true } }),
+                mockUserDoc({ credits: { balance: 0, freeReportUsed: true } })
             );
 
             const result = await service.deductCredit(
@@ -273,9 +276,12 @@ describe('UsersService', () => {
             expect(result).toBe(true);
             expect(mockModel.findOneAndUpdate).toHaveBeenCalledTimes(2);
             expect(mockModel.findOneAndUpdate).toHaveBeenLastCalledWith(
-                { _id: '507f1f77bcf86cd799439011', 'credits.freeReportUsed': false },
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    'credits.freeReportUsed': false,
+                },
                 { $set: { 'credits.freeReportUsed': true } },
-                { new: true },
+                { new: true }
             );
         });
 

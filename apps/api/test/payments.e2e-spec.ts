@@ -15,7 +15,7 @@ import {
     BILLING_EVENT_TYPE,
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
@@ -26,10 +26,7 @@ import { UsersModule } from '../src/modules/users/users.module';
 import { ReportsModule } from '../src/modules/reports/reports.module';
 import { StorageModule } from '../src/modules/storage/storage.module';
 import { PaymentsModule } from '../src/modules/payments/payments.module';
-import {
-    User,
-    UserDocument,
-} from '../src/modules/users/schemas/user.schema';
+import { User, UserDocument } from '../src/modules/users/schemas/user.schema';
 import {
     ProcessedWebhookEvent,
     ProcessedWebhookEventDocument,
@@ -52,7 +49,7 @@ jest.mock('../src/config/env', () => ({
         GOOGLE_CLIENT_SECRET: 'GOCSPX-test-secret',
         GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
         RESEND_API_KEY: 're_test_key',
-        RESEND_FROM_EMAIL: 'LucidKit <test@test.com>',
+        RESEND_FROM_EMAIL: 'LucidShip <test@test.com>',
         AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
         AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
         AUTH_MAGIC_LINK_TTL_MIN: 15,
@@ -131,7 +128,7 @@ function createStatefulRedisMock() {
                     const existing = store.get(key);
                     if (!existing) return;
                     const set: Set<string> = new Set(
-                        JSON.parse(existing) as string[],
+                        JSON.parse(existing) as string[]
                     );
                     for (const m of members) set.delete(m);
                     if (set.size === 0) store.delete(key);
@@ -264,7 +261,7 @@ describe('Payments E2E', () => {
         await app.init();
 
         userModel = moduleFixture.get<Model<UserDocument>>(
-            getModelToken(User.name),
+            getModelToken(User.name)
         );
         webhookEventModel = moduleFixture.get<
             Model<ProcessedWebhookEventDocument>
@@ -304,7 +301,7 @@ describe('Payments E2E', () => {
 
     async function createUser(
         email: string,
-        billingData?: Record<string, unknown> | null,
+        billingData?: Record<string, unknown> | null
     ): Promise<UserDocument> {
         const hash = await bcrypt.hash(TEST_PASSWORD, 10);
         return userModel.create({
@@ -317,7 +314,7 @@ describe('Payments E2E', () => {
     }
 
     async function loginAsUser(
-        email: string,
+        email: string
     ): Promise<{ accessToken: string }> {
         const res = await supertest(app.getHttpServer())
             .post('/api/auth/login/password')
@@ -343,7 +340,7 @@ describe('Payments E2E', () => {
                 .expect((res: supertest.Response) => {
                     expect(
                         (res.body as { data: { checkoutUrl: string } }).data
-                            .checkoutUrl,
+                            .checkoutUrl
                     ).toBe('https://checkout.stripe.com/test_session');
                 });
         });
@@ -362,7 +359,7 @@ describe('Payments E2E', () => {
                 .expect(409)
                 .expect((res: supertest.Response) => {
                     expect(
-                        (res.body as { error: { code: string } }).error.code,
+                        (res.body as { error: { code: string } }).error.code
                     ).toBe('ALREADY_SUBSCRIBED');
                 });
         });
@@ -414,7 +411,7 @@ describe('Payments E2E', () => {
                 .expect((res: supertest.Response) => {
                     expect(
                         (res.body as { data: { portalUrl: string } }).data
-                            .portalUrl,
+                            .portalUrl
                     ).toBe('https://billing.stripe.com/test_session');
                 });
         });
@@ -429,7 +426,7 @@ describe('Payments E2E', () => {
                 .expect(400)
                 .expect((res: supertest.Response) => {
                     expect(
-                        (res.body as { error: { code: string } }).error.code,
+                        (res.body as { error: { code: string } }).error.code
                     ).toBe('NO_BILLING_ACCOUNT');
                 });
         });
@@ -440,7 +437,7 @@ describe('Payments E2E', () => {
                 hasActiveSubscription: false,
             });
             const { accessToken } = await loginAsUser(
-                'nullcustomer@example.com',
+                'nullcustomer@example.com'
             );
 
             await supertest(app.getHttpServer())
@@ -449,7 +446,7 @@ describe('Payments E2E', () => {
                 .expect(400)
                 .expect((res: supertest.Response) => {
                     expect(
-                        (res.body as { error: { code: string } }).error.code,
+                        (res.body as { error: { code: string } }).error.code
                     ).toBe('NO_BILLING_ACCOUNT');
                 });
         });
@@ -483,7 +480,7 @@ describe('Payments E2E', () => {
                 .expect(400)
                 .expect((res: supertest.Response) => {
                     expect(
-                        (res.body as { error: { code: string } }).error.code,
+                        (res.body as { error: { code: string } }).error.code
                     ).toBeDefined();
                 });
         });
@@ -498,7 +495,7 @@ describe('Payments E2E', () => {
                 .expect((res: supertest.Response) => {
                     expect(
                         (res.body as { error: { message: string } }).error
-                            .message,
+                            .message
                     ).toContain('monobank');
                 });
         });
@@ -510,7 +507,7 @@ describe('Payments E2E', () => {
         it('success response has { data: { ... } } shape', async () => {
             await createUser('format-success@example.com', null);
             const { accessToken } = await loginAsUser(
-                'format-success@example.com',
+                'format-success@example.com'
             );
 
             const res = await supertest(app.getHttpServer())
@@ -520,9 +517,9 @@ describe('Payments E2E', () => {
                 .expect(201);
 
             expect(res.body).toHaveProperty('data');
-            expect(
-                (res.body as { data: unknown }).data,
-            ).toHaveProperty('checkoutUrl');
+            expect((res.body as { data: unknown }).data).toHaveProperty(
+                'checkoutUrl'
+            );
         });
 
         it('error response has { error: { code, message } } shape', async () => {
@@ -542,7 +539,7 @@ describe('Payments E2E', () => {
         it('validation error returns 400 with error format', async () => {
             await createUser('format-validate@example.com', null);
             const { accessToken } = await loginAsUser(
-                'format-validate@example.com',
+                'format-validate@example.com'
             );
 
             const res = await supertest(app.getHttpServer())
@@ -572,7 +569,7 @@ describe('Payments E2E', () => {
                 .expect((res: supertest.Response) => {
                     expect(
                         (res.body as { data: { checkoutUrl: string } }).data
-                            .checkoutUrl,
+                            .checkoutUrl
                     ).toBe('https://checkout.stripe.com/test_session');
                 });
         });
@@ -602,7 +599,7 @@ describe('Payments E2E', () => {
             };
 
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                oneOffEvent,
+                oneOffEvent
             );
 
             // Send webhook
@@ -634,7 +631,7 @@ describe('Payments E2E', () => {
 
             await createUser('toggle-oneoff@example.com', null);
             const { accessToken } = await loginAsUser(
-                'toggle-oneoff@example.com',
+                'toggle-oneoff@example.com'
             );
 
             await supertest(app.getHttpServer())
@@ -644,7 +641,7 @@ describe('Payments E2E', () => {
                 .expect(400)
                 .expect((res: supertest.Response) => {
                     expect(
-                        (res.body as { error: { code: string } }).error.code,
+                        (res.body as { error: { code: string } }).error.code
                     ).toBe('PAYMENT_TYPE_DISABLED');
                 });
         });
@@ -653,9 +650,7 @@ describe('Payments E2E', () => {
             envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
 
             await createUser('toggle-sub@example.com', null);
-            const { accessToken } = await loginAsUser(
-                'toggle-sub@example.com',
-            );
+            const { accessToken } = await loginAsUser('toggle-sub@example.com');
 
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
@@ -667,7 +662,7 @@ describe('Payments E2E', () => {
                 .expect(400)
                 .expect((res: supertest.Response) => {
                     expect(
-                        (res.body as { error: { code: string } }).error.code,
+                        (res.body as { error: { code: string } }).error.code
                     ).toBe('PAYMENT_TYPE_DISABLED');
                 });
         });
@@ -698,7 +693,7 @@ describe('Payments E2E', () => {
             };
 
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                checkoutEvent,
+                checkoutEvent
             );
 
             // First webhook — should update billing
@@ -713,7 +708,7 @@ describe('Payments E2E', () => {
             const userAfterFirst = await userModel.findById(userId).lean();
             expect(userAfterFirst?.billing?.hasActiveSubscription).toBe(true);
             expect(userAfterFirst?.billing?.providerCustomerId).toBe(
-                'cus_idempotency_test',
+                'cus_idempotency_test'
             );
 
             // Second webhook with same providerEventId — idempotent, no duplicate update
@@ -752,7 +747,7 @@ describe('Payments E2E', () => {
 
             // First attempt — addCredits will fail because provider throws
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                oneOffEvent,
+                oneOffEvent
             );
 
             // Temporarily break the user to cause addCredits to fail
@@ -780,9 +775,7 @@ describe('Payments E2E', () => {
                 creditsAmount: -999, // Invalid amount — addCredits will throw
                 raw: {},
             };
-            mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                failEvent,
-            );
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue(failEvent);
 
             // This should not leave a "pending" record blocking retries
             // (creditsAmount <= 0 is caught by applyOneOffPayment and skipped, not thrown)
@@ -838,7 +831,7 @@ describe('Payments E2E', () => {
 
             // Send newer event first
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                newerEvent,
+                newerEvent
             );
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
@@ -850,12 +843,12 @@ describe('Payments E2E', () => {
             const afterNewer = await userModel.findById(userId).lean();
             expect(afterNewer?.billing?.hasActiveSubscription).toBe(true);
             expect(afterNewer?.billing?.subscriptionStatus).toBe(
-                SUBSCRIPTION_STATUS.ACTIVE,
+                SUBSCRIPTION_STATUS.ACTIVE
             );
 
             // Send older event — should be skipped by out-of-order guard
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                olderEvent,
+                olderEvent
             );
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
@@ -868,7 +861,7 @@ describe('Payments E2E', () => {
             // Billing state should remain from the newer event
             expect(afterOlder?.billing?.hasActiveSubscription).toBe(true);
             expect(afterOlder?.billing?.subscriptionStatus).toBe(
-                SUBSCRIPTION_STATUS.ACTIVE,
+                SUBSCRIPTION_STATUS.ACTIVE
             );
         });
     });
@@ -898,7 +891,7 @@ describe('Payments E2E', () => {
                 },
             };
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                checkoutEvent,
+                checkoutEvent
             );
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
@@ -910,10 +903,10 @@ describe('Payments E2E', () => {
             const afterCheckout = await userModel.findById(userId).lean();
             expect(afterCheckout?.billing?.hasActiveSubscription).toBe(true);
             expect(afterCheckout?.billing?.subscriptionStatus).toBe(
-                SUBSCRIPTION_STATUS.ACTIVE,
+                SUBSCRIPTION_STATUS.ACTIVE
             );
             expect(afterCheckout?.billing?.providerCustomerId).toBe(
-                'cus_lifecycle',
+                'cus_lifecycle'
             );
 
             // Step 2: SUBSCRIPTION_UPDATED(past_due) — payment fails
@@ -928,7 +921,7 @@ describe('Payments E2E', () => {
                 raw: { id: 'sub_lifecycle', status: 'past_due' },
             };
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                pastDueEvent,
+                pastDueEvent
             );
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
@@ -940,7 +933,7 @@ describe('Payments E2E', () => {
             const afterPastDue = await userModel.findById(userId).lean();
             expect(afterPastDue?.billing?.hasActiveSubscription).toBe(false);
             expect(afterPastDue?.billing?.subscriptionStatus).toBe(
-                SUBSCRIPTION_STATUS.PAST_DUE,
+                SUBSCRIPTION_STATUS.PAST_DUE
             );
 
             // Step 3: SUBSCRIPTION_DELETED — subscription canceled
@@ -955,7 +948,7 @@ describe('Payments E2E', () => {
                 raw: { id: 'sub_lifecycle', status: 'canceled' },
             };
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                deletedEvent,
+                deletedEvent
             );
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
@@ -967,10 +960,10 @@ describe('Payments E2E', () => {
             const afterDeleted = await userModel.findById(userId).lean();
             expect(afterDeleted?.billing?.hasActiveSubscription).toBe(false);
             expect(afterDeleted?.billing?.subscriptionStatus).toBe(
-                SUBSCRIPTION_STATUS.CANCELED,
+                SUBSCRIPTION_STATUS.CANCELED
             );
             expect(afterDeleted?.billing?.providerSubscriptionStatus).toBe(
-                'canceled',
+                'canceled'
             );
         });
     });
@@ -993,7 +986,7 @@ describe('Payments E2E', () => {
             };
 
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                oneOffEvent,
+                oneOffEvent
             );
 
             // First call — should add 10 credits
@@ -1053,7 +1046,7 @@ describe('Payments E2E', () => {
             };
 
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
-                updateEvent,
+                updateEvent
             );
 
             await supertest(app.getHttpServer())
@@ -1065,7 +1058,7 @@ describe('Payments E2E', () => {
 
             const updated = await userModel.findById(userId).lean();
             expect(updated?.billing?.subscriptionStatus).toBe(
-                SUBSCRIPTION_STATUS.PAST_DUE,
+                SUBSCRIPTION_STATUS.PAST_DUE
             );
             expect(updated?.billing?.hasActiveSubscription).toBe(false);
         });

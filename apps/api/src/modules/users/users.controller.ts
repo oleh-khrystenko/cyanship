@@ -14,7 +14,7 @@ import {
     MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
     type ApiMessageResponse,
-} from '@lucidkit/types';
+} from '@lucidship/types';
 import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -55,12 +55,9 @@ export class UsersController {
                           hasActiveSubscription:
                               user.billing.hasActiveSubscription,
                           planCode: user.billing.planCode,
-                          subscriptionStatus:
-                              user.billing.subscriptionStatus,
-                          currentPeriodEnd:
-                              user.billing.currentPeriodEnd,
-                          cancelAtPeriodEnd:
-                              user.billing.cancelAtPeriodEnd,
+                          subscriptionStatus: user.billing.subscriptionStatus,
+                          currentPeriodEnd: user.billing.currentPeriodEnd,
+                          cancelAtPeriodEnd: user.billing.cancelAtPeriodEnd,
                       }
                     : null,
             },
