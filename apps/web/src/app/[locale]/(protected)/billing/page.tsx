@@ -41,7 +41,7 @@ export default function BillingPage() {
         try {
             const { checkoutUrl } =
                 await createSubscriptionCheckout('monthly_usd');
-            window.location.href = checkoutUrl;
+            window.location.assign(checkoutUrl);
         } catch {
             toast.error(t('subscribe.error'));
             setLoadingAction(null);
@@ -52,7 +52,7 @@ export default function BillingPage() {
         setLoadingAction(`oneoff_${packCode}`);
         try {
             const { checkoutUrl } = await createOneOffCheckout(packCode);
-            window.location.href = checkoutUrl;
+            window.location.assign(checkoutUrl);
         } catch {
             toast.error(t('credits.error'));
             setLoadingAction(null);
@@ -63,7 +63,7 @@ export default function BillingPage() {
         setLoadingAction('portal');
         try {
             const { portalUrl } = await createPortalSession();
-            window.location.href = portalUrl;
+            window.location.assign(portalUrl);
         } catch {
             toast.error(t('active.manage_error'));
             setLoadingAction(null);

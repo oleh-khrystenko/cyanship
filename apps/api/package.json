@@ -94,6 +94,10 @@
         ],
         "coverageDirectory": "../coverage",
         "testEnvironment": "node",
-        "setupFiles": ["./test-setup.ts"]
+        "setupFiles": ["./test-setup.ts"],
+        "moduleNameMapper": {
+            "^@lucidship/types$": "<rootDir>/../../../packages/types/src/index.ts",
+            "^@lucidship/types/(.*)$": "<rootDir>/../../../packages/types/src/$1"
+        }
     }
 }

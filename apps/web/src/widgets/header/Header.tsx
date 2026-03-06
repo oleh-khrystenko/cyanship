@@ -25,7 +25,7 @@ const Header = () => {
     const handleLogout = async () => {
         await logout();
         clearUser();
-        window.location.href = `/${locale}`;
+        window.location.assign(`/${locale}`);
     };
 
     return (

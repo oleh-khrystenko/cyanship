@@ -269,6 +269,7 @@ describe('AuthController', () => {
             expect(res.cookie).not.toHaveBeenCalled();
             expect(result.data).toEqual({
                 deleted: true,
+                purpose: MAGIC_LINK_PURPOSE.DELETE_ACCOUNT,
                 message: 'Account scheduled for deletion',
             });
         });

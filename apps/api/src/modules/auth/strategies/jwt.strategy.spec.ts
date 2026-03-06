@@ -56,7 +56,7 @@ describe('JwtStrategy', () => {
             expect(result).toBeNull();
         });
 
-        it('should return null for soft-deleted user', async () => {
+        it('should return soft-deleted user (filtering is done by JwtActiveGuard)', async () => {
             const deletedUser = {
                 _id: payload.sub,
                 email: payload.email,
@@ -66,7 +66,7 @@ describe('JwtStrategy', () => {
 
             const result = await strategy.validate(payload);
 
-            expect(result).toBeNull();
+            expect(result).toBe(deletedUser);
         });
     });
 });
