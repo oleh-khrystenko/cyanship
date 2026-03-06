@@ -92,6 +92,7 @@ border-primary/30  -- замість border-blue-200
 |----------|--------------|---------|
 | `shared/styles/` | Hex-значення в CSS-змінних | Тут визначаються самі токени |
 | `shared/icons/` | Hex-значення у SVG `fill`/`stroke` | Брендові іконки (Google, Stripe) з офіційними кольорами |
+| `white` / `black` | `text-white`, `bg-black/50` | Універсальні константи (контрастний текст на primary, overlay backdrop) |
 | Inline `style` для динамічних значень | `style={{ backgroundColor: userColor }}` | Runtime-значення, що не можуть бути токеном (user avatar color, chart data) |
 
 ## Scope

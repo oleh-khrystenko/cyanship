@@ -88,7 +88,7 @@ function VerifyContent() {
     if (status === 'deleted') {
         return (
             <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
-                <CheckCircle className="h-12 w-12 text-green-500" />
+                <CheckCircle className="h-12 w-12 text-success" />
                 <p className="text-text-primary text-lg font-semibold">
                     {t('deleted_heading')}
                 </p>

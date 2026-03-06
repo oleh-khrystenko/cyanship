@@ -244,7 +244,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Delete password confirmation */}
             {confirmDelete && (
-                <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
+                <div className="rounded-lg border border-error/30 bg-error/10 p-4">
                     <p className="text-text-primary mb-3 text-sm">
                         {t('delete_password_confirm')}
                     </p>
@@ -252,7 +252,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         <UiButton
                             variant="filled"
                             size="sm"
-                            className="rounded-lg bg-red-600 hover:bg-red-700"
+                            className="rounded-lg bg-error"
                             onClick={() => void handleDeletePassword()}
                             disabled={submitting}
                         >

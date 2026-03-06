@@ -44,7 +44,7 @@ const Header = () => {
 
                 <div className="flex items-center gap-4">
                     {isLoading ? (
-                        <div className="h-8 w-20 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="h-8 w-20 animate-pulse rounded-lg bg-surface-hover" />
                     ) : isAuthenticated && user ? (
                         <>
                             <UiButton
@@ -63,7 +63,7 @@ const Header = () => {
                                         className="rounded-full"
                                     />
                                 ) : (
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-sm font-semibold text-neutral-700 dark:bg-neutral-600 dark:text-neutral-200">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-hover text-sm font-semibold text-text-primary">
                                         {(user.profile.name ||
                                             user.email)[0]?.toUpperCase()}
                                     </div>
@@ -71,7 +71,7 @@ const Header = () => {
                                 <span className="text-text-primary hidden text-sm sm:block">
                                     {user.profile.name || user.email}
                                 </span>
-                                <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200">
+                                <span className="rounded-full bg-surface-hover px-2 py-0.5 text-xs font-medium text-text-primary">
                                     {user.credits.balance} {t('credits')}
                                 </span>
                             </UiButton>

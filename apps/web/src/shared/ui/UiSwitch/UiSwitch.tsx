@@ -53,7 +53,7 @@ const UiSwitch = (props: UiSwitchProps) => {
         'focus:outline-none',
         'transition-colors duration-200',
         'px-px',
-        checked ? 'bg-neutral-700' : 'bg-neutral-300',
+        checked ? 'bg-primary' : 'bg-border',
         disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         containerSizeStyles[size],
         className

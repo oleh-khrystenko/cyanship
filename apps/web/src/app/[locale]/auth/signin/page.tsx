@@ -241,11 +241,11 @@ export default function SigninPage() {
             </form>
 
             <div className="flex items-center gap-4">
-                <div className="h-px flex-1 bg-neutral-300 dark:bg-neutral-600" />
+                <div className="h-px flex-1 bg-border" />
                 <span className="text-text-secondary text-sm">
                     {t('or_divider')}
                 </span>
-                <div className="h-px flex-1 bg-neutral-300 dark:bg-neutral-600" />
+                <div className="h-px flex-1 bg-border" />
             </div>
 
             <UiButton
@@ -253,7 +253,7 @@ export default function SigninPage() {
                 href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
                 variant="filled"
                 size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+                className="w-full justify-center gap-3 rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
                 IconLeft={GoogleIcon}
             >
                 {t('google_button')}
@@ -331,7 +331,7 @@ export default function SigninPage() {
                     type="button"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+                    className="w-full justify-center rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
                     IconLeft={Mail}
@@ -345,8 +345,8 @@ export default function SigninPage() {
     // --- State: magic-link-sent ---
     const renderMagicLinkSentState = () => (
         <div className="space-y-6">
-            <div className="rounded-lg border border-green-300 bg-green-50 p-6 text-center dark:border-green-700 dark:bg-green-900/20">
-                <Mail className="mx-auto mb-3 h-10 w-10 text-green-600 dark:text-green-400" />
+            <div className="rounded-lg border border-success/30 bg-success/10 p-6 text-center">
+                <Mail className="mx-auto mb-3 h-10 w-10 text-success" />
                 <h2 className="text-text-primary text-lg font-semibold">
                     {t('magic_link_sent_title')}
                 </h2>
@@ -404,7 +404,7 @@ export default function SigninPage() {
     // --- State: error ---
     const renderErrorState = () => (
         <div className="space-y-4">
-            <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center dark:border-red-700 dark:bg-red-900/20">
+            <div className="rounded-lg border border-error/30 bg-error/10 p-6 text-center">
                 <p className="text-error text-sm font-medium">
                     {errorMessage || t('error_generic')}
                 </p>
