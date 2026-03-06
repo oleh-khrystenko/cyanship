@@ -3,7 +3,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
-import UiSpinner from '@/shared/ui/UiSpinner';
+import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { useAuthStore } from '@/stores/auth';
 
 interface AuthGuardProps {
@@ -23,11 +23,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     }, [isLoading, isAuthenticated, router, locale]);
 
     if (isLoading) {
-        return (
-            <main className="flex min-h-screen items-center justify-center">
-                <UiSpinner size="lg" />
-            </main>
-        );
+        return <UiFullPageLoader />;
     }
 
     if (!isAuthenticated) {

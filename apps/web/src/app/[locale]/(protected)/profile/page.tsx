@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import UiSpinner from '@/shared/ui/UiSpinner';
+import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { useAuthStore } from '@/stores/auth';
 import {
     ProfileForm,
@@ -52,13 +52,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
     return (
-        <Suspense
-            fallback={
-                <main className="flex min-h-screen items-center justify-center">
-                    <UiSpinner size="lg" />
-                </main>
-            }
-        >
+        <Suspense fallback={<UiFullPageLoader />}>
             <ProfileContent />
         </Suspense>
     );

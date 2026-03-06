@@ -33,6 +33,7 @@ Ui-компоненти інкапсулюють:
 | `UiSelect` | `<select>` | `outlined`, `filled` |
 | `UiSwitch` | `<input type="checkbox">` (toggle) | -- (sizes: sm/md/lg) |
 | `UiSpinner` | Кастомні loading-індикатори | -- (sizes: sm/md/lg) |
+| `UiFullPageLoader` | Full-screen centered spinner з optional message | композиція UiSpinner; для Suspense fallback та loading states |
 
 ## Rules
 
