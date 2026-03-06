@@ -1,6 +1,6 @@
 # LucidShip
 
-> Production-ready SaaS boilerplate — все, що потрібно для швидкого запуску web-додатка: auth, payments, i18n, theming та модульна архітектура з коробки.
+> Production-ready SaaS-бойлерплейт та живий лендінг агенції — ядро для швидкого запуску web-додатків (auth, payments, i18n, theming) з модульною архітектурою Core/Agency. При форку видаляється agency модуль, і розробка клієнтського MVP починається поверх готового ядра.
 
 <!-- MANUAL:START -->
 # Rules
@@ -49,7 +49,9 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 
 ## Architecture Overview
 
-Turborepo monorepo з 2 apps + 1 shared package. Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Reports, Storage -- skeleton. Agency -- scaffold (порожні директорії, готові для розширення).
+Turborepo monorepo з 2 apps + 1 shared package. Два шари: **Core** (auth, users, payments, shared UI) та **Agency** (бізнес-логіка агенції, ізольований модуль). Одностороння залежність: Agency -> Core, ніколи навпаки (enforced ESLint).
+
+Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Reports, Storage -- skeleton. Agency -- scaffold (порожні директорії, готові для розширення).
 
 - **apps/api** -- NestJS REST API, модульна архітектура, MongoDB через Mongoose, JWT auth, Redis для magic links, token storage, rate limiting, brute force tracking, Stripe webhooks (subscriptions + one-off)
 - **apps/web** -- Next.js SSR/CSR з Feature-Sliced Design, i18n, light/dark/system theme (next-themes), auth pages, profile management, billing page (subscriptions + credit packs). Dev: `next dev --turbopack`. Build: `output: 'standalone'` (Docker). API proxy: `/api/*` -> backend via `next.config.ts` rewrites.
@@ -186,6 +188,7 @@ lucidship/
 │           └── validation/common.ts      # emailSchema, passwordSchema (min 8), objectIdSchema (24 hex)
 │
 ├── docs/
+│   ├── vision/                           # product.md (dual-purpose: boilerplate + agency landing)
 │   ├── conventions/                      # tone.md, fail-fast.md, i18n.md, env-sync.md, modular-boundaries.md
 │   ├── planning/                         # auth-flow/ (17 docs), payments-mvp-implementation-blueprint.md
 │   ├── testing/                          # auth/ + payments/ (README, automated-tests.md, manual-test-plan.md)
@@ -728,3 +731,8 @@ Constants at top: `REFRESH_TOKEN_TTL` = 2 min (test) / 7 days (prod). Access tok
 
 Файл: `docs/conventions/modular-boundaries.md`, `apps/web/eslint.config.mjs`
 Core модулі (auth, users, payments, shared UI) не можуть імпортувати з agency scope. Agency scope може імпортувати все з core. ESLint enforces це правило на web. Fork checklist: 10 кроків для видалення agency за 15 хвилин.
+
+### Frontend tests
+
+Файли: `apps/web/src/middleware.spec.ts`, `src/features/auth/AuthGuard.spec.tsx`, `src/features/auth/AuthInitializer.spec.tsx`, `src/shared/api/auth.spec.ts`, `src/shared/api/client.spec.ts`, `src/shared/api/mapApiCode.spec.ts`, `src/shared/api/payments.spec.ts`, `src/stores/auth/authStore.spec.ts`
+Jest + jsdom, @testing-library/react. Покриття: middleware routing, auth guard redirect, auth initializer silent refresh, API client interceptors, auth/payments API functions, API code mapping, auth store state.
