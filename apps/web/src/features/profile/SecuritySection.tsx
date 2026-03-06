@@ -2,12 +2,11 @@
 
 import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Eye, EyeOff, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserProfile } from '@lucidship/types';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
-import UiInput from '@/shared/ui/UiInput';
+import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import {
     setPassword,
@@ -31,8 +30,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
-    const [showCurrent, setShowCurrent] = useState(false);
-    const [showNew, setShowNew] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -140,29 +137,15 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     <p className="text-text-secondary text-sm">
                         {getHeading()}
                     </p>
-                    <div className="relative">
-                        <UiInput
-                            type={showNew ? 'text' : 'password'}
-                            placeholder={t('password_placeholder')}
-                            value={newPwd}
-                            onChange={(e) => setNewPwd(e.target.value)}
-                            required={isPasswordRequired}
-                            size="lg"
-                            className="pr-12"
-                        />
-                        <UiButton
-                            variant="icon-compact"
-                            size="md"
-                            onClick={() => setShowNew(!showNew)}
-                            className="absolute right-3 top-[18px] -translate-y-1/2"
-                            aria-label={
-                                showNew
-                                    ? t('hide_password')
-                                    : t('show_password')
-                            }
-                            IconLeft={(showNew ? EyeOff : Eye) as LucideIcon}
-                        />
-                    </div>
+                    <UiPasswordInput
+                        placeholder={t('password_placeholder')}
+                        value={newPwd}
+                        onChange={(e) => setNewPwd(e.target.value)}
+                        required={isPasswordRequired}
+                        size="lg"
+                        showLabel={t('show_password')}
+                        hideLabel={t('hide_password')}
+                    />
                     <UiButton
                         type="submit"
                         variant="filled"
@@ -191,12 +174,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
                     {/* Current password — only in change mode, not reset */}
                     {isChangeMode && (
-                        <div className="relative">
+                        <div>
                             <label className="text-text-secondary mb-1 block text-sm">
                                 {t('current_password_label')}
                             </label>
-                            <UiInput
-                                type={showCurrent ? 'text' : 'password'}
+                            <UiPasswordInput
                                 placeholder={t('password_placeholder')}
                                 value={currentPwd}
                                 onChange={(e) =>
@@ -204,49 +186,24 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                                 }
                                 required
                                 size="lg"
-                                className="pr-12"
-                            />
-                            <UiButton
-                                variant="icon-compact"
-                                size="md"
-                                onClick={() =>
-                                    setShowCurrent(!showCurrent)
-                                }
-                                className="absolute bottom-[18px] right-3 -translate-y-1/2"
-                                aria-label={
-                                    showCurrent
-                                        ? t('hide_password')
-                                        : t('show_password')
-                                }
-                                IconLeft={(showCurrent ? EyeOff : Eye) as LucideIcon}
+                                showLabel={t('show_password')}
+                                hideLabel={t('hide_password')}
                             />
                         </div>
                     )}
 
-                    <div className="relative">
+                    <div>
                         <label className="text-text-secondary mb-1 block text-sm">
                             {t('new_password_label')}
                         </label>
-                        <UiInput
-                            type={showNew ? 'text' : 'password'}
+                        <UiPasswordInput
                             placeholder={t('password_placeholder')}
                             value={newPwd}
                             onChange={(e) => setNewPwd(e.target.value)}
                             required
                             size="lg"
-                            className="pr-12"
-                        />
-                        <UiButton
-                            variant="icon-compact"
-                            size="md"
-                            onClick={() => setShowNew(!showNew)}
-                            className="absolute bottom-[18px] right-3 -translate-y-1/2"
-                            aria-label={
-                                showNew
-                                    ? t('hide_password')
-                                    : t('show_password')
-                            }
-                            IconLeft={(showNew ? EyeOff : Eye) as LucideIcon}
+                            showLabel={t('show_password')}
+                            hideLabel={t('hide_password')}
                         />
                     </div>
 

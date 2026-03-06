@@ -3,11 +3,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Eye, EyeOff, Mail, type LucideIcon } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
+import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
@@ -41,7 +42,6 @@ export default function SigninPage() {
     const [state, setState] = useState<SigninState>('email');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showMagicLinkSuggestion, setShowMagicLinkSuggestion] =
@@ -290,26 +290,15 @@ export default function SigninPage() {
                 </UiButton>
             </div>
 
-            <div className="relative">
-                <UiInput
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={t('password_placeholder')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    error={errorMessage || undefined}
-                    required
-                    size="lg"
-                    autoFocus
-                    className="pr-12"
-                />
-                <UiButton
-                    variant="icon-compact"
-                    size="md"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-[18px] -translate-y-1/2"
-                    IconLeft={(showPassword ? EyeOff : Eye) as LucideIcon}
-                />
-            </div>
+            <UiPasswordInput
+                placeholder={t('password_placeholder')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={errorMessage || undefined}
+                required
+                size="lg"
+                autoFocus
+            />
 
             <div className="text-right">
                 <UiButton

@@ -28,7 +28,8 @@ Ui-компоненти інкапсулюють:
 | Ui-компонент | Замінює нативний елемент | Варіанти |
 |---|---|---|
 | `UiButton` | `<button>`, `<a>`, Next.js `<Link>` | `filled`, `text`, `icon`, `icon-compact`; polymorphic: `as="button"` / `as="link"` / `as="a"` |
-| `UiInput` | `<input>` (text, email, password, etc.) | `outlined`, `filled` |
+| `UiInput` | `<input>` (text, email, number, etc.) | `outlined`, `filled` |
+| `UiPasswordInput` | `<input type="password">` + show/hide toggle | композиція UiInput + UiButton; внутрішній стан visibility |
 | `UiSelect` | `<select>` | `outlined`, `filled` |
 | `UiSwitch` | `<input type="checkbox">` (toggle) | -- (sizes: sm/md/lg) |
 | `UiSpinner` | Кастомні loading-індикатори | -- (sizes: sm/md/lg) |
@@ -44,7 +45,8 @@ Ui-компоненти інкапсулюють:
 | `<button>` | `UiButton` (default, `as="button"`) |
 | `<a>` | `UiButton as="a"` (зовнішні посилання) |
 | `<Link>` (next/link) | `UiButton as="link"` (внутрішня навігація) |
-| `<input>` (text/email/password/number) | `UiInput` |
+| `<input>` (text/email/number) | `UiInput` |
+| `<input type="password">` | `UiPasswordInput` |
 | `<select>` | `UiSelect` |
 | `<input type="checkbox">` (toggle) | `UiSwitch` |
 
