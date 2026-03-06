@@ -49,11 +49,11 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 
 ## Architecture Overview
 
-Turborepo monorepo з 2 apps + 1 shared package. Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Reports, Storage -- skeleton.
+Turborepo monorepo з 2 apps + 1 shared package. Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Reports, Storage -- skeleton. Agency -- scaffold (порожні директорії, готові для розширення).
 
 - **apps/api** -- NestJS REST API, модульна архітектура, MongoDB через Mongoose, JWT auth, Redis для magic links, token storage, rate limiting, brute force tracking, Stripe webhooks (subscriptions + one-off)
 - **apps/web** -- Next.js SSR/CSR з Feature-Sliced Design, i18n, light/dark/system theme (next-themes), auth pages, profile management, billing page (subscriptions + credit packs). Dev: `next dev --turbopack`. Build: `output: 'standalone'` (Docker). API proxy: `/api/*` -> backend via `next.config.ts` rewrites.
-- **packages/types** -- Shared Zod-схеми, типи, constants, contracts, validation, enums. Entry: `src/index.ts` -> 5 modules (constants, enums, entities, contracts, validation). Build: CJS to `dist/` via `tsconfig.build.json`.
+- **packages/types** -- Shared Zod-схеми, типи, constants, contracts, validation, enums. Entry: `src/index.ts` -> 5 modules (constants, enums, entities, contracts, validation). Окремий entry `src/agency.ts` для agency-специфічних типів. Build: CJS to `dist/` via `tsconfig.build.json`.
 
 ## Project Structure
 
@@ -75,22 +75,22 @@ lucidship/
 │   │   │   │   ├── guards/subscription.guard.ts          # CanActivate: user.billing?.hasActiveSubscription
 │   │   │   │   └── providers/redis.provider.ts           # REDIS_CLIENT token (ioredis)
 │   │   │   └── modules/
-│   │   │       ├── auth/                 # ✅ Повністю реалізований
+│   │   │       ├── auth/                 # Повністю реалізований
 │   │   │       │   ├── auth.module.ts    # PassportModule, JwtModule(1h), UsersModule(forwardRef), OnModuleInit(ping Redis), OnModuleDestroy(close Redis)
 │   │   │       │   ├── auth.controller.ts # 12 endpoints: Google OAuth, magic-link, password, refresh, logout
 │   │   │       │   ├── auth.service.ts   # Tokens, magic links, rate limiting, brute force, password, rotation
-│   │   │       │   ├── services/email.service.ts          # Resend: 4 email templates × 2 langs (HTML with LucidShip branding)
+│   │   │       │   ├── services/email.service.ts          # Resend: 4 email templates x 2 langs (HTML with LucidShip branding)
 │   │   │       │   ├── strategies/jwt.strategy.ts         # fromAuthHeaderAsBearerToken -> findById
 │   │   │       │   ├── strategies/google.strategy.ts      # scope:[email,profile], state:false, verifies email
 │   │   │       │   └── dto/              # 7 Zod DTOs (check-email, send-magic-link, login-password, set/change/verify-password, verify-magic-link)
-│   │   │       ├── users/                # ✅ Повністю реалізований
+│   │   │       ├── users/                # Повністю реалізований
 │   │   │       │   ├── users.module.ts
 │   │   │       │   ├── users.controller.ts  # 6 endpoints: getMe, updateProfile, updateLang, deleteAccount, confirmDelete, restore
 │   │   │       │   ├── users.service.ts     # CRUD, findOrCreate, profile, soft-delete, restore, credits (addCredits, deductCredit, hasCredit)
 │   │   │       │   ├── cleanup.service.ts   # @Cron(EVERY_DAY_AT_3AM) hard-delete expired accounts + revokeAllUserTokens
 │   │   │       │   ├── schemas/user.schema.ts  # Mongoose: email, provider, profile, credits, passwordHash, deletedAt, accountDeletionRequestedAt, billing
 │   │   │       │   └── dto/              # update-profile.dto.ts, update-lang.dto.ts
-│   │   │       ├── payments/             # ✅ Повністю реалізований (subscription + one-off)
+│   │   │       ├── payments/             # Повністю реалізований (subscription + one-off)
 │   │   │       │   ├── payments.module.ts
 │   │   │       │   ├── payments.controller.ts  # 3 endpoints: checkout-session, portal-session, webhook/:provider
 │   │   │       │   ├── payments.service.ts     # Checkout (sub + one-off), portal, two-phase webhook idempotency, WEBHOOK_MONGO_TIMEOUT_MS=10000
@@ -100,8 +100,9 @@ lucidship/
 │   │   │       │   ├── interfaces/payment-provider.interface.ts  # PAYMENT_PROVIDER token + interface
 │   │   │       │   ├── schemas/processed-webhook-event.schema.ts # Two-phase idempotency (pending -> applied), timestamps:false
 │   │   │       │   └── dto/create-checkout-session.dto.ts
-│   │   │       ├── reports/              # 🟡 Skeleton (empty controller + service)
-│   │   │       └── storage/              # 🟡 Skeleton (no controller, service only)
+│   │   │       ├── agency/               # Scaffold (порожній, тільки .gitkeep)
+│   │   │       ├── reports/              # Skeleton (empty controller + service)
+│   │   │       └── storage/              # Skeleton (no controller, service only)
 │   │   ├── src/test-setup.ts             # Sets minimal Stripe env for unit tests (fail-fast policy)
 │   │   └── test/
 │   │       ├── app.e2e-spec.ts           # E2E: basic endpoints, invalid auth, 401 flows
@@ -110,15 +111,17 @@ lucidship/
 │   │       └── jest-e2e.json
 │   │
 │   └── web/                              # Next.js frontend
-│       ├── next.config.ts                # standalone output, /api/* proxy to backend, Google images allowed
+│       ├── next.config.ts                # standalone output, /api/* proxy to backend, Google images allowed, next-intl plugin
 │       ├── postcss.config.mjs            # @tailwindcss/postcss
+│       ├── eslint.config.mjs             # next/core-web-vitals + typescript, bans agency imports from core modules
 │       ├── src/
 │       │   ├── app/
 │       │   │   ├── providers.tsx         # next-themes ThemeProvider (attribute:class, storageKey:theme, defaultTheme:system)
-│       │   │   ├── globals.css           # @import tailwindcss + 4 style files
+│       │   │   ├── globals.css           # @import tailwindcss + 5 style files
 │       │   │   └── [locale]/
 │       │   │       ├── layout.tsx        # Providers, NextIntlClientProvider, AuthInitializer, Header, Mulish font (Cyrillic+Latin)
 │       │   │       ├── page.tsx          # Welcome page (public), SEO via fetchMetadata()
+│       │   │       ├── (agency)/         # Scaffold (порожній, для agency-специфічних сторінок)
 │       │   │       ├── auth/
 │       │   │       │   ├── signin/page.tsx   # Email -> password/magic-link decision (450 lines, 6-state machine)
 │       │   │       │   ├── callback/page.tsx # OAuth callback: refreshToken -> getMe -> /profile; handles ?account_deleted=true
@@ -131,13 +134,18 @@ lucidship/
 │       │   │               ├── layout.tsx    # SEO metadata
 │       │   │               ├── success/page.tsx  # Post-checkout: getMe -> update store -> toast -> /billing
 │       │   │               └── cancel/page.tsx   # Cancel: toast -> /billing
-│       │   ├── entities/brand/Logo.tsx   # "LucidShip" text logo (text-5xl, bold, primary)
+│       │   ├── entities/
+│       │   │   ├── brand/Logo.tsx        # "LucidShip" text logo (text-5xl, bold, primary)
+│       │   │   └── agency/              # Scaffold (порожній)
 │       │   ├── features/
 │       │   │   ├── auth/                 # AuthInitializer (silent refresh, skips /auth/callback & /auth/verify), AuthGuard
 │       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiSelect, updates URL + backend pref)
 │       │   │   ├── change-theme/         # Theme toggle (3 modes: Light/System/Dark, lucide icons)
-│       │   │   └── profile/              # ProfileForm (name/avatar/lang), SecuritySection (set/change/delete pwd), DangerZone (60s cooldown), DeleteAccountModal
-│       │   ├── widgets/header/           # Sticky header: Logo + avatar/initials + credits badge + theme + lang + logout
+│       │   │   ├── profile/              # ProfileForm (name/avatar/lang), SecuritySection (set/change/delete pwd), DangerZone (60s cooldown), DeleteAccountModal
+│       │   │   └── agency/              # Scaffold (порожній)
+│       │   ├── widgets/
+│       │   │   ├── header/              # Sticky header: Logo + avatar/initials + credits badge + theme + lang + logout
+│       │   │   └── agency/              # Scaffold (порожній)
 │       │   ├── shared/
 │       │   │   ├── api/
 │       │   │   │   ├── client.ts         # Axios + 401 auto-refresh interceptor + in-memory token (closure)
@@ -151,16 +159,19 @@ lucidship/
 │       │   │   ├── icons/GoogleIcon.tsx   # Google OAuth SVG icon (official colors)
 │       │   │   ├── seo/metadata.ts       # fetchMetadata(): canonical URLs, hrefLang alternates (x-default, uk-ua, en-ua)
 │       │   │   ├── types/settings.ts     # THEME enum, Theme, PageParams, MetaProps
+│       │   │   ├── fonts/               # mulish-cyrillic.woff2, mulish-latin.woff2
 │       │   │   └── styles/              # themes.css (CSS vars light/dark), settings.css (.container), custom-variants.css, animations.css, scrollbar.css
 │       │   ├── stores/auth/authStore.ts  # user, isAuthenticated, isLoading (Zustand, initial isLoading=true)
 │       │   ├── i18n/                     # routing.ts (locales:['uk','en'], default:'uk'), request.ts (server-side config)
 │       │   └── middleware.ts             # Protects /profile,/pay,/billing; redirects /auth/signin if authenticated; i18n routing
-│       └── messages/                     # uk.json, en.json (namespaces: welcome_page, auth_page, notifications, errors, profile_page, billing_page, components)
+│       └── messages/                     # uk.json, en.json (namespaces: welcome_page, auth_page, notifications, errors, profile_page, billing_page, components, delete_account_modal)
 │
 ├── packages/
 │   └── types/                            # @lucidship/types
 │       └── src/
-│           ├── index.ts                  # Re-exports all 5 modules
+│           ├── index.ts                  # Re-exports all 5 modules (constants, enums, entities, contracts, validation)
+│           ├── agency.ts                 # Окремий entry point для agency типів -> ./agency/index
+│           ├── agency/index.ts           # Scaffold (порожній export)
 │           ├── constants/lang.ts         # LANG { UK:'uk', EN:'en' }, Lang type
 │           ├── enums/
 │           │   ├── response-code.ts      # PRIMARY: RESPONSE_CODE (17 codes), RESPONSE_CODE_TYPE mapping
@@ -175,9 +186,11 @@ lucidship/
 │           └── validation/common.ts      # emailSchema, passwordSchema (min 8), objectIdSchema (24 hex)
 │
 ├── docs/
-│   ├── conventions/                      # tone.md, fail-fast.md, i18n.md, env-sync.md
+│   ├── conventions/                      # tone.md, fail-fast.md, i18n.md, env-sync.md, modular-boundaries.md
 │   ├── planning/                         # auth-flow/ (17 docs), payments-mvp-implementation-blueprint.md
-│   └── sprints/                          # sprint-003 through sprint-008 (auth -> payments testing)
+│   ├── testing/                          # auth/ + payments/ (README, automated-tests.md, manual-test-plan.md)
+│   └── prompts/                          # codex/, gemini/ (update-context.md)
+├── .claude/prompts/                      # update-context.md (цей скрипт)
 ├── docker-compose.yml                    # Prod: api + web
 ├── docker-compose.dev.yml                # Dev: mongo:7 + redis:7-alpine + api + web (types build first)
 ├── turbo.json                            # Pipeline: dev(no cache), build(^build deps), lint, test(no cache)
@@ -261,6 +274,7 @@ Zod: `packages/types/src/entities/user.ts`
 | `contracts/payments.ts`  | `PAYMENT_TYPE` (SUBSCRIPTION, ONE_OFF), `CREDIT_PACK_CONFIG` (credits_5/10/20), `SUBSCRIPTION_STATUS` (7), `BILLING_EVENT_TYPE` (4), `CreateCheckoutSessionSchema` (discriminated union), `UserBillingSchema`, `BillingWebhookEventSchema` |
 | `contracts/users.ts`     | `UpdateLangSchema`, `UpdateProfileSchema`                                          |
 | `validation/common.ts`   | `emailSchema`, `passwordSchema` (min 8), `objectIdSchema` (24 hex)                |
+| `agency.ts`              | Окремий entry point (`@lucidship/types/agency`), scaffold (порожній export)        |
 
 ## Module Dependency Map
 
@@ -298,6 +312,8 @@ AppModule (root)
 - `UsersModule` -> `AuthModule` (sendMagicLink, verifyPassword, revokeAllUserTokens)
 - `PaymentsModule` -> `UsersModule` (findById for billing updates, addCredits for one-off)
 
+**Agency module:** scaffold (порожній .gitkeep в `apps/api/src/modules/agency/`). Ще не зареєстрований в AppModule. Дозволено залежність Agency -> Users, Payments, Common. Заборонено Core -> Agency (enforced ESLint).
+
 ### Frontend (apps/web)
 
 ```
@@ -313,6 +329,8 @@ middleware.ts
 ├── Protected: /profile, /pay, /billing -> redirect if no bid_refresh cookie
 └── Auth: /auth/signin -> redirect to /profile if bid_refresh exists
 ```
+
+**Agency scaffolds (порожні):** `app/[locale]/(agency)/`, `features/agency/`, `entities/agency/`, `widgets/agency/`
 
 ## Key Patterns
 
@@ -522,7 +540,6 @@ Prefix: `/api`. Rate limit: 60 req/60s (ThrottlerGuard global).
 - `REDIS_URL` -- Redis
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` -- Google OAuth
 - `RESEND_API_KEY` -- Resend email service
-- `RESEND_FROM_EMAIL` -- **Required in production**, dev fallback: `LucidShip <onboarding@resend.dev>`
 - `STRIPE_SECRET_KEY` -- Stripe API key
 - `STRIPE_WEBHOOK_SECRET` -- Webhook signature verification
 - `STRIPE_PRICE_MONTHLY_USD` -- Stripe price ID for subscription
@@ -536,6 +553,7 @@ Prefix: `/api`. Rate limit: 60 req/60s (ThrottlerGuard global).
 - `NODE_ENV` -> `'development'`
 - `PORT` -> `'4000'`
 - `WEB_URL` -> `'http://localhost:3000'`
+- `RESEND_FROM_EMAIL` -> `'LucidShip <onboarding@resend.dev>'` (dev fallback)
 - `BILLING_SUCCESS_URL` -> `{WEB_URL}/billing/success`
 - `BILLING_CANCEL_URL` -> `{WEB_URL}/billing/cancel`
 - `PAYMENTS_SUBSCRIPTION_ENABLED` -> `'true'` (feature flag)
@@ -593,7 +611,7 @@ pnpm --filter @lucidship/types dev                     # Watch mode
 
 - **TypeScript strict mode** увімкнений в обох apps
 - API lint: no `any`, no floating promises, async requires await; test files мають ослаблені правила
-- Web lint: extends `eslint-config-next/core-web-vitals` + `typescript`; `@typescript-eslint/no-unused-vars` з `argsIgnorePattern: '^_'`
+- Web lint: extends `eslint-config-next/core-web-vitals` + `typescript`; `@typescript-eslint/no-unused-vars` з `argsIgnorePattern: '^_'`; **ESLint забороняє імпорт agency модулів з core** (enforced in `eslint.config.mjs`)
 - `main.ts` використовує `void bootstrap()` -- не `.finally()`
 - Mongoose schemas потребують `!` (definite assignment) на всіх `@Prop()` полях
 - Cookie для refresh token: `bid_refresh`, httpOnly, secure (prod), sameSite=lax, path=/, maxAge=7d
@@ -618,6 +636,7 @@ pnpm --filter @lucidship/types dev                     # Watch mode
 - Password hashing: bcrypt з salt rounds 10
 - `rawBody: true` в `main.ts` -- критично для Stripe webhook signature verification
 - Next.js: dev з `--turbopack`, build з `output: 'standalone'`, API proxy через rewrites
+- **Agency boundary**: Agency може імпортувати Core. Core НЕ може імпортувати Agency. Agency types -- окремий entry `@lucidship/types/agency`.
 
 ## Known Complexities
 
@@ -647,6 +666,10 @@ Subscription billing update uses atomic MongoDB query with guard: only updates i
 ### packages/types build order
 
 `packages/types` МУСИТЬ бути зібраний до JS перед API/Web у Docker (enforced в docker-compose.dev.yml). **НІКОЛИ** не додавати `paths: { "@lucidship/types": [...] }` до API tsconfig -- ламає структуру output. API резолвить через workspace symlink -> `dist/`. Web може мати `paths` (Next.js бандлер, points to source `../../packages/types/src/index.ts`).
+
+### packages/types dual exports
+
+`package.json` має два exports: default (`./src/index.ts` -> `./dist/index.js`) і `./agency` (`./src/agency.ts` -> `./dist/agency.js`). Agency типи ізольовані від core -- можна видалити без впливу на core imports.
 
 ### UsersModule <-> AuthModule circular dependency
 
@@ -700,3 +723,8 @@ Sets placeholder Stripe env vars (`sk_test_placeholder`, `whsec_test_placeholder
 
 Файл: `apps/api/src/modules/auth/auth.service.ts`
 Constants at top: `REFRESH_TOKEN_TTL` = 2 min (test) / 7 days (prod). Access token = 1 min (test) / 1 hour (prod). Controlled by `NODE_ENV !== 'production'` check.
+
+### Agency/Core modular boundary
+
+Файл: `docs/conventions/modular-boundaries.md`, `apps/web/eslint.config.mjs`
+Core модулі (auth, users, payments, shared UI) не можуть імпортувати з agency scope. Agency scope може імпортувати все з core. ESLint enforces це правило на web. Fork checklist: 10 кроків для видалення agency за 15 хвилин.
