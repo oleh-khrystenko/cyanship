@@ -12,3 +12,6 @@ process.env.RESEND_API_KEY ??= 're_test_placeholder';
 process.env.STRIPE_SECRET_KEY ??= 'sk_test_placeholder';
 process.env.STRIPE_WEBHOOK_SECRET ??= 'whsec_test_placeholder';
 process.env.STRIPE_PRICE_MONTHLY_USD ??= 'price_test_placeholder';
+process.env.STRIPE_PRICE_CREDITS_5_USD ??= 'price_test_credits_5';
+process.env.STRIPE_PRICE_CREDITS_10_USD ??= 'price_test_credits_10';
+process.env.STRIPE_PRICE_CREDITS_20_USD ??= 'price_test_credits_20';
