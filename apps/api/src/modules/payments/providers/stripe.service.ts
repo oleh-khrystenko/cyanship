@@ -180,6 +180,6 @@ export class StripeService implements IPaymentProvider {
     }
 
     private toRaw(obj: object): Record<string, unknown> {
-        return JSON.parse(JSON.stringify(obj));
+        return JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
     }
 }

@@ -21,7 +21,6 @@ import { CookieOptions, Request, Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ENV } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';

@@ -10,7 +10,6 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import {
-    Lang,
     MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
     type ApiMessageResponse,

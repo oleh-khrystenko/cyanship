@@ -31,7 +31,6 @@ jest.mock('../../config/env', () => ({
     },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
     STRIPE_CREDIT_PACKS: Record<string, { priceId: string; credits: number }>;
