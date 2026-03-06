@@ -5,23 +5,26 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
+import type { UserDocument } from '../../modules/users/schemas/user.schema';
+
 @Injectable()
 export class JwtActiveGuard extends AuthGuard('jwt') {
-    handleRequest<
-        TUser extends Record<string, unknown> = Record<string, unknown>,
-    >(
+    handleRequest<TUser = UserDocument>(
         err: Error | null,
         user: TUser | false,
         info: unknown,
         context: ExecutionContext
     ): TUser {
-        const authenticatedUser: TUser = super.handleRequest(
+        const authenticatedUser = super.handleRequest<TUser>(
             err,
             user,
             info,
             context
         );
-        if (authenticatedUser && authenticatedUser.deletedAt) {
+        if (
+            authenticatedUser &&
+            (authenticatedUser as unknown as UserDocument).deletedAt
+        ) {
             throw new UnauthorizedException();
         }
         return authenticatedUser;

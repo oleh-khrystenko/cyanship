@@ -81,6 +81,7 @@ jest.mock('../src/config/env', () => ({
         }),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
 const envModule = require('../src/config/env') as {
     ENV: Record<string, unknown>;
 };
@@ -586,7 +587,7 @@ describe('Payments E2E', () => {
 
         it('should credit user on ONE_OFF_PAYMENT_COMPLETED webhook', async () => {
             const user = await createUser('credits-webhook@example.com', null);
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             const oneOffEvent: BillingWebhookEvent = {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
@@ -672,7 +673,7 @@ describe('Payments E2E', () => {
     describe('webhook idempotency', () => {
         it('should update billing on first webhook and skip duplicate on second call', async () => {
             const user = await createUser('idempotency@example.com', null);
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             const checkoutEvent: BillingWebhookEvent = {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
@@ -733,7 +734,7 @@ describe('Payments E2E', () => {
 
         it('should rollback pending event on transient failure and allow retry to succeed', async () => {
             const user = await createUser('rollback@example.com', null);
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             const oneOffEvent: BillingWebhookEvent = {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
@@ -763,7 +764,7 @@ describe('Payments E2E', () => {
             // Event should NOT be in the collection (user not found is a non-error skip)
             // Let's test the real transient failure: re-create user and use a failing mock
             const user2 = await createUser('rollback2@example.com', null);
-            const userId2 = (user2._id as object).toString();
+            const userId2 = user2._id.toString();
 
             // Make handleWebhookPayload return event that will cause addCredits to throw
             const failEvent: BillingWebhookEvent = {
@@ -798,7 +799,7 @@ describe('Payments E2E', () => {
     describe('out-of-order event handling', () => {
         it('should apply newer event and skip older event for same user', async () => {
             const user = await createUser('ooo@example.com', null);
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             const newerEvent: BillingWebhookEvent = {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
@@ -870,7 +871,7 @@ describe('Payments E2E', () => {
     describe('subscription lifecycle', () => {
         it('should track full lifecycle: CHECKOUT_COMPLETED → SUBSCRIPTION_UPDATED(past_due) → SUBSCRIPTION_DELETED', async () => {
             const user = await createUser('lifecycle@example.com', null);
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             // Step 1: CHECKOUT_COMPLETED — user subscribes
             const checkoutEvent: BillingWebhookEvent = {
@@ -972,7 +973,7 @@ describe('Payments E2E', () => {
     describe('one-off idempotency', () => {
         it('should not add credits twice for duplicate ONE_OFF_PAYMENT_COMPLETED event', async () => {
             const user = await createUser('oneoff-idemp@example.com', null);
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             const oneOffEvent: BillingWebhookEvent = {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
@@ -1030,7 +1031,7 @@ describe('Payments E2E', () => {
                 cancelAtPeriodEnd: false,
                 lastProviderEventAt: new Date('2024-01-01T00:00:00Z'),
             });
-            const userId = (user._id as object).toString();
+            const userId = user._id.toString();
 
             // SUBSCRIPTION_UPDATED with empty userId — should look up by raw.id
             const updateEvent: BillingWebhookEvent = {

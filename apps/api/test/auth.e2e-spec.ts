@@ -293,6 +293,7 @@ describe('Auth E2E', () => {
     }
 
     function createMagicLinkToken(email: string, purpose = 'login'): string {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- inline utility in test helper
         const token = require('crypto').randomBytes(32).toString('hex');
         const payload = JSON.stringify({
             email: email.toLowerCase(),
@@ -1051,24 +1052,19 @@ describe('Auth E2E', () => {
     describe('Account Restore flow', () => {
         // Note: JwtStrategy rejects users with deletedAt set (returns null → 401).
         // This means deleted users cannot access /account/restore via JWT.
-        // The restore flow in practice works via the frontend showing
-        // the restore screen after login with accountDeleted flag,
-        // but the JWT is rejected on subsequent requests.
-        it('should return 401 for deleted user (JwtStrategy rejects deletedAt)', async () => {
+        it('should allow deleted user to restore via JwtAuthGuard (not JwtActiveGuard)', async () => {
             await createUserWithPassword('user@example.com', 'password123');
-            // Login BEFORE soft-delete to get a valid JWT
             const { accessToken } = await loginWithPassword(
                 'user@example.com',
                 'password123'
             );
-            // Soft-delete AFTER login
             await softDeleteUser('user@example.com');
 
-            // JwtStrategy checks DB on each request and rejects deleted users
+            // JwtAuthGuard allows deleted users — restore endpoint is accessible
             await supertest(app.getHttpServer())
                 .post('/api/users/account/restore')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .expect(401);
+                .expect(201);
         });
 
         it('should return 400 when account is not deleted', async () => {
