@@ -14,6 +14,7 @@
 | i18n | [i18n.md](i18n.md) | Синхронізація мови між фронтом та бекендом |
 | Env Sync | [env-sync.md](env-sync.md) | Синхронізація env vars між env.ts, .env та .env.example |
 | Modular Boundaries | [modular-boundaries.md](modular-boundaries.md) | Core/Agency розділення, однонаправлені залежності, fork checklist |
+| UI Primitives | [ui-primitives.md](ui-primitives.md) | Заборона нативних HTML-елементів, єдиний набір Ui-компонентів |
 
 ## Як додати нове правило
 

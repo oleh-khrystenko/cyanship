@@ -17,6 +17,7 @@ All AI agents MUST read and follow rules in `docs/conventions/`:
 - **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
 - **[Env Sync](docs/conventions/env-sync.md)** — always update env.ts, .env, and .env.example together
 - **[Modular Boundaries](docs/conventions/modular-boundaries.md)** — core/agency separation, one-way dependencies, fork checklist
+- **[UI Primitives](docs/conventions/ui-primitives.md)** — no raw HTML elements, use shared Ui* components only
 
 Full index: [docs/conventions/README.md](docs/conventions/README.md)
   <!-- MANUAL:END -->
