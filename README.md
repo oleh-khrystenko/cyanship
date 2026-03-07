@@ -181,5 +181,5 @@ docker compose up --build -d
 
 - [Vision & Product](docs/vision/product.md) — опис проекту, бізнес-модель, позиціонування
 - [Conventions](docs/conventions/README.md) — правила та конвенції для розробки
-- [Planning](docs/planning/README.md) — планування та специфікації
+- [Architecture](docs/architecture/README.md) — опис реалізованих підсистем (auth, payments)
 - [Testing](docs/testing/) — тестові плани (auth, payments)

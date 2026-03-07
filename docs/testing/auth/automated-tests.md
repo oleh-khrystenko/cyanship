@@ -1,6 +1,6 @@
 # Automated Tests — Auth
 
-> Опис покриття та структури автоматизованих тестів для auth flow. Всі тести реалізовані та проходять. Source of truth для auth сценаріїв — `docs/planning/auth-flow/`.
+> Опис покриття та структури автоматизованих тестів для auth flow. Всі тести реалізовані та проходять. Source of truth для auth сценаріїв — `docs/architecture/auth-flow/`.
 
 ---
 
@@ -24,7 +24,7 @@ Unit, integration (e2e) та frontend unit тести для повного по
 
 Перш ніж писати будь-який тест — прочитай і зрозумій:
 
-1. **Специфікацію:** `docs/planning/auth-flow.md` — повний опис всіх auth flows, edge cases, security mechanisms
+1. **Специфікацію:** `docs/architecture/auth-flow/` — повний опис всіх auth flows, edge cases, security mechanisms
 2. **Існуючі тести** — зрозумій patterns мокування, структуру, стиль assertions:
    - `apps/api/src/modules/auth/auth.service.spec.ts` (~77 тестів)
    - `apps/api/src/modules/users/users.service.spec.ts` (~24 тести)
@@ -402,7 +402,7 @@ pnpm build
 
 **Критерії успіху:**
 - Всі тести проходять (exit code 0)
-- Нові тести покривають всі auth flows з `docs/planning/auth-flow.md`
+- Нові тести покривають всі auth flows з `docs/architecture/auth-flow/`
 - Існуючі тести не змінені та все ще проходять
 - Жоден тест не залежить від зовнішніх сервісів (Redis, MongoDB Atlas, Google, Resend)
 - Coverage auth + users modules > 80%

@@ -5,7 +5,7 @@
 ## Блоки
 
 - `docs/vision/` — опис проекту, бізнес-модель, позиціонування.
-- `docs/planning/` — планування, беклог, напрямки розвитку.
+- `docs/architecture/` — опис реалізованих підсистем (auth, payments).
 - `docs/testing/` — тестові плани та документація (unit, integration, manual E2E).
 - `docs/conventions/` — загальні конвенції та правила для AI-агентів/розробників.
 - `docs/prompts/` — службові prompt-и для агентів/асистентів.
@@ -13,9 +13,8 @@
 ## Поточне наповнення
 
 - `docs/vision/product.md` — повний опис проекту Lucid Ship
-- `docs/planning/README.md`
-- `docs/planning/auth-flow/` — повна специфікація auth-flow (17 документів)
-- `docs/planning/payments-mvp-implementation-blueprint.md`
+- `docs/architecture/auth-flow/` — опис реалізації авторизації (16 документів)
+- `docs/architecture/payments-flow/` — опис реалізації платіжної системи (12 документів)
 - `docs/testing/auth/` — unit + integration + manual E2E тести для auth
 - `docs/testing/payments/` — automated + manual тести для payments
 - `docs/conventions/README.md`
