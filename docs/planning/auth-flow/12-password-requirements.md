@@ -1,14 +1,14 @@
 # Вимоги до пароля
 
-## Мінімальні (default)
+Файл: `packages/types/src/validation/common.ts` (passwordSchema)
 
-- Мінімальна довжина: конфігурована змінна (default: `8` символів)
+## Вимоги
+
+- Мінімальна довжина: 8 символів (конфігурується через `AUTH_PASSWORD_MIN_LENGTH`)
 - Без додаткових вимог до складності
 
 ## Валідація
 
-- Zod-схема в `packages/types` — single source of truth
-- Перевірка на frontend (UX) та backend (безпека)
-- Повідомлення: "Пароль має містити щонайменше 8 символів"
-
-> **Boilerplate-нотатка:** Кожен бізнес може налаштувати вимоги під свої потреби: додати вимоги до великих літер, цифр, спецсимволів, або підключити zxcvbn для оцінки сили пароля.
+- Zod-схема `passwordSchema` в `packages/types` — single source of truth
+- Перевірка на backend через `createZodDto()` (nestjs-zod)
+- Хешування: bcrypt з salt rounds 10

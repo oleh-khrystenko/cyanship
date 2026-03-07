@@ -1,17 +1,16 @@
 # Error States
 
-| Ситуація | UI поведінка | Toast/повідомлення |
-|----------|-------------|-------------------|
-| Невірний пароль | Поле пароля підсвічується червоним | "Невірний пароль" |
-| Progressive lockout (5/10/20 спроб) | Поле пароля заблоковане + показ "Увійти через email" (після 20) | "Забагато невдалих спроб. Спробуйте через {N} хвилин або скористайтесь посиланням 'Забув пароль?'" |
-| Expired magic link | Redirect на сторінку авторизації | "Час дії посилання закінчився. Спробуйте ще раз" |
-| Використаний magic link | Redirect на сторінку авторизації | "Посилання недійсне або вже було використано. Введіть email для отримання нового" |
-| Rate limit magic link | Залишається на поточному стані | "Забагато запитів. Спробуйте через кілька хвилин" |
-| Google OAuth помилка | Redirect на сторінку авторизації | "Не вдалося увійти через Google. Спробуйте ще раз" |
-| Невалідний email | Поле email підсвічується червоним | "Введіть коректну email-адресу" |
-| Сервер недоступний | Прелоадер зникає | "Сервіс тимчасово недоступний. Спробуйте пізніше" |
-| Невірний пароль (видалення) | Поле пароля підсвічується червоним | "Невірний пароль" |
-| Expired magic link (видалення) | Redirect на профіль | "Час дії посилання закінчився. Спробуйте ще раз" |
-| Акаунт деактивовано | Екран відновлення при вході | "Ваш акаунт заплановано до видалення {дата}" |
-| Forgot password (email не існує) | Показує той самий toast що й при успіху | "Якщо акаунт з цією адресою існує, ми надіслали посилання для зміни пароля" |
-| Сесії ревоковані (інший пристрій) | Redirect на сторінку авторизації | "Сесію завершено. Увійдіть знову" |
+| Ситуація | UI поведінка | Повідомлення |
+|----------|-------------|-------------|
+| Невірний пароль | Помилка під полем пароля (signin page) | i18n `auth_page.signin.invalid_credentials` |
+| Progressive lockout (429) | Помилка + показ кнопки "Увійти через email" | i18n `auth_page.signin.too_many_attempts` з кількістю хвилин |
+| Невалідний/прострочений magic link | Verify page: помилка inline + кнопка "Спробувати знову" | i18n `auth_page.verify.error_heading` + API error code mapping |
+| Rate limit magic link (429) | Toast error | i18n `delete_account_modal.rate_limit` або generic |
+| Google OAuth помилка | Redirect на `/auth/signin` (callback page catch) | - |
+| check-email помилка | Стан `error` з кнопкою повернення | Mapped API error code або generic |
+| Сервер недоступний | Стан `error` | i18n `auth_page.signin.error_generic` |
+| Невірний пароль (видалення акаунту) | Помилка під полем пароля в модальному вікні | i18n `delete_account_modal.invalid_password` |
+| Акаунт деактивовано (пароль) | Signin page: стан `recovery` з датою і кнопками | i18n `auth_page.recovery.*` |
+| Акаунт деактивовано (Google) | Callback page: UI відновлення | i18n `auth_page.recovery.*` |
+| Password set вже існує | Toast error на profile | Backend: 400 "Password already set" |
+| Password change невірний поточний | Toast error на profile | i18n `profile_page.security.password_invalid` |

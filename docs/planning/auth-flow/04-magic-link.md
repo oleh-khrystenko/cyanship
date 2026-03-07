@@ -1,29 +1,38 @@
 # Magic Link
 
+Файл: `apps/api/src/modules/auth/auth.service.ts` (sendMagicLink, verifyMagicLink)
+
 ## Генерація
 
-- Token: 64-byte hex (256-bit), зберігається в Redis
-- TTL: 15 хвилин
-- Rate limit: 3 запити на email за 15 хвилин
-- Одноразовий: після використання видаляється з Redis
-- **Anti-spam:** Перед генерацією нового токену перевіряється, чи є в Redis валідний токен для цього email з тим самим purpose, створений менше 1 хвилини тому. Якщо є — новий лист не відправляється, фронту повертається успішна відповідь. Це захищає від подвійного кліку та спаму.
+- Token: `randomBytes(32).toString('hex')` — 32 байти рандому, 64 hex-символів
+- Зберігається в Redis як `magic:{token}` -> `{ email, purpose }` (JSON)
+- TTL: 15 хвилин (конфігурується через `AUTH_MAGIC_LINK_TTL_MIN`)
+- Rate limit: 3 запити на email за 15 хвилин (ключ: `ratelimit:magic:{email}`)
+- Одноразовий: після використання видаляється з Redis через GETDEL (атомарно)
+- **Anti-spam dedup:** Перед генерацією нового токену перевіряється ключ `magic_dedup:{email}:{purpose}`. Якщо є — новий лист не відправляється, фронту повертається успішна відповідь (silent dedup). TTL dedup: 60 секунд (конфігурується через `AUTH_MAGIC_LINK_DEDUP_SEC`).
 
-## Повторний клік на magic link (вже використаний)
+## Верифікація
 
-Коли юзер натискає на magic link вдруге (token вже видалений з Redis):
+Файл: `apps/web/src/app/[locale]/auth/verify/page.tsx`
 
-1. Backend не знаходить token → повертає помилку
-2. Redirect на сторінку авторизації
-3. Toast-нотифікація: "Посилання вже було використано. Введіть email для отримання нового"
+1. Юзер натискає magic link -> `GET {WEB_URL}/auth/verify?token=XXX`
+2. Verify page робить `POST /api/auth/magic-link/verify` з токеном
+3. Backend: Redis GETDEL -> парсить `{ email, purpose }` -> обробляє по purpose
 
-**Обгрунтування:** Magic link одноразовий з міркувань безпеки. Якщо хтось перехопив посилання і юзер вже його використав — зловмисник не зможе увійти. Повідомлення дружнє і одразу пропонує рішення.
+### Обробка по purpose:
 
-## Expired magic link
+| Purpose | Дія на backend | Redirect на frontend |
+|---------|----------------|---------------------|
+| `login` | `findOrCreateByEmail()` -> tokens | `/profile` |
+| `register` | `findOrCreateByEmail()` -> tokens | `/profile` |
+| `reset-password` | `findOrCreateByEmail()` -> tokens | `/profile` |
+| `delete-account` | `softDelete()` -> `revokeAllUserTokens()` -> deletion email | Показує екран "Акаунт видалено" inline |
 
-Коли юзер натискає на magic link після закінчення TTL:
+## Помилки (token не знайдено)
 
-1. Backend не знаходить token (видалений по TTL) → повертає помилку
-2. Redirect на сторінку авторизації
-3. Toast-нотифікація: "Час дії посилання закінчився. Спробуйте ще раз"
+Коли token невалідний (вже використаний, прострочений, або хибний):
 
-> **Примітка:** Технічно expired та reused magic link повертають однакову помилку (token не знайдено в Redis). Backend не розрізняє ці випадки. Можна використовувати єдине повідомлення: "Посилання недійсне або вже було використано. Введіть email для отримання нового".
+1. Backend повертає 401 "Invalid or expired magic link token"
+2. Verify page показує помилку inline з кнопкою "Спробувати знову" (веде на `/auth/signin`)
+
+> **Примітка:** Backend не розрізняє expired та reused magic link — обидва випадки повертають однакову помилку (token не знайдено в Redis).
