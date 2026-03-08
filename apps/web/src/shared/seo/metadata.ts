@@ -22,9 +22,9 @@ export async function fetchMetadata({
         locale = LANG.UK;
     }
 
-    let title = 'LucidShip – Захист ваших ставок';
+    let title = 'LucidShip – Запустіть SaaS MVP за 4 тижні';
     let description =
-        'LucidShip – надійний сервіс для захисту та управління вашими ставками. Ми створюємо безпечні та ефективні рішення для вашого бізнесу.';
+        'Розробка production-ready B2B платформ на Next.js та NestJS. Швидкий вихід на ринок без агенційних витрат.';
 
     if (page === null) {
         if (meta) {
@@ -63,18 +63,33 @@ export async function fetchMetadata({
         description = pageData?.head?.description ?? description;
     }
 
-    const path = href === 'welcome' ? '' : `/${href}`;
+    const path = href === 'landing' ? '' : `/${href}`;
+
+    const canonicalUrl = `${BASE_URL}/${locale}${path}`;
 
     return {
         title,
         description,
         alternates: {
-            canonical: `${BASE_URL}/${locale}${path}`,
+            canonical: canonicalUrl,
             languages: {
                 'x-default': `${BASE_URL}/uk${path}`,
                 'uk-ua': `${BASE_URL}/uk${path}`,
                 'en-ua': `${BASE_URL}/en${path}`,
             },
+        },
+        openGraph: {
+            title,
+            description,
+            url: canonicalUrl,
+            siteName: 'LucidShip',
+            locale: locale === 'uk' ? 'uk_UA' : 'en_US',
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
         },
     };
 }

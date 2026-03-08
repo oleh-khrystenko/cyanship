@@ -64,10 +64,10 @@ export default function CallbackPage() {
         return (
             <main className="flex min-h-screen items-center justify-center px-4">
                 <div className="w-full max-w-md space-y-6 text-center">
-                    <h1 className="text-text-primary text-3xl font-bold">
+                    <h1 className="text-foreground text-3xl font-bold">
                         {tRecovery('title')}
                     </h1>
-                    <p className="text-text-secondary">
+                    <p className="text-muted-foreground">
                         {t('account_deleted_description')}
                     </p>
                     <UiButton

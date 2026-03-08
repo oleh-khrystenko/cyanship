@@ -18,11 +18,11 @@ const sizeStyles: Record<UiInputSize, string> = {
 
 const variantStyles: Record<UiInputVariant, string> = {
     outlined:
-        'bg-transparent text-text-primary border border-border hover:border-text-secondary focus-within:border-primary',
-    filled: 'bg-surface-hover text-text-primary border border-transparent hover:bg-surface focus-within:bg-surface',
+        'bg-transparent text-foreground border border-border hover:border-muted-foreground focus-within:border-primary',
+    filled: 'bg-secondary text-foreground border border-transparent hover:bg-card focus-within:bg-card',
 };
 
-const errorStyles = 'border-error hover:border-error focus-within:border-error';
+const errorStyles = 'border-destructive hover:border-destructive focus-within:border-destructive';
 
 const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
     const {
@@ -59,7 +59,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     <IconLeft
                         width={iconSize}
                         height={iconSize}
-                        className="shrink-0 text-text-secondary"
+                        className="shrink-0 text-muted-foreground"
                         aria-hidden
                     />
                 )}
@@ -67,19 +67,19 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     {...inputProps}
                     ref={ref}
                     disabled={disabled}
-                    className="w-full bg-transparent outline-none placeholder:text-text-secondary disabled:cursor-not-allowed"
+                    className="w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
                 />
                 {IconRight && (
                     <IconRight
                         width={iconSize}
                         height={iconSize}
-                        className="shrink-0 text-text-secondary"
+                        className="shrink-0 text-muted-foreground"
                         aria-hidden
                     />
                 )}
             </label>
             {error && (
-                <p className="mt-1 text-sm text-error">
+                <p className="mt-1 text-sm text-destructive">
                     {error}
                 </p>
             )}

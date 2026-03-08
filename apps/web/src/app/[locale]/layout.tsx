@@ -45,7 +45,7 @@ export default async function LocaleLayout({
             </head>
 
             <body
-                className={`${mulish.className} bg-background text-text-primary`}
+                className={`${mulish.className} bg-background text-foreground`}
             >
                 <Providers>
                     <NextIntlClientProvider>

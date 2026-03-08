@@ -75,10 +75,10 @@ const ProfileForm = ({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="text-text-secondary mb-1 block text-sm">
+                <label className="text-muted-foreground mb-1 block text-sm">
                     {t('name_label')}
                     {nameRequired && (
-                        <span className="text-error ml-1">*</span>
+                        <span className="text-destructive ml-1">*</span>
                     )}
                 </label>
                 <UiInput
@@ -96,7 +96,7 @@ const ProfileForm = ({
             </div>
 
             <div>
-                <label className="text-text-secondary mb-1 block text-sm">
+                <label className="text-muted-foreground mb-1 block text-sm">
                     {t('last_name_label')}
                 </label>
                 <UiInput

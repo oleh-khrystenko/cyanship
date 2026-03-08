@@ -89,10 +89,10 @@ function VerifyContent() {
         return (
             <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
                 <CheckCircle className="h-12 w-12 text-success" />
-                <p className="text-text-primary text-lg font-semibold">
+                <p className="text-foreground text-lg font-semibold">
                     {t('deleted_heading')}
                 </p>
-                <p className="text-text-secondary max-w-sm text-center text-sm">
+                <p className="text-muted-foreground max-w-sm text-center text-sm">
                     {t('deleted_description')}
                 </p>
                 <UiButton
@@ -111,10 +111,10 @@ function VerifyContent() {
     if (status === 'error') {
         return (
             <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
-                <p className="text-text-primary text-lg">
+                <p className="text-foreground text-lg">
                     {t('error_heading')}
                 </p>
-                <p className="text-text-secondary text-sm">
+                <p className="text-muted-foreground text-sm">
                     {errorMessage || t('error_description')}
                 </p>
                 <UiButton

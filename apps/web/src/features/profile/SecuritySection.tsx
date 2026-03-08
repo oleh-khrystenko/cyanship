@@ -127,14 +127,14 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     return (
         <section className="space-y-4">
-            <h2 className="text-text-primary text-xl font-semibold">
+            <h2 className="text-foreground text-xl font-semibold">
                 {t('heading')}
             </h2>
 
             {/* Set password mode */}
             {isSetMode && (
                 <form onSubmit={handleSetPassword} className="space-y-3">
-                    <p className="text-text-secondary text-sm">
+                    <p className="text-muted-foreground text-sm">
                         {getHeading()}
                     </p>
                     <UiPasswordInput
@@ -168,14 +168,14 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             {/* Change password mode (has password, default or reset) */}
             {(isChangeMode || isResetMode) && (
                 <form onSubmit={handleChangePassword} className="space-y-3">
-                    <p className="text-text-secondary text-sm">
+                    <p className="text-muted-foreground text-sm">
                         {getHeading()}
                     </p>
 
                     {/* Current password — only in change mode, not reset */}
                     {isChangeMode && (
                         <div>
-                            <label className="text-text-secondary mb-1 block text-sm">
+                            <label className="text-muted-foreground mb-1 block text-sm">
                                 {t('current_password_label')}
                             </label>
                             <UiPasswordInput
@@ -193,7 +193,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     )}
 
                     <div>
-                        <label className="text-text-secondary mb-1 block text-sm">
+                        <label className="text-muted-foreground mb-1 block text-sm">
                             {t('new_password_label')}
                         </label>
                         <UiPasswordInput
@@ -231,7 +231,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                                 type="button"
                                 variant="text"
                                 size="md"
-                                className="text-error"
+                                className="text-destructive"
                                 onClick={() => setConfirmDelete(true)}
                                 disabled={submitting}
                             >
@@ -244,15 +244,15 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Delete password confirmation */}
             {confirmDelete && (
-                <div className="rounded-lg border border-error/30 bg-error/10 p-4">
-                    <p className="text-text-primary mb-3 text-sm">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                    <p className="text-foreground mb-3 text-sm">
                         {t('delete_password_confirm')}
                     </p>
                     <div className="flex gap-3">
                         <UiButton
                             variant="filled"
                             size="sm"
-                            className="rounded-lg bg-error"
+                            className="rounded-lg bg-destructive"
                             onClick={() => void handleDeletePassword()}
                             disabled={submitting}
                         >

@@ -72,10 +72,10 @@ const DeleteAccountModal = ({
             onClick={handleBackdropClick}
         >
             <div className="bg-background mx-4 w-full max-w-md rounded-xl p-6 shadow-xl">
-                <h2 className="text-text-primary text-lg font-semibold">
+                <h2 className="text-foreground text-lg font-semibold">
                     {t('title')}
                 </h2>
-                <p className="text-text-secondary mt-2 text-sm">
+                <p className="text-muted-foreground mt-2 text-sm">
                     {t('description')}
                 </p>
 
@@ -84,7 +84,7 @@ const DeleteAccountModal = ({
                     className="mt-4 space-y-4"
                 >
                     <div>
-                        <label className="text-text-secondary mb-1 block text-sm">
+                        <label className="text-muted-foreground mb-1 block text-sm">
                             {t('password_label')}
                         </label>
                         <UiPasswordInput
@@ -111,7 +111,7 @@ const DeleteAccountModal = ({
                             type="submit"
                             variant="filled"
                             size="md"
-                            className="rounded-lg bg-error"
+                            className="rounded-lg bg-destructive"
                             disabled={submitting || !password}
                         >
                             {submitting ? (

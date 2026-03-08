@@ -19,7 +19,7 @@ const ChangeTheme: FC = () => {
         <div
             role="group"
             aria-label="Theme"
-            className="bg-surface border-border flex items-center rounded-full border p-0.5"
+            className="bg-card border-border flex items-center rounded-full border p-0.5"
         >
             {THEME_OPTIONS.map(({ value, icon: Icon, label }) => {
                 const isActive = theme === value;
@@ -34,7 +34,7 @@ const ChangeTheme: FC = () => {
                         className={
                             isActive
                                 ? 'rounded-full bg-primary/15 !text-primary'
-                                : 'rounded-full !text-text-secondary hover:!text-text-primary'
+                                : 'rounded-full !text-muted-foreground hover:!text-foreground'
                         }
                         IconLeft={Icon}
                     />

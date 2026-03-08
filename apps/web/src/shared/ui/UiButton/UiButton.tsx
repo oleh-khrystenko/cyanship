@@ -44,11 +44,11 @@ const iconCompactSizeStyles: Record<UiButtonSize, string> = {
  * Override via className prop for custom design systems
  */
 const variantStyles: Record<UiButtonVariant, string> = {
-    filled: 'bg-primary text-white hover:bg-primary-dark active:bg-primary-dark',
-    text: 'bg-transparent text-text-secondary hover:text-text-primary',
-    icon: 'bg-transparent text-text-secondary hover:text-text-primary',
+    filled: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
+    text: 'bg-transparent text-muted-foreground hover:text-foreground',
+    icon: 'bg-transparent text-muted-foreground hover:text-foreground',
     'icon-compact':
-        'bg-transparent text-text-secondary hover:text-text-primary',
+        'bg-transparent text-muted-foreground hover:text-foreground',
 };
 
 interface RenderContentProps {

@@ -202,13 +202,13 @@ export default function SigninPage() {
     // --- Header ---
     const renderHeader = () => (
         <div className="text-center">
-            <h1 className="text-text-primary text-3xl font-bold">
+            <h1 className="text-foreground text-3xl font-bold">
                 {state === 'recovery'
                     ? tRecovery('title')
                     : t('heading')}
             </h1>
             {state === 'email' && (
-                <p className="text-text-secondary mt-2">
+                <p className="text-muted-foreground mt-2">
                     {t('subheading')}
                 </p>
             )}
@@ -242,7 +242,7 @@ export default function SigninPage() {
 
             <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-text-secondary text-sm">
+                <span className="text-muted-foreground text-sm">
                     {t('or_divider')}
                 </span>
                 <div className="h-px flex-1 bg-border" />
@@ -253,7 +253,7 @@ export default function SigninPage() {
                 href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
                 variant="filled"
                 size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
+                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
                 IconLeft={GoogleIcon}
             >
                 {t('google_button')}
@@ -331,7 +331,7 @@ export default function SigninPage() {
                     type="button"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
+                    className="w-full justify-center rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
                     IconLeft={Mail}
@@ -347,10 +347,10 @@ export default function SigninPage() {
         <div className="space-y-6">
             <div className="rounded-lg border border-success/30 bg-success/10 p-6 text-center">
                 <Mail className="mx-auto mb-3 h-10 w-10 text-success" />
-                <h2 className="text-text-primary text-lg font-semibold">
+                <h2 className="text-foreground text-lg font-semibold">
                     {t('magic_link_sent_title')}
                 </h2>
-                <p className="text-text-secondary mt-1 text-sm">
+                <p className="text-muted-foreground mt-1 text-sm">
                     {t('magic_link_sent_description', { email })}
                 </p>
             </div>
@@ -369,7 +369,7 @@ export default function SigninPage() {
     // --- State: recovery ---
     const renderRecoveryState = () => (
         <div className="space-y-4">
-            <p className="text-text-secondary text-center">
+            <p className="text-muted-foreground text-center">
                 {tRecovery('description', {
                     date: deletedAt ?? '',
                     days: deletedDaysLeft,
@@ -404,8 +404,8 @@ export default function SigninPage() {
     // --- State: error ---
     const renderErrorState = () => (
         <div className="space-y-4">
-            <div className="rounded-lg border border-error/30 bg-error/10 p-6 text-center">
-                <p className="text-error text-sm font-medium">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 text-center">
+                <p className="text-destructive text-sm font-medium">
                     {errorMessage || t('error_generic')}
                 </p>
             </div>
