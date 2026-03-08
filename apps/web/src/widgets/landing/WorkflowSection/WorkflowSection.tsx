@@ -14,7 +14,10 @@ const WorkflowSection = () => {
         <section id="workflow" className="scroll-mt-28 border-t border-border py-24">
             <div className="container px-6">
                 <div className="max-w-2xl">
-                    <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                    <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                        {t('label')}
+                    </span>
+                    <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
                         {t('heading')}
                     </h2>
                     <p className="mt-6 text-lg leading-relaxed text-muted-foreground">

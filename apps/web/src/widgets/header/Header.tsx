@@ -17,9 +17,11 @@ import { useAuthStore } from '@/stores/auth';
 
 const landingNavItems = [
     { key: 'approach', href: '#problem' },
+    { key: 'proof', href: '#dogfooding' },
     { key: 'portfolio', href: '#portfolio' },
     { key: 'workflow', href: '#workflow' },
     { key: 'pricing', href: '#pricing' },
+    { key: 'get_started', href: '#footer-cta' },
 ] as const;
 
 const Header = () => {

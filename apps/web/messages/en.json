@@ -6,9 +6,11 @@
         },
         "nav": {
             "approach": "Approach",
+            "proof": "Proof",
             "portfolio": "Portfolio",
             "workflow": "Workflow",
-            "pricing": "Pricing"
+            "pricing": "Pricing",
+            "get_started": "Get Started"
         },
         "hero": {
             "heading": "Launch Your SaaS MVP in 4 Weeks.",
@@ -21,6 +23,7 @@
             "comment": "// Your MVP's payment logic"
         },
         "problem": {
+            "label": "Approach",
             "heading": "Skip the Boilerplate. Focus on Business.",
             "paragraph_1": "Most startup budgets are burned on rebuilding authentication, database models, and payment integrations. I've already built that.",
             "paragraph_2": "Using my proprietary modular core, \"LucidShip\", we skip the repetitive setup.",
@@ -33,6 +36,7 @@
             "feature_scale_description": "MongoDB database and Stripe payments integrated out of the box."
         },
         "dogfooding": {
+            "label": "Proof",
             "heading": "You Are Looking at the Code Right Now",
             "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same LucidShip core your product will use.",
             "step_1": "Create an account to test the auth flow.",
@@ -47,6 +51,7 @@
             "video_label": "Watch Loom Video"
         },
         "workflow": {
+            "label": "Workflow",
             "heading": "No Useless Meetings. Just Daily Progress.",
             "description": "I value your time. My workflow is designed for founders who prefer tangible results over endless Zoom calls.",
             "step_async_title": "Async Communication",
@@ -57,6 +62,7 @@
             "step_code_description": "Regular repository pushes. You always own your IP."
         },
         "pricing": {
+            "label": "Pricing",
             "heading": "Predictable Pricing. Zero Hidden Fees.",
             "package_label": "MVP Launch Package",
             "price": "Starting at $1,500",
@@ -79,6 +85,7 @@
             "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package."
         },
         "footer_cta": {
+            "label": "Get Started",
             "heading": "Have a raw idea? Let's map it out.",
             "description": "Send me a brief outline or a quick Loom video explaining your concept. I'll review it and return a clear technical roadmap and a precise estimate within 24 hours. No commitment. No sales calls.",
             "cta": "Submit Your Idea",

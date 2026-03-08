@@ -28,7 +28,10 @@ const FooterCtaSection = () => {
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     {/* Text + CTA */}
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                        <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                            {t('label')}
+                        </span>
+                        <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
                             {t('heading')}
                         </h2>
                         <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
