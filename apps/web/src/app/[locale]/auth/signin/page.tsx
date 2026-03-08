@@ -225,7 +225,7 @@ export default function SigninPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    IconLeft={Mail}
+                    IconLeft={<Mail />}
                     size="lg"
                 />
 
@@ -254,7 +254,7 @@ export default function SigninPage() {
                 variant="filled"
                 size="lg"
                 className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
-                IconLeft={GoogleIcon}
+                IconLeft={<GoogleIcon />}
             >
                 {t('google_button')}
             </UiButton>
@@ -276,7 +276,7 @@ export default function SigninPage() {
                     type="email"
                     value={email}
                     readOnly
-                    IconLeft={Mail}
+                    IconLeft={<Mail />}
                     size="lg"
                     className="pr-20"
                 />
@@ -334,7 +334,7 @@ export default function SigninPage() {
                     className="w-full justify-center rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
-                    IconLeft={Mail}
+                    IconLeft={<Mail />}
                 >
                     {t('login_via_email_link')}
                 </UiButton>

@@ -25,7 +25,7 @@ const HeroSection = () => {
                                 variant="filled"
                                 size="lg"
                                 className="h-12 rounded-lg px-8 text-base font-semibold"
-                                IconRight={ArrowRight}
+                                IconRight={<ArrowRight />}
                             >
                                 {t('cta_primary')}
                             </UiButton>

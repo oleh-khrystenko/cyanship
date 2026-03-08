@@ -34,7 +34,7 @@ const UiPasswordInput = forwardRef<HTMLInputElement, UiPasswordInputProps>(
                     onClick={() => setVisible((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2"
                     aria-label={visible ? hideLabel : showLabel}
-                    IconLeft={visible ? EyeOff : Eye}
+                    IconLeft={visible ? <EyeOff /> : <Eye />}
                 />
             </div>
         );

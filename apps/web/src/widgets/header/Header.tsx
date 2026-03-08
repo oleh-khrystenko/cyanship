@@ -84,7 +84,7 @@ const Header = () => {
                                     void handleLogout();
                                 }}
                                 aria-label={t('logout')}
-                                IconLeft={LogOut}
+                                IconLeft={<LogOut />}
                             />
                         </>
                     ) : (

@@ -4,10 +4,10 @@ import { forwardRef } from 'react';
 import { composeClasses } from '@/shared/lib';
 import type { UiInputProps, UiInputSize, UiInputVariant } from './types';
 
-const iconSizeMap: Record<UiInputSize, number> = {
-    sm: 16,
-    md: 20,
-    lg: 24,
+const iconSizeStyles: Record<UiInputSize, string> = {
+    sm: '[&>svg]:size-4',
+    md: '[&>svg]:size-5',
+    lg: '[&>svg]:size-6',
 };
 
 const sizeStyles: Record<UiInputSize, string> = {
@@ -36,7 +36,10 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
         ...inputProps
     } = props;
 
-    const iconSize = iconSizeMap[size];
+    const iconClass = composeClasses(
+        'shrink-0 text-muted-foreground',
+        iconSizeStyles[size]
+    );
 
     const wrapperClasses = composeClasses(
         'inline-flex items-center gap-2',
@@ -56,12 +59,9 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                 data-size={size}
             >
                 {IconLeft && (
-                    <IconLeft
-                        width={iconSize}
-                        height={iconSize}
-                        className="shrink-0 text-muted-foreground"
-                        aria-hidden
-                    />
+                    <span className={iconClass} aria-hidden>
+                        {IconLeft}
+                    </span>
                 )}
                 <input
                     {...inputProps}
@@ -70,12 +70,9 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     className="w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
                 />
                 {IconRight && (
-                    <IconRight
-                        width={iconSize}
-                        height={iconSize}
-                        className="shrink-0 text-muted-foreground"
-                        aria-hidden
-                    />
+                    <span className={iconClass} aria-hidden>
+                        {IconRight}
+                    </span>
                 )}
             </label>
             {error && (

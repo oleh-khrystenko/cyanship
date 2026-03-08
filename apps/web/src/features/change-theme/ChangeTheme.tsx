@@ -36,7 +36,7 @@ const ChangeTheme: FC = () => {
                                 ? 'rounded-full bg-primary/15 !text-primary'
                                 : 'rounded-full !text-muted-foreground hover:!text-foreground'
                         }
-                        IconLeft={Icon}
+                        IconLeft={<Icon />}
                     />
                 );
             })}

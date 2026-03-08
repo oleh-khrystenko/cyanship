@@ -1,16 +1,12 @@
 import {
     AnchorHTMLAttributes,
     ButtonHTMLAttributes,
-    ComponentType,
     ReactNode,
-    SVGProps,
 } from 'react';
 import { LinkProps } from 'next/link';
 
 export type UiButtonVariant = 'filled' | 'text' | 'icon' | 'icon-compact';
 export type UiButtonSize = 'sm' | 'md' | 'lg';
-
-type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 /**
  * Base props shared by all button variants
@@ -20,8 +16,8 @@ interface BaseProps {
     variant?: UiButtonVariant;
     size?: UiButtonSize;
     className?: string;
-    IconLeft?: IconComponent;
-    IconRight?: IconComponent;
+    IconLeft?: ReactNode;
+    IconRight?: ReactNode;
     disabled?: boolean;
 }
 

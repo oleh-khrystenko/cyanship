@@ -6,13 +6,13 @@ import { composeClasses } from '@/shared/lib';
 import type { UiButtonProps, UiButtonSize, UiButtonVariant } from './types';
 
 /**
- * Icon size mapping based on button size
- * Aligns with UiInput icon sizes (w-4/w-5/w-6 = 16/20/24px)
+ * CSS classes to control icon size via container.
+ * Icons passed as ReactNode are sized by the wrapper, not by the caller.
  */
-const iconSizeMap: Record<UiButtonSize, number> = {
-    sm: 16,
-    md: 20,
-    lg: 24,
+const iconSizeStyles_svg: Record<UiButtonSize, string> = {
+    sm: '[&>svg]:size-4',
+    md: '[&>svg]:size-5',
+    lg: '[&>svg]:size-6',
 };
 
 const sizeStyles: Record<UiButtonSize, string> = {
@@ -52,8 +52,8 @@ const variantStyles: Record<UiButtonVariant, string> = {
 };
 
 interface RenderContentProps {
-    IconLeft?: UiButtonProps['IconLeft'];
-    IconRight?: UiButtonProps['IconRight'];
+    IconLeft?: ReactNode;
+    IconRight?: ReactNode;
     children?: ReactNode;
     size: UiButtonSize;
 }
@@ -64,15 +64,19 @@ const renderContent = ({
     children,
     size,
 }: RenderContentProps) => {
-    const iconSize = iconSizeMap[size];
+    const sizeClass = iconSizeStyles_svg[size];
     return (
         <>
             {IconLeft && (
-                <IconLeft width={iconSize} height={iconSize} aria-hidden />
+                <span className={sizeClass} aria-hidden>
+                    {IconLeft}
+                </span>
             )}
             {children && <span>{children}</span>}
             {IconRight && (
-                <IconRight width={iconSize} height={iconSize} aria-hidden />
+                <span className={sizeClass} aria-hidden>
+                    {IconRight}
+                </span>
             )}
         </>
     );
