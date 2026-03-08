@@ -111,21 +111,17 @@ apps/web/src/
 
 ---
 
-## i18n — розширення існуючого namespace
+## i18n
 
-Namespace: `welcome_page` (існуючий, розширюється новими ключами для landing секцій).
+Namespace: `landing_page`. Існуючий `welcome_page` перейменовується на `landing_page`, старі ключі (`heading`, `description`, `cta`) видаляються — їх замінюють нові секції. Ключ `head` зберігається з оновленим контентом.
+
+Всі місця в коді, що посилаються на `welcome_page` (page.tsx, metadata), оновлюються на `landing_page`.
 
 ```jsonc
 // messages/uk.json & messages/en.json
 {
-  "welcome_page": {
-    // --- Існуючі ключі (зберігаються) ---
+  "landing_page": {
     "head": { "title": "...", "description": "..." },
-    "heading": "...",
-    "description": "...",
-    "cta": "...",
-
-    // --- Нові ключі для landing секцій ---
     "nav": {
       "approach": "Підхід / Approach",
       "portfolio": "Портфоліо / Portfolio",
@@ -208,7 +204,7 @@ Namespace: `welcome_page` (існуючий, розширюється новим
 }
 ```
 
-Всі widgets використовують `useTranslations('welcome_page')` — єдиний namespace для всієї landing/welcome сторінки.
+Всі widgets використовують `useTranslations('landing_page')`.
 
 ---
 
@@ -217,10 +213,12 @@ Namespace: `welcome_page` (існуючий, розширюється новим
 ### Фаза 1: Інфраструктура
 
 **Крок 1.1 — i18n ключі**
-- Розширити існуючий `welcome_page` namespace в `messages/uk.json` та `messages/en.json`
-- Додати нові вкладені секції: `nav`, `hero`, `problem`, `dogfooding`, `portfolio`, `workflow`, `pricing`, `footer_cta`, `footer`
+- Перейменувати `welcome_page` → `landing_page` в `messages/uk.json` та `messages/en.json`
+- Видалити старі ключі (`heading`, `description`, `cta`), оновити `head`
+- Додати секції: `nav`, `hero`, `problem`, `dogfooding`, `portfolio`, `workflow`, `pricing`, `footer_cta`, `footer`
+- Оновити всі посилання в коді: `useTranslations('welcome_page')` → `useTranslations('landing_page')`, `fetchMetadata` page key
 - Всі тексти з чернетки перекласти на українську
-- Файли: `apps/web/messages/uk.json`, `apps/web/messages/en.json`
+- Файли: `apps/web/messages/uk.json`, `apps/web/messages/en.json`, `apps/web/src/app/[locale]/page.tsx`
 
 **Крок 1.2 — Перевірити design tokens**
 - Переконатися що `bg-surface`, `bg-surface-hover`, `border-border` коректно працюють для card-подібних елементів
@@ -233,44 +231,44 @@ Namespace: `welcome_page` (існуючий, розширюється новим
 **Крок 2.1 — LandingFooter**
 - Простий footer з Logo + copyright
 - Використовує `Logo` з `entities/brand`
-- i18n: `welcome_page.footer`
+- i18n: `landing_page.footer`
 
 **Крок 2.2 — LandingNav**
 - Горизонтальна anchor navigation для секцій сторінки
 - `UiButton as="a"` variant="text" для anchor links (#problem, #portfolio, #workflow, #pricing)
 - Рендериться всередині `page.tsx` як перший елемент `<main>`, під глобальним auth Header
 - Mobile: горизонтальний scroll або compact layout
-- i18n: `welcome_page.nav`
+- i18n: `landing_page.nav`
 
 **Крок 2.3 — HeroSection**
 - Grid layout: текст зліва + CodeVisual справа
 - `CodeVisual.tsx` — окремий під-компонент (псевдо-editor з syntax highlighting через span кольори)
 - 2 CTA: `UiButton` filled (primary) + `UiButton` text (secondary)
 - CodeVisual використовує `font-mono`, кольори через design tokens
-- i18n: `welcome_page.hero`
+- i18n: `landing_page.hero`
 
 **Крок 2.4 — ProblemSection**
 - Текстовий блок + 3 feature cards
 - Cards = `<div>` з `bg-surface border-border rounded-lg p-6`
 - Іконки: `Layers`, `Code2`, `Rocket` з lucide-react
-- i18n: `welcome_page.problem`
+- i18n: `landing_page.problem`
 
 **Крок 2.5 — DogfoodingSection**
 - Текстовий блок + checklist
 - Checklist items = `<div>` з `bg-surface border-border rounded-lg p-4`
 - Check icon в круглому індикаторі
-- i18n: `welcome_page.dogfooding`
+- i18n: `landing_page.dogfooding`
 
 **Крок 2.6 — PortfolioSection**
 - Grid: текст зліва + video placeholder справа
 - Video placeholder — `<div>` з Play іконкою (не інтерактивний поки що, або `UiButton as="a"` якщо буде Loom URL)
-- i18n: `welcome_page.portfolio`
+- i18n: `landing_page.portfolio`
 
 **Крок 2.7 — WorkflowSection**
 - Текстовий блок + 3 cards
 - Cards = `<div>` з `bg-surface border-border rounded-lg`
 - Icon badges = `<div>` з `bg-surface-hover border-border rounded-lg`
-- i18n: `welcome_page.workflow`
+- i18n: `landing_page.workflow`
 
 **Крок 2.8 — PricingSection**
 - Grid: pricing card зліва + FAQ справа
@@ -278,23 +276,23 @@ Namespace: `welcome_page` (існуючий, розширюється новим
 - Includes checklist з Check іконками
 - CTA: `UiButton` variant="filled" full-width
 - FAQ: список question/answer div-ів
-- i18n: `welcome_page.pricing`
+- i18n: `landing_page.pricing`
 
 **Крок 2.9 — FooterCtaSection**
 - Grid: текст + CTA зліва, 4-step process cards справа
 - Step cards = `<div>` з icon badge + title + subtitle + step number
 - Перший step: `bg-primary` icon badge, інші: `bg-surface-hover`
 - CTA: `UiButton` variant="filled"
-- i18n: `welcome_page.footer_cta`
+- i18n: `landing_page.footer_cta`
 
 ### Фаза 3: Збирання сторінки
 
 **Крок 3.1 — Оновити `app/[locale]/page.tsx`**
 - Замінити поточний placeholder на композицію всіх landing widgets
 - Server component (без `'use client'`)
-- `useTranslations('welcome_page')` — кожен widget викликає `useTranslations` самостійно
+- `useTranslations('landing_page')` — кожен widget викликає `useTranslations` самостійно
 - Anchor `<div id="problem">`, `<div id="portfolio">`, etc. для scroll navigation
-- Оновити `generateMetadata()` з оновленими `welcome_page.head` ключами
+- Оновити `generateMetadata()` з оновленими `landing_page.head` ключами
 
 **Layout залишається без змін** — глобальний auth `Header` (logo, avatar, theme, lang) рендериться для всіх сторінок включно з landing. `LandingNav` з anchor links рендериться всередині `page.tsx` як додаткова навігація по секціях.
 
