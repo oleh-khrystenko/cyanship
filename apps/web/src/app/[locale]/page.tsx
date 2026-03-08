@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps } from '@/shared/types/settings';
 import {
-    LandingNav,
     HeroSection,
     ProblemSection,
     DogfoodingSection,
@@ -20,7 +19,6 @@ export async function generateMetadata(props: MetaProps): Promise<Metadata> {
 export default function HomePage() {
     return (
         <main>
-            <LandingNav />
             <HeroSection />
             <ProblemSection />
             <DogfoodingSection />

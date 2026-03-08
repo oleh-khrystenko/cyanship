@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -14,13 +15,24 @@ import UiButton from '@/shared/ui/UiButton';
 import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
+const landingNavItems = [
+    { key: 'approach', href: '#problem' },
+    { key: 'portfolio', href: '#portfolio' },
+    { key: 'workflow', href: '#workflow' },
+    { key: 'pricing', href: '#pricing' },
+] as const;
+
 const Header = () => {
     const t = useTranslations('components.header');
+    const tNav = useTranslations('landing_page.nav');
     const locale = useLocale();
+    const pathname = usePathname();
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
     const clearUser = useAuthStore((s) => s.clearUser);
+
+    const isLandingPage = pathname === `/${locale}`;
 
     const handleLogout = async () => {
         await logout();
@@ -41,6 +53,20 @@ const Header = () => {
                 >
                     <Logo />
                 </UiButton>
+
+                {isLandingPage && (
+                    <nav className="hidden gap-6 md:flex">
+                        {landingNavItems.map(({ key, href }) => (
+                            <a
+                                key={key}
+                                href={href}
+                                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                {tNav(key)}
+                            </a>
+                        ))}
+                    </nav>
+                )}
 
                 <div className="flex items-center gap-4">
                     {isLoading ? (

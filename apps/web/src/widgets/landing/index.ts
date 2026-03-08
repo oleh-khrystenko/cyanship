@@ -1,5 +1,4 @@
 export { HeroSection } from './HeroSection';
-export { LandingNav } from './LandingNav';
 export { ProblemSection } from './ProblemSection';
 export { DogfoodingSection } from './DogfoodingSection';
 export { PortfolioSection } from './PortfolioSection';
