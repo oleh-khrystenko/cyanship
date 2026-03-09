@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
@@ -24,6 +25,39 @@ const landingNavItems = [
     { key: 'get_started', href: '#footer-cta' },
 ] as const;
 
+const sectionIds = landingNavItems.map((item) => item.href.slice(1));
+
+function useActiveSection(enabled: boolean) {
+    const [activeId, setActiveId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visible = entries
+                    .filter((e) => e.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+                if (visible.length > 0) {
+                    setActiveId(visible[0].target.id);
+                }
+            },
+            { rootMargin: '-20% 0px -60% 0px' }
+        );
+
+        const elements = sectionIds
+            .map((id) => document.getElementById(id))
+            .filter(Boolean) as HTMLElement[];
+
+        elements.forEach((el) => observer.observe(el));
+
+        return () => observer.disconnect();
+    }, [enabled]);
+
+    return activeId;
+}
+
 const Header = () => {
     const t = useTranslations('components.header');
     const tNav = useTranslations('landing_page.nav');
@@ -35,6 +69,7 @@ const Header = () => {
     const clearUser = useAuthStore((s) => s.clearUser);
 
     const isLandingPage = pathname === `/${locale}`;
+    const activeSection = useActiveSection(isLandingPage);
 
     const handleLogout = async () => {
         await logout();
@@ -58,15 +93,22 @@ const Header = () => {
 
                 {isLandingPage && (
                     <nav className="hidden gap-6 md:flex">
-                        {landingNavItems.map(({ key, href }) => (
-                            <a
-                                key={key}
-                                href={href}
-                                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                {tNav(key)}
-                            </a>
-                        ))}
+                        {landingNavItems.map(({ key, href }) => {
+                            const isActive = activeSection === href.slice(1);
+                            return (
+                                <a
+                                    key={key}
+                                    href={href}
+                                    className={`text-sm transition-colors ${
+                                        isActive
+                                            ? 'text-foreground font-medium'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    {tNav(key)}
+                                </a>
+                            );
+                        })}
                     </nav>
                 )}
 
