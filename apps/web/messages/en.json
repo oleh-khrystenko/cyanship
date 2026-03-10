@@ -267,9 +267,12 @@
     "components": {
         "header": {
             "signin": "Sign in",
+            "get_started": "Get Started",
             "logout": "Log out",
             "profile": "Profile",
-            "credits": "credits"
+            "credits": "credits",
+            "settings": "Settings",
+            "menu": "Open menu"
         },
         "change_lang": {
             "label": "Change language"

@@ -267,9 +267,12 @@
     "components": {
         "header": {
             "signin": "Увійти",
+            "get_started": "Почати",
             "logout": "Вийти",
             "profile": "Профіль",
-            "credits": "кредитів"
+            "credits": "кредитів",
+            "settings": "Налаштування",
+            "menu": "Відкрити меню"
         },
         "change_lang": {
             "label": "Змінити мову"
