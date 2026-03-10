@@ -272,6 +272,12 @@
         },
         "change_lang": {
             "label": "Change language"
+        },
+        "change_theme": {
+            "label": "Change theme",
+            "light": "Light",
+            "system": "System",
+            "dark": "Dark"
         }
     }
 }
