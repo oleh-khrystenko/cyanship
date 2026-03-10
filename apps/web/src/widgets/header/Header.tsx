@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LogOut, User } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
 const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
@@ -13,6 +13,7 @@ const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
 });
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
+import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -68,6 +69,7 @@ const Header = () => {
     const isLoading = useAuthStore((s) => s.isLoading);
     const clearUser = useAuthStore((s) => s.clearUser);
 
+    const router = useRouter();
     const isLandingPage = pathname === `/${locale}`;
     const activeSection = useActiveSection(isLandingPage);
 
@@ -75,6 +77,27 @@ const Header = () => {
         await logout();
         clearUser();
         window.location.assign(`/${locale}`);
+    };
+
+    const userMenuItems = [
+        {
+            value: 'profile',
+            label: t('profile'),
+            icon: <User />,
+        },
+        {
+            value: 'logout',
+            label: t('logout'),
+            icon: <LogOut />,
+        },
+    ];
+
+    const handleUserMenuSelect = (value: string) => {
+        if (value === 'profile') {
+            router.push(`/${locale}/profile`);
+        } else if (value === 'logout') {
+            void handleLogout();
+        }
     };
 
     return (
@@ -113,48 +136,46 @@ const Header = () => {
                 )}
 
                 <div className="flex items-center gap-4">
+                    <ChangeLang />
+                    <ChangeTheme />
+
                     {isLoading ? (
                         <div className="bg-secondary h-8 w-20 animate-pulse rounded-lg" />
                     ) : isAuthenticated && user ? (
                         <>
-                            <UiButton
-                                as="link"
-                                href={`/${locale}/profile`}
-                                variant="text"
+                            <span className="bg-secondary text-foreground rounded-full px-2.5 py-1 text-xs font-medium">
+                                {user.credits.balance}{' '}
+                                {t('credits')}
+                            </span>
+                            <UiDropdownMenu
+                                items={userMenuItems}
+                                onSelect={handleUserMenuSelect}
                                 size="sm"
-                                className="flex items-center gap-2 p-0 transition-opacity hover:opacity-80"
-                            >
-                                <span className="flex items-center gap-3">
-                                    {user.profile.avatar ? (
-                                        <Image
-                                            src={user.profile.avatar}
-                                            alt={user.profile.name || ''}
-                                            width={32}
-                                            height={32}
-                                            className="rounded-full"
-                                        />
-                                    ) : (
-                                        <div className="bg-secondary text-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold">
-                                            {(user.profile.name ||
-                                                user.email)[0]?.toUpperCase()}
-                                        </div>
-                                    )}
-                                    <span className="text-foreground hidden text-sm sm:block">
-                                        {user.profile.name || user.email}
-                                    </span>
-                                    <span className="bg-secondary text-foreground rounded-full px-2 py-0.5 text-xs font-medium">
-                                        {user.credits.balance} {t('credits')}
-                                    </span>
-                                </span>
-                            </UiButton>
-                            <UiButton
-                                variant="icon-compact"
-                                size="sm"
-                                onClick={() => {
-                                    void handleLogout();
-                                }}
-                                aria-label={t('logout')}
-                                IconLeft={<LogOut />}
+                                trigger={
+                                    <button
+                                        type="button"
+                                        className="cursor-pointer rounded-full transition-opacity hover:opacity-80"
+                                    >
+                                        {user.profile.avatar ? (
+                                            <Image
+                                                src={user.profile.avatar}
+                                                alt={
+                                                    user.profile.name || ''
+                                                }
+                                                width={32}
+                                                height={32}
+                                                className="rounded-full"
+                                            />
+                                        ) : (
+                                            <div className="bg-secondary text-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold">
+                                                {(
+                                                    user.profile.name ||
+                                                    user.email
+                                                )[0]?.toUpperCase()}
+                                            </div>
+                                        )}
+                                    </button>
+                                }
                             />
                         </>
                     ) : (
@@ -168,9 +189,6 @@ const Header = () => {
                             {t('signin')}
                         </UiButton>
                     )}
-
-                    <ChangeTheme />
-                    <ChangeLang />
                 </div>
             </div>
         </header>
