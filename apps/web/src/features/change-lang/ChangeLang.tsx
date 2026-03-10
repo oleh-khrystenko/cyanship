@@ -3,32 +3,26 @@
 import { FC } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { Globe } from 'lucide-react';
 import { UA, US } from 'country-flag-icons/react/3x2';
 import { LANG } from '@lucidship/types';
 import { ChangeLangProps } from './types';
-import UiSelect from '@/shared/ui/UiSelect';
-import type { UiSelectOption } from '@/shared/ui/UiSelect';
+import UiButton from '@/shared/ui/UiButton';
+import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
+import type { UiDropdownMenuItem } from '@/shared/ui/UiDropdownMenu';
 import { updatePreferredLang } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
-const LANGS: UiSelectOption[] = [
+const LANG_ITEMS: UiDropdownMenuItem[] = [
     {
-        label: (
-            <div className="flex items-center gap-1.5">
-                <US title="United States" className="h-5 w-7" />
-                <span className="text-sm font-bold">Eng</span>
-            </div>
-        ),
         value: LANG.EN,
+        label: 'English',
+        icon: <US title="United States" className="h-4 w-5 rounded-sm" />,
     },
     {
-        label: (
-            <div className="flex items-center gap-1.5">
-                <UA title="Ukraine" className="h-5 w-7" />
-                <span className="text-sm font-bold">Укр</span>
-            </div>
-        ),
         value: LANG.UK,
+        label: 'Українська',
+        icon: <UA title="Ukraine" className="h-4 w-5 rounded-sm" />,
     },
 ];
 
@@ -41,6 +35,8 @@ const ChangeLang: FC<ChangeLangProps> = () => {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
     const handleChangeLang = (value: string) => {
+        if (value === activeLocale) return;
+
         const allSearchParams = searchParams.toString();
         const newPath = pathname.replace(`/${activeLocale}`, '');
         const newUrl = `/${value}${newPath}${allSearchParams ? `?${allSearchParams}` : ''}`;
@@ -52,13 +48,21 @@ const ChangeLang: FC<ChangeLangProps> = () => {
     };
 
     return (
-        <UiSelect
-            label={t('label')}
-            options={LANGS}
-            value={activeLocale}
-            onChange={handleChangeLang}
-            variant="outlined"
+        <UiDropdownMenu
+            items={LANG_ITEMS}
+            onSelect={handleChangeLang}
+            activeValue={activeLocale}
+            align="end"
             size="sm"
+            trigger={
+                <UiButton
+                    variant="icon"
+                    size="sm"
+                    aria-label={t('label')}
+                    className="size-9"
+                    IconLeft={<Globe />}
+                />
+            }
         />
     );
 };
