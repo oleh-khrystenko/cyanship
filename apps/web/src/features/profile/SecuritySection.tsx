@@ -142,6 +142,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         value={newPwd}
                         onChange={(e) => setNewPwd(e.target.value)}
                         required={isPasswordRequired}
+                        minLength={8}
                         size="lg"
                         showLabel={t('show_password')}
                         hideLabel={t('hide_password')}
@@ -201,6 +202,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             value={newPwd}
                             onChange={(e) => setNewPwd(e.target.value)}
                             required
+                            minLength={8}
                             size="lg"
                             showLabel={t('show_password')}
                             hideLabel={t('hide_password')}
