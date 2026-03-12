@@ -20,7 +20,8 @@
         },
         "code_visual": {
             "filename": "api/subscriptions/route.ts",
-            "comment": "// Платіжна логіка вашого MVP"
+            "comment_1": "// Готовий модуль монетизації",
+            "comment_2": "// Генеруйте MRR з першого дня з вбудованим білінгом"
         },
         "problem": {
             "label": "Підхід",

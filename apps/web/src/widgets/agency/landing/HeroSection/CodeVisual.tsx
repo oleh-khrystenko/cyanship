@@ -19,11 +19,15 @@ const CodeVisual = () => {
                 </div>
 
                 {/* Code content */}
-                <div className="p-6 font-mono text-sm leading-relaxed">
+                <div className="p-4 font-mono text-[11px] leading-relaxed sm:p-6 sm:text-sm">
                     <div className="text-muted-foreground">
-                        {t('comment')}
+                        {t('comment_1')}
                     </div>
-                    <div className="mt-2">
+                    <div className="text-muted-foreground">
+                        {t('comment_2')}
+                    </div>
+
+                    <div className="mt-3">
                         <span className="text-muted-foreground">
                             export async function
                         </span>{' '}
@@ -32,6 +36,7 @@ const CodeVisual = () => {
                             {'(req: Request) {'}
                         </span>
                     </div>
+
                     <div className="mt-1 pl-4">
                         <span className="text-muted-foreground">const</span>{' '}
                         <span className="text-foreground">session</span>{' '}
@@ -44,6 +49,7 @@ const CodeVisual = () => {
                         <span className="text-foreground">create</span>
                         <span className="text-muted-foreground">{'({'}</span>
                     </div>
+
                     <div className="pl-8 text-muted-foreground">
                         mode:{' '}
                         <span className="text-foreground">
@@ -59,10 +65,40 @@ const CodeVisual = () => {
                         ,
                     </div>
                     <div className="pl-8 text-muted-foreground">
-                        line_items:{' '}
-                        <span className="text-foreground">[...]</span>,
+                        line_items: [
                     </div>
+                    <div className="pl-12 text-muted-foreground">
+                        {'{ '}price:{' '}
+                        <span className="text-foreground">
+                            {"'price_premium_tier'"}
+                        </span>
+                        , quantity:{' '}
+                        <span className="text-foreground">1</span>
+                        {' }'}
+                    </div>
+                    <div className="pl-8 text-muted-foreground">],</div>
+                    <div className="pl-8 text-muted-foreground">
+                        success_url:{' '}
+                        <span className="text-foreground">
+                            {'`${domain}/dashboard?setup=complete`'}
+                        </span>
+                        ,
+                    </div>
+
                     <div className="pl-4 text-muted-foreground">{'});'}</div>
+
+                    <div className="mt-2 pl-4 text-muted-foreground">
+                        <span className="text-muted-foreground">return</span>{' '}
+                        <span className="text-foreground">Response</span>
+                        <span className="text-muted-foreground">
+                            .json({'{ '}
+                        </span>
+                        <span className="text-foreground">url</span>
+                        <span className="text-muted-foreground">
+                            : session.url{' }'});
+                        </span>
+                    </div>
+
                     <div className="mt-2 text-muted-foreground">{'}'}</div>
                 </div>
             </div>

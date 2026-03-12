@@ -20,7 +20,8 @@
         },
         "code_visual": {
             "filename": "api/subscriptions/route.ts",
-            "comment": "// Your MVP's payment logic"
+            "comment_1": "// Ready-to-use monetization module",
+            "comment_2": "// Generate MRR from Day 1 with built-in billing"
         },
         "problem": {
             "label": "Approach",
