@@ -386,7 +386,7 @@ const Header = () => {
                                         as="a"
                                         href="#footer-cta"
                                         variant="filled"
-                                        size="sm"
+                                        size="md"
                                         className="mt-2 w-full rounded-lg"
                                         onClick={() =>
                                             setIsSheetOpen(false)

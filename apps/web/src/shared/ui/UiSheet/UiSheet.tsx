@@ -68,7 +68,7 @@ function UiSheetContent({
                 {children}
                 <DialogPrimitive.Close
                     className={composeClasses(
-                        'absolute top-4 right-4 flex size-8 items-center justify-center rounded-md opacity-70 transition-opacity',
+                        'absolute top-3 right-4 flex size-8 items-center justify-center rounded-md opacity-70 transition-opacity',
                         'hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none',
                         'disabled:pointer-events-none'
                     )}

@@ -10,7 +10,7 @@
             "portfolio": "Portfolio",
             "workflow": "Workflow",
             "pricing": "Pricing",
-            "get_started": "Get Started"
+            "get_started": "Contact"
         },
         "hero": {
             "heading": "Launch Your SaaS MVP in 4 Weeks.",
@@ -85,7 +85,7 @@
             "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package."
         },
         "footer_cta": {
-            "label": "Get Started",
+            "label": "Contact",
             "heading": "Have a raw idea? Let's map it out.",
             "description": "Send me a brief outline or a quick Loom video explaining your concept. I'll review it and return a clear technical roadmap and a precise estimate within 24 hours. No commitment. No sales calls.",
             "cta": "Submit Your Idea",
