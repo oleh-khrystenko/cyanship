@@ -246,7 +246,7 @@ const Header = () => {
                             href={cta.href}
                             variant="filled"
                             size="sm"
-                            className="rounded-lg"
+                            className="ml-2 rounded-lg"
                         >
                             {cta.label}
                         </UiButton>
