@@ -12,6 +12,7 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
+import type { MagicLinkPurpose } from '@lucidship/types';
 import {
     checkEmail,
     loginWithPassword,
@@ -50,7 +51,7 @@ export default function SigninPage() {
     const [deletedDaysLeft, setDeletedDaysLeft] = useState(0);
     const [resendCountdown, setResendCountdown] = useState(0);
     const [resending, setResending] = useState(false);
-    const lastPurposeRef = useRef<string>('login');
+    const lastPurposeRef = useRef<MagicLinkPurpose>('login');
     const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
     useEffect(() => {
