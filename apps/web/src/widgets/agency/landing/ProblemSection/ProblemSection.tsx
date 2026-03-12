@@ -23,7 +23,6 @@ const ProblemSection = () => {
                     <div className="mt-8 max-w-xl space-y-4 text-lg leading-relaxed text-muted-foreground">
                         <p>{t('paragraph_1')}</p>
                         <p>{t('paragraph_2')}</p>
-                        <p>{t('paragraph_3')}</p>
                     </div>
                 </div>
 
