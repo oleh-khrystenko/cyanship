@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { UserProfile } from '@lucidship/types';
+import { passwordSchema } from '@lucidship/types';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
@@ -30,6 +31,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
+    const [newPwdError, setNewPwdError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -63,8 +65,24 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
         return t('set_password');
     };
 
+    const validateNewPassword = (): boolean => {
+        const result = passwordSchema.safeParse(newPwd);
+        if (!result.success) {
+            setNewPwdError(t('password_too_short'));
+            return false;
+        }
+        return true;
+    };
+
     const handleSetPassword = async (e: FormEvent) => {
         e.preventDefault();
+
+        if (isPasswordOptional && !newPwd) {
+            return;
+        }
+
+        if (!validateNewPassword()) return;
+
         setSubmitting(true);
         try {
             await setPassword(newPwd);
@@ -81,6 +99,9 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const handleChangePassword = async (e: FormEvent) => {
         e.preventDefault();
+
+        if (!validateNewPassword()) return;
+
         setSubmitting(true);
         try {
             if (isResetMode) {
@@ -140,9 +161,12 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     <UiPasswordInput
                         placeholder={t('password_placeholder')}
                         value={newPwd}
-                        onChange={(e) => setNewPwd(e.target.value)}
+                        onChange={(e) => {
+                            setNewPwd(e.target.value);
+                            if (newPwdError) setNewPwdError('');
+                        }}
+                        error={newPwdError || undefined}
                         required={isPasswordRequired}
-                        minLength={8}
                         size="lg"
                         showLabel={t('show_password')}
                         hideLabel={t('hide_password')}
@@ -200,9 +224,12 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         <UiPasswordInput
                             placeholder={t('password_placeholder')}
                             value={newPwd}
-                            onChange={(e) => setNewPwd(e.target.value)}
+                            onChange={(e) => {
+                                setNewPwd(e.target.value);
+                                if (newPwdError) setNewPwdError('');
+                            }}
+                            error={newPwdError || undefined}
                             required
-                            minLength={8}
                             size="lg"
                             showLabel={t('show_password')}
                             hideLabel={t('hide_password')}
