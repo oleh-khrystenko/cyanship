@@ -7,7 +7,7 @@ const HeroSection = () => {
     const t = useTranslations('landing_page.hero');
 
     return (
-        <section className="py-24 md:py-32">
+        <section className="flex min-h-[calc(100svh-4rem)] items-center py-16 md:py-20">
             <div className="container px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     {/* Content */}
