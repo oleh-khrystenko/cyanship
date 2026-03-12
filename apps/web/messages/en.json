@@ -57,7 +57,7 @@
             "step_async_title": "Async Communication",
             "step_async_description": "Slack and email for structured, searchable decisions.",
             "step_video_title": "Video Updates",
-            "step_video_description": "Detailed Loom screen recordings showcasing new features and UI/UX flows.",
+            "step_video_description": "Concise Loom screen recordings showcasing new features and UI/UX flows.",
             "step_code_title": "Code Transparency",
             "step_code_description": "Regular repository pushes. You always own your IP."
         },
