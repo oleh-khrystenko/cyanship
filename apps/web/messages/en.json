@@ -28,13 +28,13 @@
             "heading": "Skip the Boilerplate. Focus on Business.",
             "paragraph_1": "Most startup budgets are burned on rebuilding authentication, database models, and payment integrations. I've already built that.",
             "paragraph_2": "Using my proprietary modular core, \"LucidShip\", we skip the repetitive setup.",
-            "paragraph_3": "I strip out my agency module, keep the rock-solid foundation, and start building your unique business logic on day one.",
-            "feature_architecture_title": "Clean Architecture",
-            "feature_architecture_description": "Strict boundaries between the core features and your custom logic.",
-            "feature_typed_title": "Fully Typed",
-            "feature_typed_description": "Built with TypeScript, Next.js, and NestJS for predictability and fewer bugs.",
-            "feature_scale_title": "Ready to Scale",
-            "feature_scale_description": "MongoDB database and Stripe payments integrated out of the box."
+            "paragraph_3": "We bypass the repetitive setup, keep the rock-solid foundation, and start building your unique custom logic on day one.",
+            "feature_architecture_title": "Zero Tech Debt",
+            "feature_architecture_description": "Built on industry standards. When you hire an in-house team, they can take over instantly without rewriting legacy code.",
+            "feature_typed_title": "Enterprise-Grade Stability",
+            "feature_typed_description": "Engineered with strict standards to ensure your product remains completely reliable during critical investor demos and active use.",
+            "feature_scale_title": "Scale Without Rewrites",
+            "feature_scale_description": "A solid foundation with built-in billing. Designed to support your first 10 paying customers just as flawlessly as your first 10,000."
         },
         "dogfooding": {
             "label": "Proof",
