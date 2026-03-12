@@ -31,9 +31,9 @@
             "feature_architecture_title": "Zero Tech Debt",
             "feature_architecture_description": "Built on industry standards. When you hire an in-house team, they can take over instantly without rewriting legacy code.",
             "feature_typed_title": "Enterprise-Grade Stability",
-            "feature_typed_description": "Engineered with strict standards to ensure your product remains completely reliable during critical investor demos and active use.",
+            "feature_typed_description": "Built for absolute reliability. Your product won't crash during critical investor demos or sudden traffic spikes.",
             "feature_scale_title": "Scale Without Rewrites",
-            "feature_scale_description": "A solid foundation with built-in billing. Designed to support your first 10 paying customers just as flawlessly as your first 10,000."
+            "feature_scale_description": "A solid foundation with built-in Stripe billing. It handles your first 10 paying customers just as easily as your first 10,000."
         },
         "dogfooding": {
             "label": "Proof",
