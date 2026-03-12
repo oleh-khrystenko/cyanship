@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, User, CreditCard, Menu } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -83,6 +83,8 @@ const Header = () => {
     const cta = useHeaderNavStore((s) => s.cta);
 
     const router = useRouter();
+    const pathname = usePathname();
+    const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
     const sectionIds = useMemo(
         () => navItems.map((item) => item.href.replace('#', '')),
@@ -203,14 +205,16 @@ const Header = () => {
                             }
                         />
                     ) : (
-                        <UiButton
-                            as="link"
-                            href={`/${locale}/auth/signin`}
-                            variant="text"
-                            size="sm"
-                        >
-                            {t('signin')}
-                        </UiButton>
+                        !isSigninPage && (
+                            <UiButton
+                                as="link"
+                                href={`/${locale}/auth/signin`}
+                                variant="text"
+                                size="sm"
+                            >
+                                {t('signin')}
+                            </UiButton>
+                        )
                     )}
 
                     {cta && (
@@ -360,18 +364,20 @@ const Header = () => {
                                         </button>
                                     </div>
                                 ) : (
-                                    <UiButton
-                                        as="link"
-                                        href={`/${locale}/auth/signin`}
-                                        variant="text"
-                                        size="sm"
-                                        className="justify-start"
-                                        onClick={() =>
-                                            setIsSheetOpen(false)
-                                        }
-                                    >
-                                        {t('signin')}
-                                    </UiButton>
+                                    !isSigninPage && (
+                                        <UiButton
+                                            as="link"
+                                            href={`/${locale}/auth/signin`}
+                                            variant="text"
+                                            size="sm"
+                                            className="justify-start"
+                                            onClick={() =>
+                                                setIsSheetOpen(false)
+                                            }
+                                        >
+                                            {t('signin')}
+                                        </UiButton>
+                                    )
                                 )}
 
                                 {/* Mobile CTA */}
