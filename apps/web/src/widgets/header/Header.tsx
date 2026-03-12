@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { LogOut, User, CreditCard, Menu } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -23,23 +23,13 @@ import {
 } from '@/shared/ui/UiSheet';
 import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import { useHeaderNavStore } from '@/stores/headerNav';
 
-const landingNavItems = [
-    { key: 'approach', href: '#problem' },
-    { key: 'proof', href: '#dogfooding' },
-    { key: 'portfolio', href: '#portfolio' },
-    { key: 'workflow', href: '#workflow' },
-    { key: 'pricing', href: '#pricing' },
-    { key: 'get_started', href: '#footer-cta' },
-] as const;
-
-const sectionIds = landingNavItems.map((item) => item.href.slice(1));
-
-function useActiveSection(enabled: boolean) {
+function useActiveSection(sectionIds: string[]) {
     const [activeId, setActiveId] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!enabled) return;
+        if (sectionIds.length === 0) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -65,7 +55,7 @@ function useActiveSection(enabled: boolean) {
         elements.forEach((el) => observer.observe(el));
 
         return () => observer.disconnect();
-    }, [enabled]);
+    }, [sectionIds]);
 
     return activeId;
 }
@@ -84,17 +74,21 @@ function getInitials(name: string | undefined, email: string): string {
 
 const Header = () => {
     const t = useTranslations('components.header');
-    const tNav = useTranslations('landing_page.nav');
     const locale = useLocale();
-    const pathname = usePathname();
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
     const clearUser = useAuthStore((s) => s.clearUser);
+    const navItems = useHeaderNavStore((s) => s.navItems);
+    const cta = useHeaderNavStore((s) => s.cta);
 
     const router = useRouter();
-    const isLandingPage = pathname === `/${locale}`;
-    const activeSection = useActiveSection(isLandingPage);
+    const hasNav = navItems.length > 0;
+    const sectionIds = useMemo(
+        () => navItems.map((item) => item.href.replace('#', '')),
+        [navItems]
+    );
+    const activeSection = useActiveSection(sectionIds);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const handleLogout = async () => {
@@ -152,14 +146,14 @@ const Header = () => {
                 </UiButton>
 
                 {/* Desktop nav */}
-                {isLandingPage && (
+                {hasNav && (
                     <nav className="hidden items-center gap-8 md:flex">
-                        {landingNavItems.map(({ key, href }) => {
+                        {navItems.map(({ href, label }) => {
                             const isActive =
-                                activeSection === href.slice(1);
+                                activeSection === href.replace('#', '');
                             return (
                                 <a
-                                    key={key}
+                                    key={href}
                                     href={href}
                                     className={`text-sm transition-colors ${
                                         isActive
@@ -167,7 +161,7 @@ const Header = () => {
                                             : 'text-muted-foreground hover:text-foreground'
                                     }`}
                                 >
-                                    {tNav(key)}
+                                    {label}
                                 </a>
                             );
                         })}
@@ -219,15 +213,15 @@ const Header = () => {
                         </UiButton>
                     )}
 
-                    {isLandingPage && (
+                    {cta && (
                         <UiButton
                             as="a"
-                            href="#footer-cta"
+                            href={cta.href}
                             variant="filled"
                             size="sm"
                             className="rounded-lg"
                         >
-                            {t('get_started')}
+                            {cta.label}
                         </UiButton>
                     )}
                 </div>
@@ -255,12 +249,12 @@ const Header = () => {
 
                             <div className="flex flex-col gap-6 px-4 py-2">
                                 {/* Mobile nav */}
-                                {isLandingPage && (
+                                {hasNav && (
                                     <nav className="flex flex-col gap-4">
-                                        {landingNavItems.map(
-                                            ({ key, href }) => (
+                                        {navItems.map(
+                                            ({ href, label }) => (
                                                 <a
-                                                    key={key}
+                                                    key={href}
                                                     href={href}
                                                     className="text-muted-foreground hover:text-foreground py-2 text-sm transition-colors"
                                                     onClick={() =>
@@ -269,14 +263,14 @@ const Header = () => {
                                                         )
                                                     }
                                                 >
-                                                    {tNav(key)}
+                                                    {label}
                                                 </a>
                                             )
                                         )}
                                     </nav>
                                 )}
 
-                                {isLandingPage && (
+                                {hasNav && (
                                     <div className="bg-border h-px" />
                                 )}
 
@@ -381,10 +375,10 @@ const Header = () => {
                                 )}
 
                                 {/* Mobile CTA */}
-                                {isLandingPage && (
+                                {cta && (
                                     <UiButton
                                         as="a"
-                                        href="#footer-cta"
+                                        href={cta.href}
                                         variant="filled"
                                         size="md"
                                         className="mt-2 w-full rounded-lg"
@@ -392,7 +386,7 @@ const Header = () => {
                                             setIsSheetOpen(false)
                                         }
                                     >
-                                        {t('get_started')}
+                                        {cta.label}
                                     </UiButton>
                                 )}
                             </div>

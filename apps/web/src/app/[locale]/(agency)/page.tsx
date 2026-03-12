@@ -10,7 +10,7 @@ import {
     PricingSection,
     FooterCtaSection,
     LandingFooter,
-} from '@/widgets/landing';
+} from '@/widgets/agency/landing';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     return await fetchMetadata({ ...props, page: 'landing', href: 'landing' });
