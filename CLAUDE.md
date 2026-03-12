@@ -43,7 +43,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 | Cache          | Redis (ioredis)               | 5.9.3                                 |
 | Scheduler      | @nestjs/schedule              | 6.1.1                                 |
 | HTTP client    | Axios                         | 1.13.5                                |
-| UI примітиви   | Headless UI, Radix            | headlessui 2.2.9, radix-tooltip 1.2.8 |
+| UI примітиви   | Headless UI, Radix            | headlessui 2.2.9, radix-avatar 1.1.11, radix-dialog 1.1.15, radix-tooltip 1.2.8 |
 | Icons          | lucide-react                  | 0.564.0                               |
 | Toasts         | Sonner                        | 2.0.7                                 |
 | Тести          | Jest + Supertest              | jest 30.2, supertest 7.1.4            |
@@ -53,10 +53,10 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 
 Turborepo monorepo з 2 apps + 1 shared package. Два шари: **Core** (auth, users, payments, shared UI) та **Agency** (бізнес-логіка агенції, ізольований модуль). Одностороння залежність: Agency -> Core, ніколи навпаки (enforced ESLint).
 
-Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Reports, Storage -- skeleton. Agency -- scaffold (порожні директорії, готові для розширення).
+Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Landing page (8 секцій агенційного лендінгу) реалізований. Reports, Storage -- skeleton. Agency -- scaffold (порожні директорії, готові для розширення).
 
 - **apps/api** -- NestJS REST API, модульна архітектура, MongoDB через Mongoose, JWT auth, Redis для magic links, token storage, rate limiting, brute force tracking, Stripe webhooks (subscriptions + one-off)
-- **apps/web** -- Next.js SSR/CSR з Feature-Sliced Design, i18n, light/dark/system theme (next-themes), auth pages, profile management, billing page (subscriptions + credit packs). Dev: `next dev --turbopack`. Build: `output: 'standalone'` (Docker). API proxy: `/api/*` -> backend via `next.config.ts` rewrites.
+- **apps/web** -- Next.js SSR/CSR з Feature-Sliced Design, i18n, light/dark/system theme (next-themes), landing page (8 sections), auth pages, profile management, billing page (subscriptions + credit packs). Dev: `next dev --turbopack`. Build: `output: 'standalone'` (Docker). API proxy: `/api/*` -> backend via `next.config.ts` rewrites.
 - **packages/types** -- Shared Zod-схеми, типи, constants, contracts, validation, enums. Entry: `src/index.ts` -> 5 modules (constants, enums, entities, contracts, validation). Окремий entry `src/agency.ts` для agency-специфічних типів. Build: CJS to `dist/` via `tsconfig.build.json`.
 
 ## Project Structure
@@ -124,7 +124,7 @@ lucidship/
 │       │   │   ├── globals.css           # @import tailwindcss + 5 style files
 │       │   │   └── [locale]/
 │       │   │       ├── layout.tsx        # Providers, NextIntlClientProvider, AuthInitializer, Header, Mulish font (Cyrillic+Latin)
-│       │   │       ├── page.tsx          # Welcome page (public), SEO via fetchMetadata()
+│       │   │       ├── page.tsx          # Landing page (8 sections: Hero, Problem, Dogfooding, Portfolio, Workflow, Pricing, FooterCta, Footer)
 │       │   │       ├── (agency)/         # Scaffold (порожній, для agency-специфічних сторінок)
 │       │   │       ├── auth/
 │       │   │       │   ├── signin/page.tsx   # Email -> password/magic-link decision (450 lines, 6-state machine)
@@ -143,12 +143,13 @@ lucidship/
 │       │   │   └── agency/              # Scaffold (порожній)
 │       │   ├── features/
 │       │   │   ├── auth/                 # AuthInitializer (silent refresh, skips /auth/callback & /auth/verify), AuthGuard
-│       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiSelect, updates URL + backend pref)
-│       │   │   ├── change-theme/         # Theme toggle (3 modes: Light/System/Dark, lucide icons)
+│       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiDropdownMenu, updates URL + backend pref)
+│       │   │   ├── change-theme/         # Theme toggle (3 modes: Light/System/Dark, UiDropdownMenu, lucide icons)
 │       │   │   ├── profile/              # ProfileForm (name/avatar/lang), SecuritySection (set/change/delete pwd), DangerZone (60s cooldown), DeleteAccountModal
 │       │   │   └── agency/              # Scaffold (порожній)
 │       │   ├── widgets/
-│       │   │   ├── header/              # Sticky header: Logo + avatar/initials + credits badge + theme + lang + logout
+│       │   │   ├── header/              # Sticky header: Logo + nav (landing sections) + avatar/initials + credits badge + theme + lang + logout + mobile sheet
+│       │   │   ├── landing/             # 8 landing page sections (Hero, Problem, Dogfooding, Portfolio, Workflow, Pricing, FooterCta, Footer)
 │       │   │   └── agency/              # Scaffold (порожній)
 │       │   ├── shared/
 │       │   │   ├── api/
@@ -158,17 +159,17 @@ lucidship/
 │       │   │   │   ├── mapApiCode.ts     # ResponseCode -> i18n key mapping (notifications.{module}.{code} -> errors.generic.unknown)
 │       │   │   │   └── index.ts
 │       │   │   ├── config/env.ts         # Fail-fast ENV + payment feature flags
-│       │   │   ├── ui/                   # UiButton (polymorphic: button/link/a), UiInput (outlined/filled), UiSelect (Headless Listbox), UiSwitch, UiSpinner
+│       │   │   ├── ui/                   # UiButton, UiInput, UiPasswordInput, UiSelect, UiSwitch, UiSpinner, UiFullPageLoader, UiDropdownMenu, UiAvatar, UiSheet
 │       │   │   ├── lib/utils.ts          # composeClasses() helper
 │       │   │   ├── icons/GoogleIcon.tsx   # Google OAuth SVG icon (official colors)
 │       │   │   ├── seo/metadata.ts       # fetchMetadata(): canonical URLs, hrefLang alternates (x-default, uk-ua, en-ua)
 │       │   │   ├── types/settings.ts     # THEME enum, Theme, PageParams, MetaProps
 │       │   │   ├── fonts/               # mulish-cyrillic.woff2, mulish-latin.woff2
-│       │   │   └── styles/              # themes.css (CSS vars light/dark), settings.css (.container), custom-variants.css, animations.css, scrollbar.css
+│       │   │   └── styles/              # themes.css (oklch design tokens light/dark), settings.css (.container), custom-variants.css, animations.css, scrollbar.css
 │       │   ├── stores/auth/authStore.ts  # user, isAuthenticated, isLoading (Zustand, initial isLoading=true)
-│       │   ├── i18n/                     # routing.ts (locales:['uk','en'], default:'uk'), request.ts (server-side config)
+│       │   ├── i18n/                     # routing.ts (locales:['uk','en'], default:'en'), request.ts (server-side config)
 │       │   └── middleware.ts             # Protects /profile,/pay,/billing; redirects /auth/signin if authenticated; i18n routing
-│       └── messages/                     # uk.json, en.json (namespaces: welcome_page, auth_page, notifications, errors, profile_page, billing_page, components, delete_account_modal)
+│       └── messages/                     # uk.json, en.json (namespaces: landing_page, auth_page, notifications, errors, profile_page, billing_page, components, delete_account_modal)
 │
 ├── packages/
 │   └── types/                            # @lucidship/types
@@ -191,8 +192,9 @@ lucidship/
 │
 ├── docs/
 │   ├── vision/                           # product.md (dual-purpose: boilerplate + agency landing)
-│   ├── conventions/                      # tone.md, fail-fast.md, i18n.md, env-sync.md, modular-boundaries.md
+│   ├── conventions/                      # tone.md, fail-fast.md, i18n.md, env-sync.md, modular-boundaries.md, ui-primitives.md, design-tokens.md
 │   ├── planning/                         # auth-flow/ (17 docs), payments-mvp-implementation-blueprint.md
+│   ├── sprints/                          # landing-page-sprint.md (467 lines, phases 0-4, implementation plan)
 │   ├── testing/                          # auth/ + payments/ (README, automated-tests.md, manual-test-plan.md)
 │   └── prompts/                          # codex/, gemini/ (update-context.md)
 ├── .claude/prompts/                      # update-context.md (цей скрипт)
@@ -220,7 +222,7 @@ Zod: `packages/types/src/entities/user.ts`
 | passwordHash                  | string \| null                           | bcrypt hash пароля           |
 | deletedAt                     | Date \| null                             | Soft-delete timestamp        |
 | accountDeletionRequestedAt    | Date \| null                             | Коли запитано видалення      |
-| preferredLang                 | string                                   | Мова (default: 'uk')        |
+| preferredLang                 | string                                   | Мова (default: 'en')        |
 | lastLoginAt                   | Date (optional)                          | Останній логін               |
 | billing                       | BillingInfo \| null                      | Дані підписки Stripe         |
 | createdAt, updatedAt          | Date                                     | Timestamps (auto)            |
@@ -326,7 +328,7 @@ layout.tsx ([locale])
 ├── Providers (next-themes ThemeProvider)
 ├── NextIntlClientProvider (i18n)
 ├── AuthInitializer (silent token refresh, skips /auth/callback & /auth/verify)
-├── Header -> Logo, avatar/initials, credits badge, Logout, ChangeTheme(dynamic ssr:false), ChangeLang
+├── Header -> Logo, nav (landing sections), UiAvatar/initials, credits badge, UiDropdownMenu (user), ChangeTheme(dynamic ssr:false), ChangeLang, mobile UiSheet
 └── {children} -- pages
 
 middleware.ts
@@ -426,6 +428,44 @@ interface IPaymentProvider {
 
 StripeService handles 4 event types: `checkout.session.completed`/`async_payment_succeeded` (maps to ONE_OFF or CHECKOUT_COMPLETED by mode), `customer.subscription.updated`, `customer.subscription.deleted`. Metadata passed to Stripe: userId, planCode, credits.
 
+### UI Primitives (Frontend)
+
+Файл: `apps/web/src/shared/ui/`
+
+10 примітивів, кожен зі структурою `Component.tsx` + `types.ts` + `index.ts`:
+
+| Компонент        | Бібліотека       | Опис                                                      |
+| ---------------- | ---------------- | --------------------------------------------------------- |
+| UiButton         | --               | Polymorphic (as: button/link/a), variants: filled/text/icon/icon-compact, sizes: sm/md/lg |
+| UiInput          | --               | Variants: outlined/filled, IconLeft/IconRight, error message |
+| UiPasswordInput  | --               | Extends UiInput, show/hide toggle (Eye/EyeOff)            |
+| UiSelect         | Headless Listbox | Options array, variants: filled/outlined                   |
+| UiSwitch         | Headless Switch  | Toggle з transition                                        |
+| UiSpinner        | --               | LoaderCircle + animate-spin, sizes: sm(16)/md(24)/lg(40)   |
+| UiFullPageLoader | --               | Center-screen UiSpinner + optional message                 |
+| UiDropdownMenu   | Headless Menu    | Items array (value/label/icon), onSelect, activeValue, position: start/end |
+| UiAvatar         | Radix Avatar     | 3 sub-components (Root/Image/Fallback), sizes: sm/md/lg    |
+| UiSheet          | Radix Dialog     | 6 sub-components (Root/Trigger/Close/Content/Header/Title), sides: left/right/top/bottom |
+
+### Landing Page (Frontend)
+
+Файл: `apps/web/src/widgets/landing/`
+
+8 секцій, server components, mobile-first design, i18n через `useTranslations('landing_page')`:
+
+| Секція           | Файл                                          | Опис                                           |
+| ---------------- | ---------------------------------------------- | ---------------------------------------------- |
+| HeroSection      | `HeroSection/HeroSection.tsx` + `CodeVisual.tsx` | Heading, description, 2 CTAs, syntax-highlighted code block |
+| ProblemSection   | `ProblemSection/ProblemSection.tsx`             | 3 paragraphs + 3 feature cards (architecture, typed, scale) |
+| DogfoodingSection| `DogfoodingSection/DogfoodingSection.tsx`       | "You're looking at this code" + 3 action steps |
+| PortfolioSection | `PortfolioSection/PortfolioSection.tsx`         | NDA note, Wish Hub link, video CTA             |
+| WorkflowSection  | `WorkflowSection/WorkflowSection.tsx`           | 3 workflow cards (async, video, code transparency) |
+| PricingSection   | `PricingSection/PricingSection.tsx`             | Package, from $1500, 4 weeks, 5 includes, FAQ (4 Q&A) |
+| FooterCtaSection | `FooterCtaSection/FooterCtaSection.tsx`         | Heading, CTA link, 4-step process              |
+| LandingFooter    | `LandingFooter/LandingFooter.tsx`              | Copyright з localized year                      |
+
+Header навігація з hash anchors (#problem, #dogfooding, #portfolio, #workflow, #pricing, #footer-cta) + IntersectionObserver для active section highlighting.
+
 ### Auth flow (Google OAuth)
 
 1. Client -> `GET /api/auth/google` -> Google consent
@@ -473,6 +513,12 @@ Frontend: getApiMessageKey('MAGIC_LINK_SENT', 'auth')
   -> 'errors.auth.magic_link_sent'         (if error code)
   -> 'errors.generic.unknown'              (final fallback)
 ```
+
+### Design Tokens (oklch)
+
+Файл: `apps/web/src/shared/styles/themes.css`
+
+CSS custom properties з oklch-based кольорами. Light/dark теми через `.dark` клас. Токени: `--background`, `--foreground`, `--card`, `--primary`, `--secondary`, `--muted`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`, `--success`, `--warning`, `--radius`. Кожен колір має пару `{color}` + `{color}-foreground`. Tailwind 4 `@theme inline` block для інтеграції.
 
 ## API Overview
 
@@ -622,8 +668,9 @@ pnpm --filter @lucidship/types dev                     # Watch mode
 - Cookie для refresh token: `bid_refresh`, httpOnly, secure (prod), sameSite=lax, path=/, maxAge=7d
 - Frontend: Feature-Sliced Design (`app/`, `features/`, `entities/`, `widgets/`, `shared/`)
 - UI компоненти: `Component.tsx` + `types.ts` + `index.ts` структура; UiButton polymorphic (button/link/a)
-- Locales: `uk` (default), `en`; routing через next-intl `defineRouting()`
+- Locales: `uk`, `en` (default: `en`); routing через next-intl `defineRouting()`
 - Theme: next-themes (attribute: class, storageKey: theme, defaultTheme: system, disableTransitionOnChange: true)
+- Design tokens: oklch-based CSS custom properties в `shared/styles/themes.css`; `@theme inline` block для Tailwind 4.x
 - **Zod = single source of truth**: схеми в `packages/types`, types через `z.infer`, валідація на API і Web
 - DTOs на API: `createZodDto(ZodSchema)` з `nestjs-zod` (НЕ class-validator)
 - API response format: `{ data: {...} }` для success, `{ error: { code, message } }` для errors
@@ -636,6 +683,7 @@ pnpm --filter @lucidship/types dev                     # Watch mode
 - i18n notifications: `notifications.{module}.{code}`, errors: `errors.{module}.{code}`, fallback: `errors.generic.{code}`
 - Web path aliases: `@/*` -> `./src/*`, `@lucidship/types` -> `../../packages/types/src/index.ts`
 - Server components за замовчуванням, `'use client'` лише де потрібно
+- Landing page sections -- server components в `widgets/landing/`, i18n через `useTranslations('landing_page')`
 - **Tone convention**: classic-polite (формальне "ви", без емодзі, 1-2 речення, минулий час для success)
 - **i18n convention**: Backend тільки англійська (code + message), frontend маппить code -> i18n key; emails -- виняток (user language)
 - Password hashing: bcrypt з salt rounds 10
@@ -733,6 +781,15 @@ Constants at top: `REFRESH_TOKEN_TTL` = 2 min (test) / 7 days (prod). Access tok
 
 Файл: `docs/conventions/modular-boundaries.md`, `apps/web/eslint.config.mjs`
 Core модулі (auth, users, payments, shared UI) не можуть імпортувати з agency scope. Agency scope може імпортувати все з core. ESLint enforces це правило на web. Fork checklist: 10 кроків для видалення agency за 15 хвилин.
+
+### Header -- landing nav + IntersectionObserver
+
+Файл: `apps/web/src/widgets/header/Header.tsx` (400+ lines)
+`useActiveSection()` hook використовує IntersectionObserver для tracking видимих landing page sections. Hash anchors (#problem, #dogfooding, #portfolio, #workflow, #pricing, #footer-cta) з active highlighting. Desktop nav + mobile UiSheet. Навігація показується лише на landing page.
+
+### UI primitives -- mixed Headless UI + Radix
+
+UiSelect, UiSwitch, UiDropdownMenu побудовані на Headless UI (@headlessui/react). UiAvatar побудований на @radix-ui/react-avatar. UiSheet побудований на @radix-ui/react-dialog. Решта (UiButton, UiInput, UiPasswordInput, UiSpinner, UiFullPageLoader) -- чистий React без headless бібліотек.
 
 ### Frontend tests
 
