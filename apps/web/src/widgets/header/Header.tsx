@@ -241,7 +241,7 @@ const Header = () => {
                         <UiSheetTrigger asChild>
                             <UiButton
                                 variant="icon"
-                                size="sm"
+                                size="md"
                                 aria-label={t('menu')}
                                 IconLeft={<Menu />}
                             />
