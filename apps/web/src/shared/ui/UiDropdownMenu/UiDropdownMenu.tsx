@@ -44,7 +44,7 @@ const UiDropdownMenu = forwardRef<HTMLDivElement, UiDropdownMenuProps>(
         } = props;
 
         return (
-            <Menu as="div" className="relative" ref={ref}>
+            <Menu as="div" className="relative inline-flex items-center" ref={ref}>
                 <MenuButton as={Fragment}>{trigger}</MenuButton>
 
                 <MenuItems
