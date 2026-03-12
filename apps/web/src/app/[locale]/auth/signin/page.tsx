@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
@@ -48,12 +48,48 @@ export default function SigninPage() {
         useState(false);
     const [deletedAt, setDeletedAt] = useState<string | null>(null);
     const [deletedDaysLeft, setDeletedDaysLeft] = useState(0);
+    const [resendCountdown, setResendCountdown] = useState(0);
+    const [resending, setResending] = useState(false);
+    const lastPurposeRef = useRef<string>('login');
+    const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
     useEffect(() => {
         if (isAuthenticated) {
             router.replace(`/${locale}/profile`);
         }
     }, [isAuthenticated, locale, router]);
+
+    const startResendTimer = useCallback(() => {
+        setResendCountdown(60);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => {
+            setResendCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current!);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
+    const handleResend = async () => {
+        setResending(true);
+        try {
+            await sendMagicLink(email, locale, lastPurposeRef.current);
+            startResendTimer();
+        } catch {
+            // dedup на бекенді — не показуємо помилку
+        } finally {
+            setResending(false);
+        }
+    };
 
     const handleError = (err: unknown, fallbackKey?: string) => {
         const code =
@@ -91,7 +127,9 @@ export default function SigninPage() {
                 setState('password');
             } else {
                 const purpose = isNewUser ? 'register' : 'login';
+                lastPurposeRef.current = purpose;
                 await sendMagicLink(email, locale, purpose);
+                startResendTimer();
                 setState('magic-link-sent');
             }
         } catch (err) {
@@ -151,8 +189,10 @@ export default function SigninPage() {
     const handleForgotPassword = async () => {
         setSubmitting(true);
         try {
+            lastPurposeRef.current = 'reset-password';
             await sendMagicLink(email, locale, 'reset-password');
             toast.success(t('forgot_password_sent'));
+            startResendTimer();
             setState('magic-link-sent');
         } catch {
             toast.success(t('forgot_password_sent'));
@@ -180,7 +220,9 @@ export default function SigninPage() {
     const handleSendMagicLinkFromPassword = async () => {
         setSubmitting(true);
         try {
+            lastPurposeRef.current = 'login';
             await sendMagicLink(email, locale, 'login');
+            startResendTimer();
             setState('magic-link-sent');
             setShowMagicLinkSuggestion(false);
         } catch {
@@ -351,18 +393,41 @@ export default function SigninPage() {
                     {t('magic_link_sent_title')}
                 </h2>
                 <p className="text-muted-foreground mt-1 text-sm">
-                    {t('magic_link_sent_description', { email })}
+                    {t.rich('magic_link_sent_description', {
+                        email,
+                        bold: (chunks) => (
+                            <span className="text-foreground font-semibold">
+                                {chunks}
+                            </span>
+                        ),
+                    })}
                 </p>
             </div>
 
-            <UiButton
-                variant="text"
-                size="sm"
-                onClick={goBackToEmail}
-                className="text-primary mx-auto block text-sm font-medium hover:underline"
-            >
-                &larr; {t('other_email')}
-            </UiButton>
+            <div className="flex flex-col items-center gap-2">
+                <UiButton
+                    variant="text"
+                    size="sm"
+                    onClick={handleResend}
+                    disabled={resendCountdown > 0 || resending}
+                    className="text-primary text-sm font-medium hover:underline"
+                >
+                    {resending
+                        ? <UiSpinner size="sm" />
+                        : resendCountdown > 0
+                          ? t('resend_countdown', { seconds: resendCountdown })
+                          : t('resend_button')}
+                </UiButton>
+
+                <UiButton
+                    variant="text"
+                    size="sm"
+                    onClick={goBackToEmail}
+                    className="text-muted-foreground text-sm hover:underline"
+                >
+                    &larr; {t('other_email')}
+                </UiButton>
+            </div>
         </div>
     );
 
