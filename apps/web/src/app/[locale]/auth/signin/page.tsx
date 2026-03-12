@@ -218,6 +218,25 @@ export default function SigninPage() {
     // --- State: email ---
     const renderEmailState = () => (
         <>
+            <UiButton
+                as="a"
+                href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
+                variant="filled"
+                size="lg"
+                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
+                IconLeft={<GoogleIcon />}
+            >
+                {t('google_button')}
+            </UiButton>
+
+            <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-muted-foreground text-sm">
+                    {t('or_divider')}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+            </div>
+
             <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <UiInput
                     type="email"
@@ -239,25 +258,6 @@ export default function SigninPage() {
                     {t('continue_button')}
                 </UiButton>
             </form>
-
-            <div className="flex items-center gap-4">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-muted-foreground text-sm">
-                    {t('or_divider')}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
-
-            <UiButton
-                as="a"
-                href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
-                variant="filled"
-                size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
-                IconLeft={<GoogleIcon />}
-            >
-                {t('google_button')}
-            </UiButton>
         </>
     );
 
