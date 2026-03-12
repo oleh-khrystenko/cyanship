@@ -1,8 +1,26 @@
+import Image from 'next/image';
+
 const Logo = () => {
     return (
-        <p className="flex items-center gap-0.5 text-2xl">
-            <span className="text-foreground font-bold">LucidShip</span>
-        </p>
+        <div className="flex items-center gap-2">
+            <Image
+                src="/logo-light-theme.svg"
+                alt="LucidShip"
+                width={32}
+                height={33}
+                className="block dark:hidden"
+            />
+            <Image
+                src="/logo-dark-theme.svg"
+                alt="LucidShip"
+                width={32}
+                height={33}
+                className="hidden dark:block"
+            />
+            <span className="text-foreground text-2xl font-bold">
+                LucidShip
+            </span>
+        </div>
     );
 };
 
