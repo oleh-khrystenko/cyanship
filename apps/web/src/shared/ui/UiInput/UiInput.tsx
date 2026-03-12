@@ -42,7 +42,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
     );
 
     const wrapperClasses = composeClasses(
-        'inline-flex items-center gap-2',
+        'flex items-center gap-2',
         'rounded-md transition-colors',
         sizeStyles[size],
         variantStyles[variant],
