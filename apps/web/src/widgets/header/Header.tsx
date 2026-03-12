@@ -135,17 +135,40 @@ const Header = () => {
     return (
         <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
             <div className="container flex h-16 items-center justify-between gap-6 px-6">
-                {/* Logo */}
-                <UiButton
-                    as="link"
-                    href={`/${locale}`}
-                    variant="text"
-                    size="md"
-                    aria-label="Go to home page"
-                    className="p-0"
-                >
-                    <Logo />
-                </UiButton>
+                {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
+                {hasNav ? (
+                    <UiButton
+                        as="button"
+                        variant="text"
+                        size="md"
+                        aria-label="Go to home page"
+                        className="p-0"
+                        onClick={() => {
+                            window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth',
+                            });
+                            history.replaceState(
+                                null,
+                                '',
+                                window.location.pathname
+                            );
+                        }}
+                    >
+                        <Logo />
+                    </UiButton>
+                ) : (
+                    <UiButton
+                        as="link"
+                        href={`/${locale}`}
+                        variant="text"
+                        size="md"
+                        aria-label="Go to home page"
+                        className="p-0"
+                    >
+                        <Logo />
+                    </UiButton>
+                )}
 
                 {/* Desktop nav */}
                 {hasNav && (
