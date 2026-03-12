@@ -76,11 +76,11 @@
             "cta": "Request a Technical Estimate",
             "faq_heading": "Frequently Asked Questions",
             "faq_1_q": "What if I need more complex features?",
-            "faq_1_a": "Just send me a written brief or a quick Loom video outlining your extra requirements. I will review it asynchronously and provide a transparent, fixed-price quote and timeline. No lengthy discovery calls needed.",
+            "faq_1_a": "Send a brief or a quick Loom video with your requirements. I'll review it asynchronously and provide a fixed-price quote. No endless discovery calls.",
             "faq_2_q": "Do I own the code?",
             "faq_2_a": "Yes, 100%. You get full source code ownership and can host it anywhere you want.",
             "faq_3_q": "What's the payment structure?",
-            "faq_3_a": "50% upfront to secure your slot, 50% upon successful delivery and deployment. All payments are securely processed via standard B2B invoicing.",
+            "faq_3_a": "50% upfront to secure your slot, 50% on delivery. Payments are processed via standard B2B invoices.",
             "faq_4_q": "Can you help with hosting?",
             "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package."
         },
