@@ -49,7 +49,7 @@ const UiDropdownMenu = forwardRef<HTMLDivElement, UiDropdownMenuProps>(
 
                 <MenuItems
                     className={composeClasses(
-                        'absolute z-50 mt-1 min-w-32',
+                        'absolute top-full z-50 mt-1 min-w-32',
                         'rounded-lg border border-border bg-card shadow-md',
                         'focus:outline-none',
                         alignStyles[align],
