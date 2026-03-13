@@ -21,7 +21,7 @@ jest.mock('next-intl/middleware', () => {
 jest.mock('./i18n/routing', () => ({
     routing: {
         locales: ['uk', 'en'],
-        defaultLocale: 'uk',
+        defaultLocale: 'en',
     },
 }));
 

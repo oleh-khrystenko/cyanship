@@ -57,7 +57,7 @@ export class User {
     @Prop({ type: Date, default: null })
     accountDeletionRequestedAt!: Date | null;
 
-    @Prop({ required: true, default: LANG.UK })
+    @Prop({ required: true, default: LANG.EN })
     preferredLang!: string;
 
     @Prop()

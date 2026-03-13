@@ -9,10 +9,10 @@
 Feature / Page / Widget / shared/ui/
         |
         v
-  Tailwind theme tokens    <-- bg-primary, text-text-secondary, border-border ...
+  Tailwind theme tokens    <-- bg-primary, text-muted-foreground, border-border ...
         |
         v
-  CSS custom properties    <-- var(--primary), var(--text-secondary) ...
+  CSS custom properties    <-- var(--primary), var(--muted-foreground) ...
         |
         v
   shared/styles/themes.css <-- single source of truth
@@ -26,20 +26,29 @@ Feature / Page / Widget / shared/ui/
 
 Файл: `apps/web/src/shared/styles/themes.css`
 
+Формат: `{color}` + `{color}-foreground` пари. Всі кольори монохромні (oklch з нульовою хромою), крім `destructive`, `success`, `warning`.
+
 | Група | Tailwind-клас | CSS-змінна | Призначення |
 |-------|---------------|------------|-------------|
-| **Primary** | `bg-primary`, `text-primary` | `var(--primary)` | Основний акцент (кнопки, посилання, active states) |
-| | `bg-primary-dark`, `text-primary-dark` | `var(--primary-dark)` | Hover/pressed стан акценту |
-| | `bg-primary-light`, `text-primary-light` | `var(--primary-light)` | Фонові підсвітки акценту |
-| **Neutrals** | `bg-background` | `var(--background)` | Фон сторінки |
-| | `bg-surface` | `var(--surface)` | Фон карток, панелей, модалок |
-| | `bg-surface-hover` | `var(--surface-hover)` | Hover-стан поверхні |
-| | `border-border` | `var(--border)` | Межі, роздільники |
-| | `text-text-primary` | `var(--text-primary)` | Основний текст |
-| | `text-text-secondary` | `var(--text-secondary)` | Другорядний текст, підказки |
-| **Status** | `text-success`, `bg-success` | `var(--success)` | Успішні стани |
-| | `text-warning`, `bg-warning` | `var(--warning)` | Попередження |
-| | `text-error`, `bg-error` | `var(--error)` | Помилки, деструктивні дії |
+| **Background** | `bg-background` | `var(--background)` | Фон сторінки |
+| **Foreground** | `text-foreground`, `bg-foreground` | `var(--foreground)` | Основний текст, інвертовані елементи |
+| **Card** | `bg-card`, `text-card-foreground` | `var(--card)`, `var(--card-foreground)` | Фон карток, текст на картках |
+| **Primary** | `bg-primary`, `text-primary`, `text-primary-foreground` | `var(--primary)`, `var(--primary-foreground)` | CTA кнопки, акценти |
+| **Secondary** | `bg-secondary`, `text-secondary-foreground` | `var(--secondary)`, `var(--secondary-foreground)` | Subtle surfaces (icon badges, hover states) |
+| **Muted** | `bg-muted`, `text-muted-foreground` | `var(--muted)`, `var(--muted-foreground)` | Muted surfaces, другорядний текст |
+| **Accent** | `bg-accent`, `text-accent-foreground` | `var(--accent)`, `var(--accent-foreground)` | Accent surfaces (hover states) |
+| **Destructive** | `bg-destructive`, `text-destructive`, `text-destructive-foreground` | `var(--destructive)`, `var(--destructive-foreground)` | Помилки, деструктивні дії |
+| **Border** | `border-border` | `var(--border)` | Межі, роздільники |
+| **Input** | `bg-input`, `border-input` | `var(--input)` | Input borders/bg |
+| **Ring** | `ring-ring` | `var(--ring)` | Focus rings |
+| **Success** | `text-success`, `bg-success` | `var(--success)` | Успішні стани, toast notifications |
+| **Warning** | `text-warning`, `bg-warning` | `var(--warning)` | Попередження, toast notifications |
+
+**Utility tokens:**
+
+| Токен | Значення | Tailwind-клас | Призначення |
+|-------|----------|---------------|-------------|
+| `--radius` | `0.625rem` | `rounded-sm/md/lg/xl` | Base border-radius |
 
 ## Rules
 
@@ -49,7 +58,7 @@ Feature / Page / Widget / shared/ui/
 
 | Заборонено | Використовувати |
 |---|---|
-| Сирі палітри Tailwind (`bg-red-500`, `text-neutral-300`, `border-blue-200`) | Токени теми (`bg-error`, `text-text-secondary`, `border-border`) |
+| Сирі палітри Tailwind (`bg-red-500`, `text-neutral-300`, `border-blue-200`) | Токени теми (`bg-destructive`, `text-muted-foreground`, `border-border`) |
 | Hex-значення (`#3b82f6`, `#f9fafb`) | CSS-змінні (`var(--primary)`, `var(--background)`) |
 | `rgb()` / `rgba()` / `hsl()` / `hsla()` | CSS-змінні або opacity-модифікатори (`bg-primary/20`) |
 
@@ -81,7 +90,7 @@ Feature / Page / Widget / shared/ui/
 Для напівпрозорих варіантів використовуй Tailwind opacity syntax з токенами теми:
 
 ```
-bg-error/10        -- замість bg-red-50
+bg-destructive/10  -- замість bg-red-50
 text-success/80    -- замість text-green-600
 border-primary/30  -- замість border-blue-200
 ```
@@ -90,9 +99,9 @@ border-primary/30  -- замість border-blue-200
 
 | Контекст | Що дозволено | Причина |
 |----------|--------------|---------|
-| `shared/styles/` | Hex-значення в CSS-змінних | Тут визначаються самі токени |
+| `shared/styles/` | oklch-значення в CSS-змінних | Тут визначаються самі токени |
 | `shared/icons/` | Hex-значення у SVG `fill`/`stroke` | Брендові іконки (Google, Stripe) з офіційними кольорами |
-| `white` / `black` | `text-white`, `bg-black/50` | Універсальні константи (контрастний текст на primary, overlay backdrop) |
+| `white` / `black` | `text-white`, `bg-black/50` | Універсальні константи (контрастний текст, overlay backdrop) |
 | Inline `style` для динамічних значень | `style={{ backgroundColor: userColor }}` | Runtime-значення, що не можуть бути токеном (user avatar color, chart data) |
 
 ## Scope

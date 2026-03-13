@@ -1,0 +1,134 @@
+import { useTranslations } from 'next-intl';
+import { Linkedin, Twitter, ExternalLink, Mail } from 'lucide-react';
+import { Logo } from '@/entities/brand';
+
+const navLinks = [
+    { key: 'pricing', href: '#pricing' },
+    { key: 'portfolio', href: '#portfolio' },
+    { key: 'proof', href: '#dogfooding' },
+] as const;
+
+const legalLinks = [
+    { key: 'terms', href: '/terms' },
+    { key: 'privacy', href: '/privacy' },
+] as const;
+
+const socialLinks = [
+    {
+        key: 'linkedin',
+        href: 'https://www.linkedin.com/in/oleg-khrystenko/',
+        icon: Linkedin,
+    },
+    {
+        key: 'twitter',
+        href: 'https://x.com/kh_oleg_',
+        icon: Twitter,
+    },
+] as const;
+
+const LandingFooter = () => {
+    const t = useTranslations('landing_page.footer');
+
+    return (
+        <footer className="border-border bg-card border-t">
+            <div className="container px-6">
+                {/* Top: Logo + slogan + columns */}
+                <div className="grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-12">
+                    {/* Brand */}
+                    <div className="lg:col-span-5">
+                        <Logo />
+                        <p className="text-muted-foreground mt-4 max-w-xs text-sm leading-relaxed">
+                            {t('slogan')}
+                        </p>
+                    </div>
+
+                    {/* 3 columns */}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7">
+                        {/* Product */}
+                        <div>
+                            <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
+                                {t('col_product')}
+                            </h4>
+                            <ul className="mt-4 space-y-3">
+                                {navLinks.map(({ key, href }) => (
+                                    <li key={key}>
+                                        <a
+                                            href={href}
+                                            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                                        >
+                                            {t(`nav_${key}`)}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Legal */}
+                        <div>
+                            <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
+                                {t('col_legal')}
+                            </h4>
+                            <ul className="mt-4 space-y-3">
+                                {legalLinks.map(({ key, href }) => (
+                                    <li key={key}>
+                                        <a
+                                            href={href}
+                                            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                                        >
+                                            {t(`legal_${key}`)}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Connect */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
+                                {t('col_connect')}
+                            </h4>
+                            <ul className="mt-4 space-y-3">
+                                <li>
+                                    <a
+                                        href="mailto:oleg@lucidship.dev"
+                                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
+                                    >
+                                        <Mail className="size-3.5" />
+                                        {t('email')}
+                                    </a>
+                                </li>
+                                {socialLinks.map(
+                                    ({ key, href, icon: Icon }) => (
+                                        <li key={key}>
+                                            <a
+                                                href={href}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
+                                            >
+                                                <Icon className="size-3.5" />
+                                                {t(`social_${key}`)}
+                                                <ExternalLink className="size-3" />
+                                            </a>
+                                        </li>
+                                    )
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-border border-t py-8">
+                    <p className="text-muted-foreground text-center text-sm">
+                        {t('copyright', {
+                            year: new Date().getFullYear(),
+                        })}
+                    </p>
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+export default LandingFooter;

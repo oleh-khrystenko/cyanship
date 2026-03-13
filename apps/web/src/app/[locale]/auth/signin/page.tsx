@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
@@ -12,6 +12,7 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
+import type { MagicLinkPurpose } from '@lucidship/types';
 import {
     checkEmail,
     loginWithPassword,
@@ -48,12 +49,48 @@ export default function SigninPage() {
         useState(false);
     const [deletedAt, setDeletedAt] = useState<string | null>(null);
     const [deletedDaysLeft, setDeletedDaysLeft] = useState(0);
+    const [resendCountdown, setResendCountdown] = useState(0);
+    const [resending, setResending] = useState(false);
+    const lastPurposeRef = useRef<MagicLinkPurpose>('login');
+    const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
     useEffect(() => {
         if (isAuthenticated) {
             router.replace(`/${locale}/profile`);
         }
     }, [isAuthenticated, locale, router]);
+
+    const startResendTimer = useCallback(() => {
+        setResendCountdown(60);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => {
+            setResendCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current!);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
+    const handleResend = async () => {
+        setResending(true);
+        try {
+            await sendMagicLink(email, locale, lastPurposeRef.current);
+            startResendTimer();
+        } catch {
+            // dedup на бекенді — не показуємо помилку
+        } finally {
+            setResending(false);
+        }
+    };
 
     const handleError = (err: unknown, fallbackKey?: string) => {
         const code =
@@ -91,7 +128,9 @@ export default function SigninPage() {
                 setState('password');
             } else {
                 const purpose = isNewUser ? 'register' : 'login';
+                lastPurposeRef.current = purpose;
                 await sendMagicLink(email, locale, purpose);
+                startResendTimer();
                 setState('magic-link-sent');
             }
         } catch (err) {
@@ -151,8 +190,10 @@ export default function SigninPage() {
     const handleForgotPassword = async () => {
         setSubmitting(true);
         try {
+            lastPurposeRef.current = 'reset-password';
             await sendMagicLink(email, locale, 'reset-password');
             toast.success(t('forgot_password_sent'));
+            startResendTimer();
             setState('magic-link-sent');
         } catch {
             toast.success(t('forgot_password_sent'));
@@ -180,7 +221,9 @@ export default function SigninPage() {
     const handleSendMagicLinkFromPassword = async () => {
         setSubmitting(true);
         try {
+            lastPurposeRef.current = 'login';
             await sendMagicLink(email, locale, 'login');
+            startResendTimer();
             setState('magic-link-sent');
             setShowMagicLinkSuggestion(false);
         } catch {
@@ -202,13 +245,13 @@ export default function SigninPage() {
     // --- Header ---
     const renderHeader = () => (
         <div className="text-center">
-            <h1 className="text-text-primary text-3xl font-bold">
+            <h1 className="text-foreground text-3xl font-bold">
                 {state === 'recovery'
                     ? tRecovery('title')
                     : t('heading')}
             </h1>
             {state === 'email' && (
-                <p className="text-text-secondary mt-2">
+                <p className="text-muted-foreground mt-2">
                     {t('subheading')}
                 </p>
             )}
@@ -218,6 +261,25 @@ export default function SigninPage() {
     // --- State: email ---
     const renderEmailState = () => (
         <>
+            <UiButton
+                as="a"
+                href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
+                variant="filled"
+                size="lg"
+                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
+                IconLeft={<GoogleIcon />}
+            >
+                {t('google_button')}
+            </UiButton>
+
+            <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-muted-foreground text-sm">
+                    {t('or_divider')}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+            </div>
+
             <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <UiInput
                     type="email"
@@ -225,7 +287,7 @@ export default function SigninPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    IconLeft={Mail}
+                    IconLeft={<Mail />}
                     size="lg"
                 />
 
@@ -239,25 +301,6 @@ export default function SigninPage() {
                     {t('continue_button')}
                 </UiButton>
             </form>
-
-            <div className="flex items-center gap-4">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-text-secondary text-sm">
-                    {t('or_divider')}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
-
-            <UiButton
-                as="a"
-                href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
-                variant="filled"
-                size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
-                IconLeft={GoogleIcon}
-            >
-                {t('google_button')}
-            </UiButton>
         </>
     );
 
@@ -276,7 +319,7 @@ export default function SigninPage() {
                     type="email"
                     value={email}
                     readOnly
-                    IconLeft={Mail}
+                    IconLeft={<Mail />}
                     size="lg"
                     className="pr-20"
                 />
@@ -331,10 +374,10 @@ export default function SigninPage() {
                     type="button"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg border border-border bg-surface text-text-primary hover:bg-surface-hover"
+                    className="w-full justify-center rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
-                    IconLeft={Mail}
+                    IconLeft={<Mail />}
                 >
                     {t('login_via_email_link')}
                 </UiButton>
@@ -347,29 +390,52 @@ export default function SigninPage() {
         <div className="space-y-6">
             <div className="rounded-lg border border-success/30 bg-success/10 p-6 text-center">
                 <Mail className="mx-auto mb-3 h-10 w-10 text-success" />
-                <h2 className="text-text-primary text-lg font-semibold">
+                <h2 className="text-foreground text-lg font-semibold">
                     {t('magic_link_sent_title')}
                 </h2>
-                <p className="text-text-secondary mt-1 text-sm">
-                    {t('magic_link_sent_description', { email })}
+                <p className="text-muted-foreground mt-1 text-sm">
+                    {t.rich('magic_link_sent_description', {
+                        email,
+                        bold: (chunks) => (
+                            <span className="text-foreground font-semibold">
+                                {chunks}
+                            </span>
+                        ),
+                    })}
                 </p>
             </div>
 
-            <UiButton
-                variant="text"
-                size="sm"
-                onClick={goBackToEmail}
-                className="text-primary mx-auto block text-sm font-medium hover:underline"
-            >
-                &larr; {t('other_email')}
-            </UiButton>
+            <div className="flex flex-col items-center gap-2">
+                <UiButton
+                    variant="text"
+                    size="sm"
+                    onClick={handleResend}
+                    disabled={resendCountdown > 0 || resending}
+                    className="text-primary text-sm font-medium hover:underline"
+                >
+                    {resending
+                        ? <UiSpinner size="sm" />
+                        : resendCountdown > 0
+                          ? t('resend_countdown', { seconds: resendCountdown })
+                          : t('resend_button')}
+                </UiButton>
+
+                <UiButton
+                    variant="text"
+                    size="sm"
+                    onClick={goBackToEmail}
+                    className="text-muted-foreground text-sm hover:underline"
+                >
+                    &larr; {t('other_email')}
+                </UiButton>
+            </div>
         </div>
     );
 
     // --- State: recovery ---
     const renderRecoveryState = () => (
         <div className="space-y-4">
-            <p className="text-text-secondary text-center">
+            <p className="text-muted-foreground text-center">
                 {tRecovery('description', {
                     date: deletedAt ?? '',
                     days: deletedDaysLeft,
@@ -404,8 +470,8 @@ export default function SigninPage() {
     // --- State: error ---
     const renderErrorState = () => (
         <div className="space-y-4">
-            <div className="rounded-lg border border-error/30 bg-error/10 p-6 text-center">
-                <p className="text-error text-sm font-medium">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 text-center">
+                <p className="text-destructive text-sm font-medium">
                     {errorMessage || t('error_generic')}
                 </p>
             </div>

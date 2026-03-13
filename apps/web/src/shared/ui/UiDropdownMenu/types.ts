@@ -1,0 +1,20 @@
+import { ReactNode } from 'react';
+
+export type UiDropdownMenuSize = 'sm' | 'md' | 'lg';
+export type UiDropdownMenuAlign = 'start' | 'end';
+
+export interface UiDropdownMenuItem {
+    label: ReactNode;
+    value: string;
+    icon?: ReactNode;
+}
+
+export interface UiDropdownMenuProps {
+    items: UiDropdownMenuItem[];
+    onSelect: (value: string) => void;
+    activeValue?: string;
+    trigger: ReactNode;
+    align?: UiDropdownMenuAlign;
+    size?: UiDropdownMenuSize;
+    className?: string;
+}

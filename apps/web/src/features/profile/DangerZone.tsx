@@ -77,15 +77,15 @@ const DangerZone = () => {
 
     return (
         <section className="space-y-4">
-            <h2 className="text-text-primary text-xl font-semibold">
+            <h2 className="text-foreground text-xl font-semibold">
                 {t('heading')}
             </h2>
 
-            <div className="rounded-lg border border-error/30 bg-error/10 p-6">
-                <h3 className="text-text-primary font-medium">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6">
+                <h3 className="text-foreground font-medium">
                     {t('delete_title')}
                 </h3>
-                <p className="text-text-secondary mt-1 text-sm">
+                <p className="text-muted-foreground mt-1 text-sm">
                     {t('delete_description')}
                 </p>
 
@@ -103,7 +103,7 @@ const DangerZone = () => {
                 <UiButton
                     variant="filled"
                     size="md"
-                    className="mt-4 rounded-lg bg-error"
+                    className="mt-4 rounded-lg bg-destructive"
                     onClick={() => void handleDelete()}
                     disabled={isPendingDeletion ? resendDisabled : loading}
                 >

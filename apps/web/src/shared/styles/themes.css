@@ -1,60 +1,81 @@
-/* 🌞 Light theme — за замовчуванням */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-    /* Primary */
-    --primary: #3b82f6;
-    --primary-dark: #1e3a8a;
-    --primary-light: #93c5fd;
-
-    /* Neutrals */
-    --background: #f9fafb;
-    --surface: #ffffff;
-    --surface-hover: #f3f4f6;
-    --border: #e5e7eb;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-
-    /* Status */
-    --success: #10b981;
-    --warning: #f59e0b;
-    --error: #ef4444;
+    --background: oklch(0.98 0.002 260);
+    --foreground: oklch(0.20 0.01 260);
+    --card: oklch(0.99 0.001 260);
+    --card-foreground: oklch(0.20 0.01 260);
+    --primary: oklch(0.20 0.01 260);
+    --primary-foreground: oklch(0.98 0.002 260);
+    --secondary: oklch(0.95 0.005 260);
+    --secondary-foreground: oklch(0.20 0.01 260);
+    --muted: oklch(0.95 0.005 260);
+    --muted-foreground: oklch(0.55 0.01 260);
+    --accent: oklch(0.95 0.005 260);
+    --accent-foreground: oklch(0.20 0.01 260);
+    --destructive: oklch(0.60 0.15 20);
+    --destructive-foreground: oklch(0.98 0 0);
+    --border: oklch(0.90 0.01 260);
+    --input: oklch(0.90 0.01 260);
+    --ring: oklch(0.30 0.01 260);
+    --success: oklch(0.65 0.15 150);
+    --warning: oklch(0.80 0.15 80);
+    --radius: 0.625rem;
 }
 
-/* 🌚 Темна тема через клас .dark */
-.dark,
-[data-theme='dark'] {
-    /* Primary */
-    --primary: #60a5fa;
-    --primary-dark: #1e40af;
-    --primary-light: #bfdbfe;
-
-    /* Neutrals */
-    --background: #0f172a;
-    --surface: #1e293b;
-    --surface-hover: #273449;
-    --border: #334155;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-
-    /* Status */
-    --success: #22c55e;
-    --warning: #fbbf24;
-    --error: #f87171;
+.dark {
+    --background: oklch(0.13 0.01 260);
+    --foreground: oklch(0.90 0.01 260);
+    --card: oklch(0.16 0.01 260);
+    --card-foreground: oklch(0.90 0.01 260);
+    --primary: oklch(0.95 0.01 260);
+    --primary-foreground: oklch(0.13 0.01 260);
+    --secondary: oklch(0.20 0.01 260);
+    --secondary-foreground: oklch(0.90 0.01 260);
+    --muted: oklch(0.20 0.01 260);
+    --muted-foreground: oklch(0.65 0.01 260);
+    --accent: oklch(0.20 0.01 260);
+    --accent-foreground: oklch(0.90 0.01 260);
+    --destructive: oklch(0.45 0.15 20);
+    --destructive-foreground: oklch(0.98 0 0);
+    --border: oklch(0.22 0.01 260);
+    --input: oklch(0.22 0.01 260);
+    --ring: oklch(0.40 0.01 260);
+    --success: oklch(0.55 0.15 150);
+    --warning: oklch(0.70 0.15 80);
 }
 
-/* 🎨 Прив’язка змінних до Tailwind токенів */
 @theme inline {
-    --color-primary: var(--primary);
-    --color-primary-dark: var(--primary-dark);
-    --color-primary-light: var(--primary-light);
-
     --color-background: var(--background);
-    --color-surface: var(--surface);
-    --color-surface-hover: var(--surface-hover);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
     --color-border: var(--border);
-    --color-text-primary: var(--text-primary);
-    --color-text-secondary: var(--text-secondary);
-
+    --color-input: var(--input);
+    --color-ring: var(--ring);
     --color-success: var(--success);
     --color-warning: var(--warning);
-    --color-error: var(--error);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
 }

@@ -4,10 +4,10 @@ import { forwardRef } from 'react';
 import { composeClasses } from '@/shared/lib';
 import type { UiInputProps, UiInputSize, UiInputVariant } from './types';
 
-const iconSizeMap: Record<UiInputSize, number> = {
-    sm: 16,
-    md: 20,
-    lg: 24,
+const iconSizeStyles: Record<UiInputSize, string> = {
+    sm: '[&>svg]:size-4',
+    md: '[&>svg]:size-5',
+    lg: '[&>svg]:size-6',
 };
 
 const sizeStyles: Record<UiInputSize, string> = {
@@ -18,11 +18,11 @@ const sizeStyles: Record<UiInputSize, string> = {
 
 const variantStyles: Record<UiInputVariant, string> = {
     outlined:
-        'bg-transparent text-text-primary border border-border hover:border-text-secondary focus-within:border-primary',
-    filled: 'bg-surface-hover text-text-primary border border-transparent hover:bg-surface focus-within:bg-surface',
+        'bg-transparent text-foreground border border-border hover:border-muted-foreground focus-within:border-primary',
+    filled: 'bg-secondary text-foreground border border-transparent hover:bg-card focus-within:bg-card',
 };
 
-const errorStyles = 'border-error hover:border-error focus-within:border-error';
+const errorStyles = 'border-destructive hover:border-destructive focus-within:border-destructive';
 
 const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
     const {
@@ -36,10 +36,13 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
         ...inputProps
     } = props;
 
-    const iconSize = iconSizeMap[size];
+    const iconClass = composeClasses(
+        'shrink-0 text-muted-foreground',
+        iconSizeStyles[size]
+    );
 
     const wrapperClasses = composeClasses(
-        'inline-flex items-center gap-2',
+        'flex items-center gap-2',
         'rounded-md transition-colors',
         sizeStyles[size],
         variantStyles[variant],
@@ -56,30 +59,24 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                 data-size={size}
             >
                 {IconLeft && (
-                    <IconLeft
-                        width={iconSize}
-                        height={iconSize}
-                        className="shrink-0 text-text-secondary"
-                        aria-hidden
-                    />
+                    <span className={iconClass} aria-hidden>
+                        {IconLeft}
+                    </span>
                 )}
                 <input
                     {...inputProps}
                     ref={ref}
                     disabled={disabled}
-                    className="w-full bg-transparent outline-none placeholder:text-text-secondary disabled:cursor-not-allowed"
+                    className="w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
                 />
                 {IconRight && (
-                    <IconRight
-                        width={iconSize}
-                        height={iconSize}
-                        className="shrink-0 text-text-secondary"
-                        aria-hidden
-                    />
+                    <span className={iconClass} aria-hidden>
+                        {IconRight}
+                    </span>
                 )}
             </label>
             {error && (
-                <p className="mt-1 text-sm text-error">
+                <p className="mt-1 text-sm text-destructive">
                     {error}
                 </p>
             )}

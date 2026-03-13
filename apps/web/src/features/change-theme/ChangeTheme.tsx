@@ -2,45 +2,57 @@
 
 import { FC } from 'react';
 import { useTheme } from 'next-themes';
+import { useTranslations } from 'next-intl';
 import { Sun, Moon, SunMoon } from 'lucide-react';
 import { THEME, Theme } from '@/shared/types/settings';
 import UiButton from '@/shared/ui/UiButton';
+import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
+import type { UiDropdownMenuItem } from '@/shared/ui/UiDropdownMenu';
 
-const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
-    { value: THEME.LIGHT, icon: Sun, label: 'Light' },
-    { value: THEME.SYSTEM, icon: SunMoon, label: 'System' },
-    { value: THEME.DARK, icon: Moon, label: 'Dark' },
+const THEME_ICONS: Record<Theme, typeof Sun> = {
+    [THEME.LIGHT]: Sun,
+    [THEME.SYSTEM]: SunMoon,
+    [THEME.DARK]: Moon,
+};
+
+const THEME_KEYS: { value: Theme; key: string }[] = [
+    { value: THEME.LIGHT, key: 'light' },
+    { value: THEME.SYSTEM, key: 'system' },
+    { value: THEME.DARK, key: 'dark' },
 ];
 
 const ChangeTheme: FC = () => {
     const { theme, setTheme } = useTheme();
+    const t = useTranslations('components.change_theme');
+
+    const TriggerIcon = THEME_ICONS[(theme as Theme) ?? THEME.SYSTEM];
+
+    const items: UiDropdownMenuItem[] = THEME_KEYS.map(({ value, key }) => {
+        const Icon = THEME_ICONS[value];
+        return {
+            value,
+            label: t(key),
+            icon: <Icon />,
+        };
+    });
 
     return (
-        <div
-            role="group"
-            aria-label="Theme"
-            className="bg-surface border-border flex items-center rounded-full border p-0.5"
-        >
-            {THEME_OPTIONS.map(({ value, icon: Icon, label }) => {
-                const isActive = theme === value;
-                return (
-                    <UiButton
-                        key={value}
-                        variant="icon"
-                        size="sm"
-                        aria-label={label}
-                        aria-pressed={isActive}
-                        onClick={() => setTheme(value)}
-                        className={
-                            isActive
-                                ? 'rounded-full bg-primary/15 !text-primary'
-                                : 'rounded-full !text-text-secondary hover:!text-text-primary'
-                        }
-                        IconLeft={Icon}
-                    />
-                );
-            })}
-        </div>
+        <UiDropdownMenu
+            items={items}
+            onSelect={setTheme}
+            activeValue={theme}
+            align="end"
+            size="sm"
+            trigger={
+                <UiButton
+                    variant="icon"
+                    size="sm"
+                    aria-label={t('label')}
+                    className="size-9"
+                    IconLeft={<TriggerIcon />}
+                />
+            }
+        />
     );
 };
 

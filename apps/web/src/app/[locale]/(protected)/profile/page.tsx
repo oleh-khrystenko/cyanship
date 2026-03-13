@@ -30,7 +30,7 @@ function ProfileContent() {
 
     return (
         <main className="mx-auto max-w-xl px-4 py-10">
-            <h1 className="text-text-primary mb-8 text-3xl font-bold">
+            <h1 className="text-foreground mb-8 text-3xl font-bold">
                 {mode === 'new' ? t('new_heading') : t('heading')}
             </h1>
 

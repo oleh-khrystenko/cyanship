@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { UserProfile } from '@lucidship/types';
+import { passwordSchema } from '@lucidship/types';
 import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
@@ -30,6 +31,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
+    const [newPwdError, setNewPwdError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -63,8 +65,24 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
         return t('set_password');
     };
 
+    const validateNewPassword = (): boolean => {
+        const result = passwordSchema.safeParse(newPwd);
+        if (!result.success) {
+            setNewPwdError(t('password_too_short'));
+            return false;
+        }
+        return true;
+    };
+
     const handleSetPassword = async (e: FormEvent) => {
         e.preventDefault();
+
+        if (isPasswordOptional && !newPwd) {
+            return;
+        }
+
+        if (!validateNewPassword()) return;
+
         setSubmitting(true);
         try {
             await setPassword(newPwd);
@@ -81,6 +99,9 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const handleChangePassword = async (e: FormEvent) => {
         e.preventDefault();
+
+        if (!validateNewPassword()) return;
+
         setSubmitting(true);
         try {
             if (isResetMode) {
@@ -127,20 +148,24 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     return (
         <section className="space-y-4">
-            <h2 className="text-text-primary text-xl font-semibold">
+            <h2 className="text-foreground text-xl font-semibold">
                 {t('heading')}
             </h2>
 
             {/* Set password mode */}
             {isSetMode && (
                 <form onSubmit={handleSetPassword} className="space-y-3">
-                    <p className="text-text-secondary text-sm">
+                    <p className="text-muted-foreground text-sm">
                         {getHeading()}
                     </p>
                     <UiPasswordInput
                         placeholder={t('password_placeholder')}
                         value={newPwd}
-                        onChange={(e) => setNewPwd(e.target.value)}
+                        onChange={(e) => {
+                            setNewPwd(e.target.value);
+                            if (newPwdError) setNewPwdError('');
+                        }}
+                        error={newPwdError || undefined}
                         required={isPasswordRequired}
                         size="lg"
                         showLabel={t('show_password')}
@@ -168,14 +193,14 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             {/* Change password mode (has password, default or reset) */}
             {(isChangeMode || isResetMode) && (
                 <form onSubmit={handleChangePassword} className="space-y-3">
-                    <p className="text-text-secondary text-sm">
+                    <p className="text-muted-foreground text-sm">
                         {getHeading()}
                     </p>
 
                     {/* Current password — only in change mode, not reset */}
                     {isChangeMode && (
                         <div>
-                            <label className="text-text-secondary mb-1 block text-sm">
+                            <label className="text-muted-foreground mb-1 block text-sm">
                                 {t('current_password_label')}
                             </label>
                             <UiPasswordInput
@@ -193,13 +218,17 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     )}
 
                     <div>
-                        <label className="text-text-secondary mb-1 block text-sm">
+                        <label className="text-muted-foreground mb-1 block text-sm">
                             {t('new_password_label')}
                         </label>
                         <UiPasswordInput
                             placeholder={t('password_placeholder')}
                             value={newPwd}
-                            onChange={(e) => setNewPwd(e.target.value)}
+                            onChange={(e) => {
+                                setNewPwd(e.target.value);
+                                if (newPwdError) setNewPwdError('');
+                            }}
+                            error={newPwdError || undefined}
                             required
                             size="lg"
                             showLabel={t('show_password')}
@@ -231,7 +260,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                                 type="button"
                                 variant="text"
                                 size="md"
-                                className="text-error"
+                                className="text-destructive"
                                 onClick={() => setConfirmDelete(true)}
                                 disabled={submitting}
                             >
@@ -244,15 +273,15 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Delete password confirmation */}
             {confirmDelete && (
-                <div className="rounded-lg border border-error/30 bg-error/10 p-4">
-                    <p className="text-text-primary mb-3 text-sm">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                    <p className="text-foreground mb-3 text-sm">
                         {t('delete_password_confirm')}
                     </p>
                     <div className="flex gap-3">
                         <UiButton
                             variant="filled"
                             size="sm"
-                            className="rounded-lg bg-error"
+                            className="rounded-lg bg-destructive"
                             onClick={() => void handleDeletePassword()}
                             disabled={submitting}
                         >
