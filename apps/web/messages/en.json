@@ -148,7 +148,9 @@
             "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
             "login_via_email_link": "Sign in via email link",
             "session_revoked": "Session ended. Please sign in again",
-            "error_generic": "Something went wrong. Please try again"
+            "error_generic": "Something went wrong. Please try again",
+            "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "terms_required": "Please accept the Terms of Service and Privacy Policy to continue"
         },
         "recovery": {
             "title": "Account deactivated",

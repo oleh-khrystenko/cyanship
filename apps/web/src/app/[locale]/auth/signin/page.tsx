@@ -7,6 +7,7 @@ import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
+import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiInput from '@/shared/ui/UiInput';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -51,6 +52,8 @@ export default function SigninPage() {
     const [deletedDaysLeft, setDeletedDaysLeft] = useState(0);
     const [resendCountdown, setResendCountdown] = useState(0);
     const [resending, setResending] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [termsError, setTermsError] = useState('');
     const lastPurposeRef = useRef<MagicLinkPurpose>('login');
     const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
@@ -116,8 +119,25 @@ export default function SigninPage() {
         }
     };
 
+    const handleTermsChange = (checked: boolean) => {
+        setAgreedToTerms(checked);
+        if (checked) setTermsError('');
+    };
+
+    const handleGoogleSignin = () => {
+        if (!agreedToTerms) {
+            setTermsError(t('terms_required'));
+            return;
+        }
+        window.location.href = `${ENV.NEXT_PUBLIC_API_URL}/auth/google`;
+    };
+
     const handleEmailSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        if (!agreedToTerms) {
+            setTermsError(t('terms_required'));
+            return;
+        }
         setState('loading');
         setErrorMessage('');
 
@@ -238,6 +258,7 @@ export default function SigninPage() {
         setState('email');
         setPassword('');
         setErrorMessage('');
+        setTermsError('');
         setSubmitting(false);
         setShowMagicLinkSuggestion(false);
     };
@@ -262,12 +283,11 @@ export default function SigninPage() {
     const renderEmailState = () => (
         <>
             <UiButton
-                as="a"
-                href={`${ENV.NEXT_PUBLIC_API_URL}/auth/google`}
                 variant="filled"
                 size="lg"
                 className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
                 IconLeft={<GoogleIcon />}
+                onClick={handleGoogleSignin}
             >
                 {t('google_button')}
             </UiButton>
@@ -301,6 +321,38 @@ export default function SigninPage() {
                     {t('continue_button')}
                 </UiButton>
             </form>
+
+            <UiCheckbox
+                checked={agreedToTerms}
+                onChange={handleTermsChange}
+                size="sm"
+                error={termsError}
+            >
+                {t.rich('terms_agree', {
+                    terms: (chunks) => (
+                        <a
+                            href={`/${locale}/terms`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                    privacy: (chunks) => (
+                        <a
+                            href={`/${locale}/privacy`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                })}
+            </UiCheckbox>
         </>
     );
 
