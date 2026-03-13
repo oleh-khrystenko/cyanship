@@ -395,7 +395,7 @@ export default function TermsPage() {
                                         href="https://github.com/basecamp/policies"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
+                                        className="!text-muted-foreground/60 underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:!text-muted-foreground"
                                     >
                                         Basecamp open-source policies
                                     </a>
@@ -404,7 +404,7 @@ export default function TermsPage() {
                                         href="https://creativecommons.org/licenses/by/4.0/"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
+                                        className="!text-muted-foreground/60 underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:!text-muted-foreground"
                                     >
                                         CC BY 4.0
                                     </a>
