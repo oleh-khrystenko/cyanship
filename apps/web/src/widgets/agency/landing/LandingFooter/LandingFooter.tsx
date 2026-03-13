@@ -30,23 +30,23 @@ const LandingFooter = () => {
     const t = useTranslations('landing_page.footer');
 
     return (
-        <footer className="border-t border-border bg-card py-16">
+        <footer className="border-border bg-card border-t">
             <div className="container px-6">
                 {/* Top: Logo + slogan + columns */}
-                <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-12">
+                <div className="grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-12">
                     {/* Brand */}
                     <div className="lg:col-span-5">
                         <Logo />
-                        <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                        <p className="text-muted-foreground mt-4 max-w-xs text-sm leading-relaxed">
                             {t('slogan')}
                         </p>
                     </div>
 
                     {/* 3 columns */}
-                    <div className="grid grid-cols-3 gap-8 lg:col-span-7">
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7">
                         {/* Product */}
                         <div>
-                            <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                            <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                                 {t('col_product')}
                             </h4>
                             <ul className="mt-4 space-y-3">
@@ -54,7 +54,7 @@ const LandingFooter = () => {
                                     <li key={key}>
                                         <a
                                             href={href}
-                                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                                         >
                                             {t(`nav_${key}`)}
                                         </a>
@@ -65,7 +65,7 @@ const LandingFooter = () => {
 
                         {/* Legal */}
                         <div>
-                            <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                            <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                                 {t('col_legal')}
                             </h4>
                             <ul className="mt-4 space-y-3">
@@ -73,7 +73,7 @@ const LandingFooter = () => {
                                     <li key={key}>
                                         <a
                                             href={href}
-                                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                                         >
                                             {t(`legal_${key}`)}
                                         </a>
@@ -83,15 +83,15 @@ const LandingFooter = () => {
                         </div>
 
                         {/* Connect */}
-                        <div>
-                            <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                        <div className="col-span-2 sm:col-span-1">
+                            <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                                 {t('col_connect')}
                             </h4>
                             <ul className="mt-4 space-y-3">
                                 <li>
                                     <a
                                         href="mailto:oleg@lucidship.dev"
-                                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
                                     >
                                         <Mail className="size-3.5" />
                                         {t('email')}
@@ -104,7 +104,7 @@ const LandingFooter = () => {
                                                 href={href}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
                                             >
                                                 <Icon className="size-3.5" />
                                                 {t(`social_${key}`)}
@@ -119,8 +119,8 @@ const LandingFooter = () => {
                 </div>
 
                 {/* Divider */}
-                <div className="mt-12 border-t border-border pt-8">
-                    <p className="text-center text-sm text-muted-foreground">
+                <div className="border-border border-t py-8">
+                    <p className="text-muted-foreground text-center text-sm">
                         {t('copyright', {
                             year: new Date().getFullYear(),
                         })}
