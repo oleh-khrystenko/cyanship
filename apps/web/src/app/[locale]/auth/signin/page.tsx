@@ -282,6 +282,38 @@ export default function SigninPage() {
     // --- State: email ---
     const renderEmailState = () => (
         <>
+            <UiCheckbox
+                checked={agreedToTerms}
+                onChange={handleTermsChange}
+                size="sm"
+                error={termsError}
+            >
+                {t.rich('terms_agree', {
+                    terms: (chunks) => (
+                        <a
+                            href={`/${locale}/terms`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                    privacy: (chunks) => (
+                        <a
+                            href={`/${locale}/privacy`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                })}
+            </UiCheckbox>
+
             <UiButton
                 variant="filled"
                 size="lg"
@@ -321,38 +353,6 @@ export default function SigninPage() {
                     {t('continue_button')}
                 </UiButton>
             </form>
-
-            <UiCheckbox
-                checked={agreedToTerms}
-                onChange={handleTermsChange}
-                size="sm"
-                error={termsError}
-            >
-                {t.rich('terms_agree', {
-                    terms: (chunks) => (
-                        <a
-                            href={`/${locale}/terms`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {chunks}
-                        </a>
-                    ),
-                    privacy: (chunks) => (
-                        <a
-                            href={`/${locale}/privacy`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {chunks}
-                        </a>
-                    ),
-                })}
-            </UiCheckbox>
         </>
     );
 
