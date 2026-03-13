@@ -19,10 +19,10 @@ export async function generateMetadata(props: MetaProps): Promise<Metadata> {
 export default function PrivacyPage() {
     return (
         <>
-            <main className="py-24">
+            <main className="py-16 md:py-24">
                 <article className="container px-6">
                     <div className="mx-auto max-w-3xl">
-                        <header className="mb-16">
+                        <header className="mb-10 md:mb-16">
                             <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                                 Legal
                             </span>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
                             </p>
                         </header>
 
-                        <div className="prose-legal space-y-12 text-base leading-relaxed text-muted-foreground [&_h2]:mt-16 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-foreground [&_h3]:mt-8 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary/80 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_strong]:text-foreground">
+                        <div className="prose-legal space-y-12 text-base leading-relaxed text-muted-foreground">
                             {/* ------------------------------------------------ */}
                             {/* INTRO                                            */}
                             {/* ------------------------------------------------ */}
@@ -445,12 +445,13 @@ export default function PrivacyPage() {
                             {/* ATTRIBUTION                                      */}
                             {/* ------------------------------------------------ */}
                             <section className="border-t border-border pt-8">
-                                <p className="text-sm">
+                                <p className="text-xs text-muted-foreground/60">
                                     This policy is adapted from the{' '}
                                     <a
                                         href="https://github.com/basecamp/policies"
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
                                     >
                                         Basecamp open-source policies
                                     </a>
@@ -459,6 +460,7 @@ export default function PrivacyPage() {
                                         href="https://creativecommons.org/licenses/by/4.0/"
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
                                     >
                                         CC BY 4.0
                                     </a>

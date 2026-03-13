@@ -3,3 +3,33 @@
     margin-left: auto;
     margin-right: auto;
 }
+
+.prose-legal {
+    & h2 {
+        @apply mt-10 text-xl font-bold tracking-tight text-foreground md:mt-16;
+    }
+
+    & h3 {
+        @apply mt-8 text-base font-semibold text-foreground;
+    }
+
+    & a {
+        @apply text-primary underline underline-offset-4;
+    }
+
+    & a:hover {
+        @apply text-primary/80;
+    }
+
+    & ul {
+        @apply list-disc space-y-2 pl-6;
+    }
+
+    & ol {
+        @apply list-decimal space-y-3 pl-6;
+    }
+
+    & strong {
+        @apply text-foreground;
+    }
+}
