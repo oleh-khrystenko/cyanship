@@ -99,7 +99,19 @@
             "step_4_sub": "Без тиску, без продажних дзвінків"
         },
         "footer": {
-            "copyright": "© {year} LucidShip. Усі права захищені."
+            "slogan": "B2B SaaS без шаблонного коду.",
+            "col_product": "Продукт",
+            "col_legal": "Юридичне",
+            "col_connect": "Контакти",
+            "nav_pricing": "Ціни",
+            "nav_portfolio": "Портфоліо",
+            "nav_workflow": "Робочий процес",
+            "legal_terms": "Умови використання",
+            "legal_privacy": "Політика конфіденційності",
+            "email": "oleg@lucidship.dev",
+            "social_linkedin": "LinkedIn",
+            "social_twitter": "X (Twitter)",
+            "copyright": "© {year} LucidShip. Створено Олегом Христенком."
         }
     },
     "auth_page": {

@@ -99,7 +99,19 @@
             "step_4_sub": "No pressure, no sales calls"
         },
         "footer": {
-            "copyright": "© {year} LucidShip. All rights reserved."
+            "slogan": "Building B2B SaaS without the boilerplate.",
+            "col_product": "Product",
+            "col_legal": "Legal",
+            "col_connect": "Connect",
+            "nav_pricing": "Pricing",
+            "nav_portfolio": "Portfolio",
+            "nav_workflow": "Workflow",
+            "legal_terms": "Terms of Service",
+            "legal_privacy": "Privacy Policy",
+            "email": "oleg@lucidship.dev",
+            "social_linkedin": "LinkedIn",
+            "social_twitter": "X (Twitter)",
+            "copyright": "© {year} LucidShip. Built by Oleg Khrystenko."
         }
     },
     "auth_page": {
