@@ -31,6 +31,9 @@ class UserCredits {
     freeReportUsed!: boolean;
 }
 
+// NOTE: When adding user-facing fields, update the Privacy Policy
+// (apps/web/src/app/[locale]/(agency)/privacy/page.tsx)
+// "What We Collect and Why" section to reflect the new data collected.
 @Schema({ timestamps: true })
 export class User {
     @Prop({ required: true, unique: true, lowercase: true, trim: true })

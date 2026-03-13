@@ -1,4 +1,14 @@
 {
+    "legal": {
+        "privacy": {
+            "title": "Privacy Policy – LucidShip",
+            "description": "How LucidShip handles your data: what we collect, why, and your rights."
+        },
+        "terms": {
+            "title": "Terms of Service – LucidShip",
+            "description": "Terms and conditions for using LucidShip products and services."
+        }
+    },
     "landing_page": {
         "head": {
             "title": "LucidShip – Launch Your SaaS MVP in 4 Weeks",
@@ -138,7 +148,9 @@
             "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
             "login_via_email_link": "Sign in via email link",
             "session_revoked": "Session ended. Please sign in again",
-            "error_generic": "Something went wrong. Please try again"
+            "error_generic": "Something went wrong. Please try again",
+            "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "terms_required": "Please accept the Terms of Service and Privacy Policy to continue"
         },
         "recovery": {
             "title": "Account deactivated",
