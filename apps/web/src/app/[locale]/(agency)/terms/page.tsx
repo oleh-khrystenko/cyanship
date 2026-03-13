@@ -1,27 +1,40 @@
 import { Metadata } from 'next';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps } from '@/shared/types/settings';
 import { LandingFooter } from '@/widgets/agency/landing';
+import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@lucidship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
+    const { locale } = await props.params;
+    const t = await getTranslations({ locale, namespace: 'legal.terms' });
+
     return await fetchMetadata({
         ...props,
         page: null,
         href: 'terms',
         meta: {
-            title: 'Terms of Service – LucidShip',
-            description:
-                'Terms and conditions for using LucidShip products and services.',
+            title: t('title'),
+            description: t('description'),
         },
     });
 }
 
-export default function TermsPage() {
+export default async function TermsPage() {
+    const locale = await getLocale();
+
     return (
         <>
             <main className="py-16 md:py-24">
                 <article className="container px-6">
                     <div className="mx-auto max-w-3xl">
+                        {locale === 'uk' && (
+                            <p className="mb-8 rounded-lg border border-border bg-secondary/50 px-4 py-3 text-sm text-muted-foreground">
+                                Цей документ доступний лише англійською
+                                мовою.
+                            </p>
+                        )}
+
                         <header className="mb-10 md:mb-16">
                             <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                                 Legal
@@ -187,11 +200,13 @@ export default function TermsPage() {
                                     <li>
                                         All of your content will be inaccessible
                                         from the Services immediately upon
-                                        account cancellation. Within 60 days, all
-                                        content will be permanently deleted from
-                                        active systems, logs, and backups. We
-                                        cannot recover this information once it
-                                        has been permanently deleted.
+                                        account cancellation. Within{' '}
+                                        {DEFAULT_ACCOUNT_DELETION_GRACE_DAYS}{' '}
+                                        days, all content will be permanently
+                                        deleted from active systems, logs, and
+                                        backups. We cannot recover this
+                                        information once it has been permanently
+                                        deleted.
                                     </li>
                                     <li>
                                         If you cancel the Service before the end

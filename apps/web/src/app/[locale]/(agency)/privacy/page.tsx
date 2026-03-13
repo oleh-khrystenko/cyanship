@@ -1,27 +1,40 @@
 import { Metadata } from 'next';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps } from '@/shared/types/settings';
 import { LandingFooter } from '@/widgets/agency/landing';
+import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@lucidship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
+    const { locale } = await props.params;
+    const t = await getTranslations({ locale, namespace: 'legal.privacy' });
+
     return await fetchMetadata({
         ...props,
         page: null,
         href: 'privacy',
         meta: {
-            title: 'Privacy Policy – LucidShip',
-            description:
-                'How LucidShip handles your data: what we collect, why, and your rights.',
+            title: t('title'),
+            description: t('description'),
         },
     });
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+    const locale = await getLocale();
+
     return (
         <>
             <main className="py-16 md:py-24">
                 <article className="container px-6">
                     <div className="mx-auto max-w-3xl">
+                        {locale === 'uk' && (
+                            <p className="mb-8 rounded-lg border border-border bg-secondary/50 px-4 py-3 text-sm text-muted-foreground">
+                                Цей документ доступний лише англійською
+                                мовою.
+                            </p>
+                        )}
+
                         <header className="mb-10 md:mb-16">
                             <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                                 Legal
@@ -89,14 +102,13 @@ export default function PrivacyPage() {
                                 <p className="mt-3">
                                     When you sign up for a LucidShip product, we
                                     ask for identifying information such as your
-                                    name, email address, and optionally a company
-                                    name. That&apos;s so you can personalize your
-                                    account, and we can send you product updates
-                                    and other essential information. We&apos;ll
-                                    never sell your personal information to third
-                                    parties, and we won&apos;t use your name or
-                                    company in marketing statements without your
-                                    permission.
+                                    name and email address. That&apos;s so you
+                                    can personalize your account, and we can send
+                                    you product updates and other essential
+                                    information. We&apos;ll never sell your
+                                    personal information to third parties, and we
+                                    won&apos;t use your name in marketing
+                                    statements without your permission.
                                 </p>
 
                                 <h3>Billing Information</h3>
@@ -121,18 +133,8 @@ export default function PrivacyPage() {
                                     This is so you can use our products as
                                     intended. We keep this content as long as
                                     your account is active. If you delete your
-                                    account, we&apos;ll delete the content within
-                                    60 days.
-                                </p>
-
-                                <h3>Geolocation Data</h3>
-                                <p className="mt-3">
-                                    We log the full IP address used to sign up
-                                    and retain it to mitigate spammy signups. We
-                                    also log all account access by full IP
-                                    address for security and fraud prevention
-                                    purposes, and keep this data for as long as
-                                    your account is active.
+                                    account, we&apos;ll delete the content within{' '}
+                                    {DEFAULT_ACCOUNT_DELETION_GRACE_DAYS} days.
                                 </p>
 
                                 <h3>Website Analytics</h3>
@@ -141,9 +143,9 @@ export default function PrivacyPage() {
                                     activity for analytics and statistical
                                     purposes such as conversion rate testing.
                                     This includes your browser and operating
-                                    system versions, your IP address, which web
-                                    pages you visited and how long they took to
-                                    load, and which website referred you to us.
+                                    system versions, which web pages you visited
+                                    and how long they took to load, and which
+                                    website referred you to us.
                                 </p>
 
                                 <h3>Cookies</h3>
@@ -198,6 +200,14 @@ export default function PrivacyPage() {
                                     <li>
                                         <strong>MongoDB Atlas</strong> — database
                                         hosting
+                                    </li>
+                                    <li>
+                                        <strong>Resend</strong> — transactional
+                                        email delivery
+                                    </li>
+                                    <li>
+                                        <strong>Google</strong> — OAuth
+                                        authentication
                                     </li>
                                 </ul>
 
@@ -357,9 +367,10 @@ export default function PrivacyPage() {
                                 <p className="mt-4">
                                     If you choose to cancel your account, your
                                     content will become immediately inaccessible
-                                    and will be purged from our systems within 60
-                                    days. This includes all active systems, logs,
-                                    and backups.
+                                    and will be purged from our systems within{' '}
+                                    {DEFAULT_ACCOUNT_DELETION_GRACE_DAYS} days.
+                                    This includes all active systems, logs, and
+                                    backups.
                                 </p>
                             </section>
 

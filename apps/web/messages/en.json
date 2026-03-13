@@ -1,4 +1,14 @@
 {
+    "legal": {
+        "privacy": {
+            "title": "Privacy Policy – LucidShip",
+            "description": "How LucidShip handles your data: what we collect, why, and your rights."
+        },
+        "terms": {
+            "title": "Terms of Service – LucidShip",
+            "description": "Terms and conditions for using LucidShip products and services."
+        }
+    },
     "landing_page": {
         "head": {
             "title": "LucidShip – Launch Your SaaS MVP in 4 Weeks",
