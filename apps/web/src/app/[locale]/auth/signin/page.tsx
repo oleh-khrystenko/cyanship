@@ -315,9 +315,9 @@ export default function SigninPage() {
             </UiCheckbox>
 
             <UiButton
-                variant="filled"
+                variant="text"
                 size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
+                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary hover:text-foreground"
                 IconLeft={<GoogleIcon />}
                 onClick={handleGoogleSignin}
             >
