@@ -51,12 +51,12 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 
 ## Architecture Overview
 
-Turborepo monorepo з 2 apps + 1 shared package. Два шари: **Core** (auth, users, payments, shared UI) та **Agency** (бізнес-логіка агенції, ізольований модуль). Одностороння залежність: Agency -> Core, ніколи навпаки (enforced ESLint).
+Turborepo monorepo з 2 apps + 1 shared package. Два шари: **Core** (auth, users, payments, shared UI) та **Agency** (бізнес-логіка агенції, лендінг, legal pages). Одностороння залежність: Agency -> Core, ніколи навпаки (enforced ESLint).
 
-Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Landing page (8 секцій агенційного лендінгу) реалізований. Reports, Storage -- skeleton. Agency -- scaffold (порожні директорії, готові для розширення).
+Auth (Google OAuth + Magic Link + Password) повністю реалізований, включно з profile management, account soft-deletion з 30-day grace period, brute force protection. Payments (Stripe subscription + one-off credit packs + webhooks + billing portal) повністю реалізований. Landing page (8 секцій агенційного лендінгу) реалізований. Legal pages (Terms of Service, Privacy Policy) реалізовані. Sign-in потребує згоди з Terms/Privacy. Reports, Storage -- skeleton. Agency backend -- scaffold (порожні директорії).
 
 - **apps/api** -- NestJS REST API, модульна архітектура, MongoDB через Mongoose, JWT auth, Redis для magic links, token storage, rate limiting, brute force tracking, Stripe webhooks (subscriptions + one-off)
-- **apps/web** -- Next.js SSR/CSR з Feature-Sliced Design, i18n, light/dark/system theme (next-themes), landing page (8 sections), auth pages, profile management, billing page (subscriptions + credit packs). Dev: `next dev --turbopack`. Build: `output: 'standalone'` (Docker). API proxy: `/api/*` -> backend via `next.config.ts` rewrites.
+- **apps/web** -- Next.js SSR/CSR з Feature-Sliced Design, i18n, light/dark/system theme (next-themes), landing page (8 sections), legal pages (Terms, Privacy), auth pages (з terms consent), profile management, billing page (subscriptions + credit packs). Dev: `next dev --turbopack`. Build: `output: 'standalone'` (Docker). API proxy: `/api/*` -> backend via `next.config.ts` rewrites.
 - **packages/types** -- Shared Zod-схеми, типи, constants, contracts, validation, enums. Entry: `src/index.ts` -> 5 modules (constants, enums, entities, contracts, validation). Окремий entry `src/agency.ts` для agency-специфічних типів. Build: CJS to `dist/` via `tsconfig.build.json`.
 
 ## Project Structure
@@ -124,11 +124,14 @@ lucidship/
 │       │   │   ├── globals.css           # @import tailwindcss + 5 style files
 │       │   │   └── [locale]/
 │       │   │       ├── layout.tsx        # Providers, NextIntlClientProvider, AuthInitializer, Header, Mulish font (Cyrillic+Latin)
-│       │   │       ├── page.tsx          # Landing page (8 sections: Hero, Problem, Dogfooding, Portfolio, Workflow, Pricing, FooterCta, Footer)
-│       │   │       ├── (agency)/         # Scaffold (порожній, для agency-специфічних сторінок)
+│       │   │       ├── (agency)/         # Agency route group (landing + legal pages)
+│       │   │       │   ├── layout.tsx    # Wraps children з LandingNav (sets header nav items)
+│       │   │       │   ├── page.tsx      # Landing page (8 sections: Hero, Problem, Dogfooding, Portfolio, Workflow, Pricing, FooterCta, Footer)
+│       │   │       │   ├── terms/page.tsx    # Terms of Service (English only, Basecamp-adapted, uses DEFAULT_ACCOUNT_DELETION_GRACE_DAYS)
+│       │   │       │   └── privacy/page.tsx  # Privacy Policy (English only, Basecamp-adapted, lists subprocessors)
 │       │   │       ├── auth/
-│       │   │       │   ├── signin/page.tsx   # Email -> password/magic-link decision (450 lines, 6-state machine)
-│       │   │       │   ├── callback/page.tsx # OAuth callback: refreshToken -> getMe -> /profile; handles ?account_deleted=true
+│       │   │       │   ├── signin/page.tsx   # Email -> password/magic-link decision (450 lines, 6-state machine, terms consent)
+│       │   │       │   ├── callback/page.tsx # OAuth callback: refreshToken -> getMe -> /profile; handles ?account_deleted=true recovery
 │       │   │       │   └── verify/page.tsx   # Magic link verification (Suspense, 4 purposes, 4 status states)
 │       │   │       └── (protected)/
 │       │   │           ├── layout.tsx        # AuthGuard wrapper
@@ -146,11 +149,12 @@ lucidship/
 │       │   │   ├── change-lang/          # Language switcher (country-flag-icons, UiDropdownMenu, updates URL + backend pref)
 │       │   │   ├── change-theme/         # Theme toggle (3 modes: Light/System/Dark, UiDropdownMenu, lucide icons)
 │       │   │   ├── profile/              # ProfileForm (name/avatar/lang), SecuritySection (set/change/delete pwd), DangerZone (60s cooldown), DeleteAccountModal
-│       │   │   └── agency/              # Scaffold (порожній)
+│       │   │   └── agency/
+│       │   │       └── landing-nav/      # LandingNav: sets headerNavStore items from i18n, renders null (data-only component)
 │       │   ├── widgets/
-│       │   │   ├── header/              # Sticky header: Logo + nav (landing sections) + avatar/initials + credits badge + theme + lang + logout + mobile sheet
-│       │   │   ├── landing/             # 8 landing page sections (Hero, Problem, Dogfooding, Portfolio, Workflow, Pricing, FooterCta, Footer)
-│       │   │   └── agency/              # Scaffold (порожній)
+│       │   │   ├── header/              # Sticky header: Logo + nav (from headerNavStore) + avatar/initials + credits badge + theme + lang + logout + mobile sheet
+│       │   │   └── agency/
+│       │   │       └── landing/         # 8 landing page sections (Hero, Problem, Dogfooding, Portfolio, Workflow, Pricing, FooterCta, LandingFooter)
 │       │   ├── shared/
 │       │   │   ├── api/
 │       │   │   │   ├── client.ts         # Axios + 401 auto-refresh interceptor + in-memory token (closure)
@@ -159,17 +163,19 @@ lucidship/
 │       │   │   │   ├── mapApiCode.ts     # ResponseCode -> i18n key mapping (notifications.{module}.{code} -> errors.generic.unknown)
 │       │   │   │   └── index.ts
 │       │   │   ├── config/env.ts         # Fail-fast ENV + payment feature flags
-│       │   │   ├── ui/                   # UiButton, UiInput, UiPasswordInput, UiSelect, UiSwitch, UiSpinner, UiFullPageLoader, UiDropdownMenu, UiAvatar, UiSheet
+│       │   │   ├── ui/                   # UiButton, UiInput, UiPasswordInput, UiCheckbox, UiSelect, UiSwitch, UiSpinner, UiFullPageLoader, UiDropdownMenu, UiAvatar, UiSheet
 │       │   │   ├── lib/utils.ts          # composeClasses() helper
 │       │   │   ├── icons/GoogleIcon.tsx   # Google OAuth SVG icon (official colors)
 │       │   │   ├── seo/metadata.ts       # fetchMetadata(): canonical URLs, hrefLang alternates (x-default, uk-ua, en-ua)
 │       │   │   ├── types/settings.ts     # THEME enum, Theme, PageParams, MetaProps
 │       │   │   ├── fonts/               # mulish-cyrillic.woff2, mulish-latin.woff2
 │       │   │   └── styles/              # themes.css (oklch design tokens light/dark), settings.css (.container), custom-variants.css, animations.css, scrollbar.css
-│       │   ├── stores/auth/authStore.ts  # user, isAuthenticated, isLoading (Zustand, initial isLoading=true)
+│       │   ├── stores/
+│       │   │   ├── auth/authStore.ts     # user, isAuthenticated, isLoading (Zustand, initial isLoading=true)
+│       │   │   └── headerNav/headerNavStore.ts  # navItems, cta (Zustand, set by LandingNav, consumed by Header)
 │       │   ├── i18n/                     # routing.ts (locales:['uk','en'], default:'en'), request.ts (server-side config)
 │       │   └── middleware.ts             # Protects /profile,/pay,/billing; redirects /auth/signin if authenticated; i18n routing
-│       └── messages/                     # uk.json, en.json (namespaces: landing_page, auth_page, notifications, errors, profile_page, billing_page, components, delete_account_modal)
+│       └── messages/                     # uk.json, en.json (namespaces: landing_page, auth_page, notifications, errors, profile_page, billing_page, components, delete_account_modal, legal)
 │
 ├── packages/
 │   └── types/                            # @lucidship/types
@@ -177,7 +183,9 @@ lucidship/
 │           ├── index.ts                  # Re-exports all 5 modules (constants, enums, entities, contracts, validation)
 │           ├── agency.ts                 # Окремий entry point для agency типів -> ./agency/index
 │           ├── agency/index.ts           # Scaffold (порожній export)
-│           ├── constants/lang.ts         # LANG { UK:'uk', EN:'en' }, Lang type
+│           ├── constants/
+│           │   ├── lang.ts              # LANG { UK:'uk', EN:'en' }, Lang type
+│           │   └── account.ts           # DEFAULT_ACCOUNT_DELETION_GRACE_DAYS = 30
 │           ├── enums/
 │           │   ├── response-code.ts      # PRIMARY: RESPONSE_CODE (17 codes), RESPONSE_CODE_TYPE mapping
 │           │   ├── response-type.ts      # RESPONSE_TYPE { SUCCESS, ERROR }
@@ -193,8 +201,10 @@ lucidship/
 ├── docs/
 │   ├── vision/                           # product.md (dual-purpose: boilerplate + agency landing)
 │   ├── conventions/                      # tone.md, fail-fast.md, i18n.md, env-sync.md, modular-boundaries.md, ui-primitives.md, design-tokens.md
-│   ├── planning/                         # auth-flow/ (17 docs), payments-mvp-implementation-blueprint.md
-│   ├── sprints/                          # landing-page-sprint.md (467 lines, phases 0-4, implementation plan)
+│   ├── architecture/
+│   │   ├── auth-flow/                   # 16 docs: principles -> technical notes (повна документація auth)
+│   │   └── payments-flow/               # 12 docs: architecture -> types (повна документація payments)
+│   ├── sprints/                          # landing-page-sprint.md, reset-password-sprint.md
 │   ├── testing/                          # auth/ + payments/ (README, automated-tests.md, manual-test-plan.md)
 │   └── prompts/                          # codex/, gemini/ (update-context.md)
 ├── .claude/prompts/                      # update-context.md (цей скрипт)
@@ -272,6 +282,7 @@ Zod: `packages/types/src/entities/user.ts`
 | Модуль                   | Зміст                                                                              |
 | ------------------------ | ---------------------------------------------------------------------------------- |
 | `constants/lang.ts`      | `LANG` object (as const), `Lang` type                                              |
+| `constants/account.ts`   | `DEFAULT_ACCOUNT_DELETION_GRACE_DAYS` = 30 (shared між legal pages та backend)     |
 | `enums/error-code.ts`    | DEPRECATED. Kept for AllExceptionsFilter backward compat                           |
 | `enums/response-code.ts` | Primary. `RESPONSE_CODE` (17 codes): auth/users success, payments errors, generic errors. `RESPONSE_CODE_TYPE` mapping |
 | `enums/response-type.ts` | `RESPONSE_TYPE = { SUCCESS, ERROR }`, `ResponseType` type                          |
@@ -328,8 +339,14 @@ layout.tsx ([locale])
 ├── Providers (next-themes ThemeProvider)
 ├── NextIntlClientProvider (i18n)
 ├── AuthInitializer (silent token refresh, skips /auth/callback & /auth/verify)
-├── Header -> Logo, nav (landing sections), UiAvatar/initials, credits badge, UiDropdownMenu (user), ChangeTheme(dynamic ssr:false), ChangeLang, mobile UiSheet
+├── Header -> Logo, nav (from headerNavStore), UiAvatar/initials, credits badge, UiDropdownMenu (user), ChangeTheme(dynamic ssr:false), ChangeLang, mobile UiSheet
 └── {children} -- pages
+
+(agency) route group
+├── layout.tsx -> LandingNav (sets headerNavStore items + CTA)
+├── page.tsx -> Landing page (8 sections)
+├── terms/page.tsx -> Terms of Service
+└── privacy/page.tsx -> Privacy Policy
 
 middleware.ts
 ├── i18n (createIntlMiddleware)
@@ -337,7 +354,9 @@ middleware.ts
 └── Auth: /auth/signin -> redirect to /profile if bid_refresh exists
 ```
 
-**Agency scaffolds (порожні):** `app/[locale]/(agency)/`, `features/agency/`, `entities/agency/`, `widgets/agency/`
+**Zustand stores:**
+- `authStore` -- user, isAuthenticated, isLoading
+- `headerNavStore` -- navItems[], cta (set by LandingNav, consumed by Header)
 
 ## Key Patterns
 
@@ -432,13 +451,14 @@ StripeService handles 4 event types: `checkout.session.completed`/`async_payment
 
 Файл: `apps/web/src/shared/ui/`
 
-10 примітивів, кожен зі структурою `Component.tsx` + `types.ts` + `index.ts`:
+11 примітивів, кожен зі структурою `Component.tsx` + `types.ts` + `index.ts`:
 
 | Компонент        | Бібліотека       | Опис                                                      |
 | ---------------- | ---------------- | --------------------------------------------------------- |
 | UiButton         | --               | Polymorphic (as: button/link/a), variants: filled/text/icon/icon-compact, sizes: sm/md/lg |
 | UiInput          | --               | Variants: outlined/filled, IconLeft/IconRight, error message |
 | UiPasswordInput  | --               | Extends UiInput, show/hide toggle (Eye/EyeOff)            |
+| UiCheckbox       | Headless Checkbox| Sizes: sm/md/lg, error state, children label, Check icon   |
 | UiSelect         | Headless Listbox | Options array, variants: filled/outlined                   |
 | UiSwitch         | Headless Switch  | Toggle з transition                                        |
 | UiSpinner        | --               | LoaderCircle + animate-spin, sizes: sm(16)/md(24)/lg(40)   |
@@ -449,7 +469,7 @@ StripeService handles 4 event types: `checkout.session.completed`/`async_payment
 
 ### Landing Page (Frontend)
 
-Файл: `apps/web/src/widgets/landing/`
+Файл: `apps/web/src/widgets/agency/landing/`
 
 8 секцій, server components, mobile-first design, i18n через `useTranslations('landing_page')`:
 
@@ -460,11 +480,23 @@ StripeService handles 4 event types: `checkout.session.completed`/`async_payment
 | DogfoodingSection| `DogfoodingSection/DogfoodingSection.tsx`       | "You're looking at this code" + 3 action steps |
 | PortfolioSection | `PortfolioSection/PortfolioSection.tsx`         | NDA note, Wish Hub link, video CTA             |
 | WorkflowSection  | `WorkflowSection/WorkflowSection.tsx`           | 3 workflow cards (async, video, code transparency) |
-| PricingSection   | `PricingSection/PricingSection.tsx`             | Package, from $1500, 4 weeks, 5 includes, FAQ (4 Q&A) |
+| PricingSection   | `PricingSection/PricingSection.tsx`             | Package, from $2,500, 4 weeks, 5 includes, FAQ (4 Q&A) |
 | FooterCtaSection | `FooterCtaSection/FooterCtaSection.tsx`         | Heading, CTA link, 4-step process              |
-| LandingFooter    | `LandingFooter/LandingFooter.tsx`              | Copyright з localized year                      |
+| LandingFooter    | `LandingFooter/LandingFooter.tsx`              | Copyright, product nav, legal links (Terms/Privacy), social links (LinkedIn/Twitter), email contact |
 
-Header навігація з hash anchors (#problem, #dogfooding, #portfolio, #workflow, #pricing, #footer-cta) + IntersectionObserver для active section highlighting.
+Header навігація з hash anchors (#problem, #dogfooding, #portfolio, #workflow, #pricing, #footer-cta) + IntersectionObserver для active section highlighting. Навігація встановлюється через `LandingNav` -> `headerNavStore` (layout.tsx agency group).
+
+### Legal Pages (Frontend)
+
+Файли: `apps/web/src/app/[locale]/(agency)/terms/page.tsx`, `privacy/page.tsx`
+
+- Server components, English-only content (з UA note для українських користувачів)
+- Адаптовані з [Basecamp open-source policies](https://github.com/basecamp/policies) (CC BY 4.0)
+- Використовують `DEFAULT_ACCOUNT_DELETION_GRACE_DAYS` з `@lucidship/types` для grace period
+- Privacy Policy перераховує subprocessors: Stripe, Vercel, MongoDB Atlas, Resend, Google
+- Terms включає секції: Account Terms, Payment/Refunds, Cancellation, Modifications, Uptime/Security/Privacy, Copyright, Features/Bugs, Liability, Contact
+- `prose-legal` CSS class для стилізації legal документів
+- Включають LandingFooter внизу сторінки
 
 ### Auth flow (Google OAuth)
 
@@ -483,6 +515,15 @@ Header навігація з hash anchors (#problem, #dogfooding, #portfolio, #w
 4. Web -> `POST /api/auth/magic-link/verify` { token }
 5. Redis GETDEL (atomic) -> `findOrCreateByEmail()` -> `generateTokens()` -> cookie -> return user
 6. Special: DELETE_ACCOUNT purpose -> soft-delete user, revoke tokens, send confirmation email
+
+### Sign-in Terms Consent
+
+Файл: `apps/web/src/app/[locale]/auth/signin/page.tsx`
+
+- `agreedToTerms` state + `termsError` state
+- UiCheckbox з rich text links до /terms та /privacy (target="_blank")
+- Обов'язковий для Google OAuth та email sign-in
+- Валідація перед відправкою форми, error message при спробі без згоди
 
 ### Token refresh (auto)
 
@@ -519,6 +560,18 @@ Frontend: getApiMessageKey('MAGIC_LINK_SENT', 'auth')
 Файл: `apps/web/src/shared/styles/themes.css`
 
 CSS custom properties з oklch-based кольорами. Light/dark теми через `.dark` клас. Токени: `--background`, `--foreground`, `--card`, `--primary`, `--secondary`, `--muted`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`, `--success`, `--warning`, `--radius`. Кожен колір має пару `{color}` + `{color}-foreground`. Tailwind 4 `@theme inline` block для інтеграції.
+
+### Header Navigation Architecture
+
+Файл: `apps/web/src/widgets/header/Header.tsx`
+
+Landing page навігація реалізована через Zustand store (`headerNavStore`) + data-only component (`LandingNav`):
+
+1. `(agency)/layout.tsx` рендерить `<LandingNav />` (renders null)
+2. `LandingNav` (useEffect) -> `headerNavStore.setNav(items, cta)` з i18n labels
+3. `Header` читає `headerNavStore` -> показує nav items + CTA якщо є
+4. На unmount `LandingNav` -> `clearNav()` (nav зникає на не-landing сторінках)
+5. `useActiveSection()` hook -- IntersectionObserver для highlighting активної секції
 
 ## API Overview
 
@@ -681,15 +734,18 @@ pnpm --filter @lucidship/types dev                     # Watch mode
 - Web: prettier-plugin-tailwindcss для сортування класів
 - i18n message keys: `{page}_page.{section}.{key}` або `components.{component}.{key}`
 - i18n notifications: `notifications.{module}.{code}`, errors: `errors.{module}.{code}`, fallback: `errors.generic.{code}`
+- i18n legal: `legal.{page}.{key}` (terms, privacy)
 - Web path aliases: `@/*` -> `./src/*`, `@lucidship/types` -> `../../packages/types/src/index.ts`
 - Server components за замовчуванням, `'use client'` лише де потрібно
-- Landing page sections -- server components в `widgets/landing/`, i18n через `useTranslations('landing_page')`
+- Landing page sections -- server components в `widgets/agency/landing/`, i18n через `useTranslations('landing_page')`
+- Legal pages -- server components в `(agency)/terms/` та `(agency)/privacy/`, English-only content з UA disclaimer
 - **Tone convention**: classic-polite (формальне "ви", без емодзі, 1-2 речення, минулий час для success)
 - **i18n convention**: Backend тільки англійська (code + message), frontend маппить code -> i18n key; emails -- виняток (user language)
 - Password hashing: bcrypt з salt rounds 10
 - `rawBody: true` в `main.ts` -- критично для Stripe webhook signature verification
 - Next.js: dev з `--turbopack`, build з `output: 'standalone'`, API proxy через rewrites
 - **Agency boundary**: Agency може імпортувати Core. Core НЕ може імпортувати Agency. Agency types -- окремий entry `@lucidship/types/agency`.
+- **Shared constants**: `DEFAULT_ACCOUNT_DELETION_GRACE_DAYS` з `@lucidship/types` -- використовується в legal pages та backend cleanup
 
 ## Known Complexities
 
@@ -747,6 +803,7 @@ In-memory Map симулює Redis (SET, GET, GETDEL, INCR, EXPIRE, SADD, SMEMBE
 - OAuth-only -> magic link (DELETE_ACCOUNT) -> verify page обробляє deletion
 - `accountDeletionRequestedAt` трекає початок процесу; `deletedAt` -- фактичний soft-delete
 - CleanupService: @Cron(EVERY_DAY_AT_3AM) hard-deletes expired (30 days) + revokeAllUserTokens per user
+- Recovery UI: signin page + callback page показують restoration option з days remaining
 
 ### Suspense у verify page та profile page
 
@@ -755,7 +812,7 @@ In-memory Map симулює Redis (SET, GET, GETDEL, INCR, EXPIRE, SADD, SMEMBE
 ### Signin page -- state machine
 
 Файл: `apps/web/src/app/[locale]/auth/signin/page.tsx` (450 lines)
-States: `email | loading | password | magic-link-sent | recovery | error`. Retry-after header parsing для rate limits, progressive lockout countdown, grace period recovery for deleted accounts.
+States: `email | loading | password | magic-link-sent | recovery | error`. Retry-after header parsing для rate limits, progressive lockout countdown, grace period recovery for deleted accounts. Terms consent (UiCheckbox) обов'язковий перед будь-яким sign-in action.
 
 ### Profile page -- modes via query param
 
@@ -782,14 +839,24 @@ Constants at top: `REFRESH_TOKEN_TTL` = 2 min (test) / 7 days (prod). Access tok
 Файл: `docs/conventions/modular-boundaries.md`, `apps/web/eslint.config.mjs`
 Core модулі (auth, users, payments, shared UI) не можуть імпортувати з agency scope. Agency scope може імпортувати все з core. ESLint enforces це правило на web. Fork checklist: 10 кроків для видалення agency за 15 хвилин.
 
-### Header -- landing nav + IntersectionObserver
+### Header -- headerNavStore + IntersectionObserver
 
 Файл: `apps/web/src/widgets/header/Header.tsx` (400+ lines)
-`useActiveSection()` hook використовує IntersectionObserver для tracking видимих landing page sections. Hash anchors (#problem, #dogfooding, #portfolio, #workflow, #pricing, #footer-cta) з active highlighting. Desktop nav + mobile UiSheet. Навігація показується лише на landing page.
+`useActiveSection()` hook використовує IntersectionObserver для tracking видимих landing page sections. Header читає navItems/cta з `headerNavStore` (Zustand). Навігація показується лише коли `navItems.length > 0` (тобто на landing page, де `LandingNav` заповнює store). Desktop nav + mobile UiSheet. Hash anchors (#problem, #dogfooding, #portfolio, #workflow, #pricing, #footer-cta).
+
+### LandingNav -- data-only component pattern
+
+Файл: `apps/web/src/features/agency/landing-nav/LandingNav.tsx`
+Renders null. useEffect sets `headerNavStore.setNav(items, cta)` з i18n-перекладеними labels. На unmount -- `clearNav()`. Це дозволяє agency layout впливати на Header (core widget) без порушення модульних границь: agency -> store -> core.
+
+### Legal pages -- agency scope, prose styling
+
+Файли: `apps/web/src/app/[locale]/(agency)/terms/page.tsx`, `privacy/page.tsx`
+Server components рендерять English-only legal content (UA note для не-EN locale). Використовують `prose-legal` CSS class. Імпортують `DEFAULT_ACCOUNT_DELETION_GRACE_DAYS` з `@lucidship/types` для consistency з backend grace period. Адаптовані з Basecamp open-source policies (CC BY 4.0).
 
 ### UI primitives -- mixed Headless UI + Radix
 
-UiSelect, UiSwitch, UiDropdownMenu побудовані на Headless UI (@headlessui/react). UiAvatar побудований на @radix-ui/react-avatar. UiSheet побудований на @radix-ui/react-dialog. Решта (UiButton, UiInput, UiPasswordInput, UiSpinner, UiFullPageLoader) -- чистий React без headless бібліотек.
+UiSelect, UiSwitch, UiDropdownMenu, UiCheckbox побудовані на Headless UI (@headlessui/react). UiAvatar побудований на @radix-ui/react-avatar. UiSheet побудований на @radix-ui/react-dialog. Решта (UiButton, UiInput, UiPasswordInput, UiSpinner, UiFullPageLoader) -- чистий React без headless бібліотек.
 
 ### Frontend tests
 
