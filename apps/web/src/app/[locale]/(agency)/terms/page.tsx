@@ -385,33 +385,31 @@ export default function TermsPage() {
                                 </p>
                             </section>
 
-                            {/* ------------------------------------------------ */}
-                            {/* ATTRIBUTION                                      */}
-                            {/* ------------------------------------------------ */}
-                            <section className="border-t border-border pt-8">
-                                <p className="text-xs text-muted-foreground/60">
-                                    These terms are adapted from the{' '}
-                                    <a
-                                        href="https://github.com/basecamp/policies"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="!text-muted-foreground/60 underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:!text-muted-foreground"
-                                    >
-                                        Basecamp open-source policies
-                                    </a>
-                                    , licensed under{' '}
-                                    <a
-                                        href="https://creativecommons.org/licenses/by/4.0/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="!text-muted-foreground/60 underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:!text-muted-foreground"
-                                    >
-                                        CC BY 4.0
-                                    </a>
-                                    .
-                                </p>
-                            </section>
                         </div>
+
+                        <footer className="mt-12 border-t border-border pt-8">
+                            <p className="text-xs text-muted-foreground/60">
+                                These terms are adapted from the{' '}
+                                <a
+                                    href="https://github.com/basecamp/policies"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
+                                >
+                                    Basecamp open-source policies
+                                </a>
+                                , licensed under{' '}
+                                <a
+                                    href="https://creativecommons.org/licenses/by/4.0/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
+                                >
+                                    CC BY 4.0
+                                </a>
+                                .
+                            </p>
+                        </footer>
                     </div>
                 </article>
             </main>
