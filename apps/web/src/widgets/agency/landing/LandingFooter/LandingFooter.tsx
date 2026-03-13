@@ -5,7 +5,7 @@ import { Logo } from '@/entities/brand';
 const navLinks = [
     { key: 'pricing', href: '#pricing' },
     { key: 'portfolio', href: '#portfolio' },
-    { key: 'workflow', href: '#workflow' },
+    { key: 'proof', href: '#dogfooding' },
 ] as const;
 
 const legalLinks = [
