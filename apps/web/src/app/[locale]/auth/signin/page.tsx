@@ -185,6 +185,7 @@ export default function SigninPage() {
                 setDeletedAt(deleted.toLocaleDateString(locale));
                 setDeletedDaysLeft(daysLeft);
                 document.cookie = 'bid_account_deleted=true; path=/';
+                setSubmitting(false);
                 setState('recovery');
             } else {
                 const me = await getMe();
