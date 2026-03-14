@@ -230,6 +230,8 @@
             "avatar_label": "Avatar (URL)",
             "avatar_placeholder": "https://example.com/photo.jpg",
             "language_label": "Language",
+            "edit_button": "Edit",
+            "cancel_button": "Cancel",
             "save_button": "Save",
             "saved": "Profile updated",
             "save_error": "Failed to save profile"

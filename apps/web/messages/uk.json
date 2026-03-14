@@ -230,6 +230,8 @@
             "avatar_label": "Аватар (URL)",
             "avatar_placeholder": "https://example.com/photo.jpg",
             "language_label": "Мова",
+            "edit_button": "Редагувати",
+            "cancel_button": "Скасувати",
             "save_button": "Зберегти",
             "saved": "Профіль оновлено",
             "save_error": "Не вдалося зберегти профіль"
