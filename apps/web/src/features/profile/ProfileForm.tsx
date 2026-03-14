@@ -14,7 +14,6 @@ import { useAuthStore } from '@/stores/auth';
 interface ProfileFormProps {
     user: UserProfile;
     editable: boolean;
-    nameRequired: boolean;
     onSaved?: () => void;
 }
 
@@ -34,7 +33,6 @@ function combineName(firstName: string, lastName: string): string {
 const ProfileForm = ({
     user,
     editable,
-    nameRequired,
     onSaved,
 }: ProfileFormProps) => {
     const t = useTranslations('profile_page.form');
@@ -66,7 +64,7 @@ const ProfileForm = ({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (nameRequired && !firstName.trim()) {
+        if (!firstName.trim()) {
             setNameError(t('name_required'));
             return;
         }
@@ -133,11 +131,7 @@ const ProfileForm = ({
                     <div>
                         <label className="text-muted-foreground mb-1.5 block text-sm">
                             {t('name_label')}
-                            {nameRequired && (
-                                <span className="text-destructive ml-1">
-                                    *
-                                </span>
-                            )}
+                            <span className="text-destructive ml-1">*</span>
                         </label>
                         <UiInput
                             type="text"

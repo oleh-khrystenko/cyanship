@@ -42,7 +42,6 @@ function ProfileContent() {
                 <ProfileForm
                     user={user}
                     editable={mode === 'new' || mode === null}
-                    nameRequired={mode === 'new'}
                     onSaved={handleProfileSaved}
                 />
 
