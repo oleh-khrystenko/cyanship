@@ -31,16 +31,10 @@ export default function CallbackPage() {
         const authenticate = async () => {
             try {
                 await refreshToken();
-
-                if (isAccountDeleted) {
-                    useAuthStore.getState().clearUser();
-                    document.cookie = 'bid_account_deleted=true; path=/';
-                    setAccountDeleted(true);
-                    return;
-                }
-
-                document.cookie = 'bid_account_deleted=; path=/; max-age=0';
                 const user = await getMe();
+
+                // getMe succeeds → user is active, ignore URL param
+                document.cookie = 'bid_account_deleted=; path=/; max-age=0';
                 useAuthStore.getState().setUser(user);
 
                 // Record terms consent for Google OAuth flow
@@ -49,6 +43,14 @@ export default function CallbackPage() {
 
                 router.replace(`/${locale}/profile`);
             } catch {
+                // getMe failed → user is soft-deleted (JwtActiveGuard blocks)
+                if (isAccountDeleted) {
+                    useAuthStore.getState().clearUser();
+                    document.cookie = 'bid_account_deleted=true; path=/';
+                    setAccountDeleted(true);
+                    return;
+                }
+
                 router.replace(`/${locale}/auth/signin`);
             }
         };
