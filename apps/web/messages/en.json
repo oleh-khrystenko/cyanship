@@ -247,7 +247,6 @@
             "set_password": "Set password",
             "set_password_optional": "Set password (optional)",
             "change_password": "Change password",
-            "delete_password": "Delete password",
             "current_password_label": "Current password",
             "new_password_label": "New password",
             "password_placeholder": "Minimum 8 characters",
@@ -256,9 +255,7 @@
             "hide_password": "Hide password",
             "password_set": "Password set",
             "password_changed": "Password changed. Other devices have been signed out",
-            "password_deleted": "Password deleted",
             "password_invalid": "Invalid password",
-            "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google.",
             "cancel": "Cancel"
         },
         "danger_zone": {

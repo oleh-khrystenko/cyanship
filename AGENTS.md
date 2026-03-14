@@ -111,7 +111,6 @@ Global prefix: `/api`.
 - `POST /api/auth/magic-link/verify` — public — consume magic-link token
 - `POST /api/auth/password/set` — `JwtActiveGuard` — set initial password
 - `POST /api/auth/password/change` — `JwtActiveGuard` — rotate credentials and sessions
-- `POST /api/auth/password/delete` — `JwtActiveGuard` — remove password hash
 - `POST /api/auth/password/verify` — `JwtActiveGuard` — verify password for sensitive actions
 - `POST /api/auth/refresh` — cookie-based — rotate refresh token
 - `POST /api/auth/logout` — cookie-based — revoke refresh token best-effort

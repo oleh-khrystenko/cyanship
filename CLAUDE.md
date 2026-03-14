@@ -105,7 +105,6 @@ Global prefix: `/api`. Rate limiting: `ThrottlerModule` (60 req/min global).
 | POST | `/auth/magic-link/verify` | — | Верифікація magic link token |
 | POST | `/auth/password/set` | `JwtActiveGuard` | Встановлення першого паролю |
 | POST | `/auth/password/change` | `JwtActiveGuard` | Зміна паролю, revoke all tokens |
-| POST | `/auth/password/delete` | `JwtActiveGuard` | Видалення паролю (OAuth-only) |
 | POST | `/auth/password/verify` | `JwtActiveGuard` | Перевірка паролю для sensitive дій |
 | POST | `/auth/refresh` | — | Ротація refresh token (cookie) |
 | POST | `/auth/logout` | — | Revoke refresh token |

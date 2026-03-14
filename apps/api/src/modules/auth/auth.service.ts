@@ -428,14 +428,6 @@ export class AuthService {
         await this.revokeAllUserTokens(user._id.toString());
     }
 
-    async deletePassword(userId: string): Promise<void> {
-        const user = await this.usersService.findById(userId);
-        if (!user || !user.passwordHash) {
-            throw new BadRequestException('No password to delete');
-        }
-        await this.usersService.clearPasswordHash(userId);
-    }
-
     async verifyPassword(userId: string, password: string): Promise<boolean> {
         const user = await this.usersService.findById(userId);
         if (!user || !user.passwordHash) return false;

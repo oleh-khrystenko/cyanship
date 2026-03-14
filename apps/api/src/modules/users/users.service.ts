@@ -119,10 +119,6 @@ export class UsersService {
         await this.userModel.findByIdAndUpdate(userId, { passwordHash: hash });
     }
 
-    async clearPasswordHash(userId: string): Promise<void> {
-        await this.userModel.findByIdAndUpdate(userId, { passwordHash: null });
-    }
-
     async setDeletionRequested(userId: string): Promise<void> {
         await this.userModel.findByIdAndUpdate(userId, {
             accountDeletionRequestedAt: new Date(),

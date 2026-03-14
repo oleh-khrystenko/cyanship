@@ -12,7 +12,6 @@ export {
     setPassword,
     changePassword,
     resetPassword,
-    deletePassword,
     verifyPassword,
     updateProfile,
     deleteAccount,

@@ -13,7 +13,6 @@ import UiSpinner from '@/shared/ui/UiSpinner';
 import {
     setPassword,
     changePassword,
-    deletePassword,
     getMe,
 } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
@@ -35,7 +34,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     const [newPwd, setNewPwd] = useState('');
     const [newPwdError, setNewPwdError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [confirmDelete, setConfirmDelete] = useState(false);
 
     const hasPassword = user.hasPassword;
 
@@ -56,7 +54,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
         setCurrentPwd('');
         setNewPwd('');
         setNewPwdError('');
-        setConfirmDelete(false);
     };
 
     const handleCancel = () => {
@@ -119,22 +116,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             } else {
                 toast.error(t('password_invalid'));
             }
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleDeletePassword = async () => {
-        setSubmitting(true);
-        try {
-            await deletePassword();
-            const me = await getMe();
-            setUser(me);
-            toast.success(t('password_deleted'));
-            resetForm();
-            setEditing(false);
-        } catch {
-            toast.error(t('password_invalid'));
         } finally {
             setSubmitting(false);
         }
@@ -288,51 +269,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         >
                             {t('cancel')}
                         </UiButton>
-                    </div>
-
-                    {/* Delete password option */}
-                    <div className="border-t border-border pt-4">
-                        {!confirmDelete ? (
-                            <UiButton
-                                type="button"
-                                variant="text"
-                                size="sm"
-                                className="text-destructive"
-                                onClick={() => setConfirmDelete(true)}
-                                disabled={submitting}
-                            >
-                                {t('delete_password')}
-                            </UiButton>
-                        ) : (
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-                                <p className="text-foreground mb-3 text-sm">
-                                    {t('delete_password_confirm')}
-                                </p>
-                                <div className="flex gap-3">
-                                    <UiButton
-                                        variant="filled"
-                                        size="sm"
-                                        className="rounded-lg bg-destructive"
-                                        onClick={() => void handleDeletePassword()}
-                                        disabled={submitting}
-                                    >
-                                        {submitting ? (
-                                            <UiSpinner size="sm" />
-                                        ) : (
-                                            t('delete_password')
-                                        )}
-                                    </UiButton>
-                                    <UiButton
-                                        variant="text"
-                                        size="sm"
-                                        onClick={() => setConfirmDelete(false)}
-                                        disabled={submitting}
-                                    >
-                                        {t('cancel')}
-                                    </UiButton>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </form>
             )}

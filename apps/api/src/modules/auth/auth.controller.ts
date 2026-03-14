@@ -221,21 +221,6 @@ export class AuthController {
         return { data: { message: 'Password changed', accessToken } };
     }
 
-    @Post('password/delete')
-    @UseGuards(JwtActiveGuard)
-    @SkipOnboarding()
-    async deletePassword(
-        @CurrentUser() user: UserDocument
-    ): Promise<ApiMessageResponse> {
-        await this.authService.deletePassword(user._id.toString());
-        return {
-            data: {
-                code: RESPONSE_CODE.PASSWORD_DELETED,
-                message: 'Password deleted',
-            },
-        };
-    }
-
     @Post('password/verify')
     @UseGuards(JwtActiveGuard)
     @SkipOnboarding()

@@ -787,43 +787,6 @@ describe('Auth E2E', () => {
             });
         });
 
-        describe('POST /api/auth/password/delete', () => {
-            it('should delete password', async () => {
-                await createUserWithPassword('user@example.com', 'password123');
-                const { accessToken } = await loginWithPassword(
-                    'user@example.com',
-                    'password123'
-                );
-
-                await supertest(app.getHttpServer())
-                    .post('/api/auth/password/delete')
-                    .set('Authorization', `Bearer ${accessToken}`)
-                    .expect(201);
-
-                const user = await userModel.findOne({
-                    email: 'user@example.com',
-                });
-                expect(user?.passwordHash).toBeNull();
-            });
-
-            it('should return 400 when no password to delete', async () => {
-                await createUserWithoutPassword('user@example.com');
-                const { accessToken } =
-                    await loginViaMagicLink('user@example.com');
-
-                await supertest(app.getHttpServer())
-                    .post('/api/auth/password/delete')
-                    .set('Authorization', `Bearer ${accessToken}`)
-                    .expect(400);
-            });
-
-            it('should return 401 without auth', async () => {
-                await supertest(app.getHttpServer())
-                    .post('/api/auth/password/delete')
-                    .expect(401);
-            });
-        });
-
         describe('POST /api/auth/password/verify', () => {
             it('should return isValid: true for correct password', async () => {
                 await createUserWithPassword('user@example.com', 'password123');

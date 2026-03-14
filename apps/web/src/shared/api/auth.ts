@@ -70,10 +70,6 @@ export async function resetPassword(
     });
 }
 
-export async function deletePassword(): Promise<void> {
-    await apiClient.post('/auth/password/delete');
-}
-
 export async function verifyPassword(
     password: string
 ): Promise<{ isValid: boolean }> {

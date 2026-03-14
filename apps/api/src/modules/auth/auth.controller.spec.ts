@@ -31,7 +31,6 @@ const mockAuthService = {
     verifyMagicLink: jest.fn(),
     setPassword: jest.fn(),
     changePassword: jest.fn(),
-    deletePassword: jest.fn(),
     verifyPassword: jest.fn(),
     rotateRefreshToken: jest.fn(),
     revokeRefreshTokenByJwt: jest.fn(),
@@ -386,21 +385,6 @@ describe('AuthController', () => {
                 expect.objectContaining({ httpOnly: true })
             );
             expect(result.data.accessToken).toBe('new-access');
-        });
-    });
-
-    describe('POST /auth/password/delete', () => {
-        it('should return PASSWORD_DELETED response code', async () => {
-            mockAuthService.deletePassword.mockResolvedValue(undefined);
-
-            const result = await controller.deletePassword(mockUser as any);
-
-            expect(result).toEqual({
-                data: {
-                    code: RESPONSE_CODE.PASSWORD_DELETED,
-                    message: 'Password deleted',
-                },
-            });
         });
     });
 

@@ -247,7 +247,6 @@
             "set_password": "Встановити пароль",
             "set_password_optional": "Встановити пароль (опціонально)",
             "change_password": "Змінити пароль",
-            "delete_password": "Видалити пароль",
             "current_password_label": "Поточний пароль",
             "new_password_label": "Новий пароль",
             "password_placeholder": "Мінімум 8 символів",
@@ -256,9 +255,7 @@
             "hide_password": "Сховати пароль",
             "password_set": "Пароль встановлено",
             "password_changed": "Пароль змінено. Інші пристрої було відключено",
-            "password_deleted": "Пароль видалено",
             "password_invalid": "Невірний пароль",
-            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google.",
             "cancel": "Скасувати"
         },
         "danger_zone": {

@@ -625,22 +625,7 @@
 
 ---
 
-### Тест I5: Default profile — delete password
-
-**Precondition:** Юзер з паролем
-
-**Steps:**
-1. Security → "Видалити пароль"
-2. Підтвердити
-
-**Expected:**
-- [ ] Network: `POST /api/auth/password/delete` → `200`
-- [ ] Toast: "Пароль видалено"
-- [ ] Наступний вхід через email → magic link (не password form)
-
----
-
-### Тест I6: Default profile — update profile
+### Тест I5: Default profile — update profile
 
 **Steps:**
 1. Змінити ім'я → зберегти
