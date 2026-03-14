@@ -139,13 +139,15 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             <h2 className="text-foreground text-lg font-semibold">
                 {t('heading')}
             </h2>
+            {isSetMode && (
+                <p className="text-muted-foreground mt-1 text-sm">
+                    {getHeading()}
+                </p>
+            )}
 
             {/* Set password mode */}
             {isSetMode && (
                 <form onSubmit={handleSetPassword} className="mt-5 space-y-4">
-                    <p className="text-muted-foreground text-sm">
-                        {getHeading()}
-                    </p>
                     <UiPasswordInput
                         placeholder={t('password_placeholder')}
                         value={newPwd}
@@ -181,10 +183,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             {/* Change password mode (has password, default or reset) */}
             {isChangeMode && (
                 <form onSubmit={handleChangePassword} className="mt-5 space-y-4">
-                    <p className="text-muted-foreground text-sm">
-                        {getHeading()}
-                    </p>
-
                     {/* Current password — only in change mode, not reset */}
                     {isChangeMode && (
                         <div>
