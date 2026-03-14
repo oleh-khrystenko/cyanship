@@ -25,6 +25,7 @@ import { ENV } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CheckEmailDto } from './dto/check-email.dto';
 import { LoginPasswordDto } from './dto/login-password.dto';
 import { SendMagicLinkDto } from './dto/send-magic-link.dto';
@@ -165,6 +166,19 @@ export class AuthController {
                 accessToken: tokens.accessToken,
                 purpose,
                 ...(accountDeleted && { accountDeleted }),
+            },
+        };
+    }
+
+    @Post('password/reset')
+    async resetPassword(
+        @Body() dto: ResetPasswordDto
+    ): Promise<ApiMessageResponse> {
+        await this.authService.resetPassword(dto.token, dto.newPassword);
+        return {
+            data: {
+                code: RESPONSE_CODE.PASSWORD_RESET,
+                message: 'Password has been reset',
             },
         };
     }

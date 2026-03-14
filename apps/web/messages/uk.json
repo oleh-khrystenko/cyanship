@@ -174,13 +174,27 @@
             "deleted_heading": "Акаунт видалено",
             "deleted_description": "Ваш акаунт деактивовано. Протягом 30 днів ви можете відновити його — просто увійдіть до системи.",
             "deleted_signin_button": "Увійти"
+        },
+        "reset_password": {
+            "heading": "Встановіть новий пароль",
+            "description": "Введіть новий пароль нижче.",
+            "new_password_placeholder": "Новий пароль",
+            "confirm_password_placeholder": "Підтвердіть пароль",
+            "submit_button": "Скинути пароль",
+            "success_toast": "Пароль змінено. Увійдіть із новим паролем.",
+            "passwords_mismatch": "Паролі не збігаються",
+            "password_too_short": "Пароль повинен містити мінімум 8 символів",
+            "error_invalid_token": "Посилання для скидання недійсне або прострочене. Запросіть нове.",
+            "error_generic": "Щось пішло не так. Спробуйте ще раз.",
+            "back_to_signin": "Повернутись до входу"
         }
     },
     "notifications": {
         "auth": {
             "magic_link_sent": "Посилання надіслано на вашу пошту",
             "logged_out": "Ви вийшли з акаунту",
-            "account_deleted": "Акаунт видалено"
+            "account_deleted": "Акаунт видалено",
+            "password_reset": "Пароль успішно змінено"
         },
         "users": {
             "terms_accepted": "Умови прийнято."

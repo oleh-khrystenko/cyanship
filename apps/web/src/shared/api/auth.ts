@@ -58,6 +58,18 @@ export async function changePassword(
     return data.data;
 }
 
+export async function resetPassword(
+    token: string,
+    newPassword: string,
+    confirmPassword: string
+): Promise<void> {
+    await apiClient.post('/auth/password/reset', {
+        token,
+        newPassword,
+        confirmPassword,
+    });
+}
+
 export async function deletePassword(): Promise<void> {
     await apiClient.post('/auth/password/delete');
 }

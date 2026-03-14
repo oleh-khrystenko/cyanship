@@ -396,6 +396,36 @@ export class AuthService {
         return this.generateTokens(userId, user.email);
     }
 
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+        const magicKey = `magic:${token}`;
+        const raw = await this.redis.getdel(magicKey);
+
+        if (!raw) {
+            throw new UnauthorizedException(
+                'Invalid or expired reset token'
+            );
+        }
+
+        const { email, purpose } = JSON.parse(raw) as {
+            email: string;
+            purpose: MagicLinkPurpose;
+        };
+
+        if (purpose !== MAGIC_LINK_PURPOSE.RESET_PASSWORD) {
+            throw new BadRequestException('Invalid token purpose');
+        }
+
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        const hash = await bcrypt.hash(newPassword, 10);
+        await this.usersService.setPasswordHash(user._id.toString(), hash);
+
+        await this.revokeAllUserTokens(user._id.toString());
+    }
+
     async deletePassword(userId: string): Promise<void> {
         const user = await this.usersService.findById(userId);
         if (!user || !user.passwordHash) {

@@ -11,6 +11,7 @@ export {
     updatePreferredLang,
     setPassword,
     changePassword,
+    resetPassword,
     deletePassword,
     verifyPassword,
     updateProfile,

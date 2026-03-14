@@ -17,7 +17,7 @@ import {
 } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
-export type ProfileMode = 'new' | 'set-password' | 'reset-password' | null;
+export type ProfileMode = 'new' | 'set-password' | null;
 
 interface SecuritySectionProps {
     user: UserProfile;
@@ -41,16 +41,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
         !hasPassword &&
         (mode === 'new' ||
             mode === 'set-password' ||
-            mode === 'reset-password' ||
             mode === null);
 
     const isChangeMode = hasPassword && (mode === null || mode === undefined);
 
-    const isResetMode = hasPassword && mode === 'reset-password';
-
-    const isPasswordRequired =
-        mode === 'reset-password' ||
-        (mode === null && !hasPassword);
+    const isPasswordRequired = mode === null && !hasPassword;
 
     const isPasswordOptional = mode === 'new' || mode === 'set-password';
 
@@ -60,7 +55,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                 ? t('set_password_optional')
                 : t('set_password');
         }
-        if (isResetMode) return t('change_password');
         if (isChangeMode) return t('change_password');
         return t('set_password');
     };
@@ -104,16 +98,10 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
         setSubmitting(true);
         try {
-            if (isResetMode) {
-                await setPassword(newPwd);
-            } else {
-                await changePassword(currentPwd, newPwd);
-            }
+            await changePassword(currentPwd, newPwd);
             const me = await getMe();
             setUser(me);
-            toast.success(
-                isResetMode ? t('password_set') : t('password_changed')
-            );
+            toast.success(t('password_changed'));
             setCurrentPwd('');
             setNewPwd('');
         } catch (err) {
@@ -191,7 +179,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             )}
 
             {/* Change password mode (has password, default or reset) */}
-            {(isChangeMode || isResetMode) && (
+            {isChangeMode && (
                 <form onSubmit={handleChangePassword} className="space-y-3">
                     <p className="text-muted-foreground text-sm">
                         {getHeading()}

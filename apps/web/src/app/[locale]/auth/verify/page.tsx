@@ -48,14 +48,6 @@ function VerifyContent() {
                         break;
                     }
 
-                    case 'reset-password': {
-                        const user = await getMe();
-                        useAuthStore.getState().setUser(user);
-                        setStatus('success');
-                        router.replace(`/${locale}/profile`);
-                        break;
-                    }
-
                     case 'delete-account': {
                         setStatus('deleted');
                         break;

@@ -78,6 +78,16 @@ export const VerifyPasswordSchema = z.object({
     password: z.string(),
 });
 
+export const ResetPasswordSchema = z
+    .object({
+        token: z.string().min(1),
+        newPassword: passwordSchema,
+        confirmPassword: passwordSchema,
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+        path: ['confirmPassword'],
+    });
+
 // --- Delete Account Verify Response ---
 
 export const DeleteAccountVerifyResponseSchema = z.object({
@@ -101,3 +111,4 @@ export type LoginPasswordDto = z.infer<typeof LoginPasswordSchema>;
 export type SetPasswordDto = z.infer<typeof SetPasswordSchema>;
 export type ChangePasswordDto = z.infer<typeof ChangePasswordSchema>;
 export type VerifyPasswordDto = z.infer<typeof VerifyPasswordSchema>;
+export type ResetPasswordDto = z.infer<typeof ResetPasswordSchema>;
