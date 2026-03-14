@@ -258,7 +258,7 @@ describe('EmailService', () => {
             );
 
             const html = sendSpy.mock.calls[0][0].html as string;
-            expect(html).toContain('http://localhost:3000');
+            expect(html).toContain('http://localhost:3000/auth/signin');
         });
 
         it('should use EN template for non-UK lang', async () => {

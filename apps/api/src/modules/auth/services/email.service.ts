@@ -174,7 +174,7 @@ export class EmailService {
     <p style="color: #52525b; font-size: 16px; margin-bottom: 32px;">
       ${t.instruction}
     </p>
-    <a href="${ENV.WEB_URL}"
+    <a href="${ENV.WEB_URL}/auth/signin"
        style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none;
               padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
       ${t.cta}
