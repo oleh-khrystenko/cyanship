@@ -1,74 +1,63 @@
 # LucidShip
-> Modern monorepo SaaS boilerplate with Next.js 16, NestJS 11, and Feature-Sliced Design.
+> Modern monorepo SaaS boilerplate з Next.js 16, NestJS 11 та Feature-Sliced Design.
 
 ## Tech Stack
-- **Core:** TypeScript, Node.js, pnpm workspaces, Turborepo.
-- **Frontend:** Next.js 16 (App Router), React 19, TailwindCSS 4, Zustand (state), next-intl (i18n), class-variance-authority (UI).
-- **Backend:** NestJS 11, Mongoose (MongoDB), Redis (caching/rate-limiting), Passport.js (OAuth/JWT).
-- **Communication:** Axios, Resend (email), Google OAuth.
-- **Infra:** Docker, docker-compose.
+- **Frameworks:** Next.js 16 (App Router), NestJS 11
+- **Database:** MongoDB (Mongoose), Redis (ioredis)
+- **Auth:** Passport.js (JWT + Google OAuth), Token Rotation
+- **Payments:** Stripe (Subscriptions + One-off packs)
+- **Styling:** TailwindCSS 4, Radix UI
+- **State/i18n:** Zustand, next-intl
+- **Communication:** Axios, Resend (Email)
+- **Testing:** Jest, Supertest
 
 ## Architecture Overview
-- **Monorepo:** Розділення на `apps/web`, `apps/api` та `packages/shared`.
-- **Frontend (apps/web):** Feature-Sliced Design (FSD). Шари: `app`, `widgets`, `features`, `entities`, `shared`.
-- **Backend (apps/api):** Modular NestJS. Кожен домен — окремий модуль.
-- **Types (packages/types):** Single source of truth для типів, енамів та контрактів API.
+Проєкт побудований як Modular Monolith з жорстким розділенням на **Core** (стабільне ядро) та **Agency** (ізольований бізнес-модуль). Frontend реалізовано за методологією **Feature-Sliced Design (FSD)**. Backend використовує модульну структуру NestJS. Всі типи та Zod-схеми винесені в спільний пакет `@lucidship/types`.
 
 ## Project Structure
-- `apps/web/src/app/[locale]` — Routing та Layouts (i18n enabled).
-- `apps/web/src/features` — Бізнес-фічі (auth, profile).
-- `apps/web/src/shared/ui` — Атомарні UI компоненти.
-- `apps/api/src/modules` — Модулі бекенду (auth, users, payments, etc.).
-- `apps/api/src/common` — Глобальні Guards, Filters, Decorators.
-- `packages/types/src` — Спільні TypeScript дефініції.
-- `docs/conventions` — Обов'язкові інженерні стандарти.
+- `apps/api/` # Backend (NestJS 11)
+  - `src/modules/` # Доменні модулі (auth, users, payments)
+  - `src/common/` # Глобальні Guards, Filters, Decorators
+- `apps/web/` # Frontend (Next.js 16)
+  - `src/features/` # Бізнес-фічі (auth, profile)
+  - `src/shared/ui/` # Атомарні UI компоненти
+- `packages/types/` # Single source of truth для типів
+  - `src/contracts/` # API контракти та Zod схеми
+- `docs/` # Архітектурна та технічна документація
 
 ## Domain Model & Schema
-- **User:** Основна сутність. Зберігає `email`, `profile` (name, avatar), `credits`, `passwordHash`, `deletedAt` (для soft delete), `preferredLang`.
-- **Mongoose Schema:** `apps/api/src/modules/users/schemas/user.schema.ts`.
-- **Types:** `packages/types/src/entities/user.ts`.
+- **User** — `apps/api/src/modules/users/schemas/user.schema.ts`. Ключова сутність: профілі, баланс кредитів, Stripe billing, soft-delete (30 днів).
+- **Audit Logs** — (в планах) для відстеження критичних дій.
 
 ## Module Dependency Map
-- `apps/web` → `@lucidship/types`
-- `apps/api` → `@lucidship/types`
-- `packages/types` → Standalone (Zod для валідації).
+`Agency` → `Core` (Однонаправлена залежність)
+`apps/web` → `@lucidship/types`
+`apps/api` → `@lucidship/types`
 
 ## Key Patterns (CodeDNA)
-- **Створення Endpoint:** `apps/api/src/modules/users/users.controller.ts`
-- **Валідація (DTO):** `apps/api/src/modules/auth/dto/login-password.dto.ts`
-- **Auth Guard:** `apps/api/src/common/guards/jwt-auth.guard.ts`
-- **Error Handling:** `apps/api/src/common/filters/all-exceptions.filter.ts`
-- **Frontend Store:** `apps/web/src/stores/auth/authStore.ts`
-- **Frontend Auth Guard:** `apps/web/src/features/auth/AuthGuard.tsx`
-- **Environment Config:** `apps/api/src/config/env.ts` (Fail-fast policy).
+- **Створення Endpoint:** Controller + DTO + Guard. Приклад: `apps/api/src/modules/users/users.controller.ts`.
+- **Global Error Handling:** Конвертація в уніфікований формат. Файл: `apps/api/src/common/filters/all-exceptions.filter.ts`.
+- **Auth Guarding:** `JwtActiveGuard` для перевірки активності токена. Файл: `apps/api/src/common/guards/jwt-active.guard.ts`.
+- **Fail-fast Config:** Валідація env при старті. Файл: `apps/api/src/config/env.ts`.
 
 ## API Surface
-### Auth Module (`/auth`)
-- `GET /google`, `GET /google/callback` — OAuth.
-- `POST /check-email` — Перевірка існування користувача.
-- `POST /login/password` — Login за паролем.
-- `POST /magic-link/send` — Відправка лінку для входу/реєстрації.
-- `POST /magic-link/verify` — Верифікація токена.
-- `POST /refresh`, `POST /logout` — Керування сесією.
-- `POST /password/set`, `POST /password/change`, `POST /password/delete` — Керування паролем.
-
-### Users Module (`/users`)
-- `GET /me` — Профіль поточного користувача.
-- `PATCH /me` — Оновлення профілю.
-- `PATCH /me/lang` — Оновлення мови.
-- `POST /account/delete`, `POST /account/delete/confirm` — Soft delete.
-- `POST /account/restore` — Відновлення акаунту.
+- `POST /auth/login/password` — Login за паролем
+- `POST /auth/magic-link/send` — Відправка Magic Link
+- `GET /users/me` [JwtActiveGuard] — Профіль поточного користувача
+- `PATCH /users/me` [JwtActiveGuard] — Оновлення профілю
+- `POST /payments/checkout-session` [JwtActiveGuard] — Створення сесії оплати
+- `POST /payments/webhook/stripe` — Обробка вебхуків Stripe (idempotent)
 
 ## Environment & Config
-- **Backend:** `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `REDIS_URL`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`.
-- **Frontend:** `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`.
-- **Policy:** Fail-fast (система крашиться при відсутності критичних змінних).
+Критичні змінні: `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY`.
+**Fail-fast policy:** Додаток не завантажується, якщо хоча б одна обов'язкова змінна відсутня в `env.ts`.
 
 ## Dev Workflow
-- `pnpm dev` — Запуск усіх додатків локально.
-- `pnpm build` — Build проекту.
-- `pnpm lint`, `pnpm format` — Перевірка стилю.
-- `docker compose -f docker-compose.dev.yml up` — Dev оточення в Docker.
+- `pnpm dev` — Запуск усіх сервісів (Turborepo)
+- `pnpm build` — Build всього проєкту
+- `pnpm lint` — Перевірка коду ESLint
+- `pnpm test` — Запуск Jest тестів
+- `docker compose -f docker-compose.dev.yml up` — Інфраструктура (Mongo + Redis)
 
 <!-- MANUAL:START -->
 # Rules
@@ -88,7 +77,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
   <!-- MANUAL:END -->
 
 ## Known Complexities & Debt
-- **Prisma Reference:** У секції `Rules` згадується `prisma/schema.prisma`, хоча проект використовує Mongoose. Це застаріла інструкція, яку слід ігнорувати або оновити при переході на Prisma.
-- **Soft Delete Logic:** Реалізовано через `deletedAt` в `users.service.ts` з можливістю відновлення протягом `ACCOUNT_DELETION_GRACE_DAYS`.
-- **I18n Sync:** Складна логіка синхронізації мови між Frontend (Next.js middleware) та Backend (`preferredLang` у користувача). Див. `docs/conventions/i18n.md`.
-- **Tailwind 4:** Використання нової версії Tailwind з CSS-first конфігурацією (`apps/web/src/app/globals.css`).
+- **Stripe Webhooks:** Потребують `rawBody` для перевірки підпису. Реалізовано в `PaymentsController` через `RawBodyRequest`.
+- **Token Rotation:** Refresh token rotation з детекцією повторного використання для захисту від сесійного крадіжки.
+- **I18n Sync:** Складна логіка синхронізації мови між Frontend middleware та Backend `preferredLang`.
+- **Soft Delete:** Вимагає перевірки `deletedAt` у всіх критичних операціях через `JwtActiveGuard`.
