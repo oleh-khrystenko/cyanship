@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Pencil, ShieldCheck, ShieldOff } from 'lucide-react';
 import type { UserProfile } from '@lucidship/types';
-import { passwordSchema } from '@lucidship/types';
+import { ChangePasswordSchema, passwordSchema } from '@lucidship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -97,10 +97,20 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     const handleChangePassword = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (!validateNewPassword()) return;
-
-        if (currentPwd === newPwd) {
-            setNewPwdError(t('password_same_as_current'));
+        const parsed = ChangePasswordSchema.safeParse({
+            currentPassword: currentPwd,
+            newPassword: newPwd,
+        });
+        if (!parsed.success) {
+            for (const issue of parsed.error.issues) {
+                if (issue.path[0] === 'newPassword') {
+                    setNewPwdError(
+                        issue.code === 'custom'
+                            ? t('password_same_as_current')
+                            : t('password_too_short')
+                    );
+                }
+            }
             return;
         }
 

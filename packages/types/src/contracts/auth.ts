@@ -69,10 +69,14 @@ export const SetPasswordSchema = z.object({
     password: passwordSchema,
 });
 
-export const ChangePasswordSchema = z.object({
-    currentPassword: z.string(),
-    newPassword: passwordSchema,
-});
+export const ChangePasswordSchema = z
+    .object({
+        currentPassword: z.string(),
+        newPassword: passwordSchema,
+    })
+    .refine((data) => data.currentPassword !== data.newPassword, {
+        path: ['newPassword'],
+    });
 
 export const VerifyPasswordSchema = z.object({
     password: z.string(),

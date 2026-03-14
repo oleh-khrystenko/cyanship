@@ -388,11 +388,6 @@ export class AuthService {
         if (!isValid) {
             throw new UnauthorizedException('Invalid current password');
         }
-        if (currentPassword === newPassword) {
-            throw new BadRequestException(
-                'New password must be different from the current one'
-            );
-        }
         const hash = await bcrypt.hash(newPassword, 10);
         await this.usersService.setPasswordHash(userId, hash);
 
