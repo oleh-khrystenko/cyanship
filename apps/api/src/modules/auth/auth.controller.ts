@@ -20,6 +20,7 @@ import {
 import { CookieOptions, Request, Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipOnboarding } from '../../common/decorators/skip-onboarding.decorator';
 import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { ENV } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -185,6 +186,7 @@ export class AuthController {
 
     @Post('password/set')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async setPassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: SetPasswordDto
@@ -200,6 +202,7 @@ export class AuthController {
 
     @Post('password/change')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async changePassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: ChangePasswordDto,
@@ -219,6 +222,7 @@ export class AuthController {
 
     @Post('password/delete')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async deletePassword(
         @CurrentUser() user: UserDocument
     ): Promise<ApiMessageResponse> {
@@ -233,6 +237,7 @@ export class AuthController {
 
     @Post('password/verify')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async verifyPassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: VerifyPasswordDto

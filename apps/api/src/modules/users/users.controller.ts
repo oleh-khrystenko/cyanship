@@ -17,6 +17,7 @@ import {
 import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipOnboarding } from '../../common/decorators/skip-onboarding.decorator';
 import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from '../auth/auth.service';
@@ -36,6 +37,7 @@ export class UsersController {
 
     @Get('me')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     getMe(@CurrentUser() user: UserDocument): {
         data: Record<string, unknown>;
     } {
@@ -67,6 +69,7 @@ export class UsersController {
 
     @Patch('me')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async updateProfile(
         @CurrentUser() user: UserDocument,
         @Body() dto: UpdateProfileDto
@@ -92,6 +95,7 @@ export class UsersController {
 
     @Patch('me/lang')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async updateLang(
         @CurrentUser() user: UserDocument,
         @Body() dto: UpdateLangDto
@@ -107,6 +111,7 @@ export class UsersController {
 
     @Post('me/accept-terms')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async acceptTerms(
         @CurrentUser() user: UserDocument,
         @Body() dto: AcceptTermsDto
@@ -122,6 +127,7 @@ export class UsersController {
 
     @Post('account/delete')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async deleteAccount(
         @CurrentUser() user: UserDocument
     ): Promise<{ data: Record<string, unknown> }> {
@@ -143,6 +149,7 @@ export class UsersController {
 
     @Post('account/delete/confirm')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async confirmDeleteAccount(
         @CurrentUser() user: UserDocument,
         @Body() dto: VerifyPasswordDto,
