@@ -34,10 +34,12 @@ export default function CallbackPage() {
 
                 if (isAccountDeleted) {
                     useAuthStore.getState().clearUser();
+                    sessionStorage.setItem('account_deleted', 'true');
                     setAccountDeleted(true);
                     return;
                 }
 
+                sessionStorage.removeItem('account_deleted');
                 const user = await getMe();
                 useAuthStore.getState().setUser(user);
 
@@ -68,6 +70,7 @@ export default function CallbackPage() {
         try {
             await restoreAccount();
             await acceptTerms();
+            sessionStorage.removeItem('account_deleted');
             toast.success(tRecovery('restored'));
             const user = await getMe();
             useAuthStore.getState().setUser(user);
