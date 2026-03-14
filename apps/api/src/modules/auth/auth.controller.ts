@@ -49,12 +49,14 @@ export class AuthController {
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
+    @SkipOnboarding()
     googleAuth() {
         // Passport redirects to Google consent screen
     }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
+    @SkipOnboarding()
     async googleCallback(
         @Req() req: Request,
         @Res() res: Response
