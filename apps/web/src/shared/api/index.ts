@@ -17,6 +17,7 @@ export {
     deleteAccount,
     confirmDeleteAccount,
     restoreAccount,
+    acceptTerms,
 } from './auth';
 export {
     createSubscriptionCheckout,

@@ -19,6 +19,7 @@ import {
     loginWithPassword,
     sendMagicLink,
     restoreAccount,
+    acceptTerms,
     getMe,
     getApiMessageKey,
 } from '@/shared/api';
@@ -224,9 +225,14 @@ export default function SigninPage() {
     };
 
     const handleRestore = async () => {
+        if (!agreedToTerms) {
+            setTermsError(t('terms_required'));
+            return;
+        }
         setSubmitting(true);
         try {
             await restoreAccount();
+            await acceptTerms();
             toast.success(tRecovery('restored'));
             const me = await getMe();
             setUser(me);
@@ -493,6 +499,38 @@ export default function SigninPage() {
                     days: deletedDaysLeft,
                 })}
             </p>
+
+            <UiCheckbox
+                checked={agreedToTerms}
+                onChange={handleTermsChange}
+                size="sm"
+                error={termsError}
+            >
+                {t.rich('terms_agree', {
+                    terms: (chunks) => (
+                        <a
+                            href={`/${locale}/terms`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                    privacy: (chunks) => (
+                        <a
+                            href={`/${locale}/privacy`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                })}
+            </UiCheckbox>
 
             <UiButton
                 variant="filled"

@@ -161,7 +161,9 @@
         },
         "callback": {
             "loading": "Signing you in…",
-            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below."
+            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below.",
+            "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "terms_required": "Please accept the Terms of Service and Privacy Policy to continue"
         },
         "verify": {
             "verifying": "Verifying your link…",
