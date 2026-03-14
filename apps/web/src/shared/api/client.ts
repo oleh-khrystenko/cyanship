@@ -39,19 +39,18 @@ apiClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as RetryableRequest | undefined;
 
-        const skipRetryUrls = [
-            '/auth/refresh',
-            '/auth/logout',
-            '/auth/login/password',
-            '/auth/password/change',
-            '/auth/password/verify',
-        ];
+        const url = originalRequest?.url ?? '';
+        const isAuthPasswordUrl =
+            url.includes('/auth/password/') ||
+            url.includes('/auth/login/password') ||
+            url.includes('/auth/refresh') ||
+            url.includes('/auth/logout');
 
         if (
             !originalRequest ||
             error.response?.status !== 401 ||
             originalRequest._retry ||
-            skipRetryUrls.includes(originalRequest.url ?? '')
+            isAuthPasswordUrl
         ) {
             return Promise.reject(error);
         }

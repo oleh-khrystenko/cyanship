@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Pencil, ShieldCheck, ShieldOff } from 'lucide-react';
 import type { UserProfile } from '@lucidship/types';
 import { passwordSchema } from '@lucidship/types';
-import { AxiosError } from 'axios';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -32,6 +31,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     const [editing, setEditing] = useState(false);
     const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
+    const [currentPwdError, setCurrentPwdError] = useState('');
     const [newPwdError, setNewPwdError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -53,6 +53,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     const resetForm = () => {
         setCurrentPwd('');
         setNewPwd('');
+        setCurrentPwdError('');
         setNewPwdError('');
     };
 
@@ -106,16 +107,8 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             toast.success(t('password_changed'));
             resetForm();
             setEditing(false);
-        } catch (err) {
-            const code =
-                err instanceof AxiosError
-                    ? err.response?.data?.error?.code
-                    : undefined;
-            if (code === 'UNAUTHORIZED') {
-                toast.error(t('password_invalid'));
-            } else {
-                toast.error(t('password_invalid'));
-            }
+        } catch {
+            setCurrentPwdError(t('password_invalid'));
         } finally {
             setSubmitting(false);
         }
@@ -214,9 +207,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         <UiPasswordInput
                             placeholder={t('password_placeholder')}
                             value={currentPwd}
-                            onChange={(e) =>
-                                setCurrentPwd(e.target.value)
-                            }
+                            onChange={(e) => {
+                                setCurrentPwd(e.target.value);
+                                if (currentPwdError) setCurrentPwdError('');
+                            }}
+                            error={currentPwdError || undefined}
                             required
                             size="lg"
                             showLabel={t('show_password')}
