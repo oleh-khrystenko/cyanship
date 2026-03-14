@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Get,
@@ -121,6 +122,10 @@ export class AuthController {
     async sendMagicLink(
         @Body() dto: SendMagicLinkDto
     ): Promise<ApiMessageResponse> {
+        if (dto.purpose === MAGIC_LINK_PURPOSE.DELETE_ACCOUNT) {
+            throw new BadRequestException('Invalid purpose');
+        }
+
         await this.authService.sendMagicLink(
             dto.email,
             dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN,
