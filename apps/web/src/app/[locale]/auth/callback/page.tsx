@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
-import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { refreshToken, getMe, restoreAccount, acceptTerms } from '@/shared/api';
@@ -19,8 +18,6 @@ export default function CallbackPage() {
 
     const [accountDeleted, setAccountDeleted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [agreedToTerms, setAgreedToTerms] = useState(false);
-    const [termsError, setTermsError] = useState('');
 
     useEffect(() => {
         const isAccountDeleted =
@@ -58,20 +55,10 @@ export default function CallbackPage() {
         void authenticate();
     }, [router, locale]);
 
-    const handleTermsChange = (checked: boolean) => {
-        setAgreedToTerms(checked);
-        if (checked) setTermsError('');
-    };
-
     const handleRestore = async () => {
-        if (!agreedToTerms) {
-            setTermsError(t('terms_required'));
-            return;
-        }
         setSubmitting(true);
         try {
             await restoreAccount();
-            await acceptTerms();
             document.cookie = 'bid_account_deleted=; path=/; max-age=0';
             toast.success(tRecovery('restored'));
             const user = await getMe();
@@ -93,38 +80,6 @@ export default function CallbackPage() {
                     <p className="text-muted-foreground">
                         {t('account_deleted_description')}
                     </p>
-
-                    <UiCheckbox
-                        checked={agreedToTerms}
-                        onChange={handleTermsChange}
-                        size="sm"
-                        error={termsError}
-                    >
-                        {t.rich('terms_agree', {
-                            terms: (chunks) => (
-                                <a
-                                    href={`/${locale}/terms`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary underline hover:no-underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {chunks}
-                                </a>
-                            ),
-                            privacy: (chunks) => (
-                                <a
-                                    href={`/${locale}/privacy`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary underline hover:no-underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {chunks}
-                                </a>
-                            ),
-                        })}
-                    </UiCheckbox>
 
                     <UiButton
                         variant="filled"
