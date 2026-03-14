@@ -306,7 +306,8 @@ export class AuthService {
     async loginWithPassword(
         email: string,
         password: string,
-        ip: string
+        ip: string,
+        termsVersion?: string
     ): Promise<{
         user: UserDocument;
         accessToken: string;
@@ -335,9 +336,13 @@ export class AuthService {
         // 4. Clear attempts on success
         await this.clearLoginAttempts(ip, normalizedEmail);
 
-        // 5. Update lastLoginAt
+        // 5. Update lastLoginAt + record consent
         user.lastLoginAt = new Date();
         await user.save();
+
+        if (termsVersion) {
+            await this.usersService.acceptTerms(user._id.toString(), termsVersion);
+        }
 
         // 6. Generate tokens
         const { accessToken, refreshToken } = await this.generateTokens(

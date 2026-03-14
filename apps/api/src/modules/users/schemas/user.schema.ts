@@ -63,6 +63,12 @@ export class User {
     @Prop({ required: true, default: LANG.EN })
     preferredLang!: string;
 
+    @Prop({ type: Date, default: null })
+    termsAcceptedAt!: Date | null;
+
+    @Prop({ type: String, default: null })
+    termsVersion!: string | null;
+
     @Prop()
     lastLoginAt?: Date;
 

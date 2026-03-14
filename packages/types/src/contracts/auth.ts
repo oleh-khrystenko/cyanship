@@ -62,6 +62,7 @@ export const CheckEmailResponseSchema = z.object({
 export const LoginPasswordSchema = z.object({
     email: emailSchema,
     password: z.string(),
+    termsVersion: z.string().optional(),
 });
 
 export const SetPasswordSchema = z.object({

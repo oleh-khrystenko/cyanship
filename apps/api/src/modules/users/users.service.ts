@@ -151,6 +151,18 @@ export class UsersService {
         return this.userModel.findByIdAndUpdate(userId, update, { new: true });
     }
 
+    async acceptTerms(userId: string, termsVersion: string): Promise<void> {
+        await this.userModel.updateOne(
+            { _id: userId },
+            {
+                $set: {
+                    termsAcceptedAt: new Date(),
+                    termsVersion,
+                },
+            },
+        );
+    }
+
     async hasCredit(userId: string): Promise<boolean> {
         const user = await this.userModel.findById(userId).exec();
         if (!user) return false;

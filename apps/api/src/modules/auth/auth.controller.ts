@@ -90,7 +90,8 @@ export class AuthController {
             await this.authService.loginWithPassword(
                 dto.email,
                 dto.password,
-                ip
+                ip,
+                dto.termsVersion
             );
 
         res.cookie('bid_refresh', refreshToken, REFRESH_COOKIE_OPTIONS);
