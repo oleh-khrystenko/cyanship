@@ -147,6 +147,7 @@ function ResetPasswordContent() {
                     />
 
                     <UiButton
+                        type="submit"
                         variant="filled"
                         size="lg"
                         disabled={isSubmitting}

@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth';
 import { TermsReacceptModal } from './TermsReacceptModal';
 
 // Auth pages that handle their own refresh/verify flow
-const SELF_AUTH_PATHS = ['/auth/callback', '/auth/verify'];
+const SELF_AUTH_PATHS = ['/auth/callback', '/auth/verify', '/auth/reset-password'];
 
 const AuthInitializer = () => {
     const setUser = useAuthStore((s) => s.setUser);
