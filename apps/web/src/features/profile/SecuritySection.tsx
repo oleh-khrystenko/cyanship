@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { Pencil, ShieldCheck, ShieldOff } from 'lucide-react';
 import type { UserProfile } from '@lucidship/types';
 import { passwordSchema } from '@lucidship/types';
 import { AxiosError } from 'axios';
@@ -29,6 +30,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const setUser = useAuthStore((s) => s.setUser);
 
+    const [editing, setEditing] = useState(false);
     const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
     const [newPwdError, setNewPwdError] = useState('');
@@ -45,18 +47,21 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const isChangeMode = hasPassword && (mode === null || mode === undefined);
 
-    const isPasswordRequired = mode === null && !hasPassword;
-
     const isPasswordOptional = mode === 'new' || mode === 'set-password';
 
-    const getHeading = () => {
-        if (isSetMode) {
-            return isPasswordOptional
-                ? t('set_password_optional')
-                : t('set_password');
-        }
-        if (isChangeMode) return t('change_password');
-        return t('set_password');
+    // View mode: has password, normal mode, not editing
+    const isViewMode = isChangeMode && !editing;
+
+    const resetForm = () => {
+        setCurrentPwd('');
+        setNewPwd('');
+        setNewPwdError('');
+        setConfirmDelete(false);
+    };
+
+    const handleCancel = () => {
+        resetForm();
+        setEditing(false);
     };
 
     const validateNewPassword = (): boolean => {
@@ -83,7 +88,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             const me = await getMe();
             setUser(me);
             toast.success(t('password_set'));
-            setNewPwd('');
+            resetForm();
         } catch {
             toast.error(t('password_invalid'));
         } finally {
@@ -102,8 +107,8 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             const me = await getMe();
             setUser(me);
             toast.success(t('password_changed'));
-            setCurrentPwd('');
-            setNewPwd('');
+            resetForm();
+            setEditing(false);
         } catch (err) {
             const code =
                 err instanceof AxiosError
@@ -126,7 +131,8 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             const me = await getMe();
             setUser(me);
             toast.success(t('password_deleted'));
-            setConfirmDelete(false);
+            resetForm();
+            setEditing(false);
         } catch {
             toast.error(t('password_invalid'));
         } finally {
@@ -136,18 +142,55 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     return (
         <section className="rounded-lg border border-border bg-card p-6">
-            <h2 className="text-foreground text-lg font-semibold">
-                {t('heading')}
-            </h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-foreground text-lg font-semibold">
+                    {t('heading')}
+                </h2>
+                {isViewMode && (
+                    <UiButton
+                        variant="text"
+                        size="sm"
+                        IconLeft={<Pencil />}
+                        onClick={() => setEditing(true)}
+                    >
+                        {t('edit_button')}
+                    </UiButton>
+                )}
+            </div>
             {isSetMode && (
                 <p className="text-muted-foreground mt-1 text-sm">
-                    {getHeading()}
+                    {isPasswordOptional
+                        ? t('set_password_optional')
+                        : t('set_password')}
                 </p>
+            )}
+
+            {/* View mode — password status */}
+            {isViewMode && (
+                <dl className="mt-5">
+                    <div className="flex items-center gap-2">
+                        <dt className="text-muted-foreground text-sm">
+                            {t('password_label')}
+                        </dt>
+                        <dd className="flex items-center gap-1.5">
+                            <ShieldCheck className="size-4 text-success" />
+                            <span className="text-success text-sm font-medium">
+                                {t('password_active')}
+                            </span>
+                        </dd>
+                    </div>
+                </dl>
             )}
 
             {/* Set password mode */}
             {isSetMode && (
                 <form onSubmit={handleSetPassword} className="mt-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                        <ShieldOff className="size-4 text-muted-foreground" />
+                        <span className="text-muted-foreground text-sm">
+                            {t('password_not_set')}
+                        </span>
+                    </div>
                     <UiPasswordInput
                         placeholder={t('password_placeholder')}
                         value={newPwd}
@@ -156,7 +199,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             if (newPwdError) setNewPwdError('');
                         }}
                         error={newPwdError || undefined}
-                        required={isPasswordRequired}
+                        required={!isPasswordOptional}
                         size="lg"
                         showLabel={t('show_password')}
                         hideLabel={t('hide_password')}
@@ -168,7 +211,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         className="rounded-lg"
                         disabled={
                             submitting ||
-                            (isPasswordRequired ? !newPwd : false)
+                            (!isPasswordOptional && !newPwd)
                         }
                     >
                         {submitting ? (
@@ -180,28 +223,25 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                 </form>
             )}
 
-            {/* Change password mode (has password, default or reset) */}
-            {isChangeMode && (
+            {/* Change password form */}
+            {isChangeMode && editing && (
                 <form onSubmit={handleChangePassword} className="mt-5 space-y-4">
-                    {/* Current password — only in change mode, not reset */}
-                    {isChangeMode && (
-                        <div>
-                            <label className="text-muted-foreground mb-1.5 block text-sm">
-                                {t('current_password_label')}
-                            </label>
-                            <UiPasswordInput
-                                placeholder={t('password_placeholder')}
-                                value={currentPwd}
-                                onChange={(e) =>
-                                    setCurrentPwd(e.target.value)
-                                }
-                                required
-                                size="lg"
-                                showLabel={t('show_password')}
-                                hideLabel={t('hide_password')}
-                            />
-                        </div>
-                    )}
+                    <div>
+                        <label className="text-muted-foreground mb-1.5 block text-sm">
+                            {t('current_password_label')}
+                        </label>
+                        <UiPasswordInput
+                            placeholder={t('password_placeholder')}
+                            value={currentPwd}
+                            onChange={(e) =>
+                                setCurrentPwd(e.target.value)
+                            }
+                            required
+                            size="lg"
+                            showLabel={t('show_password')}
+                            hideLabel={t('hide_password')}
+                        />
+                    </div>
 
                     <div>
                         <label className="text-muted-foreground mb-1.5 block text-sm">
@@ -229,9 +269,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             size="md"
                             className="rounded-lg"
                             disabled={
-                                submitting ||
-                                !newPwd ||
-                                (isChangeMode && !currentPwd)
+                                submitting || !newPwd || !currentPwd
                             }
                         >
                             {submitting ? (
@@ -241,52 +279,62 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                             )}
                         </UiButton>
 
-                        {isChangeMode && (
+                        <UiButton
+                            type="button"
+                            variant="text"
+                            size="md"
+                            onClick={handleCancel}
+                            disabled={submitting}
+                        >
+                            {t('cancel')}
+                        </UiButton>
+                    </div>
+
+                    {/* Delete password option */}
+                    <div className="border-t border-border pt-4">
+                        {!confirmDelete ? (
                             <UiButton
                                 type="button"
                                 variant="text"
-                                size="md"
+                                size="sm"
                                 className="text-destructive"
                                 onClick={() => setConfirmDelete(true)}
                                 disabled={submitting}
                             >
                                 {t('delete_password')}
                             </UiButton>
+                        ) : (
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                                <p className="text-foreground mb-3 text-sm">
+                                    {t('delete_password_confirm')}
+                                </p>
+                                <div className="flex gap-3">
+                                    <UiButton
+                                        variant="filled"
+                                        size="sm"
+                                        className="rounded-lg bg-destructive"
+                                        onClick={() => void handleDeletePassword()}
+                                        disabled={submitting}
+                                    >
+                                        {submitting ? (
+                                            <UiSpinner size="sm" />
+                                        ) : (
+                                            t('delete_password')
+                                        )}
+                                    </UiButton>
+                                    <UiButton
+                                        variant="text"
+                                        size="sm"
+                                        onClick={() => setConfirmDelete(false)}
+                                        disabled={submitting}
+                                    >
+                                        {t('cancel')}
+                                    </UiButton>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </form>
-            )}
-
-            {/* Delete password confirmation */}
-            {confirmDelete && (
-                <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-                    <p className="text-foreground mb-3 text-sm">
-                        {t('delete_password_confirm')}
-                    </p>
-                    <div className="flex gap-3">
-                        <UiButton
-                            variant="filled"
-                            size="sm"
-                            className="rounded-lg bg-destructive"
-                            onClick={() => void handleDeletePassword()}
-                            disabled={submitting}
-                        >
-                            {submitting ? (
-                                <UiSpinner size="sm" />
-                            ) : (
-                                t('delete_password')
-                            )}
-                        </UiButton>
-                        <UiButton
-                            variant="text"
-                            size="sm"
-                            onClick={() => setConfirmDelete(false)}
-                            disabled={submitting}
-                        >
-                            {t('cancel')}
-                        </UiButton>
-                    </div>
-                </div>
             )}
         </section>
     );

@@ -238,6 +238,10 @@
         },
         "security": {
             "heading": "Security",
+            "edit_button": "Change",
+            "password_label": "Password",
+            "password_active": "Active",
+            "password_not_set": "Password not set",
             "set_password": "Set password",
             "set_password_optional": "Set password (optional)",
             "change_password": "Change password",

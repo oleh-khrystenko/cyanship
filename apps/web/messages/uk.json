@@ -238,6 +238,10 @@
         },
         "security": {
             "heading": "Безпека",
+            "edit_button": "Змінити",
+            "password_label": "Пароль",
+            "password_active": "Встановлено",
+            "password_not_set": "Пароль не встановлено",
             "set_password": "Встановити пароль",
             "set_password_optional": "Встановити пароль (опціонально)",
             "change_password": "Змінити пароль",
