@@ -7,7 +7,7 @@ import { AxiosError } from 'axios';
 import { CheckCircle } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
-import { verifyMagicLink, getMe, getApiMessageKey } from '@/shared/api';
+import { verifyMagicLink, getMe, acceptTerms, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
 type VerifyStatus = 'verifying' | 'success' | 'deleted' | 'error';
@@ -33,6 +33,7 @@ function VerifyContent() {
 
                 switch (result.purpose) {
                     case 'register': {
+                        await acceptTerms();
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
@@ -41,6 +42,7 @@ function VerifyContent() {
                     }
 
                     case 'login': {
+                        await acceptTerms();
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
@@ -54,6 +56,7 @@ function VerifyContent() {
                     }
 
                     default: {
+                        await acceptTerms();
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
