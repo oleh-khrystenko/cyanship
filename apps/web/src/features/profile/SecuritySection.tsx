@@ -99,6 +99,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
         if (!validateNewPassword()) return;
 
+        if (currentPwd === newPwd) {
+            setNewPwdError(t('password_same_as_current'));
+            return;
+        }
+
         setSubmitting(true);
         try {
             await changePassword(currentPwd, newPwd);

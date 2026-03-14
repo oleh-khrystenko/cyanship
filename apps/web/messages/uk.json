@@ -251,6 +251,7 @@
             "new_password_label": "Новий пароль",
             "password_placeholder": "Мінімум 8 символів",
             "password_too_short": "Пароль повинен містити мінімум 8 символів",
+            "password_same_as_current": "Новий пароль має відрізнятися від поточного",
             "show_password": "Показати пароль",
             "hide_password": "Сховати пароль",
             "password_set": "Пароль встановлено",
