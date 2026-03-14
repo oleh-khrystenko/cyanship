@@ -73,58 +73,64 @@ const ProfileForm = ({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label className="text-muted-foreground mb-1 block text-sm">
-                    {t('name_label')}
-                    {nameRequired && (
-                        <span className="text-destructive ml-1">*</span>
-                    )}
-                </label>
-                <UiInput
-                    type="text"
-                    placeholder={t('name_placeholder')}
-                    value={firstName}
-                    onChange={(e) => {
-                        setFirstName(e.target.value);
-                        if (nameError) setNameError('');
-                    }}
-                    error={nameError || undefined}
-                    disabled={!editable}
-                    size="lg"
-                />
-            </div>
+        <section className="rounded-lg border border-border bg-card p-6">
+            <h2 className="text-foreground text-lg font-semibold">
+                {t('heading')}
+            </h2>
 
-            <div>
-                <label className="text-muted-foreground mb-1 block text-sm">
-                    {t('last_name_label')}
-                </label>
-                <UiInput
-                    type="text"
-                    placeholder={t('last_name_placeholder')}
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    disabled={!editable}
-                    size="lg"
-                />
-            </div>
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                <div>
+                    <label className="text-muted-foreground mb-1.5 block text-sm">
+                        {t('name_label')}
+                        {nameRequired && (
+                            <span className="text-destructive ml-1">*</span>
+                        )}
+                    </label>
+                    <UiInput
+                        type="text"
+                        placeholder={t('name_placeholder')}
+                        value={firstName}
+                        onChange={(e) => {
+                            setFirstName(e.target.value);
+                            if (nameError) setNameError('');
+                        }}
+                        error={nameError || undefined}
+                        disabled={!editable}
+                        size="lg"
+                    />
+                </div>
 
-            {editable && (
-                <UiButton
-                    type="submit"
-                    variant="filled"
-                    size="lg"
-                    className="w-full justify-center rounded-lg"
-                    disabled={submitting}
-                >
-                    {submitting ? (
-                        <UiSpinner size="sm" />
-                    ) : (
-                        t('save_button')
-                    )}
-                </UiButton>
-            )}
-        </form>
+                <div>
+                    <label className="text-muted-foreground mb-1.5 block text-sm">
+                        {t('last_name_label')}
+                    </label>
+                    <UiInput
+                        type="text"
+                        placeholder={t('last_name_placeholder')}
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        disabled={!editable}
+                        size="lg"
+                    />
+                </div>
+
+                {editable && (
+                    <UiButton
+                        type="submit"
+                        variant="filled"
+                        size="md"
+                        className="mt-2 w-full justify-center rounded-lg"
+                        disabled={submitting}
+                    >
+                        {submitting ? (
+                            <UiSpinner size="sm" />
+                        ) : (
+                            t('save_button')
+                        )}
+                    </UiButton>
+                )}
+            </form>
+        </section>
     );
 };
 

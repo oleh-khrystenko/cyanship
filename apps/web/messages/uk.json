@@ -221,6 +221,7 @@
         "heading": "Профіль",
         "new_heading": "Заповніть профіль",
         "form": {
+            "heading": "Особисті дані",
             "name_label": "Ім'я",
             "name_placeholder": "Ваше ім'я",
             "name_required": "Ім'я обов'язкове",

@@ -76,13 +76,13 @@ const DangerZone = () => {
     const resendDisabled = loading || cooldownSec > 0;
 
     return (
-        <section className="space-y-4">
-            <h2 className="text-foreground text-xl font-semibold">
+        <section className="rounded-lg border border-destructive/30 bg-card p-6">
+            <h2 className="text-foreground text-lg font-semibold">
                 {t('heading')}
             </h2>
 
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6">
-                <h3 className="text-foreground font-medium">
+            <div className="mt-5">
+                <h3 className="text-foreground text-sm font-medium">
                     {t('delete_title')}
                 </h3>
                 <p className="text-muted-foreground mt-1 text-sm">

@@ -135,14 +135,14 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     };
 
     return (
-        <section className="space-y-4">
-            <h2 className="text-foreground text-xl font-semibold">
+        <section className="rounded-lg border border-border bg-card p-6">
+            <h2 className="text-foreground text-lg font-semibold">
                 {t('heading')}
             </h2>
 
             {/* Set password mode */}
             {isSetMode && (
-                <form onSubmit={handleSetPassword} className="space-y-3">
+                <form onSubmit={handleSetPassword} className="mt-5 space-y-4">
                     <p className="text-muted-foreground text-sm">
                         {getHeading()}
                     </p>
@@ -180,7 +180,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Change password mode (has password, default or reset) */}
             {isChangeMode && (
-                <form onSubmit={handleChangePassword} className="space-y-3">
+                <form onSubmit={handleChangePassword} className="mt-5 space-y-4">
                     <p className="text-muted-foreground text-sm">
                         {getHeading()}
                     </p>
@@ -188,7 +188,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     {/* Current password — only in change mode, not reset */}
                     {isChangeMode && (
                         <div>
-                            <label className="text-muted-foreground mb-1 block text-sm">
+                            <label className="text-muted-foreground mb-1.5 block text-sm">
                                 {t('current_password_label')}
                             </label>
                             <UiPasswordInput
@@ -206,7 +206,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     )}
 
                     <div>
-                        <label className="text-muted-foreground mb-1 block text-sm">
+                        <label className="text-muted-foreground mb-1.5 block text-sm">
                             {t('new_password_label')}
                         </label>
                         <UiPasswordInput
@@ -261,7 +261,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Delete password confirmation */}
             {confirmDelete && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
                     <p className="text-foreground mb-3 text-sm">
                         {t('delete_password_confirm')}
                     </p>

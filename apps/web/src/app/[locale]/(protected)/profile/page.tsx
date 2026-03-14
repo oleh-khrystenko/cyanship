@@ -29,12 +29,12 @@ function ProfileContent() {
     };
 
     return (
-        <main className="mx-auto max-w-xl px-4 py-10">
-            <h1 className="text-foreground mb-8 text-3xl font-bold">
+        <main className="mx-auto max-w-2xl px-6 py-16">
+            <h1 className="text-foreground text-3xl font-bold tracking-tight">
                 {mode === 'new' ? t('new_heading') : t('heading')}
             </h1>
 
-            <div className="space-y-10">
+            <div className="mt-10 space-y-6">
                 <ProfileForm
                     user={user}
                     editable={mode === 'new' || mode === null}
