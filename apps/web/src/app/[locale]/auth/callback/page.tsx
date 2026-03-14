@@ -34,12 +34,12 @@ export default function CallbackPage() {
 
                 if (isAccountDeleted) {
                     useAuthStore.getState().clearUser();
-                    sessionStorage.setItem('account_deleted', 'true');
+                    document.cookie = 'bid_account_deleted=true; path=/';
                     setAccountDeleted(true);
                     return;
                 }
 
-                sessionStorage.removeItem('account_deleted');
+                document.cookie = 'bid_account_deleted=; path=/; max-age=0';
                 const user = await getMe();
                 useAuthStore.getState().setUser(user);
 
@@ -70,7 +70,7 @@ export default function CallbackPage() {
         try {
             await restoreAccount();
             await acceptTerms();
-            sessionStorage.removeItem('account_deleted');
+            document.cookie = 'bid_account_deleted=; path=/; max-age=0';
             toast.success(tRecovery('restored'));
             const user = await getMe();
             useAuthStore.getState().setUser(user);

@@ -32,11 +32,6 @@ const AuthInitializer = () => {
             return;
         }
 
-        if (sessionStorage.getItem('account_deleted')) {
-            clearUser();
-            return;
-        }
-
         const init = async () => {
             try {
                 await refreshToken();

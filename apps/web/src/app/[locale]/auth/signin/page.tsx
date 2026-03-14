@@ -184,6 +184,7 @@ export default function SigninPage() {
 
                 setDeletedAt(deleted.toLocaleDateString(locale));
                 setDeletedDaysLeft(daysLeft);
+                document.cookie = 'bid_account_deleted=true; path=/';
                 setState('recovery');
             } else {
                 const me = await getMe();
@@ -233,6 +234,7 @@ export default function SigninPage() {
         try {
             await restoreAccount();
             await acceptTerms();
+            document.cookie = 'bid_account_deleted=; path=/; max-age=0';
             toast.success(tRecovery('restored'));
             const me = await getMe();
             setUser(me);
