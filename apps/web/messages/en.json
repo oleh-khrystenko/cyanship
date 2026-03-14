@@ -225,6 +225,8 @@
             "name_label": "First name",
             "name_placeholder": "Your name",
             "name_required": "Name is required",
+            "name_too_short": "Name must be at least 2 characters",
+            "name_invalid_chars": "Name can only contain letters, spaces, hyphens, and apostrophes",
             "last_name_label": "Last name",
             "last_name_placeholder": "Your last name",
             "avatar_label": "Avatar (URL)",

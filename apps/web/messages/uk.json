@@ -225,6 +225,8 @@
             "name_label": "Ім'я",
             "name_placeholder": "Ваше ім'я",
             "name_required": "Ім'я обов'язкове",
+            "name_too_short": "Ім'я має містити щонайменше 2 символи",
+            "name_invalid_chars": "Ім'я може містити лише літери, пробіли, дефіси та апострофи",
             "last_name_label": "Прізвище",
             "last_name_placeholder": "Ваше прізвище",
             "avatar_label": "Аватар (URL)",

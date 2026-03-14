@@ -64,8 +64,23 @@ const ProfileForm = ({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (!firstName.trim()) {
+        const namePattern = /^[\p{L}\s'\-]+$/u;
+        const trimmedFirst = firstName.trim();
+
+        if (!trimmedFirst) {
             setNameError(t('name_required'));
+            return;
+        }
+
+        const fullName = combineName(firstName, lastName);
+
+        if (fullName.length < 2) {
+            setNameError(t('name_too_short'));
+            return;
+        }
+
+        if (!namePattern.test(fullName)) {
+            setNameError(t('name_invalid_chars'));
             return;
         }
 
@@ -73,10 +88,7 @@ const ProfileForm = ({
         setNameError('');
 
         try {
-            const fullName = combineName(firstName, lastName);
-            await updateProfile({
-                name: fullName || undefined,
-            });
+            await updateProfile({ name: fullName });
             const me = await getMe();
             setUser(me);
             toast.success(t('saved'));

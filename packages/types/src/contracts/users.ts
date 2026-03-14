@@ -10,7 +10,13 @@ export const UpdateLangSchema = z.object({
 });
 
 export const UpdateProfileSchema = z.object({
-    name: z.string().trim().min(1).max(100).optional(),
+    name: z
+        .string()
+        .trim()
+        .min(2)
+        .max(100)
+        .regex(/^[\p{L}\s'\-]+$/u)
+        .optional(),
     avatar: z.string().url().optional(),
     preferredLang: z.enum(langValues).optional(),
 });
