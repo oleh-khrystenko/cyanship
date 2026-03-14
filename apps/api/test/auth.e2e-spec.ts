@@ -1275,4 +1275,189 @@ describe('Auth E2E', () => {
             expect(res.body.data).toHaveProperty('termsVersion');
         });
     });
+
+    // ─── Password Reset flow ───
+
+    describe('POST /auth/password/reset', () => {
+        it('should reset password with valid token', async () => {
+            await createUserWithPassword('user@example.com', 'OldPassword1');
+            const token = createMagicLinkToken(
+                'user@example.com',
+                'reset-password'
+            );
+
+            const res = await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'NewPassword1',
+                    confirmPassword: 'NewPassword1',
+                })
+                .expect(201);
+
+            const body = res.body as {
+                data: { code: string; message: string };
+            };
+            expect(body.data.code).toBe('PASSWORD_RESET');
+
+            // Response must NOT contain accessToken
+            expect(body.data).not.toHaveProperty('accessToken');
+
+            // Old password should no longer work
+            await supertest(app.getHttpServer())
+                .post('/api/auth/login/password')
+                .send({ email: 'user@example.com', password: 'OldPassword1' })
+                .expect(401);
+
+            // New password should work
+            await supertest(app.getHttpServer())
+                .post('/api/auth/login/password')
+                .send({ email: 'user@example.com', password: 'NewPassword1' })
+                .expect(201);
+        });
+
+        it('should reject invalid token', async () => {
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token: 'invalid-token',
+                    newPassword: 'NewPassword1',
+                    confirmPassword: 'NewPassword1',
+                })
+                .expect(401);
+        });
+
+        it('should reject expired/used token (second use)', async () => {
+            await createUserWithPassword('user@example.com', 'OldPassword1');
+            const token = createMagicLinkToken(
+                'user@example.com',
+                'reset-password'
+            );
+
+            // First use — success
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'NewPassword1',
+                    confirmPassword: 'NewPassword1',
+                })
+                .expect(201);
+
+            // Second use — GETDEL already consumed
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'AnotherPwd1',
+                    confirmPassword: 'AnotherPwd1',
+                })
+                .expect(401);
+        });
+
+        it('should reject token with wrong purpose', async () => {
+            await createUserWithoutPassword('user@example.com');
+            const token = createMagicLinkToken('user@example.com', 'login');
+
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'NewPassword1',
+                    confirmPassword: 'NewPassword1',
+                })
+                .expect(400);
+        });
+
+        it('should reject mismatched passwords', async () => {
+            await createUserWithPassword('user@example.com', 'OldPassword1');
+            const token = createMagicLinkToken(
+                'user@example.com',
+                'reset-password'
+            );
+
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'aaaaaaaa',
+                    confirmPassword: 'bbbbbbbb',
+                })
+                .expect(400);
+        });
+
+        it('should reject short password', async () => {
+            await createUserWithPassword('user@example.com', 'OldPassword1');
+            const token = createMagicLinkToken(
+                'user@example.com',
+                'reset-password'
+            );
+
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: '123',
+                    confirmPassword: '123',
+                })
+                .expect(400);
+        });
+
+        it('should revoke all existing sessions after reset', async () => {
+            await createUserWithPassword('user@example.com', 'OldPassword1');
+
+            // Login to get a refresh token
+            const { cookies } = await loginWithPassword(
+                'user@example.com',
+                'OldPassword1'
+            );
+            const refreshToken = extractRefreshCookie(cookies);
+
+            // Reset password
+            const token = createMagicLinkToken(
+                'user@example.com',
+                'reset-password'
+            );
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'NewPassword1',
+                    confirmPassword: 'NewPassword1',
+                })
+                .expect(201);
+
+            // Old refresh token should be revoked
+            await supertest(app.getHttpServer())
+                .post('/api/auth/refresh')
+                .set('Cookie', `bid_refresh=${refreshToken}`)
+                .expect(401);
+        });
+
+        it('should work for OAuth-only user without existing password', async () => {
+            await createUserWithoutPassword('oauth@example.com');
+            const token = createMagicLinkToken(
+                'oauth@example.com',
+                'reset-password'
+            );
+
+            await supertest(app.getHttpServer())
+                .post('/api/auth/password/reset')
+                .send({
+                    token,
+                    newPassword: 'NewPassword1',
+                    confirmPassword: 'NewPassword1',
+                })
+                .expect(201);
+
+            // Should now be able to login with password
+            await supertest(app.getHttpServer())
+                .post('/api/auth/login/password')
+                .send({
+                    email: 'oauth@example.com',
+                    password: 'NewPassword1',
+                })
+                .expect(201);
+        });
+    });
 });
