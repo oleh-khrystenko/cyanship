@@ -88,7 +88,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             toast.success(t('password_set'));
             resetForm();
         } catch {
-            toast.error(t('password_invalid'));
+            setNewPwdError(t('password_invalid'));
         } finally {
             setSubmitting(false);
         }
