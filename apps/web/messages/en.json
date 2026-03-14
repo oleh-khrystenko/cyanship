@@ -181,6 +181,9 @@
             "magic_link_sent": "A sign-in link has been sent to your email",
             "logged_out": "You have been logged out",
             "account_deleted": "Account deleted"
+        },
+        "users": {
+            "terms_accepted": "Terms accepted."
         }
     },
     "errors": {
@@ -291,7 +294,8 @@
             "pack_label": "{count} credits",
             "buy_button": "Buy",
             "error": "Failed to create payment session. Please try again."
-        }
+        },
+        "checkout_terms_note": "By proceeding, you confirm that you agree to the <terms>payment terms</terms>."
     },
     "components": {
         "header": {
@@ -311,6 +315,14 @@
             "light": "Light",
             "system": "System",
             "dark": "Dark"
+        },
+        "terms_reaccept": {
+            "title": "Updated terms",
+            "description": "Our Terms of Service or Privacy Policy have been updated. Please review and accept the changes to continue.",
+            "agree": "I agree to the updated <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "button": "Accept and continue",
+            "required": "You must accept the updated terms to continue.",
+            "error": "Something went wrong. Please try again."
         }
     }
 }
