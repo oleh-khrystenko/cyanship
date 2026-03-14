@@ -64,7 +64,10 @@ export class UsersService {
         });
     }
 
-    async findOrCreateByEmail(email: string): Promise<UserDocument> {
+    async findOrCreateByEmail(
+        email: string,
+        lang?: string
+    ): Promise<UserDocument> {
         const normalizedEmail = email.toLowerCase();
         const existing = await this.userModel
             .findOne({ email: normalizedEmail })
@@ -78,6 +81,7 @@ export class UsersService {
         return this.userModel.create({
             email: normalizedEmail,
             lastLoginAt: new Date(),
+            ...(lang && { preferredLang: lang }),
         });
     }
 

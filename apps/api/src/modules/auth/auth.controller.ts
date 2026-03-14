@@ -121,7 +121,8 @@ export class AuthController {
     ): Promise<ApiMessageResponse> {
         await this.authService.sendMagicLink(
             dto.email,
-            dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN
+            dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN,
+            dto.lang
         );
         return {
             data: {

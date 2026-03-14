@@ -492,7 +492,7 @@ describe('AuthService', () => {
                 'user@example.com',
                 expect.stringMatching(/^[a-f0-9]{64}$/),
                 'login',
-                'uk'
+                'en'
             );
         });
 
@@ -638,7 +638,8 @@ describe('AuthService', () => {
 
             expect(mockRedis.getdel).toHaveBeenCalledWith(`magic:${token}`);
             expect(usersService.findOrCreateByEmail).toHaveBeenCalledWith(
-                'user@example.com'
+                'user@example.com',
+                undefined
             );
             expect(result.purpose).toBe('login');
             expect('tokens' in result && result.tokens).toEqual({

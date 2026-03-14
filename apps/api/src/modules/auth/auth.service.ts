@@ -162,7 +162,8 @@ export class AuthService {
 
     async sendMagicLink(
         email: string,
-        purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN
+        purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
+        requestLang?: string
     ): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
@@ -186,7 +187,7 @@ export class AuthService {
         }
 
         const token = randomBytes(32).toString('hex');
-        const payload = JSON.stringify({ email: normalizedEmail, purpose });
+        const payload = JSON.stringify({ email: normalizedEmail, purpose, lang: requestLang });
         const magicLinkTtl = ENV.AUTH_MAGIC_LINK_TTL_MIN * 60;
 
         const pipeline = this.redis.pipeline();
@@ -195,7 +196,7 @@ export class AuthService {
         await pipeline.exec();
 
         const user = await this.usersService.findByEmail(normalizedEmail);
-        const lang = user?.preferredLang ?? LANG.UK;
+        const lang = user?.preferredLang ?? requestLang ?? LANG.EN;
 
         await this.emailService.sendMagicLink(
             normalizedEmail,
@@ -228,16 +229,17 @@ export class AuthService {
             );
         }
 
-        const { email, purpose } = JSON.parse(raw) as {
+        const { email, purpose, lang } = JSON.parse(raw) as {
             email: string;
             purpose: MagicLinkPurpose;
+            lang?: string;
         };
 
         if (purpose === MAGIC_LINK_PURPOSE.DELETE_ACCOUNT) {
             return this.handleDeleteAccountVerification(email);
         }
 
-        const user = await this.usersService.findOrCreateByEmail(email);
+        const user = await this.usersService.findOrCreateByEmail(email, lang);
 
         user.lastLoginAt = new Date();
         await user.save();

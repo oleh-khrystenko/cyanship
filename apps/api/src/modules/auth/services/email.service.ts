@@ -83,13 +83,13 @@ export class EmailService {
         email: string,
         token: string,
         purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
-        lang: string = LANG.UK
+        lang: string = LANG.EN
     ): Promise<void> {
         const link =
             purpose === MAGIC_LINK_PURPOSE.RESET_PASSWORD
                 ? `${ENV.WEB_URL}/auth/reset-password?token=${token}`
                 : `${ENV.WEB_URL}/auth/verify?token=${token}`;
-        const t = TEMPLATES[purpose][lang] ?? TEMPLATES[purpose][LANG.UK];
+        const t = TEMPLATES[purpose][lang] ?? TEMPLATES[purpose][LANG.EN];
 
         const { error } = await this.resend.emails.send({
             from: ENV.RESEND_FROM_EMAIL,
@@ -131,7 +131,7 @@ export class EmailService {
     async sendDeletionConfirmation(
         email: string,
         deletionDate: Date,
-        lang: string = LANG.UK
+        lang: string = LANG.EN
     ): Promise<void> {
         const formattedDate = deletionDate.toLocaleDateString(
             lang === LANG.UK ? 'uk-UA' : 'en-US',
