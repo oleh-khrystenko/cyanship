@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { isOnboardingComplete } from '@lucidship/types';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { useAuthStore } from '@/stores/auth';
 import {
@@ -14,11 +15,14 @@ import type { ProfileMode } from '@/features/profile';
 
 function ProfileContent() {
     const searchParams = useSearchParams();
-    const mode = (searchParams.get('mode') as ProfileMode) ?? null;
+    const user = useAuthStore((s) => s.user);
+    const onboardingDone = user ? isOnboardingComplete(user.profile) : true;
+    const mode: ProfileMode | null = !onboardingDone
+        ? 'new'
+        : ((searchParams.get('mode') as ProfileMode) ?? null);
     const t = useTranslations('profile_page');
     const locale = useLocale();
     const router = useRouter();
-    const user = useAuthStore((s) => s.user);
 
     if (!user) return null;
 
