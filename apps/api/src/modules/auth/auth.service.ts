@@ -162,7 +162,8 @@ export class AuthService {
 
     async sendMagicLink(
         email: string,
-        purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN
+        purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
+        requestLang?: string
     ): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
@@ -186,7 +187,7 @@ export class AuthService {
         }
 
         const token = randomBytes(32).toString('hex');
-        const payload = JSON.stringify({ email: normalizedEmail, purpose });
+        const payload = JSON.stringify({ email: normalizedEmail, purpose, lang: requestLang });
         const magicLinkTtl = ENV.AUTH_MAGIC_LINK_TTL_MIN * 60;
 
         const pipeline = this.redis.pipeline();
@@ -195,7 +196,7 @@ export class AuthService {
         await pipeline.exec();
 
         const user = await this.usersService.findByEmail(normalizedEmail);
-        const lang = user?.preferredLang ?? LANG.UK;
+        const lang = user?.preferredLang ?? requestLang ?? LANG.EN;
 
         await this.emailService.sendMagicLink(
             normalizedEmail,
@@ -228,16 +229,17 @@ export class AuthService {
             );
         }
 
-        const { email, purpose } = JSON.parse(raw) as {
+        const { email, purpose, lang } = JSON.parse(raw) as {
             email: string;
             purpose: MagicLinkPurpose;
+            lang?: string;
         };
 
         if (purpose === MAGIC_LINK_PURPOSE.DELETE_ACCOUNT) {
             return this.handleDeleteAccountVerification(email);
         }
 
-        const user = await this.usersService.findOrCreateByEmail(email);
+        const user = await this.usersService.findOrCreateByEmail(email, lang);
 
         user.lastLoginAt = new Date();
         await user.save();
@@ -306,7 +308,8 @@ export class AuthService {
     async loginWithPassword(
         email: string,
         password: string,
-        ip: string
+        ip: string,
+        termsVersion?: string
     ): Promise<{
         user: UserDocument;
         accessToken: string;
@@ -335,9 +338,13 @@ export class AuthService {
         // 4. Clear attempts on success
         await this.clearLoginAttempts(ip, normalizedEmail);
 
-        // 5. Update lastLoginAt
+        // 5. Update lastLoginAt + record consent
         user.lastLoginAt = new Date();
         await user.save();
+
+        if (termsVersion) {
+            await this.usersService.acceptTerms(user._id.toString(), termsVersion);
+        }
 
         // 6. Generate tokens
         const { accessToken, refreshToken } = await this.generateTokens(
@@ -391,12 +398,34 @@ export class AuthService {
         return this.generateTokens(userId, user.email);
     }
 
-    async deletePassword(userId: string): Promise<void> {
-        const user = await this.usersService.findById(userId);
-        if (!user || !user.passwordHash) {
-            throw new BadRequestException('No password to delete');
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+        const magicKey = `magic:${token}`;
+        const raw = await this.redis.getdel(magicKey);
+
+        if (!raw) {
+            throw new UnauthorizedException(
+                'Invalid or expired reset token'
+            );
         }
-        await this.usersService.clearPasswordHash(userId);
+
+        const { email, purpose } = JSON.parse(raw) as {
+            email: string;
+            purpose: MagicLinkPurpose;
+        };
+
+        if (purpose !== MAGIC_LINK_PURPOSE.RESET_PASSWORD) {
+            throw new BadRequestException('Invalid token purpose');
+        }
+
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        const hash = await bcrypt.hash(newPassword, 10);
+        await this.usersService.setPasswordHash(user._id.toString(), hash);
+
+        await this.revokeAllUserTokens(user._id.toString());
     }
 
     async verifyPassword(userId: string, password: string): Promise<boolean> {

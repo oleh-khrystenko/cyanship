@@ -31,6 +31,8 @@ export const UserSchema = z.object({
     createdAt: z.coerce.date(),
     lastLoginAt: z.coerce.date().optional(),
     billing: UserBillingSchema.nullable().optional(),
+    termsAcceptedAt: z.coerce.date().nullable().optional(),
+    termsVersion: z.string().nullable().optional(),
 });
 
 export const UserProfileSchema = UserSchema.pick({
@@ -43,6 +45,7 @@ export const UserProfileSchema = UserSchema.pick({
     accountDeletionRequestedAt: true,
     preferredLang: true,
     billing: true,
+    termsVersion: true,
 });
 
 export type User = z.infer<typeof UserSchema>;

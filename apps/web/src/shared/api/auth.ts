@@ -1,10 +1,11 @@
-import type {
-    AuthResponse,
-    CheckEmailResponse,
-    MagicLinkPurpose,
-    UpdateProfileDto,
-    UserProfile,
-    VerifyMagicLinkResponse,
+import {
+    CURRENT_TERMS_VERSION,
+    type AuthResponse,
+    type CheckEmailResponse,
+    type MagicLinkPurpose,
+    type UpdateProfileDto,
+    type UserProfile,
+    type VerifyMagicLinkResponse,
 } from '@lucidship/types';
 
 import { apiClient, setAccessToken } from './client';
@@ -23,7 +24,7 @@ export async function loginWithPassword(
 ): Promise<AuthResponse> {
     const { data } = await apiClient.post<{ data: AuthResponse }>(
         '/auth/login/password',
-        { email, password }
+        { email, password, termsVersion: CURRENT_TERMS_VERSION }
     );
 
     setAccessToken(data.data.accessToken);
@@ -57,8 +58,16 @@ export async function changePassword(
     return data.data;
 }
 
-export async function deletePassword(): Promise<void> {
-    await apiClient.post('/auth/password/delete');
+export async function resetPassword(
+    token: string,
+    newPassword: string,
+    confirmPassword: string
+): Promise<void> {
+    await apiClient.post('/auth/password/reset', {
+        token,
+        newPassword,
+        confirmPassword,
+    });
 }
 
 export async function verifyPassword(
@@ -138,4 +147,10 @@ export async function getMe(): Promise<UserProfile> {
 
 export async function updatePreferredLang(lang: string): Promise<void> {
     await apiClient.patch('/users/me/lang', { lang });
+}
+
+export async function acceptTerms(): Promise<void> {
+    await apiClient.post('/users/me/accept-terms', {
+        termsVersion: CURRENT_TERMS_VERSION,
+    });
 }

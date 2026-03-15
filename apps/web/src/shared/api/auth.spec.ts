@@ -19,7 +19,6 @@ import {
     verifyMagicLink,
     setPassword,
     changePassword,
-    deletePassword,
     verifyPassword,
     updateProfile,
     deleteAccount,
@@ -142,16 +141,6 @@ describe('auth API functions', () => {
             });
             expect(mockSetAccessToken).toHaveBeenCalledWith('changed-token');
             expect(result).toEqual(response);
-        });
-    });
-
-    describe('deletePassword', () => {
-        it('sends POST to /auth/password/delete', async () => {
-            mockPost.mockResolvedValue({});
-
-            await deletePassword();
-
-            expect(mockPost).toHaveBeenCalledWith('/auth/password/delete');
         });
     });
 

@@ -20,7 +20,7 @@ const mockUser = {
     credits: { balance: 0, freeReportUsed: false },
     passwordHash: '$2b$10$hash',
     deletedAt: null as Date | null,
-    preferredLang: 'uk',
+    preferredLang: 'en',
 };
 
 const mockAuthService = {
@@ -31,7 +31,6 @@ const mockAuthService = {
     verifyMagicLink: jest.fn(),
     setPassword: jest.fn(),
     changePassword: jest.fn(),
-    deletePassword: jest.fn(),
     verifyPassword: jest.fn(),
     rotateRefreshToken: jest.fn(),
     revokeRefreshTokenByJwt: jest.fn(),
@@ -174,7 +173,8 @@ describe('AuthController', () => {
             expect(mockAuthService.loginWithPassword).toHaveBeenCalledWith(
                 'test@gmail.com',
                 'pass',
-                '1.2.3.4'
+                '1.2.3.4',
+                undefined
             );
         });
     });
@@ -205,7 +205,8 @@ describe('AuthController', () => {
 
             expect(mockAuthService.sendMagicLink).toHaveBeenCalledWith(
                 'test@gmail.com',
-                MAGIC_LINK_PURPOSE.LOGIN
+                MAGIC_LINK_PURPOSE.LOGIN,
+                undefined
             );
         });
 
@@ -219,7 +220,8 @@ describe('AuthController', () => {
 
             expect(mockAuthService.sendMagicLink).toHaveBeenCalledWith(
                 'test@gmail.com',
-                MAGIC_LINK_PURPOSE.REGISTER
+                MAGIC_LINK_PURPOSE.REGISTER,
+                undefined
             );
         });
     });
@@ -383,21 +385,6 @@ describe('AuthController', () => {
                 expect.objectContaining({ httpOnly: true })
             );
             expect(result.data.accessToken).toBe('new-access');
-        });
-    });
-
-    describe('POST /auth/password/delete', () => {
-        it('should return PASSWORD_DELETED response code', async () => {
-            mockAuthService.deletePassword.mockResolvedValue(undefined);
-
-            const result = await controller.deletePassword(mockUser as any);
-
-            expect(result).toEqual({
-                data: {
-                    code: RESPONSE_CODE.PASSWORD_DELETED,
-                    message: 'Password deleted',
-                },
-            });
         });
     });
 

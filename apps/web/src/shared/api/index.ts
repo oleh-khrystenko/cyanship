@@ -11,12 +11,13 @@ export {
     updatePreferredLang,
     setPassword,
     changePassword,
-    deletePassword,
+    resetPassword,
     verifyPassword,
     updateProfile,
     deleteAccount,
     confirmDeleteAccount,
     restoreAccount,
+    acceptTerms,
 } from './auth';
 export {
     createSubscriptionCheckout,

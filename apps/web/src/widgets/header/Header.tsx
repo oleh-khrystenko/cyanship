@@ -100,16 +100,23 @@ const Header = () => {
         window.location.assign(`/${locale}`);
     };
 
-    const userMenuItems = [
+    const allUserMenuItems: {
+        value: string;
+        label: string;
+        icon: React.ReactNode;
+        route?: string;
+    }[] = [
         {
             value: 'profile',
             label: t('profile'),
             icon: <User />,
+            route: `/${locale}/profile`,
         },
         {
             value: 'credits',
             label: `${user?.credits.balance ?? 0} ${t('credits')}`,
             icon: <CreditCard />,
+            route: `/${locale}/billing`,
         },
         {
             value: 'logout',
@@ -118,11 +125,14 @@ const Header = () => {
         },
     ];
 
+    const userMenuItems = allUserMenuItems.filter(
+        (item) => !item.route || !pathname.startsWith(item.route)
+    );
+
     const handleUserMenuSelect = (value: string) => {
-        if (value === 'profile') {
-            router.push(`/${locale}/profile`);
-        } else if (value === 'credits') {
-            router.push(`/${locale}/billing`);
+        const item = allUserMenuItems.find((i) => i.value === value);
+        if (item?.route) {
+            router.push(item.route);
         } else if (value === 'logout') {
             void handleLogout();
         }
@@ -344,47 +354,28 @@ const Header = () => {
                                             </div>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            className="text-muted-foreground hover:text-foreground flex items-center gap-2 py-2 text-sm transition-colors"
-                                            onClick={() => {
-                                                setIsSheetOpen(false);
-                                                router.push(
-                                                    `/${locale}/billing`
-                                                );
-                                            }}
-                                        >
-                                            <CreditCard className="size-4" />
-                                            <span>
-                                                {user.credits.balance}{' '}
-                                                {t('credits')}
-                                            </span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className="text-muted-foreground hover:text-foreground flex items-center gap-2 py-2 text-sm transition-colors"
-                                            onClick={() => {
-                                                setIsSheetOpen(false);
-                                                router.push(
-                                                    `/${locale}/profile`
-                                                );
-                                            }}
-                                        >
-                                            <User className="size-4" />
-                                            <span>{t('profile')}</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className="text-destructive hover:text-destructive/80 flex items-center gap-2 py-2 text-sm transition-colors"
-                                            onClick={() =>
-                                                void handleLogout()
-                                            }
-                                        >
-                                            <LogOut className="size-4" />
-                                            <span>{t('logout')}</span>
-                                        </button>
+                                        {userMenuItems.map((item) => (
+                                            <button
+                                                key={item.value}
+                                                type="button"
+                                                className={`flex items-center gap-2 py-2 text-sm transition-colors ${
+                                                    item.value === 'logout'
+                                                        ? 'text-destructive hover:text-destructive/80'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                                onClick={() => {
+                                                    setIsSheetOpen(false);
+                                                    handleUserMenuSelect(
+                                                        item.value
+                                                    );
+                                                }}
+                                            >
+                                                <span className="size-4">
+                                                    {item.icon}
+                                                </span>
+                                                <span>{item.label}</span>
+                                            </button>
+                                        ))}
                                     </div>
                                 ) : (
                                     !isSigninPage && (

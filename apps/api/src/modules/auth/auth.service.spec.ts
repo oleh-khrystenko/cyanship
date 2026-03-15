@@ -102,9 +102,6 @@ describe('AuthService', () => {
                         findOrCreateByGoogle: jest.fn(),
                         findOrCreateByEmail: jest.fn(),
                         setPasswordHash: jest.fn().mockResolvedValue(undefined),
-                        clearPasswordHash: jest
-                            .fn()
-                            .mockResolvedValue(undefined),
                         softDelete: jest.fn().mockResolvedValue(undefined),
                     },
                 },
@@ -492,7 +489,7 @@ describe('AuthService', () => {
                 'user@example.com',
                 expect.stringMatching(/^[a-f0-9]{64}$/),
                 'login',
-                'uk'
+                'en'
             );
         });
 
@@ -638,7 +635,8 @@ describe('AuthService', () => {
 
             expect(mockRedis.getdel).toHaveBeenCalledWith(`magic:${token}`);
             expect(usersService.findOrCreateByEmail).toHaveBeenCalledWith(
-                'user@example.com'
+                'user@example.com',
+                undefined
             );
             expect(result.purpose).toBe('login');
             expect('tokens' in result && result.tokens).toEqual({
@@ -1283,40 +1281,6 @@ describe('AuthService', () => {
 
             expect(result.accessToken).toBe('fresh-access');
             expect(result.refreshToken).toBe('fresh-refresh');
-        });
-    });
-
-    describe('deletePassword', () => {
-        const userId = '507f1f77bcf86cd799439011';
-
-        it('should delete password for user with password', async () => {
-            jest.spyOn(usersService, 'findById').mockResolvedValue({
-                ...mockUser,
-                passwordHash: '$2b$10$hash',
-            } as never);
-
-            await authService.deletePassword(userId);
-
-            expect(usersService.clearPasswordHash).toHaveBeenCalledWith(userId);
-        });
-
-        it('should throw BadRequestException if no password to delete', async () => {
-            jest.spyOn(usersService, 'findById').mockResolvedValue({
-                ...mockUser,
-                passwordHash: null,
-            } as never);
-
-            await expect(authService.deletePassword(userId)).rejects.toThrow(
-                BadRequestException
-            );
-        });
-
-        it('should throw BadRequestException if user not found', async () => {
-            jest.spyOn(usersService, 'findById').mockResolvedValue(null);
-
-            await expect(authService.deletePassword(userId)).rejects.toThrow(
-                BadRequestException
-            );
         });
     });
 

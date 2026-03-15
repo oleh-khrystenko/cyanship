@@ -24,7 +24,7 @@ Profile page приймає query param `?mode=` (`ProfileMode`):
 
 **ProfileForm:**
 - `editable=true` (форма редагується)
-- `nameRequired=false` (ім'я не обов'язкове)
+- Ім'я завжди обов'язкове
 - Два поля: Ім'я та Прізвище (frontend розділяє `profile.name` на частини, зберігає як єдиний рядок)
 
 **SecuritySection:**

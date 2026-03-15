@@ -105,10 +105,6 @@ Unit, integration (e2e) та frontend unit тести для повного по
 - Зберігає hash через `findByIdAndUpdate`
 - Перевір що передається `{ passwordHash: hash }`
 
-**Метод `clearPasswordHash`:**
-- Очищає hash через `findByIdAndUpdate`
-- Перевір що передається `{ passwordHash: null }`
-
 **Метод `findOrCreateByGoogle` (enrichment):**
 - Existing user БЕЗ name/avatar → Google дані записуються (enrichment)
 - Existing user З name/avatar → Google дані НЕ перезаписують існуючі (no-overwrite)
@@ -149,7 +145,6 @@ Unit, integration (e2e) та frontend unit тести для повного по
 | `GET /auth/google/callback` | Redirect URL містить `WEB_URL/auth/callback`, якщо `accountDeleted` — додає `?account_deleted=true` |
 | `POST /auth/password/set` | Response з `RESPONSE_CODE.PASSWORD_SET` |
 | `POST /auth/password/change` | Нова cookie + новий accessToken в response |
-| `POST /auth/password/delete` | Response з `RESPONSE_CODE.PASSWORD_DELETED` |
 | `POST /auth/password/verify` | Response `{ data: { isValid: boolean } }` |
 | `POST /auth/refresh` | Нова cookie + новий accessToken; при помилці — очищує cookie |
 | `POST /auth/logout` | Cookie очищується (maxAge=0), response з `RESPONSE_CODE.LOGGED_OUT` |
@@ -228,7 +223,6 @@ createMagicLinkToken(email, purpose) → зберігає token в mocked Redis,
 **Г. Password Management (потребує JWT):**
 - `POST /auth/password/set` — без існуючого пароля → 200; з існуючим → 400; без auth → 401
 - `POST /auth/password/change` — валідний current → 200 + нові tokens; невірний current → 401; без auth → 401; session invalidation (старий refresh token перестає працювати)
-- `POST /auth/password/delete` — є пароль → 200; немає пароля → 400; без auth → 401
 - `POST /auth/password/verify` — вірний → `{ isValid: true }`; невірний → `{ isValid: false }`; без auth → 401
 
 **Д. User Profile (потребує JWT):**
@@ -311,7 +305,6 @@ createMagicLinkToken(email, purpose) → зберігає token в mocked Redis,
 | `verifyMagicLink(token)` | POST `/auth/magic-link/verify`, викликає `setAccessToken` |
 | `setPassword(password)` | POST `/auth/password/set` |
 | `changePassword(current, new)` | POST `/auth/password/change`, викликає `setAccessToken` |
-| `deletePassword()` | POST `/auth/password/delete` |
 | `verifyPassword(password)` | POST `/auth/password/verify`, повертає `{ isValid }` |
 | `updateProfile(dto)` | PATCH `/users/me` |
 | `deleteAccount()` | POST `/users/account/delete`, повертає `{ requiresPassword?, requiresMagicLink? }` |

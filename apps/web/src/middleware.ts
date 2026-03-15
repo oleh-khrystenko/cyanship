@@ -7,6 +7,7 @@ const intlMiddleware = createIntlMiddleware(routing);
 const PROTECTED_PATHS = ['/profile', '/pay', '/billing'];
 const AUTH_PATHS = ['/auth/signin'];
 const COOKIE_NAME = 'bid_refresh';
+const DELETED_COOKIE = 'bid_account_deleted';
 
 const localePattern = new RegExp(`^/(${routing.locales.join('|')})(/.*)?$`);
 
@@ -25,7 +26,9 @@ export default function middleware(request: NextRequest) {
         (p) => path === p || path.startsWith(`${p}/`)
     );
 
-    if (isProtected && !hasRefreshCookie) {
+    const isAccountDeleted = request.cookies.has(DELETED_COOKIE);
+
+    if (isProtected && (!hasRefreshCookie || isAccountDeleted)) {
         return NextResponse.redirect(
             new URL(`/${locale}/auth/signin`, request.url)
         );
@@ -35,7 +38,7 @@ export default function middleware(request: NextRequest) {
         (p) => path === p || path.startsWith(`${p}/`)
     );
 
-    if (isAuthPath && hasRefreshCookie) {
+    if (isAuthPath && hasRefreshCookie && !isAccountDeleted) {
         return NextResponse.redirect(
             new URL(`/${locale}/profile`, request.url)
         );

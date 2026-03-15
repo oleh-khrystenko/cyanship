@@ -86,6 +86,20 @@ export default function BillingPage() {
                             <p className="text-foreground mb-6 font-medium">
                                 {t('subscribe.plan_label')}
                             </p>
+                            <p className="text-muted-foreground mb-6 text-xs">
+                                {t.rich('checkout_terms_note', {
+                                    terms: (chunks) => (
+                                        <a
+                                            href={`/${locale}/terms`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary underline hover:no-underline"
+                                        >
+                                            {chunks}
+                                        </a>
+                                    ),
+                                })}
+                            </p>
                             <UiButton
                                 onClick={handleSubscriptionCheckout}
                                 disabled={loadingAction === 'subscribe'}
@@ -163,6 +177,20 @@ export default function BillingPage() {
                     <p className="text-muted-foreground mb-6">
                         {t('credits.balance', {
                             count: user.credits.balance,
+                        })}
+                    </p>
+                    <p className="text-muted-foreground mb-6 text-xs">
+                        {t.rich('checkout_terms_note', {
+                            terms: (chunks) => (
+                                <a
+                                    href={`/${locale}/terms`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary underline hover:no-underline"
+                                >
+                                    {chunks}
+                                </a>
+                            ),
                         })}
                     </p>
                     <div className="space-y-3">

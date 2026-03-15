@@ -134,13 +134,17 @@ describe('EmailService', () => {
                 await emailService.sendMagicLink(email, token, purpose, 'uk');
 
                 const html = sendSpy.mock.calls[0][0].html as string;
+                const expectedPath =
+                    purpose === 'reset-password'
+                        ? `/auth/reset-password?token=${token}`
+                        : `/auth/verify?token=${token}`;
                 expect(html).toContain(
-                    `http://localhost:3000/auth/verify?token=${token}`
+                    `http://localhost:3000${expectedPath}`
                 );
             }
         });
 
-        it('should fallback to uk when unknown lang provided', async () => {
+        it('should fallback to en when unknown lang provided', async () => {
             await emailService.sendMagicLink(
                 email,
                 token,
@@ -150,7 +154,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Вхід до LucidShip',
+                    subject: 'Sign in to LucidShip',
                 })
             );
         });
@@ -254,7 +258,7 @@ describe('EmailService', () => {
             );
 
             const html = sendSpy.mock.calls[0][0].html as string;
-            expect(html).toContain('http://localhost:3000');
+            expect(html).toContain('http://localhost:3000/auth/signin');
         });
 
         it('should use EN template for non-UK lang', async () => {

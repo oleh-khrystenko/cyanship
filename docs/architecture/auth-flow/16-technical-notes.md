@@ -12,7 +12,6 @@
 | POST | `/api/auth/magic-link/verify` | - | Верифікація token -> cookie + user + accessToken |
 | POST | `/api/auth/password/set` | JwtActiveGuard | Встановити пароль (якщо ще немає) |
 | POST | `/api/auth/password/change` | JwtActiveGuard | Змінити пароль (revoke all + new tokens) |
-| POST | `/api/auth/password/delete` | JwtActiveGuard | Видалити пароль |
 | POST | `/api/auth/password/verify` | JwtActiveGuard | Перевірити пароль (boolean) |
 | POST | `/api/auth/refresh` | Cookie | Ротація refresh token |
 | POST | `/api/auth/logout` | Cookie | Очистка cookie + revoke token |

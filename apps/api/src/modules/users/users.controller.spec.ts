@@ -15,7 +15,7 @@ const mockUser = {
     passwordHash: '$2b$10$hash',
     deletedAt: null as Date | null,
     accountDeletionRequestedAt: null as Date | null,
-    preferredLang: 'uk',
+    preferredLang: 'en',
 };
 
 const mockUsersService = {
@@ -62,7 +62,8 @@ describe('UsersController', () => {
                     hasPassword: true,
                     deletedAt: null,
                     accountDeletionRequestedAt: null,
-                    preferredLang: 'uk',
+                    preferredLang: 'en',
+                    termsVersion: null,
                     billing: null,
                 },
             });
@@ -200,7 +201,7 @@ describe('UsersController', () => {
             );
             expect(
                 mockAuthService.sendDeletionConfirmationEmail
-            ).toHaveBeenCalledWith('test@gmail.com', 'uk');
+            ).toHaveBeenCalledWith('test@gmail.com', 'en');
             expect(res.clearCookie).toHaveBeenCalledWith('bid_refresh', {
                 path: '/',
             });

@@ -46,7 +46,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             return;
         }
 
-        if (emailEntry.verified === false) {
+        if (emailEntry.verified !== true) {
             done(
                 new UnauthorizedException('Google email is not verified'),
                 undefined

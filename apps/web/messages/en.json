@@ -161,7 +161,9 @@
         },
         "callback": {
             "loading": "Signing you in…",
-            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below."
+            "account_deleted_description": "Your account is scheduled for deletion. Restore it by clicking the button below.",
+            "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "terms_required": "Please accept the Terms of Service and Privacy Policy to continue"
         },
         "verify": {
             "verifying": "Verifying your link…",
@@ -172,13 +174,30 @@
             "deleted_heading": "Account deleted",
             "deleted_description": "Your account has been deactivated. You have 30 days to restore it — just sign in during that time.",
             "deleted_signin_button": "Sign in"
+        },
+        "reset_password": {
+            "heading": "Set new password",
+            "description": "Enter your new password below.",
+            "new_password_placeholder": "New password",
+            "confirm_password_placeholder": "Confirm password",
+            "submit_button": "Reset password",
+            "success_toast": "Password changed. Sign in with your new password.",
+            "passwords_mismatch": "Passwords do not match",
+            "password_too_short": "Password must be at least 8 characters",
+            "error_invalid_token": "This reset link is invalid or has expired. Please request a new one.",
+            "error_generic": "Something went wrong. Please try again.",
+            "back_to_signin": "Back to sign in"
         }
     },
     "notifications": {
         "auth": {
             "magic_link_sent": "A sign-in link has been sent to your email",
             "logged_out": "You have been logged out",
-            "account_deleted": "Account deleted"
+            "account_deleted": "Account deleted",
+            "password_reset": "Password reset successfully"
+        },
+        "users": {
+            "terms_accepted": "Terms accepted."
         }
     },
     "errors": {
@@ -202,35 +221,42 @@
         "heading": "Profile",
         "new_heading": "Complete your profile",
         "form": {
+            "heading": "Personal info",
             "name_label": "First name",
             "name_placeholder": "Your name",
             "name_required": "Name is required",
+            "name_too_short": "Name must be at least 2 characters",
+            "name_invalid_chars": "Name can only contain letters, spaces, hyphens, and apostrophes",
             "last_name_label": "Last name",
             "last_name_placeholder": "Your last name",
             "avatar_label": "Avatar (URL)",
             "avatar_placeholder": "https://example.com/photo.jpg",
             "language_label": "Language",
+            "edit_button": "Edit",
+            "cancel_button": "Cancel",
             "save_button": "Save",
             "saved": "Profile updated",
             "save_error": "Failed to save profile"
         },
         "security": {
             "heading": "Security",
+            "edit_button": "Change",
+            "password_label": "Password",
+            "password_active": "Active",
+            "password_not_set": "Password not set",
             "set_password": "Set password",
             "set_password_optional": "Set password (optional)",
             "change_password": "Change password",
-            "delete_password": "Delete password",
             "current_password_label": "Current password",
             "new_password_label": "New password",
             "password_placeholder": "Minimum 8 characters",
             "password_too_short": "Password must be at least 8 characters",
+            "password_same_as_current": "New password must be different from the current one",
             "show_password": "Show password",
             "hide_password": "Hide password",
             "password_set": "Password set",
             "password_changed": "Password changed. Other devices have been signed out",
-            "password_deleted": "Password deleted",
             "password_invalid": "Invalid password",
-            "delete_password_confirm": "Are you sure you want to delete your password? You will only be able to sign in with magic link or Google.",
             "cancel": "Cancel"
         },
         "danger_zone": {
@@ -289,7 +315,8 @@
             "pack_label": "{count} credits",
             "buy_button": "Buy",
             "error": "Failed to create payment session. Please try again."
-        }
+        },
+        "checkout_terms_note": "By proceeding, you confirm that you agree to the <terms>payment terms</terms>."
     },
     "components": {
         "header": {
@@ -309,6 +336,14 @@
             "light": "Light",
             "system": "System",
             "dark": "Dark"
+        },
+        "terms_reaccept": {
+            "title": "Updated terms",
+            "description": "Our Terms of Service or Privacy Policy have been updated. Please review and accept the changes to continue.",
+            "agree": "I agree to the updated <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "button": "Accept and continue",
+            "required": "You must accept the updated terms to continue.",
+            "error": "Something went wrong. Please try again."
         }
     }
 }

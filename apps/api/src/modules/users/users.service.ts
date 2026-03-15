@@ -64,7 +64,10 @@ export class UsersService {
         });
     }
 
-    async findOrCreateByEmail(email: string): Promise<UserDocument> {
+    async findOrCreateByEmail(
+        email: string,
+        lang?: string
+    ): Promise<UserDocument> {
         const normalizedEmail = email.toLowerCase();
         const existing = await this.userModel
             .findOne({ email: normalizedEmail })
@@ -78,6 +81,7 @@ export class UsersService {
         return this.userModel.create({
             email: normalizedEmail,
             lastLoginAt: new Date(),
+            ...(lang && { preferredLang: lang }),
         });
     }
 
@@ -115,10 +119,6 @@ export class UsersService {
         await this.userModel.findByIdAndUpdate(userId, { passwordHash: hash });
     }
 
-    async clearPasswordHash(userId: string): Promise<void> {
-        await this.userModel.findByIdAndUpdate(userId, { passwordHash: null });
-    }
-
     async setDeletionRequested(userId: string): Promise<void> {
         await this.userModel.findByIdAndUpdate(userId, {
             accountDeletionRequestedAt: new Date(),
@@ -149,6 +149,18 @@ export class UsersService {
         if (data.preferredLang !== undefined)
             update.preferredLang = data.preferredLang;
         return this.userModel.findByIdAndUpdate(userId, update, { new: true });
+    }
+
+    async acceptTerms(userId: string, termsVersion: string): Promise<void> {
+        await this.userModel.updateOne(
+            { _id: userId },
+            {
+                $set: {
+                    termsAcceptedAt: new Date(),
+                    termsVersion,
+                },
+            },
+        );
     }
 
     async hasCredit(userId: string): Promise<boolean> {

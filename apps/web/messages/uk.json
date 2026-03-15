@@ -161,7 +161,9 @@
         },
         "callback": {
             "loading": "Авторизація…",
-            "account_deleted_description": "Ваш акаунт заплановано до видалення. Відновіть його, натиснувши кнопку нижче."
+            "account_deleted_description": "Ваш акаунт заплановано до видалення. Відновіть його, натиснувши кнопку нижче.",
+            "terms_agree": "Я погоджуюсь з <terms>Умовами використання</terms> та <privacy>Політикою конфіденційності</privacy>",
+            "terms_required": "Для продовження прийміть Умови використання та Політику конфіденційності"
         },
         "verify": {
             "verifying": "Перевіряємо посилання…",
@@ -172,13 +174,30 @@
             "deleted_heading": "Акаунт видалено",
             "deleted_description": "Ваш акаунт деактивовано. Протягом 30 днів ви можете відновити його — просто увійдіть до системи.",
             "deleted_signin_button": "Увійти"
+        },
+        "reset_password": {
+            "heading": "Встановіть новий пароль",
+            "description": "Введіть новий пароль нижче.",
+            "new_password_placeholder": "Новий пароль",
+            "confirm_password_placeholder": "Підтвердіть пароль",
+            "submit_button": "Скинути пароль",
+            "success_toast": "Пароль змінено. Увійдіть із новим паролем.",
+            "passwords_mismatch": "Паролі не збігаються",
+            "password_too_short": "Пароль повинен містити мінімум 8 символів",
+            "error_invalid_token": "Посилання для скидання недійсне або прострочене. Запросіть нове.",
+            "error_generic": "Щось пішло не так. Спробуйте ще раз.",
+            "back_to_signin": "Повернутись до входу"
         }
     },
     "notifications": {
         "auth": {
             "magic_link_sent": "Посилання надіслано на вашу пошту",
             "logged_out": "Ви вийшли з акаунту",
-            "account_deleted": "Акаунт видалено"
+            "account_deleted": "Акаунт видалено",
+            "password_reset": "Пароль успішно змінено"
+        },
+        "users": {
+            "terms_accepted": "Умови прийнято."
         }
     },
     "errors": {
@@ -202,35 +221,42 @@
         "heading": "Профіль",
         "new_heading": "Заповніть профіль",
         "form": {
+            "heading": "Особисті дані",
             "name_label": "Ім'я",
             "name_placeholder": "Ваше ім'я",
             "name_required": "Ім'я обов'язкове",
+            "name_too_short": "Ім'я має містити щонайменше 2 символи",
+            "name_invalid_chars": "Ім'я може містити лише літери, пробіли, дефіси та апострофи",
             "last_name_label": "Прізвище",
             "last_name_placeholder": "Ваше прізвище",
             "avatar_label": "Аватар (URL)",
             "avatar_placeholder": "https://example.com/photo.jpg",
             "language_label": "Мова",
+            "edit_button": "Редагувати",
+            "cancel_button": "Скасувати",
             "save_button": "Зберегти",
             "saved": "Профіль оновлено",
             "save_error": "Не вдалося зберегти профіль"
         },
         "security": {
             "heading": "Безпека",
+            "edit_button": "Змінити",
+            "password_label": "Пароль",
+            "password_active": "Встановлено",
+            "password_not_set": "Пароль не встановлено",
             "set_password": "Встановити пароль",
             "set_password_optional": "Встановити пароль (опціонально)",
             "change_password": "Змінити пароль",
-            "delete_password": "Видалити пароль",
             "current_password_label": "Поточний пароль",
             "new_password_label": "Новий пароль",
             "password_placeholder": "Мінімум 8 символів",
             "password_too_short": "Пароль повинен містити мінімум 8 символів",
+            "password_same_as_current": "Новий пароль має відрізнятися від поточного",
             "show_password": "Показати пароль",
             "hide_password": "Сховати пароль",
             "password_set": "Пароль встановлено",
             "password_changed": "Пароль змінено. Інші пристрої було відключено",
-            "password_deleted": "Пароль видалено",
             "password_invalid": "Невірний пароль",
-            "delete_password_confirm": "Ви впевнені, що хочете видалити пароль? Ви зможете входити тільки через magic link або Google.",
             "cancel": "Скасувати"
         },
         "danger_zone": {
@@ -289,7 +315,8 @@
             "pack_label": "{count} кредитів",
             "buy_button": "Придбати",
             "error": "Не вдалося створити сесію оплати. Спробуйте ще раз."
-        }
+        },
+        "checkout_terms_note": "Продовжуючи, ви підтверджуєте згоду з <terms>умовами оплати</terms>."
     },
     "components": {
         "header": {
@@ -309,6 +336,14 @@
             "light": "Світла",
             "system": "Системна",
             "dark": "Темна"
+        },
+        "terms_reaccept": {
+            "title": "Оновлені умови",
+            "description": "Наші Умови використання або Політика конфіденційності були оновлені. Перегляньте та прийміть зміни для продовження роботи.",
+            "agree": "Я погоджуюсь з оновленими <terms>Умовами використання</terms> та <privacy>Політикою конфіденційності</privacy>",
+            "button": "Прийняти та продовжити",
+            "required": "Необхідно прийняти оновлені умови для продовження.",
+            "error": "Щось пішло не так. Спробуйте ще раз."
         }
     }
 }

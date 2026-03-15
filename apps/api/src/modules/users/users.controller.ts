@@ -17,10 +17,12 @@ import {
 import { Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipOnboarding } from '../../common/decorators/skip-onboarding.decorator';
 import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { VerifyPasswordDto } from '../auth/dto/verify-password.dto';
+import { AcceptTermsDto } from './dto/accept-terms.dto';
 import { UpdateLangDto } from './dto/update-lang.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserDocument } from './schemas/user.schema';
@@ -35,6 +37,7 @@ export class UsersController {
 
     @Get('me')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     getMe(@CurrentUser() user: UserDocument): {
         data: Record<string, unknown>;
     } {
@@ -49,6 +52,7 @@ export class UsersController {
                 accountDeletionRequestedAt:
                     user.accountDeletionRequestedAt ?? null,
                 preferredLang: user.preferredLang,
+                termsVersion: user.termsVersion ?? null,
                 billing: user.billing
                     ? {
                           hasActiveSubscription:
@@ -65,6 +69,7 @@ export class UsersController {
 
     @Patch('me')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async updateProfile(
         @CurrentUser() user: UserDocument,
         @Body() dto: UpdateProfileDto
@@ -90,6 +95,7 @@ export class UsersController {
 
     @Patch('me/lang')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async updateLang(
         @CurrentUser() user: UserDocument,
         @Body() dto: UpdateLangDto
@@ -103,8 +109,25 @@ export class UsersController {
         };
     }
 
+    @Post('me/accept-terms')
+    @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
+    async acceptTerms(
+        @CurrentUser() user: UserDocument,
+        @Body() dto: AcceptTermsDto
+    ): Promise<ApiMessageResponse> {
+        await this.usersService.acceptTerms(user._id.toString(), dto.termsVersion);
+        return {
+            data: {
+                code: RESPONSE_CODE.TERMS_ACCEPTED,
+                message: 'Terms accepted',
+            },
+        };
+    }
+
     @Post('account/delete')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async deleteAccount(
         @CurrentUser() user: UserDocument
     ): Promise<{ data: Record<string, unknown> }> {
@@ -126,6 +149,7 @@ export class UsersController {
 
     @Post('account/delete/confirm')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async confirmDeleteAccount(
         @CurrentUser() user: UserDocument,
         @Body() dto: VerifyPasswordDto,

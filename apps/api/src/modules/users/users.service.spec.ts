@@ -386,19 +386,6 @@ describe('UsersService', () => {
         });
     });
 
-    describe('clearPasswordHash', () => {
-        it('should set passwordHash to null', async () => {
-            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
-
-            await service.clearPasswordHash('507f1f77bcf86cd799439011');
-
-            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                '507f1f77bcf86cd799439011',
-                { passwordHash: null }
-            );
-        });
-    });
-
     describe('softDelete', () => {
         it('should set deletedAt to current date', async () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(undefined);

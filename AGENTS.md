@@ -1,155 +1,193 @@
 # LucidShip
-> Monorepo-monolith на Next.js 16 + NestJS 11, де auth/session lifecycle централізований у API, а FE/BE працюють через shared Zod/TypeScript contracts.
+
+> Monorepo-monolith on Next.js 16 + NestJS 11 where API owns auth/session lifecycle, billing, and shared Zod/TypeScript contracts for both apps.
 
 ## Tech Stack
-- **Core:** TypeScript 5.9, Node.js 20 (CI/Docker), Next.js 16.0.1 + React 19.2 (`apps/web`), NestJS 11.1.x (`apps/api`).
-- **Data:** MongoDB (Mongoose 8, schema-first), Redis 7 + ioredis 5 для refresh/magic-link/rate-limit state.
-- **Infra:** pnpm workspaces + Turborepo, Docker Compose (`docker-compose.yml`, `docker-compose.dev.yml`), GitHub Actions (`.github/workflows/ci.yml`).
-- **Libs:** `nestjs-zod` + `zod`, `passport-jwt`, `passport-google-oauth20`, `@nestjs/throttler`, `@nestjs/schedule`, `axios`, `zustand`, `next-intl`, `next-themes`, `sonner`, `@headlessui/react`.
+
+| Layer | Technology | Version / Role |
+|---|---|---|
+| Core | TypeScript, Node.js | TS 5.9, Node 20 |
+| Frontend | Next.js, React, next-intl, Zustand, Tailwind CSS | Next 16.0.1, React 19.2 |
+| Backend | NestJS, nestjs-zod, Passport | NestJS 11.1.x, Zod DTO pipeline, JWT + Google OAuth |
+| Data | MongoDB, Mongoose, Redis, ioredis | Mongoose 8 schema-first, Redis session/runtime state |
+| Payments | Stripe | Checkout, portal, webhook ingestion |
+| Infra / Tests | pnpm workspaces, Turborepo, Docker Compose, Jest | Monorepo orchestration, unit + e2e coverage |
 
 ## Architecture Overview
-Monorepo-monolith із трьома основними зонами: `apps/api`, `apps/web`, `packages/types`.
 
-- **API:** NestJS module graph (`AppModule` -> `AuthModule`, `UsersModule`, scaffold `Reports/Payments/Storage`), global `/api` prefix, global `ZodValidationPipe`, global `AllExceptionsFilter`, global `ThrottlerGuard`.
-- **Auth model:** access JWT (1h) у пам’яті фронта + refresh JWT (7d) у httpOnly cookie `bid_refresh`; Redis token family (`refresh:*`, `refresh_family:*`) з rotation/reuse-detection через `GETDEL`.
-- **Web:** App Router + locale segment routing (`app/[locale]`), edge middleware з cookie gate, client bootstrap через `AuthInitializer`, route guard через `AuthGuard`.
-- **FE/BE sync:** DTO/contracts/enums з `@lucidship/types` використовуються і в Nest DTO (`createZodDto`), і у web API wrappers.
+LucidShip is a modular monolith with three main zones: `apps/api`, `apps/web`, and `packages/types`. The API is the system of record for auth, refresh rotation, account lifecycle, billing state, and webhook processing; the web app stays thin and talks to it through shared contracts. The frontend uses App Router with locale segments, an edge cookie gate, and a client auth bootstrap that resolves the current session into a Zustand store. Core and agency scopes are intentionally separated: the current agency implementation lives mostly in web route groups/widgets, while `apps/api/src/modules/agency` remains a placeholder and modular-boundary rules are documented in `docs/conventions/modular-boundaries.md`.
 
 ## Project Structure
-- `apps/api/src/main.ts` — API bootstrap (prefix/cors/cookie-parser/global pipes & filters).
-- `apps/api/src/app.module.ts` — composition root (Config, Mongoose, Throttler, Schedule, feature modules).
-- `apps/api/src/config/env.ts` — fail-fast env loader + auth/rate-limit tuning.
-- `apps/api/src/common` — Redis provider, JWT guard, `CurrentUser`, global exception filter.
-- `apps/api/src/modules/auth` — password auth, magic-link, Google OAuth, refresh rotation, email templates.
-- `apps/api/src/modules/users` — profile/lang/password-adjacent user ops, soft-delete/restore, cleanup cron.
-- `apps/web/src/app/[locale]` — localized routes (`/`, `/auth/*`, protected profile).
-- `apps/web/src/features/auth` — `AuthInitializer`, `AuthGuard`.
-- `apps/web/src/features/profile` — profile edit, password flows, account deletion UX.
-- `apps/web/src/shared/api` — axios client/interceptors + auth/users API wrappers + API-code mapping.
-- `apps/web/src/stores/auth` — Zustand auth state (`user`, `isAuthenticated`, `isLoading`).
-- `apps/web/src/i18n` + `apps/web/messages/*.json` — locale routing, dictionaries, runtime messages.
-- `packages/types/src` — shared constants/enums/contracts/entities/validation.
-- `docs/conventions` — mandatory agent rules (tone/fail-fast/i18n sync).
+
+```text
+apps/
+├── api/src/
+│   ├── main.ts, app.module.ts
+│   ├── config/          # env loader
+│   ├── common/          # decorators, filters, guards, providers
+│   └── modules/         # auth, users, payments, reports, storage, agency
+├── web/src/
+│   ├── app/[locale]/    # (agency), (protected), auth
+│   ├── features/        # auth, profile, agency, change-lang, change-theme
+│   ├── widgets/         # header, agency/landing
+│   ├── shared/          # api, config, ui, seo, styles, icons
+│   ├── stores/          # auth, headerNav
+│   └── i18n/            # routing, request config
+packages/
+└── types/src/           # contracts, entities, enums, constants, validation, agency
+docs/
+├── architecture/        # auth-flow, payments-flow
+└── conventions/         # source-of-truth rules
+```
 
 ## Domain Model & Schema
-**MongoDB (primary persistent model):**
-- `User` (`apps/api/src/modules/users/schemas/user.schema.ts`)
-  - `email` (unique, normalized lower-case)
-  - `provider?: { name, id }` (OAuth linkage)
-  - `profile: { name?, avatar? }`
-  - `credits: { balance, freeReportUsed }`
-  - `passwordHash: string | null`
-  - `deletedAt: Date | null` (soft-delete)
-  - `preferredLang` (`uk`/`en`), `lastLoginAt`, timestamps
-  - sparse index: `provider.id`
 
-**Redis (runtime/session state):**
-- `refresh:{jti}` -> `userId` or short-lived `rotated` marker
-- `refresh_family:{userId}` -> active JTI set
-- `magic:{token}` -> JSON `{ email, purpose }`
-- `magic_dedup:{email}:{purpose}` -> anti-spam dedup
-- `ratelimit:magic:{email}` -> per-email magic-link rate counter
-- `check_email:{ip}` -> check-email rate limit
-- `login_attempts:{ip}:{email}` -> progressive brute-force lockout
+### User
+Файл: `apps/api/src/modules/users/schemas/user.schema.ts` | Zod: `packages/types/src/entities/user.ts`
+- Soft-delete via `deletedAt` plus a separate `accountDeletionRequestedAt` marker.
+- Embedded `billing` subdocument stores provider IDs, subscription state, and `lastProviderEventAt` for webhook ordering.
+- Sparse indexes exist on `provider.id`, `billing.providerCustomerId`, and `billing.providerSubscriptionId`.
 
-**Shared contracts (`@lucidship/types`):**
-- Auth schemas: `CheckEmailSchema`, `LoginPasswordSchema`, `SendMagicLinkSchema`, `VerifyMagicLinkSchema`, `SetPasswordSchema`, `ChangePasswordSchema`, `VerifyPasswordSchema`.
-- User schemas: `UpdateProfileSchema`, `UpdateLangSchema`, `UserProfileSchema`.
-- Enums/constants: `RESPONSE_CODE`, `RESPONSE_CODE_TYPE`, `ERROR_CODE` (compat), `LANG`, `MAGIC_LINK_PURPOSE`.
+### ProcessedWebhookEvent
+Файл: `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts`
+- Unique `(provider, providerEventId)` idempotency ledger for Stripe webhooks.
+- `status` transitions `pending -> applied`; failed handlers roll back pending rows.
+- Persists `occurredAt`, `userId`, and `packCode` to support replay-safe billing updates.
+
+### Auth Runtime State
+Файл: `apps/api/src/modules/auth/auth.service.ts`
+- Refresh tokens live in Redis as `refresh:{jti}` plus `refresh_family:{userId}` with `GETDEL` rotation and a short `rotated` grace marker.
+- Magic-link send/verify also relies on Redis for token storage, dedup, and per-email rate limiting.
+- Brute-force protection is runtime-only (`login_attempts:{ip}:{email}` and `check_email:{ip}`), not persisted in MongoDB.
+
+### Shared Contracts
+Файли: `packages/types/src/contracts/auth.ts`, `packages/types/src/contracts/users.ts`, `packages/types/src/contracts/payments.ts`
+- API DTOs, billing enums, and user profile shapes are defined once in Zod and reused by Nest DTO wrappers and web API clients.
+- `UserBillingSchema` is shared into the web profile/billing UI, so payment-model changes affect both apps immediately.
+- Agency-specific shared types are intended to stay behind `@lucidship/types/agency` per `docs/conventions/modular-boundaries.md`.
 
 ## Module Dependency Map
-**API graph**
-- `AppModule` -> `AuthModule`, `UsersModule`, `ReportsModule`, `PaymentsModule`, `StorageModule`, infra modules.
-- `AuthModule` <-> `UsersModule` через `forwardRef`.
-- `AuthController` -> `AuthService` -> (`UsersService`, `JwtService`, `EmailService`, `REDIS_CLIENT`).
-- `UsersController` -> (`UsersService`, `AuthService`) для profile/lang/delete/restore.
-- `CleanupService` -> (`UserModel`, `AuthService`) для grace-period hard delete + revoke.
-- `JwtStrategy` -> `UsersService` (reject `deletedAt` users).
 
-**Web graph**
-- `app/[locale]/layout.tsx` -> `Providers` + `NextIntlClientProvider` + `AuthInitializer` + `Header`.
-- `middleware.ts` -> `i18n/routing.ts` + `bid_refresh` presence checks.
-- `auth/signin/page.tsx` -> `checkEmail` -> (`loginWithPassword` | `sendMagicLink`) -> `getMe`.
-- `auth/verify/page.tsx` -> `verifyMagicLink` -> `getMe` + purpose-based redirects.
-- `auth/callback/page.tsx` -> `refreshToken` -> `getMe`.
-- `shared/api/client.ts` -> axios interceptors -> refresh dedup (`refreshPromise`) + retry original request.
-
-**Cross-app graph**
-- `apps/api` + `apps/web` -> `@lucidship/types`.
+- `AppModule` → `AuthModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`
+- `AuthModule` ↔ `UsersModule` (`forwardRef`, circular)
+- `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` abstraction (`StripeService` implementation)
+- `CleanupService` → `AuthService` + `UserModel`
+- `app/[locale]/layout.tsx` → `Providers` + `NextIntlClientProvider` + `AuthInitializer` + `Header`
+- Protected web routes → `AuthGuard` → auth store → `shared/api/auth.ts`
+- `shared/api/client.ts` → axios interceptors → refresh dedupe → `authStore`
+- Agency web routes/features/widgets → core `shared/*` only; core must not import agency scope
 
 ## Key Patterns (CodeDNA)
-- **Створення Endpoint:** `apps/api/src/modules/auth/auth.controller.ts`, `apps/api/src/modules/users/users.controller.ts`.
-- **Валідація:** `apps/api/src/modules/*/dto/*.ts` + `packages/types/src/contracts/*.ts` (`createZodDto`).
-- **Auth/Guard:** `apps/api/src/modules/auth/strategies/jwt.strategy.ts`, `apps/api/src/common/guards/jwt-auth.guard.ts`, `apps/web/src/features/auth/AuthGuard.tsx`, `apps/web/src/middleware.ts`.
-- **Error Handling:** `apps/api/src/common/filters/all-exceptions.filter.ts`.
 
-## API Surface
+### Створення endpoint
+Nest controllers pair guard + DTO + service and return `{ data: ... }` envelopes. Приклади: `apps/api/src/modules/auth/auth.controller.ts`, `apps/api/src/modules/payments/payments.controller.ts`.
+
+### Валідація
+Zod contracts live in `packages/types/src/contracts/*`, then Nest DTOs wrap them through `createZodDto()`. Приклади: `apps/api/src/modules/auth/dto/*.ts`, `apps/api/src/modules/payments/dto/create-checkout-session.dto.ts`.
+
+### Auth/session lifecycle
+Access JWT stays in memory on the web, refresh JWT stays in `bid_refresh` httpOnly cookie, Redis tracks refresh token families, and axios deduplicates refresh calls. Файли: `apps/api/src/modules/auth/auth.service.ts`, `apps/web/src/shared/api/client.ts`, `apps/web/src/features/auth/AuthInitializer.tsx`, `apps/web/src/middleware.ts`. Full flow docs: `docs/architecture/auth-flow/README.md`.
+
+### Billing/webhook processing
+Payments go through a provider interface, Stripe webhooks require Nest `rawBody`, and MongoDB stores processed-event idempotency state before applying billing changes. Файли: `apps/api/src/modules/payments/payments.service.ts`, `apps/api/src/modules/payments/providers/stripe.service.ts`, `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts`. Full flow docs: `docs/architecture/payments-flow/README.md`.
+
+### Error handling and i18n mapping
+API returns machine-readable codes through `AllExceptionsFilter`; the web maps those codes to locale keys instead of rendering backend strings. Файли: `apps/api/src/common/filters/all-exceptions.filter.ts`, `apps/web/src/shared/api/mapApiCode.ts`, `docs/conventions/i18n.md`.
+
+## API Overview
+
 Global prefix: `/api`.
 
 **AppController** (`apps/api/src/app.controller.ts`)
-- `GET /api` — hello probe.
-- `GET /api/health` — status/timestamp/environment.
+- `GET /api` — public — hello probe
+- `GET /api/health` — public — health snapshot
 
 **AuthController** (`apps/api/src/modules/auth/auth.controller.ts`)
-- `GET /api/auth/google` — start Google OAuth.
-- `GET /api/auth/google/callback` — OAuth callback, set refresh cookie, redirect to web callback.
-- `POST /api/auth/check-email` — detect user existence + `hasPassword`.
-- `POST /api/auth/login/password` — password login + token pair.
-- `POST /api/auth/magic-link/send` — magic-link issue with rate-limit/dedup.
-- `POST /api/auth/magic-link/verify` — consume token; login/register/reset/delete-account branches.
-- `POST /api/auth/password/set` — set first password (JWT).
-- `POST /api/auth/password/change` — verify current password, revoke sessions, issue new pair.
-- `POST /api/auth/password/delete` — clear password hash.
-- `POST /api/auth/password/verify` — verify password for sensitive actions.
-- `POST /api/auth/refresh` — refresh rotation.
-- `POST /api/auth/logout` — revoke refresh token best-effort + clear cookie.
+- `GET /api/auth/google` — public — start Google OAuth
+- `GET /api/auth/google/callback` — Google guard — set refresh cookie and redirect to web callback
+- `POST /api/auth/check-email` — public — detect account existence and password availability
+- `POST /api/auth/login/password` — public — password login + token pair
+- `POST /api/auth/magic-link/send` — public — issue magic-link email
+- `POST /api/auth/magic-link/verify` — public — consume magic-link token
+- `POST /api/auth/password/set` — `JwtActiveGuard` — set initial password
+- `POST /api/auth/password/change` — `JwtActiveGuard` — rotate credentials and sessions
+- `POST /api/auth/password/verify` — `JwtActiveGuard` — verify password for sensitive actions
+- `POST /api/auth/refresh` — cookie-based — rotate refresh token
+- `POST /api/auth/logout` — cookie-based — revoke refresh token best-effort
 
 **UsersController** (`apps/api/src/modules/users/users.controller.ts`)
-- `GET /api/users/me` — current profile.
-- `PATCH /api/users/me` — update profile + optional preferred language.
-- `PATCH /api/users/me/lang` — language update only.
-- `POST /api/users/account/delete` — choose delete path (`requiresPassword` vs `requiresMagicLink`).
-- `POST /api/users/account/delete/confirm` — password-confirmed soft delete + token revoke.
-- `POST /api/users/account/restore` — restore soft-deleted account (JWT protected).
+- `GET /api/users/me` — `JwtActiveGuard` — current profile + billing snapshot
+- `PATCH /api/users/me` — `JwtActiveGuard` — update profile fields
+- `PATCH /api/users/me/lang` — `JwtActiveGuard` — change preferred language
+- `POST /api/users/account/delete` — `JwtActiveGuard` — choose password vs magic-link deletion path
+- `POST /api/users/account/delete/confirm` — `JwtActiveGuard` — password-confirmed soft delete
+- `POST /api/users/account/restore` — `JwtAuthGuard` — restore soft-deleted account
 
-**Reports/Payments**
-- Controllers exist (`/api/reports`, `/api/payments`), route methods not implemented.
+**PaymentsController** (`apps/api/src/modules/payments/payments.controller.ts`)
+- `POST /api/payments/checkout-session` — `JwtActiveGuard` — create Stripe checkout session
+- `POST /api/payments/portal-session` — `JwtActiveGuard` — create Stripe billing portal session
+- `POST /api/payments/webhook/:provider` — public + `SkipThrottle` — ingest provider webhook with raw body
 
-## Environment & Config
-**Fail-fast loaders**
-- API: `apps/api/src/config/env.ts`.
-- Web: `apps/web/src/shared/config/env.ts`.
+**Reports / Storage**
+- `ReportsController` exists but exposes no route methods yet: `apps/api/src/modules/reports/reports.controller.ts`
+- `StorageModule` has no controller/business flow yet: `apps/api/src/modules/storage/`
 
-**Critical API env keys**
-- Runtime: `NODE_ENV`, `PORT`, `WEB_URL`.
-- Data/Auth: `MONGODB_URI`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`.
-- OAuth/Email: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
-- Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`.
+## Configuration & Environment
 
-**Critical Web/infra env keys**
-- Public: `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`.
-- Internal reverse proxy: `API_INTERNAL_URL` (read in `apps/web/next.config.ts`).
-- Compose ports: `WEB_PORT`, `API_PORT`.
+**Loaders and source files**
+- API fail-fast loader: `apps/api/src/config/env.ts`
+- Web fail-fast loader: `apps/web/src/shared/config/env.ts`
+- Shared env documentation: `.env.example`
+- Next reverse proxy config: `apps/web/next.config.ts`
 
-## Dev Workflow
-- **Start all:** `pnpm dev`
-- **Start app:** `pnpm --filter api dev`, `pnpm --filter web dev`
-- **Build:** `pnpm build`, `pnpm --filter api build`, `pnpm --filter web build`
-- **Lint/Format:** `pnpm lint`, `pnpm format`
-- **Tests:** `pnpm test`, `pnpm --filter api test`, `pnpm --filter api test:e2e`, `pnpm --filter api test:cov`, `pnpm --filter web test`
-- **Docker dev:** `docker compose -f docker-compose.dev.yml up --build`
-- **Docker prod-like:** `docker compose up --build -d`
-- **DB migration:** відсутні (Mongoose schema-first).
+**API env: required with defaults**
+- `NODE_ENV`, `PORT`, `WEB_URL`
 
-## Known Complexities & Debt
-- `JwtStrategy` відхиляє `deletedAt` users, тому `POST /api/users/account/restore` недосяжний для soft-deleted сесій (`apps/api/src/modules/auth/strategies/jwt.strategy.ts`, `apps/api/test/auth.e2e-spec.ts`).
-- Подвійний auth bootstrap: `AuthInitializer` і `/auth/callback` обидва виконують refresh/getMe, що провокує зайві refresh rotations (`apps/web/src/features/auth/AuthInitializer.tsx`, `apps/web/src/app/[locale]/auth/callback/page.tsx`).
-- Edge gate у `middleware.ts` перевіряє лише наявність `bid_refresh`, не валідність; stale cookie може давати хибні редіректи.
-- `sendMagicLink` на фронті передає `lang`, але backend у `AuthService.sendMagicLink` обирає мову з `user.preferredLang` або `uk`; для new email параметр `lang` ігнорується.
-- `getApiMessageKey` повертає `errors.generic.<unknown_code>`, але словники мають лише `errors.generic.unknown`; ризик missing translation (`apps/web/src/shared/api/mapApiCode.ts`, `apps/web/messages/*.json`).
-- `apps/web/next.config.ts` має fallback `API_INTERNAL_URL || 'http://localhost:4000'`, що суперечить fail-fast policy.
-- `AppController.getHealth()` повертає `process.env.NODE_ENV || 'development'` замість централізованого `ENV` (`apps/api/src/app.controller.ts`).
-- `ReportsModule`, `PaymentsModule`, `StorageModule` лишаються scaffold без бізнес-flow `[NEED_CONTEXT]`.
+**API env: required without fallback**
+- Data/runtime: `MONGODB_URI`, `REDIS_URL`
+- Auth: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
+- OAuth/email: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`
+- Payments: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_USD`
+
+**API env: conditionally required / optional defaults**
+- One-off Stripe prices are required only when `PAYMENTS_ONE_OFF_ENABLED=true`: `STRIPE_PRICE_CREDITS_5_USD`, `STRIPE_PRICE_CREDITS_10_USD`, `STRIPE_PRICE_CREDITS_20_USD`
+- Dev-only fallback exists for `RESEND_FROM_EMAIL`; production must provide a verified sender
+- `BILLING_SUCCESS_URL` and `BILLING_CANCEL_URL` default from `WEB_URL`
+- Auth tuning defaults live in `apps/api/src/config/env.ts`: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
+- Payment feature flags default to enabled: `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED`
+
+**Web env**
+- Required: `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`
+- Optional with defaults in client config: `NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED`, `NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED`
+- Server-side reverse proxy target: `API_INTERNAL_URL`
+
+**Infra / orchestration**
+- Compose ports: `WEB_PORT`, `API_PORT`
+- Docker dev runs MongoDB + Redis locally from `docker-compose.dev.yml`
+
+**Policy**
+- `docs/conventions/fail-fast.md` is the rule for env handling
+- `docs/conventions/env-sync.md` requires updating `env.ts`, `.env.example`, and `.env` together
+
+## Common Commands
+
+- `pnpm dev` — run all workspace dev tasks
+- `pnpm build` — build all apps/packages
+- `pnpm lint` — run workspace lint
+- `pnpm format` — run Prettier over the repo
+- `pnpm test` — run workspace tests
+- `pnpm --filter api dev|build|test|test:e2e|test:cov` — API-only workflow
+- `pnpm --filter web dev|build|test` — web-only workflow
+- `pnpm --filter @lucidship/types build` — rebuild shared contracts
+- `docker compose -f docker-compose.dev.yml up --build` — local dev stack with MongoDB + Redis
+- `docker compose up --build -d` — production-like container stack
+
+## Testing Strategy
+
+- API unit specs live next to modules under `apps/api/src/**/*.spec.ts`
+- API e2e coverage lives in `apps/api/test/*.e2e-spec.ts` and uses `MongoMemoryServer` plus Redis/email/payment provider overrides
+- Web tests use Jest + jsdom and live next to source files, especially around middleware, auth bootstrap/guard, and API clients
+
 <!-- MANUAL:START -->
 # Rules
 
@@ -168,78 +206,18 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
   <!-- MANUAL:END -->
 
 ## Rules & Conventions
-# Repository Guidelines
 
-## Project Structure & Module Organization
-
-This is a pnpm/Turborepo monorepo. Primary locations:
-
-- `apps/web/` — Next.js frontend (App Router, `src/app/[locale]/` for pages and i18n).
-- `apps/api/` — NestJS backend (`src/modules/` for feature modules).
-- `packages/types/` — Shared TypeScript types (`@lucidship/types`).
-- Root configs: `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.json`, `.prettierrc`.
-
-Frontend follows Feature-Sliced Design in `apps/web/src/`:
-
-- `features/`, `entities/`, `widgets/`, `shared/ui/`, `shared/lib/`, `shared/icons/`, `stores/`.
-
-## Build, Test, and Development Commands
-
-Run from repo root:
-
-- `pnpm dev` — Start all apps in dev mode via Turborepo.
-- `pnpm build` — Build all apps.
-- `pnpm lint` — Lint all apps.
-- `pnpm format` — Format with Prettier.
-
-API-specific testing:
-
-- `pnpm --filter api test` — Unit tests.
-- `pnpm --filter api test:watch` — Watch mode.
-- `pnpm --filter api test:e2e` — End-to-end tests.
-- `pnpm --filter api test:cov` — Coverage run.
-
-Docker (optional):
-
-- `docker compose -f docker-compose.dev.yml up --build` — Dev with local MongoDB.
-- `docker compose up --build -d` — Production-style run (Atlas).
-
-## Coding Style & Naming Conventions
-
-- Language: TypeScript across apps and packages.
-- Formatting: Prettier (`pnpm format`). ESLint runs via `pnpm lint`.
-- UI components in `apps/web/src/shared/ui/` follow: `Component.tsx`, `types.ts`, `index.ts`, `README.md`.
-- Keep naming consistent with existing modules (e.g., `UiButton`, `UiSelect`).
-
-## Testing Guidelines
-
-- Run API tests with `pnpm --filter api test` before PRs.
-- Use `test:cov` for coverage-sensitive changes.
-- Keep test files near related modules under `apps/api/src/`.
-
-## Commit & Pull Request Guidelines
-
-- Git history is not available in this workspace, so no commit convention can be inferred.
-- Use concise, imperative commit summaries (e.g., `add api kv module`).
-- PRs should include:
-    - Clear description of behavior changes.
-    - Linked issues/tickets if applicable.
-    - Screenshots for UI changes (web).
-    - Notes on env/config updates (e.g., `.env` keys).
-
-## Configuration & Environment
-
-Root `.env` should define at least:
-
-- `WEB_PORT`, `API_PORT`, `MONGODB_URI`,
-- `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`.
-
-If you add new env keys, update documentation and sample config.
+- Source of truth for repo-wide rules: `docs/conventions/README.md`
+- Read and follow before touching user-facing copy, env/config, or UI structure: `tone.md`, `fail-fast.md`, `i18n.md`, `env-sync.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
+- Full auth and billing behavior docs live in `docs/architecture/auth-flow/README.md` and `docs/architecture/payments-flow/README.md`
 
 ## Known Complexities & Debt
-- `AuthService` використовує multi-step Redis token-rotation (`refresh:*`, `refresh_family:*`) + grace period; зміни без regression tests ризиковані (`apps/api/src/modules/auth/auth.service.ts`).
-- Magic-link verify робить `GET` + `DEL` окремими командами Redis; потенційний race при конкурентних запитах (`apps/api/src/modules/auth/auth.service.ts`).
-- Auth gate дублюється на edge (`middleware.ts`, cookie presence) і на client (`AuthGuard`, Zustand state); при split-domain cookie setup можливі false redirects (`apps/web/src/middleware.ts`, `apps/web/src/features/auth/AuthGuard.tsx`).
-- Callback path і глобальний `AuthInitializer` обидва викликають refresh/getMe; можливі зайві refresh rotation cycles (`apps/web/src/app/[locale]/layout.tsx`, `apps/web/src/app/[locale]/auth/callback/page.tsx`).
-- `ReportsModule`, `PaymentsModule`, `StorageModule` наразі каркасні (без endpoint/business flow) — подальша роль модулів неочевидна з коду `[NEED_CONTEXT]`.
-- E2E тест піднімає full `AppModule` (реальні зовнішні залежності: Mongo/Redis/env), що робить запуск чутливим до середовища (`apps/api/test/app.e2e-spec.ts`).
+
+- `AuthInitializer` and `app/[locale]/auth/callback/page.tsx` both run refresh/getMe flows, so OAuth callback still causes redundant refresh rotations.
+- `apps/web/src/middleware.ts` only checks presence of `bid_refresh`; stale or invalid cookies can still trigger false redirects.
+- `apps/web/src/shared/api/payments.ts` prefixes endpoints with `/api/payments/...` on top of `apiClient` base URL. With `.env.example` default `NEXT_PUBLIC_API_URL=/api`, browser requests become `/api/api/payments/...`.
+- Frontend `sendMagicLink()` sends `lang`, but backend `AuthService.sendMagicLink()` ignores that input and falls back to `user.preferredLang` or `LANG.UK`; new-email magic links do not honor the current locale.
+- `apps/web/src/shared/api/mapApiCode.ts` returns `errors.generic.<code>` for generic fallbacks, but message dictionaries only guarantee `errors.generic.unknown`; missing API-code translations can leak raw keys.
+- `apps/web/next.config.ts` still has `API_INTERNAL_URL || 'http://localhost:4000'`, which conflicts with the fail-fast policy documented in `docs/conventions/fail-fast.md`.
+- `apps/api/src/app.controller.ts` returns `process.env.NODE_ENV || 'development'` instead of using centralized `ENV`, so health output can drift from loader rules.
+- `apps/api/src/modules/reports/`, `apps/api/src/modules/storage/`, and `apps/api/src/modules/agency/` are still scaffold / placeholder areas with incomplete business flow `[NEED_CONTEXT]`.
