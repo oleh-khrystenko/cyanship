@@ -5,7 +5,7 @@ import { EmailService } from './email.service';
 jest.mock('../../../config/env', () => ({
     ENV: {
         RESEND_API_KEY: 'test-key',
-        RESEND_FROM_EMAIL: 'LucidShip <test@resend.dev>',
+        RESEND_FROM_EMAIL: 'CyanShip <test@resend.dev>',
         WEB_URL: 'http://localhost:3000',
     },
 }));
@@ -42,7 +42,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     to: email,
-                    subject: 'Вхід до LucidShip',
+                    subject: 'Вхід до CyanShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -55,7 +55,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Ласкаво просимо до LucidShip',
+                    subject: 'Ласкаво просимо до CyanShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -102,7 +102,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Sign in to LucidShip',
+                    subject: 'Sign in to CyanShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -114,7 +114,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Welcome to LucidShip',
+                    subject: 'Welcome to CyanShip',
                 })
             );
             const html = sendSpy.mock.calls[0][0].html as string;
@@ -154,7 +154,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Sign in to LucidShip',
+                    subject: 'Sign in to CyanShip',
                 })
             );
         });

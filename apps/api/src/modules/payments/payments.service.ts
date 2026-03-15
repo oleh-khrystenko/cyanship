@@ -14,7 +14,7 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreateCheckoutSession,
-} from '@lucidship/types';
+} from '@cyanship/types';
 import { ENV, STRIPE_CREDIT_PACKS } from '../../config/env';
 import {
     PAYMENT_PROVIDER,

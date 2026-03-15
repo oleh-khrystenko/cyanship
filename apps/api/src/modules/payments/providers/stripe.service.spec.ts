@@ -15,7 +15,7 @@ import {
     BILLING_EVENT_TYPE,
     PAYMENT_TYPE,
     SUBSCRIPTION_STATUS,
-} from '@lucidship/types';
+} from '@cyanship/types';
 
 import { StripeService } from './stripe.service';
 import { CreateCheckoutInput } from '../interfaces/payment-provider.interface';

@@ -12,7 +12,7 @@ import { resolve } from 'path';
 import {
     type CreditPackCode,
     DEFAULT_ACCOUNT_DELETION_GRACE_DAYS,
-} from '@lucidship/types';
+} from '@cyanship/types';
 
 // Load .env from monorepo root before reading process.env.
 // Use __dirname (relative to this file) instead of process.cwd() which varies by runner.
@@ -55,7 +55,7 @@ export const ENV = {
     // Production: MUST set real sender (verified domain). Dev: uses Resend test sender.
     RESEND_FROM_EMAIL: isProduction
         ? getEnvVar('RESEND_FROM_EMAIL')
-        : getEnvVar('RESEND_FROM_EMAIL', 'LucidShip <onboarding@resend.dev>'),
+        : getEnvVar('RESEND_FROM_EMAIL', 'CyanShip <onboarding@resend.dev>'),
 
     // --- STRIPE (required — crash if missing) ---
     STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),

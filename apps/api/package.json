@@ -21,7 +21,7 @@
         "test:e2e": "jest --config test/jest-e2e.json"
     },
     "dependencies": {
-        "@lucidship/types": "workspace:*",
+        "@cyanship/types": "workspace:*",
         "@nestjs/common": "^11.1.8",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^11.1.8",
@@ -96,8 +96,8 @@
         "testEnvironment": "node",
         "setupFiles": ["./test-setup.ts"],
         "moduleNameMapper": {
-            "^@lucidship/types$": "<rootDir>/../../../packages/types/src/index.ts",
-            "^@lucidship/types/(.*)$": "<rootDir>/../../../packages/types/src/$1"
+            "^@cyanship/types$": "<rootDir>/../../../packages/types/src/index.ts",
+            "^@cyanship/types/(.*)$": "<rootDir>/../../../packages/types/src/$1"
         }
     }
 }

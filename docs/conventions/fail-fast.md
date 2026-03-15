@@ -20,7 +20,7 @@
 | `NODE_ENV` | `'development'` | Стандартна конвенція |
 | `PORT` | `'4000'` | Зручність локальної розробки |
 | `WEB_URL` | `'http://localhost:3000'` | Зручність локальної розробки |
-| `RESEND_FROM_EMAIL` | `'LucidShip <onboarding@resend.dev>'` | Dev sandbox Resend |
+| `RESEND_FROM_EMAIL` | `'CyanShip <onboarding@resend.dev>'` | Dev sandbox Resend |
 
 ## Як додати нову env var
 

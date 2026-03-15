@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
-import { passwordSchema } from '@lucidship/types';
+import { passwordSchema } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';

@@ -8,7 +8,7 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreditPackCode,
-} from '@lucidship/types';
+} from '@cyanship/types';
 
 import { PaymentsService } from './payments.service';
 import { PAYMENT_PROVIDER } from './interfaces/payment-provider.interface';

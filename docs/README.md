@@ -12,7 +12,7 @@
 
 ## Поточне наповнення
 
-- `docs/vision/product.md` — повний опис проекту LucidShip
+- `docs/vision/product.md` — повний опис проекту CyanShip
 - `docs/architecture/auth-flow/` — опис реалізації авторизації (16 документів)
 - `docs/architecture/payments-flow/` — опис реалізації платіжної системи (12 документів)
 - `docs/testing/auth/` — unit + integration + manual E2E тести для auth

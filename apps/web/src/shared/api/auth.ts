@@ -6,7 +6,7 @@ import {
     type UpdateProfileDto,
     type UserProfile,
     type VerifyMagicLinkResponse,
-} from '@lucidship/types';
+} from '@cyanship/types';
 
 import { apiClient, setAccessToken } from './client';
 

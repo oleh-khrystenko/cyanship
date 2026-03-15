@@ -1,17 +1,17 @@
 {
     "legal": {
         "privacy": {
-            "title": "Privacy Policy – LucidShip",
-            "description": "How LucidShip handles your data: what we collect, why, and your rights."
+            "title": "Privacy Policy – CyanShip",
+            "description": "How CyanShip handles your data: what we collect, why, and your rights."
         },
         "terms": {
-            "title": "Terms of Service – LucidShip",
-            "description": "Terms and conditions for using LucidShip products and services."
+            "title": "Terms of Service – CyanShip",
+            "description": "Terms and conditions for using CyanShip products and services."
         }
     },
     "landing_page": {
         "head": {
-            "title": "LucidShip – Launch Your SaaS MVP in 4 Weeks",
+            "title": "CyanShip – Launch Your SaaS MVP in 4 Weeks",
             "description": "Production-ready B2B platform development on Next.js and NestJS. Fast time-to-market with zero agency overhead."
         },
         "nav": {
@@ -37,7 +37,7 @@
             "label": "Approach",
             "heading": "Skip the Boilerplate. Focus on Business.",
             "paragraph_1": "Most startup budgets are burned on rebuilding authentication, database models, and payment integrations. I've already built that.",
-            "paragraph_2": "With \"LucidShip\" — my pre-built core — we bypass the setup phase and start building your custom logic on day one.",
+            "paragraph_2": "With \"CyanShip\" — my pre-built core — we bypass the setup phase and start building your custom logic on day one.",
             "feature_architecture_title": "Zero Tech Debt",
             "feature_architecture_description": "Built on industry standards. When you hire an in-house team, they can take over instantly without rewriting legacy code.",
             "feature_typed_title": "Enterprise-Grade Stability",
@@ -48,7 +48,7 @@
         "dogfooding": {
             "label": "Proof",
             "heading": "You Are Looking at the Code Right Now",
-            "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same LucidShip core your product will use.",
+            "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow.",
             "step_2": "Click the Stripe checkout to see the payment integration.",
             "step_3": "Experience the load speed firsthand."
@@ -118,15 +118,15 @@
             "nav_proof": "Proof",
             "legal_terms": "Terms of Service",
             "legal_privacy": "Privacy Policy",
-            "email": "oleg@lucidship.dev",
+            "email": "oleg@cyanship.com",
             "social_linkedin": "LinkedIn",
             "social_twitter": "X (Twitter)",
-            "copyright": "© {year} LucidShip. Built by Oleg Khrystenko."
+            "copyright": "© {year} CyanShip. Built by Oleg Khrystenko."
         }
     },
     "auth_page": {
         "signin": {
-            "heading": "Sign in to LucidShip",
+            "heading": "Sign in to CyanShip",
             "subheading": "Launch your SaaS faster with production-ready auth, payments, and more",
             "email_label": "Email",
             "email_placeholder": "your@email.com",

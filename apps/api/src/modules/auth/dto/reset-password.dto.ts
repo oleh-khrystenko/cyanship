@@ -1,4 +1,4 @@
 import { createZodDto } from 'nestjs-zod';
-import { ResetPasswordSchema } from '@lucidship/types';
+import { ResetPasswordSchema } from '@cyanship/types';
 
 export class ResetPasswordDto extends createZodDto(ResetPasswordSchema) {}
