@@ -6,13 +6,13 @@ import { composeClasses } from '@/shared/lib';
 import type { UiButtonProps, UiButtonSize, UiButtonVariant } from './types';
 
 /**
- * Icon size mapping based on button size
- * Aligns with UiInput icon sizes (w-4/w-5/w-6 = 16/20/24px)
+ * CSS classes to control icon size via container.
+ * Icons passed as ReactNode are sized by the wrapper, not by the caller.
  */
-const iconSizeMap: Record<UiButtonSize, number> = {
-    sm: 16,
-    md: 20,
-    lg: 24,
+const iconSizeStyles_svg: Record<UiButtonSize, string> = {
+    sm: '[&>svg]:size-4',
+    md: '[&>svg]:size-5',
+    lg: '[&>svg]:size-6',
 };
 
 const sizeStyles: Record<UiButtonSize, string> = {
@@ -44,16 +44,16 @@ const iconCompactSizeStyles: Record<UiButtonSize, string> = {
  * Override via className prop for custom design systems
  */
 const variantStyles: Record<UiButtonVariant, string> = {
-    filled: 'bg-primary text-white hover:bg-primary-dark active:bg-primary-dark',
-    text: 'bg-transparent text-text-secondary hover:text-text-primary',
-    icon: 'bg-transparent text-text-secondary hover:text-text-primary',
+    filled: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
+    text: 'bg-transparent text-muted-foreground hover:text-foreground',
+    icon: 'bg-transparent text-muted-foreground hover:text-foreground',
     'icon-compact':
-        'bg-transparent text-text-secondary hover:text-text-primary',
+        'bg-transparent text-muted-foreground hover:text-foreground',
 };
 
 interface RenderContentProps {
-    IconLeft?: UiButtonProps['IconLeft'];
-    IconRight?: UiButtonProps['IconRight'];
+    IconLeft?: ReactNode;
+    IconRight?: ReactNode;
     children?: ReactNode;
     size: UiButtonSize;
 }
@@ -64,15 +64,19 @@ const renderContent = ({
     children,
     size,
 }: RenderContentProps) => {
-    const iconSize = iconSizeMap[size];
+    const sizeClass = iconSizeStyles_svg[size];
     return (
         <>
             {IconLeft && (
-                <IconLeft width={iconSize} height={iconSize} aria-hidden />
+                <span className={sizeClass} aria-hidden>
+                    {IconLeft}
+                </span>
             )}
             {children && <span>{children}</span>}
             {IconRight && (
-                <IconRight width={iconSize} height={iconSize} aria-hidden />
+                <span className={sizeClass} aria-hidden>
+                    {IconRight}
+                </span>
             )}
         </>
     );

@@ -33,6 +33,7 @@ Ui-компоненти інкапсулюють:
 | `UiSelect` | `<select>` | `outlined`, `filled` |
 | `UiSwitch` | `<input type="checkbox">` (toggle) | -- (sizes: sm/md/lg) |
 | `UiSpinner` | Кастомні loading-індикатори | -- (sizes: sm/md/lg) |
+| `UiDropdownMenu` | Context menus, action menus, option pickers | align: `start`/`end`; sizes: sm/md/lg |
 | `UiFullPageLoader` | Full-screen centered spinner з optional message | композиція UiSpinner; для Suspense fallback та loading states |
 
 ## Rules
@@ -51,7 +52,10 @@ Ui-компоненти інкапсулюють:
 | `<select>` | `UiSelect` |
 | `<input type="checkbox">` (toggle) | `UiSwitch` |
 
-**Виняток:** `<input type="hidden">`, `<input type="file">` та інші спеціалізовані input-типи, для яких ще не створено Ui-обгортку, дозволені до появи відповідного примітиву.
+**Винятки:**
+- `<input type="hidden">`, `<input type="file">` та інші спеціалізовані input-типи, для яких ще не створено Ui-обгортку, дозволені до появи відповідного примітиву.
+- `<a href="#section">` — anchor links для навігації по секціях тієї самої сторінки. Не потребують UiButton обгортки, бо це не інтерактивний елемент з варіантами/розмірами, а простий scroll anchor.
+- `<a>` всередині prose-контенту (юридичні сторінки, статті, markdown-контент) — inline-посилання в суцільному тексті, де UiButton порушив би flow тексту. Стилізуються через батьківський CSS-клас (наприклад `.prose-legal a`).
 
 ### 2. Єдина точка стилізації
 

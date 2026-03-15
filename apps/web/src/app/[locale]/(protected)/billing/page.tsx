@@ -77,14 +77,28 @@ export default function BillingPage() {
                 <section>
                     {!hasActive ? (
                         <>
-                            <h2 className="text-text-primary mb-2 text-2xl font-bold">
+                            <h2 className="text-foreground mb-2 text-2xl font-bold">
                                 {t('subscribe.title')}
                             </h2>
-                            <p className="text-text-secondary mb-6">
+                            <p className="text-muted-foreground mb-6">
                                 {t('subscribe.description')}
                             </p>
-                            <p className="text-text-primary mb-6 font-medium">
+                            <p className="text-foreground mb-6 font-medium">
                                 {t('subscribe.plan_label')}
+                            </p>
+                            <p className="text-muted-foreground mb-6 text-xs">
+                                {t.rich('checkout_terms_note', {
+                                    terms: (chunks) => (
+                                        <a
+                                            href={`/${locale}/terms`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary underline hover:no-underline"
+                                        >
+                                            {chunks}
+                                        </a>
+                                    ),
+                                })}
                             </p>
                             <UiButton
                                 onClick={handleSubscriptionCheckout}
@@ -99,11 +113,11 @@ export default function BillingPage() {
                         </>
                     ) : (
                         <>
-                            <h2 className="text-text-primary mb-6 text-2xl font-bold">
+                            <h2 className="text-foreground mb-6 text-2xl font-bold">
                                 {t('active.title')}
                             </h2>
                             <div className="mb-6 space-y-2">
-                                <p className="text-text-secondary">
+                                <p className="text-muted-foreground">
                                     {billing?.cancelAtPeriodEnd
                                         ? t('active.status_canceling', {
                                               date: formatDate(
@@ -114,7 +128,7 @@ export default function BillingPage() {
                                         : t('active.status_active')}
                                 </p>
                                 {billing?.planCode && (
-                                    <p className="text-text-secondary">
+                                    <p className="text-muted-foreground">
                                         {t('active.plan_label', {
                                             plan: billing.planCode,
                                         })}
@@ -122,7 +136,7 @@ export default function BillingPage() {
                                 )}
                                 {billing?.currentPeriodEnd &&
                                     !billing?.cancelAtPeriodEnd && (
-                                        <p className="text-text-secondary">
+                                        <p className="text-muted-foreground">
                                             {t('active.next_billing', {
                                                 date: formatDate(
                                                     billing.currentPeriodEnd,
@@ -154,15 +168,29 @@ export default function BillingPage() {
             {/* ── Credits Section (One-Off) ── */}
             {PAYMENTS_ONE_OFF_ENABLED && (
                 <section>
-                    <h2 className="text-text-primary mb-2 text-2xl font-bold">
+                    <h2 className="text-foreground mb-2 text-2xl font-bold">
                         {t('credits.title')}
                     </h2>
-                    <p className="text-text-secondary mb-6">
+                    <p className="text-muted-foreground mb-6">
                         {t('credits.description')}
                     </p>
-                    <p className="text-text-secondary mb-6">
+                    <p className="text-muted-foreground mb-6">
                         {t('credits.balance', {
                             count: user.credits.balance,
+                        })}
+                    </p>
+                    <p className="text-muted-foreground mb-6 text-xs">
+                        {t.rich('checkout_terms_note', {
+                            terms: (chunks) => (
+                                <a
+                                    href={`/${locale}/terms`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary underline hover:no-underline"
+                                >
+                                    {chunks}
+                                </a>
+                            ),
                         })}
                     </p>
                     <div className="space-y-3">
@@ -176,7 +204,7 @@ export default function BillingPage() {
                                 key={packCode}
                                 className="flex items-center justify-between"
                             >
-                                <span className="text-text-primary">
+                                <span className="text-foreground">
                                     {t('credits.pack_label', {
                                         count: pack.credits,
                                     })}

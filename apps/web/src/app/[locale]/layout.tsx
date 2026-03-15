@@ -41,11 +41,22 @@ export default async function LocaleLayout({
             <head>
                 <meta name="darkreader-lock" />
                 <meta name="color-scheme" content="light dark" />
-                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                <link
+                    rel="icon"
+                    href="/logo-light-theme.svg"
+                    type="image/svg+xml"
+                    media="(prefers-color-scheme: light)"
+                />
+                <link
+                    rel="icon"
+                    href="/logo-dark-theme.svg"
+                    type="image/svg+xml"
+                    media="(prefers-color-scheme: dark)"
+                />
             </head>
 
             <body
-                className={`${mulish.className} bg-background text-text-primary`}
+                className={`${mulish.className} bg-background text-foreground`}
             >
                 <Providers>
                     <NextIntlClientProvider>

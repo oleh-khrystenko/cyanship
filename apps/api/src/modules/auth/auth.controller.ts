@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Get,
@@ -20,11 +21,13 @@ import {
 import { CookieOptions, Request, Response } from 'express';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipOnboarding } from '../../common/decorators/skip-onboarding.decorator';
 import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { ENV } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CheckEmailDto } from './dto/check-email.dto';
 import { LoginPasswordDto } from './dto/login-password.dto';
 import { SendMagicLinkDto } from './dto/send-magic-link.dto';
@@ -47,12 +50,14 @@ export class AuthController {
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
+    @SkipOnboarding()
     googleAuth() {
         // Passport redirects to Google consent screen
     }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
+    @SkipOnboarding()
     async googleCallback(
         @Req() req: Request,
         @Res() res: Response
@@ -90,7 +95,8 @@ export class AuthController {
             await this.authService.loginWithPassword(
                 dto.email,
                 dto.password,
-                ip
+                ip,
+                dto.termsVersion
             );
 
         res.cookie('bid_refresh', refreshToken, REFRESH_COOKIE_OPTIONS);
@@ -116,9 +122,14 @@ export class AuthController {
     async sendMagicLink(
         @Body() dto: SendMagicLinkDto
     ): Promise<ApiMessageResponse> {
+        if (dto.purpose === MAGIC_LINK_PURPOSE.DELETE_ACCOUNT) {
+            throw new BadRequestException('Invalid purpose');
+        }
+
         await this.authService.sendMagicLink(
             dto.email,
-            dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN
+            dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN,
+            dto.lang
         );
         return {
             data: {
@@ -168,8 +179,22 @@ export class AuthController {
         };
     }
 
+    @Post('password/reset')
+    async resetPassword(
+        @Body() dto: ResetPasswordDto
+    ): Promise<ApiMessageResponse> {
+        await this.authService.resetPassword(dto.token, dto.newPassword);
+        return {
+            data: {
+                code: RESPONSE_CODE.PASSWORD_RESET,
+                message: 'Password has been reset',
+            },
+        };
+    }
+
     @Post('password/set')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async setPassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: SetPasswordDto
@@ -185,6 +210,7 @@ export class AuthController {
 
     @Post('password/change')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async changePassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: ChangePasswordDto,
@@ -202,22 +228,9 @@ export class AuthController {
         return { data: { message: 'Password changed', accessToken } };
     }
 
-    @Post('password/delete')
-    @UseGuards(JwtActiveGuard)
-    async deletePassword(
-        @CurrentUser() user: UserDocument
-    ): Promise<ApiMessageResponse> {
-        await this.authService.deletePassword(user._id.toString());
-        return {
-            data: {
-                code: RESPONSE_CODE.PASSWORD_DELETED,
-                message: 'Password deleted',
-            },
-        };
-    }
-
     @Post('password/verify')
     @UseGuards(JwtActiveGuard)
+    @SkipOnboarding()
     async verifyPassword(
         @CurrentUser() user: UserDocument,
         @Body() dto: VerifyPasswordDto

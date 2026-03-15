@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { refreshToken, getMe, restoreAccount } from '@/shared/api';
+import { refreshToken, getMe, restoreAccount, acceptTerms } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
 export default function CallbackPage() {
@@ -28,17 +28,26 @@ export default function CallbackPage() {
         const authenticate = async () => {
             try {
                 await refreshToken();
+                const user = await getMe();
 
+                // getMe succeeds → user is active, ignore URL param
+                document.cookie = 'bid_account_deleted=; path=/; max-age=0';
+                useAuthStore.getState().setUser(user);
+
+                // Record terms consent for Google OAuth flow
+                // (sign-in page checkbox was checked before redirect)
+                await acceptTerms().catch(() => {});
+
+                router.replace(`/${locale}/profile`);
+            } catch {
+                // getMe failed → user is soft-deleted (JwtActiveGuard blocks)
                 if (isAccountDeleted) {
                     useAuthStore.getState().clearUser();
+                    document.cookie = 'bid_account_deleted=true; path=/';
                     setAccountDeleted(true);
                     return;
                 }
 
-                const user = await getMe();
-                useAuthStore.getState().setUser(user);
-                router.replace(`/${locale}/profile`);
-            } catch {
                 router.replace(`/${locale}/auth/signin`);
             }
         };
@@ -50,6 +59,7 @@ export default function CallbackPage() {
         setSubmitting(true);
         try {
             await restoreAccount();
+            document.cookie = 'bid_account_deleted=; path=/; max-age=0';
             toast.success(tRecovery('restored'));
             const user = await getMe();
             useAuthStore.getState().setUser(user);
@@ -64,12 +74,13 @@ export default function CallbackPage() {
         return (
             <main className="flex min-h-screen items-center justify-center px-4">
                 <div className="w-full max-w-md space-y-6 text-center">
-                    <h1 className="text-text-primary text-3xl font-bold">
+                    <h1 className="text-foreground text-3xl font-bold">
                         {tRecovery('title')}
                     </h1>
-                    <p className="text-text-secondary">
+                    <p className="text-muted-foreground">
                         {t('account_deleted_description')}
                     </p>
+
                     <UiButton
                         variant="filled"
                         size="lg"

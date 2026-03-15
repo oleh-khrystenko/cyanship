@@ -9,7 +9,10 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import type { CreditPackCode } from '@lucidship/types';
+import {
+    type CreditPackCode,
+    DEFAULT_ACCOUNT_DELETION_GRACE_DAYS,
+} from '@lucidship/types';
 
 // Load .env from monorepo root before reading process.env.
 // Use __dirname (relative to this file) instead of process.cwd() which varies by runner.
@@ -119,7 +122,10 @@ export const ENV = {
         10
     ),
     ACCOUNT_DELETION_GRACE_DAYS: parseInt(
-        getEnvVar('ACCOUNT_DELETION_GRACE_DAYS', '30'),
+        getEnvVar(
+            'ACCOUNT_DELETION_GRACE_DAYS',
+            String(DEFAULT_ACCOUNT_DELETION_GRACE_DAYS)
+        ),
         10
     ),
 };

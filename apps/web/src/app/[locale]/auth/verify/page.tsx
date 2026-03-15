@@ -7,7 +7,7 @@ import { AxiosError } from 'axios';
 import { CheckCircle } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
-import { verifyMagicLink, getMe, getApiMessageKey } from '@/shared/api';
+import { verifyMagicLink, getMe, acceptTerms, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
 type VerifyStatus = 'verifying' | 'success' | 'deleted' | 'error';
@@ -33,6 +33,7 @@ function VerifyContent() {
 
                 switch (result.purpose) {
                     case 'register': {
+                        await acceptTerms();
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
@@ -41,14 +42,7 @@ function VerifyContent() {
                     }
 
                     case 'login': {
-                        const user = await getMe();
-                        useAuthStore.getState().setUser(user);
-                        setStatus('success');
-                        router.replace(`/${locale}/profile`);
-                        break;
-                    }
-
-                    case 'reset-password': {
+                        await acceptTerms();
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
@@ -62,6 +56,7 @@ function VerifyContent() {
                     }
 
                     default: {
+                        await acceptTerms();
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
@@ -89,10 +84,10 @@ function VerifyContent() {
         return (
             <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
                 <CheckCircle className="h-12 w-12 text-success" />
-                <p className="text-text-primary text-lg font-semibold">
+                <p className="text-foreground text-lg font-semibold">
                     {t('deleted_heading')}
                 </p>
-                <p className="text-text-secondary max-w-sm text-center text-sm">
+                <p className="text-muted-foreground max-w-sm text-center text-sm">
                     {t('deleted_description')}
                 </p>
                 <UiButton
@@ -111,10 +106,10 @@ function VerifyContent() {
     if (status === 'error') {
         return (
             <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
-                <p className="text-text-primary text-lg">
+                <p className="text-foreground text-lg">
                     {t('error_heading')}
                 </p>
-                <p className="text-text-secondary text-sm">
+                <p className="text-muted-foreground text-sm">
                     {errorMessage || t('error_description')}
                 </p>
                 <UiButton

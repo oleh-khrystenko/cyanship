@@ -83,10 +83,13 @@ export class EmailService {
         email: string,
         token: string,
         purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
-        lang: string = LANG.UK
+        lang: string = LANG.EN
     ): Promise<void> {
-        const link = `${ENV.WEB_URL}/auth/verify?token=${token}`;
-        const t = TEMPLATES[purpose][lang] ?? TEMPLATES[purpose][LANG.UK];
+        const link =
+            purpose === MAGIC_LINK_PURPOSE.RESET_PASSWORD
+                ? `${ENV.WEB_URL}/auth/reset-password?token=${token}`
+                : `${ENV.WEB_URL}/auth/verify?token=${token}`;
+        const t = TEMPLATES[purpose][lang] ?? TEMPLATES[purpose][LANG.EN];
 
         const { error } = await this.resend.emails.send({
             from: ENV.RESEND_FROM_EMAIL,
@@ -128,7 +131,7 @@ export class EmailService {
     async sendDeletionConfirmation(
         email: string,
         deletionDate: Date,
-        lang: string = LANG.UK
+        lang: string = LANG.EN
     ): Promise<void> {
         const formattedDate = deletionDate.toLocaleDateString(
             lang === LANG.UK ? 'uk-UA' : 'en-US',
@@ -171,7 +174,7 @@ export class EmailService {
     <p style="color: #52525b; font-size: 16px; margin-bottom: 32px;">
       ${t.instruction}
     </p>
-    <a href="${ENV.WEB_URL}"
+    <a href="${ENV.WEB_URL}/auth/signin"
        style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none;
               padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
       ${t.cta}

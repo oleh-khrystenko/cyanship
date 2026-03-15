@@ -31,6 +31,9 @@ class UserCredits {
     freeReportUsed!: boolean;
 }
 
+// NOTE: When adding user-facing fields, update the Privacy Policy
+// (apps/web/src/app/[locale]/(agency)/privacy/page.tsx)
+// "What We Collect and Why" section to reflect the new data collected.
 @Schema({ timestamps: true })
 export class User {
     @Prop({ required: true, unique: true, lowercase: true, trim: true })
@@ -57,8 +60,14 @@ export class User {
     @Prop({ type: Date, default: null })
     accountDeletionRequestedAt!: Date | null;
 
-    @Prop({ required: true, default: LANG.UK })
+    @Prop({ required: true, default: LANG.EN })
     preferredLang!: string;
+
+    @Prop({ type: Date, default: null })
+    termsAcceptedAt!: Date | null;
+
+    @Prop({ type: String, default: null })
+    termsVersion!: string | null;
 
     @Prop()
     lastLoginAt?: Date;

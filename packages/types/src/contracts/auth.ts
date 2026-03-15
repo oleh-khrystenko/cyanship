@@ -62,20 +62,35 @@ export const CheckEmailResponseSchema = z.object({
 export const LoginPasswordSchema = z.object({
     email: emailSchema,
     password: z.string(),
+    termsVersion: z.string().optional(),
 });
 
 export const SetPasswordSchema = z.object({
     password: passwordSchema,
 });
 
-export const ChangePasswordSchema = z.object({
-    currentPassword: z.string(),
-    newPassword: passwordSchema,
-});
+export const ChangePasswordSchema = z
+    .object({
+        currentPassword: z.string(),
+        newPassword: passwordSchema,
+    })
+    .refine((data) => data.currentPassword !== data.newPassword, {
+        path: ['newPassword'],
+    });
 
 export const VerifyPasswordSchema = z.object({
     password: z.string(),
 });
+
+export const ResetPasswordSchema = z
+    .object({
+        token: z.string().min(1),
+        newPassword: passwordSchema,
+        confirmPassword: passwordSchema,
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+        path: ['confirmPassword'],
+    });
 
 // --- Delete Account Verify Response ---
 
@@ -100,3 +115,4 @@ export type LoginPasswordDto = z.infer<typeof LoginPasswordSchema>;
 export type SetPasswordDto = z.infer<typeof SetPasswordSchema>;
 export type ChangePasswordDto = z.infer<typeof ChangePasswordSchema>;
 export type VerifyPasswordDto = z.infer<typeof VerifyPasswordSchema>;
+export type ResetPasswordDto = z.infer<typeof ResetPasswordSchema>;

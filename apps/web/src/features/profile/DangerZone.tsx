@@ -76,16 +76,16 @@ const DangerZone = () => {
     const resendDisabled = loading || cooldownSec > 0;
 
     return (
-        <section className="space-y-4">
-            <h2 className="text-text-primary text-xl font-semibold">
+        <section className="rounded-lg border border-destructive/30 bg-card p-6">
+            <h2 className="text-foreground text-lg font-semibold">
                 {t('heading')}
             </h2>
 
-            <div className="rounded-lg border border-error/30 bg-error/10 p-6">
-                <h3 className="text-text-primary font-medium">
+            <div className="mt-5">
+                <h3 className="text-foreground text-sm font-medium">
                     {t('delete_title')}
                 </h3>
-                <p className="text-text-secondary mt-1 text-sm">
+                <p className="text-muted-foreground mt-1 text-sm">
                     {t('delete_description')}
                 </p>
 
@@ -103,7 +103,7 @@ const DangerZone = () => {
                 <UiButton
                     variant="filled"
                     size="md"
-                    className="mt-4 rounded-lg bg-error"
+                    className="mt-4 rounded-lg bg-destructive"
                     onClick={() => void handleDelete()}
                     disabled={isPendingDeletion ? resendDisabled : loading}
                 >

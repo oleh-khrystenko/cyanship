@@ -1,9 +1,7 @@
-import { ComponentType, InputHTMLAttributes, SVGProps } from 'react';
+import { InputHTMLAttributes, ReactNode } from 'react';
 
 export type UiInputVariant = 'outlined' | 'filled';
 export type UiInputSize = 'sm' | 'md' | 'lg';
-
-type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 export interface UiInputProps extends Omit<
     InputHTMLAttributes<HTMLInputElement>,
@@ -12,6 +10,6 @@ export interface UiInputProps extends Omit<
     variant?: UiInputVariant;
     size?: UiInputSize;
     error?: string;
-    IconLeft?: IconComponent;
-    IconRight?: IconComponent;
+    IconLeft?: ReactNode;
+    IconRight?: ReactNode;
 }
