@@ -153,7 +153,7 @@ Compact таблиця або список.
 Помилки в env коштують найбільше часу на debug.
 
 Включи: required vars (crash if missing), optional з defaults, feature flags, fail-fast policy, файли-джерела env loader'ів.
-Якщо в проєкті є `docs/conventions/fail-fast.md` або `docs/conventions/env-sync.md`, посилайся на них і НЕ копіюй весь текст правил.
+Якщо в проєкті є `docs/conventions/fail-fast.md`, посилайся на нього і НЕ копіюй весь текст правил.
 
 ## Common Commands
 

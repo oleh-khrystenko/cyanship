@@ -167,7 +167,7 @@ Global prefix: `/api`.
 
 **Policy**
 - `docs/conventions/fail-fast.md` is the rule for env handling
-- `docs/conventions/env-sync.md` requires updating `env.ts`, `.env.example`, and `.env` together
+- `docs/conventions/fail-fast.md` requires updating `env.ts`, `.env.example`, and `.env` together
 
 ## Common Commands
 
@@ -208,7 +208,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 ## Rules & Conventions
 
 - Source of truth for repo-wide rules: `docs/conventions/README.md`
-- Read and follow before touching user-facing copy, env/config, or UI structure: `tone.md`, `fail-fast.md`, `i18n.md`, `env-sync.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
+- Read and follow before touching user-facing copy, env/config, or UI structure: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
 - Full auth and billing behavior docs live in `docs/architecture/auth-flow/README.md` and `docs/architecture/payments-flow/README.md`
 
 ## Known Complexities & Debt
