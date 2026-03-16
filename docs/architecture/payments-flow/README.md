@@ -1,6 +1,6 @@
 # Payments — Опис реалізації платіжної системи
 
-> Повний опис реалізованої платіжної системи LucidShip: Stripe subscriptions, one-off credit packs, webhook обробка, billing UI.
+> Повний опис реалізованої платіжної системи CyanShip: Stripe subscriptions, one-off credit packs, webhook обробка, billing UI.
 
 ## Зміст
 

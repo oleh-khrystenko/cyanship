@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { CURRENT_TERMS_VERSION } from '@lucidship/types';
+import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 
 import { getMe, refreshToken } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';

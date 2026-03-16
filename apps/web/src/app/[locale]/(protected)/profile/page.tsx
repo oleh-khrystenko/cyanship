@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { isOnboardingComplete } from '@lucidship/types';
+import { isOnboardingComplete } from '@cyanship/types';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { useAuthStore } from '@/stores/auth';
 import {

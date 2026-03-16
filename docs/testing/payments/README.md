@@ -49,7 +49,7 @@
 
 ## Verification
 
-1. `pnpm --filter @lucidship/types build` — types компілюються
+1. `pnpm --filter @cyanship/types build` — types компілюються
 2. `pnpm --filter api test` — всі backend unit тести pass
 3. `pnpm --filter api test:e2e` — всі backend e2e тести pass
 4. `pnpm --filter web test` — всі frontend unit тести pass

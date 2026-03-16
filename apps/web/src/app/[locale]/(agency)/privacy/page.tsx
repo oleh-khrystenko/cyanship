@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps } from '@/shared/types/settings';
 import { LandingFooter } from '@/widgets/agency/landing';
-import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@lucidship/types';
+import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     const { locale } = await props.params;
@@ -66,11 +66,11 @@ export default async function PrivacyPage() {
                                     never will.
                                 </p>
                                 <p className="mt-4">
-                                    This policy applies to the LucidShip website
-                                    (lucidship.dev) and all services built and
+                                    This policy applies to the CyanShip website
+                                    (cyanship.com) and all services built and
                                     maintained by Oleh Khrystenko, sole
                                     proprietor (FOP), operating under the
-                                    &quot;LucidShip&quot; brand (referred to as
+                                    &quot;CyanShip&quot; brand (referred to as
                                     &quot;Company&quot;, &quot;we&quot;,
                                     &quot;our&quot;, or &quot;us&quot;
                                     throughout).
@@ -100,7 +100,7 @@ export default async function PrivacyPage() {
 
                                 <h3>Identity and Access</h3>
                                 <p className="mt-3">
-                                    When you sign up for a LucidShip product, we
+                                    When you sign up for a CyanShip product, we
                                     ask for identifying information such as your
                                     name and email address. That&apos;s so you
                                     can personalize your account, and we can send
@@ -244,7 +244,7 @@ export default async function PrivacyPage() {
                                 </p>
 
                                 <p className="mt-6">
-                                    If LucidShip is acquired by or merges with
+                                    If CyanShip is acquired by or merges with
                                     another company, we&apos;ll notify you well
                                     before any of your personal information is
                                     transferred or becomes subject to a different
@@ -335,8 +335,8 @@ export default async function PrivacyPage() {
                                     If you have questions about exercising these
                                     rights or need assistance, please contact us
                                     at{' '}
-                                    <a href="mailto:privacy@lucidship.dev">
-                                        privacy@lucidship.dev
+                                    <a href="mailto:privacy@cyanship.com">
+                                        privacy@cyanship.com
                                     </a>
                                     .
                                 </p>
@@ -445,8 +445,8 @@ export default async function PrivacyPage() {
                                     Have any questions, comments, or concerns
                                     about this privacy policy, your data, or your
                                     rights? Please get in touch by emailing us at{' '}
-                                    <a href="mailto:privacy@lucidship.dev">
-                                        privacy@lucidship.dev
+                                    <a href="mailto:privacy@cyanship.com">
+                                        privacy@cyanship.com
                                     </a>
                                     .
                                 </p>

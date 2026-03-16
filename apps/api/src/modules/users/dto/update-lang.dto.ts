@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
 
-import { UpdateLangSchema } from '@lucidship/types';
+import { UpdateLangSchema } from '@cyanship/types';
 
 export class UpdateLangDto extends createZodDto(UpdateLangSchema) {}

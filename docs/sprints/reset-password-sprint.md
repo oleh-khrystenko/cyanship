@@ -113,7 +113,7 @@ export type ResetPasswordDto = z.infer<typeof ResetPasswordSchema>;
 **Крок 0.3 — Збілдити types**
 
 ```bash
-pnpm --filter @lucidship/types build
+pnpm --filter @cyanship/types build
 ```
 
 ---
@@ -126,7 +126,7 @@ pnpm --filter @lucidship/types build
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { ResetPasswordSchema } from '@lucidship/types';
+import { ResetPasswordSchema } from '@cyanship/types';
 
 export class ResetPasswordDto extends createZodDto(ResetPasswordSchema) {}
 ```

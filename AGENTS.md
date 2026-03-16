@@ -1,4 +1,4 @@
-# LucidShip
+# CyanShip
 
 > Monorepo-monolith on Next.js 16 + NestJS 11 where API owns auth/session lifecycle, billing, and shared Zod/TypeScript contracts for both apps.
 
@@ -15,7 +15,7 @@
 
 ## Architecture Overview
 
-LucidShip is a modular monolith with three main zones: `apps/api`, `apps/web`, and `packages/types`. The API is the system of record for auth, refresh rotation, account lifecycle, billing state, and webhook processing; the web app stays thin and talks to it through shared contracts. The frontend uses App Router with locale segments, an edge cookie gate, and a client auth bootstrap that resolves the current session into a Zustand store. Core and agency scopes are intentionally separated: the current agency implementation lives mostly in web route groups/widgets, while `apps/api/src/modules/agency` remains a placeholder and modular-boundary rules are documented in `docs/conventions/modular-boundaries.md`.
+CyanShip is a modular monolith with three main zones: `apps/api`, `apps/web`, and `packages/types`. The API is the system of record for auth, refresh rotation, account lifecycle, billing state, and webhook processing; the web app stays thin and talks to it through shared contracts. The frontend uses App Router with locale segments, an edge cookie gate, and a client auth bootstrap that resolves the current session into a Zustand store. Core and agency scopes are intentionally separated: the current agency implementation lives mostly in web route groups/widgets, while `apps/api/src/modules/agency` remains a placeholder and modular-boundary rules are documented in `docs/conventions/modular-boundaries.md`.
 
 ## Project Structure
 
@@ -64,7 +64,7 @@ docs/
 Файли: `packages/types/src/contracts/auth.ts`, `packages/types/src/contracts/users.ts`, `packages/types/src/contracts/payments.ts`
 - API DTOs, billing enums, and user profile shapes are defined once in Zod and reused by Nest DTO wrappers and web API clients.
 - `UserBillingSchema` is shared into the web profile/billing UI, so payment-model changes affect both apps immediately.
-- Agency-specific shared types are intended to stay behind `@lucidship/types/agency` per `docs/conventions/modular-boundaries.md`.
+- Agency-specific shared types are intended to stay behind `@cyanship/types/agency` per `docs/conventions/modular-boundaries.md`.
 
 ## Module Dependency Map
 
@@ -178,7 +178,7 @@ Global prefix: `/api`.
 - `pnpm test` — run workspace tests
 - `pnpm --filter api dev|build|test|test:e2e|test:cov` — API-only workflow
 - `pnpm --filter web dev|build|test` — web-only workflow
-- `pnpm --filter @lucidship/types build` — rebuild shared contracts
+- `pnpm --filter @cyanship/types build` — rebuild shared contracts
 - `docker compose -f docker-compose.dev.yml up --build` — local dev stack with MongoDB + Redis
 - `docker compose up --build -d` — production-like container stack
 

@@ -13,7 +13,7 @@ import {
     createPortalSession,
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
-import { CREDIT_PACK_CONFIG, type CreditPackCode } from '@lucidship/types';
+import { CREDIT_PACK_CONFIG, type CreditPackCode } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
 

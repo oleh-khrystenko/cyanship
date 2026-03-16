@@ -1,4 +1,4 @@
-import { BillingWebhookEvent, PaymentType } from '@lucidship/types';
+import { BillingWebhookEvent, PaymentType } from '@cyanship/types';
 
 export interface CreateCheckoutInput {
     userId: string;

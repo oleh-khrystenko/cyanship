@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps } from '@/shared/types/settings';
 import { LandingFooter } from '@/widgets/agency/landing';
-import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@lucidship/types';
+import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     const { locale } = await props.params;
@@ -44,7 +44,7 @@ export default async function TermsPage() {
                             </h1>
                             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
                                 All the terms that you agree to when you sign up
-                                for a LucidShip product or service.
+                                for a CyanShip product or service.
                             </p>
                             <p className="mt-4 text-sm text-muted-foreground">
                                 Last updated: March 13, 2026
@@ -57,9 +57,9 @@ export default async function TermsPage() {
                             {/* ------------------------------------------------ */}
                             <section>
                                 <p>
-                                    Thank you for using LucidShip! These Terms of
+                                    Thank you for using CyanShip! These Terms of
                                     Service (&quot;Terms&quot;) govern your use
-                                    of the LucidShip website (lucidship.dev) and
+                                    of the CyanShip website (cyanship.com) and
                                     all related products and services.
                                 </p>
                                 <p className="mt-4">
@@ -68,11 +68,11 @@ export default async function TermsPage() {
                                     &quot;us&quot; in this document, we are
                                     referring to Oleh Khrystenko, sole
                                     proprietor (FOP), operating under the
-                                    &quot;LucidShip&quot; brand.
+                                    &quot;CyanShip&quot; brand.
                                 </p>
                                 <p className="mt-4">
                                     When we say &quot;Services&quot;, we mean the
-                                    LucidShip website and any product created and
+                                    CyanShip website and any product created and
                                     maintained by us, whether delivered within a
                                     web browser, desktop application, or another
                                     format.
@@ -174,8 +174,8 @@ export default async function TermsPage() {
                                         Refunds are handled on a case-by-case
                                         basis. If you are unhappy with the
                                         service, please contact us at{' '}
-                                        <a href="mailto:support@lucidship.dev">
-                                            support@lucidship.dev
+                                        <a href="mailto:support@cyanship.com">
+                                            support@cyanship.com
                                         </a>{' '}
                                         and we will do our best to find a fair
                                         resolution.
@@ -279,7 +279,7 @@ export default async function TermsPage() {
                                     </li>
                                     <li>
                                         When you use our Services, you entrust us
-                                        with your data. You agree that LucidShip
+                                        with your data. You agree that CyanShip
                                         may process your data as described in our{' '}
                                         <a href="privacy">Privacy Policy</a>{' '}
                                         and for no other purpose.
@@ -393,8 +393,8 @@ export default async function TermsPage() {
                                 <p className="mt-4">
                                     If you have a question about any of these
                                     Terms, please contact us at{' '}
-                                    <a href="mailto:support@lucidship.dev">
-                                        support@lucidship.dev
+                                    <a href="mailto:support@cyanship.com">
+                                        support@cyanship.com
                                     </a>
                                     .
                                 </p>

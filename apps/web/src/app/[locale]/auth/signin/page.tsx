@@ -13,7 +13,7 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
-import type { MagicLinkPurpose } from '@lucidship/types';
+import type { MagicLinkPurpose } from '@cyanship/types';
 import {
     checkEmail,
     loginWithPassword,
