@@ -3,7 +3,7 @@ jest.mock('../../../config/env', () => ({
     ENV: {
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
+        STRIPE_PRICE_ID_SUBSCRIPTION: 'price_test_monthly',
     },
 }));
 

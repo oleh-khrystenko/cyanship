@@ -19,7 +19,7 @@ import { UsersService } from '../users/users.service';
 jest.mock('../../config/env', () => ({
     ENV: {
         WEB_URL: 'http://localhost:3000',
-        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
+        STRIPE_PRICE_ID_SUBSCRIPTION: 'price_test_monthly',
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },

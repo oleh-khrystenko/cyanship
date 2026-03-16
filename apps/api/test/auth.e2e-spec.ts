@@ -42,7 +42,7 @@ jest.mock('../src/config/env', () => ({
         RESEND_FROM_EMAIL: 'CyanShip <test@test.com>',
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
+        STRIPE_PRICE_ID_SUBSCRIPTION: 'price_test_monthly',
         AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
         AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
         AUTH_MAGIC_LINK_TTL_MIN: 15,

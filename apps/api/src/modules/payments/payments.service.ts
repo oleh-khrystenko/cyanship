@@ -90,7 +90,7 @@ export class PaymentsService {
                     message: 'Already subscribed',
                 });
             }
-            const priceId = ENV.STRIPE_PRICE_MONTHLY_USD;
+            const priceId = ENV.STRIPE_PRICE_ID_SUBSCRIPTION;
             const result = await this.paymentProvider.createCheckoutSession({
                 userId,
                 userEmail: user.email,

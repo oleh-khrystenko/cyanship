@@ -43,10 +43,10 @@ export const ENV = {
 
     STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
     STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
-    STRIPE_PRICE_MONTHLY_USD: getEnvVar('STRIPE_PRICE_MONTHLY_USD'),
-    STRIPE_PRICE_CREDITS_5_USD: getEnvVar('STRIPE_PRICE_CREDITS_5_USD'),
-    STRIPE_PRICE_CREDITS_10_USD: getEnvVar('STRIPE_PRICE_CREDITS_10_USD'),
-    STRIPE_PRICE_CREDITS_20_USD: getEnvVar('STRIPE_PRICE_CREDITS_20_USD'),
+    STRIPE_PRICE_ID_SUBSCRIPTION: getEnvVar('STRIPE_PRICE_ID_SUBSCRIPTION'),
+    STRIPE_PRICE_ID_CREDITS_5: getEnvVar('STRIPE_PRICE_ID_CREDITS_5'),
+    STRIPE_PRICE_ID_CREDITS_10: getEnvVar('STRIPE_PRICE_ID_CREDITS_10'),
+    STRIPE_PRICE_ID_CREDITS_20: getEnvVar('STRIPE_PRICE_ID_CREDITS_20'),
 
     PAYMENTS_SUBSCRIPTION_ENABLED:
         getEnvVar('PAYMENTS_SUBSCRIPTION_ENABLED') === 'true',
@@ -98,15 +98,15 @@ export const STRIPE_CREDIT_PACKS: Partial<
 > = oneOffEnabled
     ? {
           credits_5: {
-              priceId: ENV.STRIPE_PRICE_CREDITS_5_USD,
+              priceId: ENV.STRIPE_PRICE_ID_CREDITS_5,
               credits: 5,
           },
           credits_10: {
-              priceId: ENV.STRIPE_PRICE_CREDITS_10_USD,
+              priceId: ENV.STRIPE_PRICE_ID_CREDITS_10,
               credits: 10,
           },
           credits_20: {
-              priceId: ENV.STRIPE_PRICE_CREDITS_20_USD,
+              priceId: ENV.STRIPE_PRICE_ID_CREDITS_20,
               credits: 20,
           },
       }
