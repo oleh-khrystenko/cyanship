@@ -78,6 +78,10 @@ export class PaymentsService {
             throw new BadRequestException('User not found');
         }
 
+        const locale = user.preferredLang;
+        const successUrl = `${ENV.WEB_URL}/${locale}/billing/success`;
+        const cancelUrl = `${ENV.WEB_URL}/${locale}/billing/cancel`;
+
         // Subscription-specific validation
         if (paymentType === PAYMENT_TYPE.SUBSCRIPTION) {
             if (user.billing?.hasActiveSubscription) {
@@ -95,8 +99,8 @@ export class PaymentsService {
                 paymentType,
                 planCode: planCode!,
                 priceId,
-                successUrl: ENV.BILLING_SUCCESS_URL,
-                cancelUrl: ENV.BILLING_CANCEL_URL,
+                successUrl,
+                cancelUrl,
             });
             return { checkoutUrl: result.checkoutUrl };
         }
@@ -114,8 +118,8 @@ export class PaymentsService {
             planCode: packCode!,
             priceId: pack.priceId,
             credits: pack.credits,
-            successUrl: ENV.BILLING_SUCCESS_URL,
-            cancelUrl: ENV.BILLING_CANCEL_URL,
+            successUrl,
+            cancelUrl,
         });
         return { checkoutUrl: result.checkoutUrl };
     }
@@ -133,8 +137,10 @@ export class PaymentsService {
             });
         }
 
+        const returnUrl = `${ENV.WEB_URL}/${user.preferredLang}/billing`;
         const result = await this.paymentProvider.createPortalSession(
-            user.billing.providerCustomerId
+            user.billing.providerCustomerId,
+            returnUrl
         );
 
         return { portalUrl: result.portalUrl };

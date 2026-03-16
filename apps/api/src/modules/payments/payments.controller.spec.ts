@@ -6,8 +6,7 @@ import { PaymentsService } from './payments.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
+        WEB_URL: 'http://localhost:3000',
     },
 }));
 

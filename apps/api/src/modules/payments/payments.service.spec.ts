@@ -18,8 +18,7 @@ import { UsersService } from '../users/users.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
+        WEB_URL: 'http://localhost:3000',
         STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
@@ -42,6 +41,7 @@ const MOCK_USER_ID = '507f1f77bcf86cd799439011';
 const mockUser = (overrides: Record<string, unknown> = {}) => ({
     _id: { toString: () => MOCK_USER_ID },
     email: 'test@example.com',
+    preferredLang: 'en',
     billing: null as unknown,
     ...overrides,
 });
@@ -137,8 +137,8 @@ describe('PaymentsService', () => {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                     planCode: 'monthly_usd',
                     priceId: 'price_test_monthly',
-                    successUrl: 'http://localhost:3000/billing/success',
-                    cancelUrl: 'http://localhost:3000/billing/cancel',
+                    successUrl: 'http://localhost:3000/en/billing/success',
+                    cancelUrl: 'http://localhost:3000/en/billing/cancel',
                 })
             );
             expect(result).toEqual({
@@ -146,7 +146,7 @@ describe('PaymentsService', () => {
             });
         });
 
-        it('should use ENV.BILLING_SUCCESS_URL and ENV.BILLING_CANCEL_URL', async () => {
+        it('should build locale-aware billing URLs from user preferredLang', async () => {
             const user = mockUser({ billing: null });
             mockUserModel.findById.mockReturnValue({
                 lean: jest.fn().mockResolvedValue(user),
@@ -165,8 +165,8 @@ describe('PaymentsService', () => {
                 mockPaymentProvider.createCheckoutSession
             ).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    successUrl: 'http://localhost:3000/billing/success',
-                    cancelUrl: 'http://localhost:3000/billing/cancel',
+                    successUrl: 'http://localhost:3000/en/billing/success',
+                    cancelUrl: 'http://localhost:3000/en/billing/cancel',
                 })
             );
         });
@@ -299,7 +299,7 @@ describe('PaymentsService', () => {
 
             expect(
                 mockPaymentProvider.createPortalSession
-            ).toHaveBeenCalledWith('cus_test_xxx');
+            ).toHaveBeenCalledWith('cus_test_xxx', 'http://localhost:3000/en/billing');
             expect(result).toEqual({
                 portalUrl: 'https://billing.stripe.com/test',
             });

@@ -61,11 +61,12 @@ export class StripeService implements IPaymentProvider {
     }
 
     async createPortalSession(
-        providerCustomerId: string
+        providerCustomerId: string,
+        returnUrl: string
     ): Promise<PortalResult> {
         const session = await this.stripe.billingPortal.sessions.create({
             customer: providerCustomerId,
-            return_url: ENV.BILLING_SUCCESS_URL,
+            return_url: returnUrl,
         });
 
         return { portalUrl: session.url };

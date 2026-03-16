@@ -43,8 +43,6 @@ jest.mock('../src/config/env', () => ({
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
         STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
         AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
         AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
         AUTH_MAGIC_LINK_TTL_MIN: 15,

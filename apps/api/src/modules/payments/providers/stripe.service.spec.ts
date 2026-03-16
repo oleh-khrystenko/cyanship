@@ -4,8 +4,6 @@ jest.mock('../../../config/env', () => ({
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
         STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
     },
 }));
 
@@ -213,16 +211,16 @@ describe('StripeService', () => {
     // ─── createPortalSession ─────────────────────────────────────────
 
     describe('createPortalSession', () => {
-        it('should pass providerCustomerId and ENV.BILLING_SUCCESS_URL to billingPortal.sessions.create', async () => {
+        it('should pass providerCustomerId and returnUrl to billingPortal.sessions.create', async () => {
             mockPortalCreate.mockResolvedValue({
                 url: 'https://billing.stripe.com/test',
             });
 
-            await service.createPortalSession('cus_test_xxx');
+            await service.createPortalSession('cus_test_xxx', 'http://localhost:3000/en/billing');
 
             expect(mockPortalCreate).toHaveBeenCalledWith({
                 customer: 'cus_test_xxx',
-                return_url: 'http://localhost:3000/billing/success',
+                return_url: 'http://localhost:3000/en/billing',
             });
         });
 
@@ -231,7 +229,7 @@ describe('StripeService', () => {
                 url: 'https://billing.stripe.com/test',
             });
 
-            const result = await service.createPortalSession('cus_test_xxx');
+            const result = await service.createPortalSession('cus_test_xxx', 'http://localhost:3000/en/billing');
 
             expect(result).toEqual({
                 portalUrl: 'https://billing.stripe.com/test',

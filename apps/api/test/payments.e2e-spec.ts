@@ -64,8 +64,6 @@ jest.mock('../src/config/env', () => ({
         STRIPE_PRICE_CREDITS_5_USD: 'price_credits5_test',
         STRIPE_PRICE_CREDITS_10_USD: 'price_credits10_test',
         STRIPE_PRICE_CREDITS_20_USD: 'price_credits20_test',
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },

@@ -23,7 +23,10 @@ export interface PortalResult {
 
 export interface IPaymentProvider {
     createCheckoutSession(input: CreateCheckoutInput): Promise<CheckoutResult>;
-    createPortalSession(providerCustomerId: string): Promise<PortalResult>;
+    createPortalSession(
+        providerCustomerId: string,
+        returnUrl: string
+    ): Promise<PortalResult>;
     handleWebhookPayload(
         rawBody: Buffer,
         signatureHeader: string
