@@ -1,12 +1,4 @@
 services:
-    mongo:
-        image: mongo:7
-        restart: unless-stopped
-        ports:
-            - '27017:27017'
-        volumes:
-            - mongo_data_dev:/data/db
-
     redis:
         image: redis:7-alpine
         restart: unless-stopped
@@ -31,7 +23,7 @@ services:
             - CI=true
             - NODE_ENV=development
             - PORT=${API_PORT}
-            - MONGODB_URI=mongodb://mongo:27017/cyanship
+            - MONGODB_URI=${MONGODB_URI}
             - REDIS_URL=redis://redis:6379
             - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
             - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
@@ -49,7 +41,6 @@ services:
             - pnpm-store:/pnpm-store
             - /app/node_modules
         depends_on:
-            - mongo
             - redis
 
     web:
@@ -84,6 +75,5 @@ services:
             - api
 
 volumes:
-    mongo_data_dev:
     redis_data_dev:
     pnpm-store:
