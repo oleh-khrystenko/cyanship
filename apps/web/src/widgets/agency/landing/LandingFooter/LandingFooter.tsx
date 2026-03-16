@@ -90,7 +90,7 @@ const LandingFooter = () => {
                             <ul className="mt-4 space-y-3">
                                 <li>
                                     <a
-                                        href="mailto:oleg@lucidship.dev"
+                                        href="mailto:oleg@cyanship.com"
                                         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
                                     >
                                         <Mail className="size-3.5" />

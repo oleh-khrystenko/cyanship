@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { CURRENT_TERMS_VERSION } from '@lucidship/types';
+import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';

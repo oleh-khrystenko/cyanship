@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UserProfile } from '@lucidship/types';
+import type { UserProfile } from '@cyanship/types';
 
 interface AuthState {
     user: UserProfile | null;

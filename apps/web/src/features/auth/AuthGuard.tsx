@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { isOnboardingComplete } from '@lucidship/types';
+import { isOnboardingComplete } from '@cyanship/types';
 
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { useAuthStore } from '@/stores/auth';

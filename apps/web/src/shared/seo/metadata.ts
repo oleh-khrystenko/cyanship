@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { MetaProps } from '@/shared/types/settings';
-import { LANG } from '@lucidship/types';
+import { LANG } from '@cyanship/types';
 import { ENV } from '@/shared/config';
 
 const BASE_URL = ENV.NEXT_PUBLIC_BASE_URL;
@@ -22,7 +22,7 @@ export async function fetchMetadata({
         locale = LANG.UK;
     }
 
-    let title = 'LucidShip – Запустіть SaaS MVP за 4 тижні';
+    let title = 'CyanShip – Запустіть SaaS MVP за 4 тижні';
     let description =
         'Розробка production-ready B2B платформ на Next.js та NestJS. Швидкий вихід на ринок без агенційних витрат.';
 
@@ -82,7 +82,7 @@ export async function fetchMetadata({
             title,
             description,
             url: canonicalUrl,
-            siteName: 'LucidShip',
+            siteName: 'CyanShip',
             locale: locale === 'uk' ? 'uk_UA' : 'en_US',
             type: 'website',
         },

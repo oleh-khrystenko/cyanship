@@ -32,7 +32,7 @@ Terms updated (CURRENT_TERMS_VERSION змінено) → AuthInitializer дет�
 **Ключові принципи:**
 
 - `termsVersion` — ISO date string (`"2026-03-14"`), не semver. Міняється лише коли Terms або Privacy Policy змінюються
-- `CURRENT_TERMS_VERSION` — константа в `@lucidship/types`, single source of truth
+- `CURRENT_TERMS_VERSION` — константа в `@cyanship/types`, single source of truth
 - Consent трекається і на backend, і на frontend
 - Re-acceptance — soft block (modal), не hard block (logout)
 - Checkout consent — інформаційний, не блокуючий (Stripe і так вимагає свої terms)
@@ -138,7 +138,7 @@ export * from './constants/terms';
 **Крок 0.5 — Збілдити types**
 
 ```bash
-pnpm --filter @lucidship/types build
+pnpm --filter @cyanship/types build
 ```
 
 ---
@@ -279,7 +279,7 @@ async acceptTerms(
 
 ```typescript
 import { createZodDto } from 'nestjs-zod';
-import { AcceptTermsSchema } from '@lucidship/types';
+import { AcceptTermsSchema } from '@cyanship/types';
 
 export class AcceptTermsDto extends createZodDto(AcceptTermsSchema) {}
 ```
@@ -308,7 +308,7 @@ termsVersion: user.termsVersion ?? null,
 Файл: `apps/web/src/shared/api/users.ts` (NEW або додати в існуючий)
 
 ```typescript
-import { CURRENT_TERMS_VERSION } from '@lucidship/types';
+import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 import { apiClient } from './client';
 
 export async function acceptTerms(): Promise<void> {
@@ -467,7 +467,7 @@ const renderRecoveryState = () => (
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { CURRENT_TERMS_VERSION } from '@lucidship/types';
+import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -757,7 +757,7 @@ apps/api/test/
 - [ ] Design tokens — кольори через token classes
 - [ ] i18n — всі тексти через useTranslations()
 - [ ] Modular boundaries — TermsReacceptModal в features/auth (core), не agency
-- [ ] Single source of truth — CURRENT_TERMS_VERSION в @lucidship/types
+- [ ] Single source of truth — CURRENT_TERMS_VERSION в @cyanship/types
 - [ ] Privacy Policy — NOTE в user.schema.ts нагадує оновити PP при зміні полів (termsAcceptedAt = user data)
 
 ---

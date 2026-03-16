@@ -1,4 +1,4 @@
-# LucidShip
+# CyanShip
 
 > Monorepo-monolith на Next.js 16 + NestJS 11: API володіє auth/session lifecycle, billing, а shared Zod/TypeScript контракти використовуються обома застосунками.
 
@@ -176,7 +176,7 @@ pnpm test                                             # test all
 
 pnpm --filter api dev|build|test|test:e2e|test:cov    # API-only
 pnpm --filter web dev|build|test                      # Web-only
-pnpm --filter @lucidship/types build                  # rebuild shared types
+pnpm --filter @cyanship/types build                  # rebuild shared types
 
 pnpm --filter api -- jest path/to/file.spec.ts        # один API тест
 pnpm --filter web -- jest path/to/file.test.ts        # один Web тест

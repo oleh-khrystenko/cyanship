@@ -280,7 +280,7 @@ const Header = () => {
                         <UiSheetContent side="right" className="w-80">
                             <UiSheetHeader>
                                 <UiSheetTitle className="text-left">
-                                    LucidShip
+                                    CyanShip
                                 </UiSheetTitle>
                             </UiSheetHeader>
 
