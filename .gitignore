@@ -79,3 +79,7 @@ packages/*/.tsbuildinfo
 
 # --- Optional: local tool configs ---
 *.local
+
+# --- Repomix ---
+repomix-output.xml
+.repomixignore
