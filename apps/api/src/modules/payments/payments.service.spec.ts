@@ -19,20 +19,23 @@ import { UsersService } from '../users/users.service';
 jest.mock('../../config/env', () => ({
     ENV: {
         WEB_URL: 'http://localhost:3000',
-        STRIPE_PRICE_ID_SUBSCRIPTION: 'price_test_monthly',
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
+    STRIPE_SUBSCRIPTION_PLANS: {
+        starter: { priceId: 'price_test_starter' },
+        pro: { priceId: 'price_test_pro' },
+    },
     STRIPE_CREDIT_PACKS: {
-        credits_5: { priceId: 'price_credits5_test', credits: 5 },
-        credits_10: { priceId: 'price_credits10_test', credits: 10 },
-        credits_20: { priceId: 'price_credits20_test', credits: 20 },
+        basic: { priceId: 'price_test_basic', credits: 5 },
+        max: { priceId: 'price_test_max', credits: 20 },
     },
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
 const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
+    STRIPE_SUBSCRIPTION_PLANS: Record<string, { priceId: string }>;
     STRIPE_CREDIT_PACKS: Record<string, { priceId: string; credits: number }>;
 };
 
@@ -125,7 +128,7 @@ describe('PaymentsService', () => {
 
             const result = await service.createCheckoutSession(MOCK_USER_ID, {
                 paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                planCode: 'monthly_usd',
+                planCode: 'pro',
             });
 
             expect(
@@ -135,8 +138,8 @@ describe('PaymentsService', () => {
                     userId: MOCK_USER_ID,
                     userEmail: user.email,
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                    planCode: 'monthly_usd',
-                    priceId: 'price_test_monthly',
+                    planCode: 'pro',
+                    priceId: 'price_test_pro',
                     successUrl: 'http://localhost:3000/en/billing/success',
                     cancelUrl: 'http://localhost:3000/en/billing/cancel',
                 })
@@ -158,7 +161,7 @@ describe('PaymentsService', () => {
 
             await service.createCheckoutSession(MOCK_USER_ID, {
                 paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                planCode: 'monthly_usd',
+                planCode: 'pro',
             });
 
             expect(
@@ -180,7 +183,7 @@ describe('PaymentsService', () => {
             const error = await service
                 .createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                    planCode: 'monthly_usd',
+                    planCode: 'pro',
                 })
                 .catch((e: unknown) => e);
 
@@ -198,7 +201,7 @@ describe('PaymentsService', () => {
             await expect(
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                    planCode: 'monthly_usd',
+                    planCode: 'pro',
                 })
             ).rejects.toThrow(BadRequestException);
         });
@@ -209,7 +212,7 @@ describe('PaymentsService', () => {
             await expect(
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                    planCode: 'monthly_usd',
+                    planCode: 'pro',
                 })
             ).rejects.toThrow(BadRequestException);
         });
@@ -234,7 +237,7 @@ describe('PaymentsService', () => {
 
             const result = await service.createCheckoutSession(MOCK_USER_ID, {
                 paymentType: PAYMENT_TYPE.ONE_OFF,
-                packCode: 'credits_5',
+                packCode: 'basic',
             });
 
             expect(result.checkoutUrl).toBe(
@@ -245,8 +248,8 @@ describe('PaymentsService', () => {
             ).toHaveBeenCalledWith(
                 expect.objectContaining({
                     paymentType: PAYMENT_TYPE.ONE_OFF,
-                    planCode: 'credits_5',
-                    priceId: 'price_credits5_test',
+                    planCode: 'basic',
+                    priceId: 'price_test_basic',
                     credits: 5,
                 })
             );
@@ -275,7 +278,7 @@ describe('PaymentsService', () => {
             await expect(
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
-                    packCode: 'credits_5',
+                    packCode: 'basic',
                 })
             ).rejects.toThrow(BadRequestException);
         });
@@ -383,7 +386,7 @@ describe('PaymentsService', () => {
                         subscription: 'sub_test',
                         currency: 'usd',
                         status: 'complete',
-                        metadata: { planCode: 'monthly_usd' },
+                        metadata: { planCode: 'pro' },
                     },
                 };
 
@@ -415,7 +418,7 @@ describe('PaymentsService', () => {
                             'billing.hasActiveSubscription': true,
                             'billing.providerCustomerId': 'cus_test',
                             'billing.providerSubscriptionId': 'sub_test',
-                            'billing.planCode': 'monthly_usd',
+                            'billing.planCode': 'pro',
                             'billing.currency': 'usd',
                         }),
                     },
@@ -561,7 +564,7 @@ describe('PaymentsService', () => {
                         subscription: 'sub_retry',
                         currency: 'usd',
                         status: 'complete',
-                        metadata: { planCode: 'monthly_usd' },
+                        metadata: { planCode: 'pro' },
                     },
                 };
 
@@ -771,7 +774,7 @@ describe('PaymentsService', () => {
                         subscription: 'sub_abc',
                         currency: 'usd',
                         status: 'complete',
-                        metadata: { planCode: 'monthly_usd' },
+                        metadata: { planCode: 'pro' },
                     },
                 };
 
@@ -788,7 +791,7 @@ describe('PaymentsService', () => {
                             'billing.provider': 'stripe',
                             'billing.providerCustomerId': 'cus_abc',
                             'billing.providerSubscriptionId': 'sub_abc',
-                            'billing.planCode': 'monthly_usd',
+                            'billing.planCode': 'pro',
                             'billing.currency': 'usd',
                             'billing.hasActiveSubscription': true,
                             'billing.subscriptionStatus':
@@ -941,7 +944,7 @@ describe('PaymentsService', () => {
                         subscription: 'sub_first',
                         currency: 'usd',
                         status: 'complete',
-                        metadata: { planCode: 'monthly_usd' },
+                        metadata: { planCode: 'pro' },
                     },
                 };
 

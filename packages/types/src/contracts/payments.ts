@@ -9,24 +9,29 @@ export const PAYMENT_TYPE = {
 
 export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
 
-export const SUBSCRIPTION_PLAN = {
-    code: 'monthly_usd',
-    label: 'Pro',
-    priceAmount: 900, // cents
-    currency: 'usd',
-    interval: 'month',
-} as const;
+// --- Product Catalog (single source of truth) ---
 
-// Конфігурація кредитних пакетів для one-off платежів.
-// Key = packCode, value = кількість кредитів + ціна в центах.
-// priceId для кожного пакету береться з env: STRIPE_PRICE_CREDITS_{N}_USD
-export const CREDIT_PACK_CONFIG = {
-    credits_5: { credits: 5, priceAmount: 500, currency: 'usd' },
-    credits_10: { credits: 10, priceAmount: 900, currency: 'usd' },
-    credits_20: { credits: 20, priceAmount: 1500, currency: 'usd' },
-} as const;
+export const SUBSCRIPTION_PLANS = [
+    { code: 'starter', priceAmount: 500, currency: 'usd', interval: 'month' },
+    { code: 'pro', priceAmount: 900, currency: 'usd', interval: 'month' },
+] as const;
 
-export type CreditPackCode = keyof typeof CREDIT_PACK_CONFIG;
+export type SubscriptionPlanCode = (typeof SUBSCRIPTION_PLANS)[number]['code'];
+
+export const SUBSCRIPTION_PLAN_MAP = Object.fromEntries(
+    SUBSCRIPTION_PLANS.map((p) => [p.code, p])
+) as { [K in SubscriptionPlanCode]: Extract<(typeof SUBSCRIPTION_PLANS)[number], { code: K }> };
+
+export const CREDIT_PACKS = [
+    { code: 'basic', credits: 5, priceAmount: 500, currency: 'usd' },
+    { code: 'max', credits: 20, priceAmount: 1500, currency: 'usd' },
+] as const;
+
+export type CreditPackCode = (typeof CREDIT_PACKS)[number]['code'];
+
+export const CREDIT_PACK_MAP = Object.fromEntries(
+    CREDIT_PACKS.map((p) => [p.code, p])
+) as { [K in CreditPackCode]: Extract<(typeof CREDIT_PACKS)[number], { code: K }> };
 
 export const SUBSCRIPTION_STATUS = {
     ACTIVE: 'ACTIVE',
@@ -56,12 +61,17 @@ export type BillingEventType =
 export const CreateCheckoutSessionSchema = z
     .object({
         paymentType: z.enum([PAYMENT_TYPE.SUBSCRIPTION, PAYMENT_TYPE.ONE_OFF]),
-        // Для subscription: planCode обов'язковий (наприклад, 'monthly_usd')
-        planCode: z.string().min(1).optional(),
-        // Для one-off: packCode обов'язковий (наприклад, 'credits_5')
+        planCode: z
+            .enum(
+                SUBSCRIPTION_PLANS.map((p) => p.code) as [
+                    SubscriptionPlanCode,
+                    ...SubscriptionPlanCode[],
+                ]
+            )
+            .optional(),
         packCode: z
             .enum(
-                Object.keys(CREDIT_PACK_CONFIG) as [
+                CREDIT_PACKS.map((p) => p.code) as [
                     CreditPackCode,
                     ...CreditPackCode[],
                 ]

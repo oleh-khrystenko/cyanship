@@ -7,7 +7,12 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { type CreditPackCode } from '@cyanship/types';
+import {
+    SUBSCRIPTION_PLANS,
+    CREDIT_PACKS,
+    type SubscriptionPlanCode,
+    type CreditPackCode,
+} from '@cyanship/types';
 
 // Load .env from monorepo root before reading process.env.
 // Use __dirname (relative to this file) instead of process.cwd() which varies by runner.
@@ -22,6 +27,8 @@ const getEnvVar = (name: string): string => {
     return value;
 };
 
+const subscriptionEnabled =
+    getEnvVar('PAYMENTS_SUBSCRIPTION_ENABLED') === 'true';
 const oneOffEnabled = getEnvVar('PAYMENTS_ONE_OFF_ENABLED') === 'true';
 
 export const ENV = {
@@ -43,13 +50,8 @@ export const ENV = {
 
     STRIPE_SECRET_KEY: getEnvVar('STRIPE_SECRET_KEY'),
     STRIPE_WEBHOOK_SECRET: getEnvVar('STRIPE_WEBHOOK_SECRET'),
-    STRIPE_PRICE_ID_SUBSCRIPTION: getEnvVar('STRIPE_PRICE_ID_SUBSCRIPTION'),
-    STRIPE_PRICE_ID_CREDITS_5: getEnvVar('STRIPE_PRICE_ID_CREDITS_5'),
-    STRIPE_PRICE_ID_CREDITS_10: getEnvVar('STRIPE_PRICE_ID_CREDITS_10'),
-    STRIPE_PRICE_ID_CREDITS_20: getEnvVar('STRIPE_PRICE_ID_CREDITS_20'),
 
-    PAYMENTS_SUBSCRIPTION_ENABLED:
-        getEnvVar('PAYMENTS_SUBSCRIPTION_ENABLED') === 'true',
+    PAYMENTS_SUBSCRIPTION_ENABLED: subscriptionEnabled,
     PAYMENTS_ONE_OFF_ENABLED: oneOffEnabled,
 
     AUTH_PASSWORD_MIN_LENGTH: parseInt(
@@ -91,26 +93,31 @@ if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
     );
 }
 
-// Computed: maps packCode → { priceId, credits }
-// Empty when one-off payments are disabled — prevents sending empty priceId to Stripe.
+// Dynamic: one env var per subscription plan, fail-fast when subscriptions enabled
+export const STRIPE_SUBSCRIPTION_PLANS: Partial<
+    Record<SubscriptionPlanCode, { priceId: string }>
+> = (() => {
+    if (!subscriptionEnabled) return {};
+    const result: Record<string, { priceId: string }> = {};
+    for (const plan of SUBSCRIPTION_PLANS) {
+        const envName = `STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`;
+        result[plan.code] = { priceId: getEnvVar(envName) };
+    }
+    return result;
+})();
+
+// Dynamic: one env var per credit pack, fail-fast when one-off enabled
 export const STRIPE_CREDIT_PACKS: Partial<
     Record<CreditPackCode, { priceId: string; credits: number }>
-> = oneOffEnabled
-    ? {
-          credits_5: {
-              priceId: ENV.STRIPE_PRICE_ID_CREDITS_5,
-              credits: 5,
-          },
-          credits_10: {
-              priceId: ENV.STRIPE_PRICE_ID_CREDITS_10,
-              credits: 10,
-          },
-          credits_20: {
-              priceId: ENV.STRIPE_PRICE_ID_CREDITS_20,
-              credits: 20,
-          },
-      }
-    : {};
+> = (() => {
+    if (!oneOffEnabled) return {};
+    const result: Record<string, { priceId: string; credits: number }> = {};
+    for (const pack of CREDIT_PACKS) {
+        const envName = `STRIPE_PRICE_ID_ONEOFF_${pack.code.toUpperCase()}`;
+        result[pack.code] = { priceId: getEnvVar(envName), credits: pack.credits };
+    }
+    return result;
+})();
 
 // Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]
 export function parseLockoutThresholds(

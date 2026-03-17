@@ -1,3 +1,5 @@
+import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from '@cyanship/types';
+
 // Set test-only env vars that are required by fail-fast policy
 // but not needed for unit tests (mocked at service level).
 process.env.NODE_ENV ??= 'test';
@@ -15,10 +17,13 @@ process.env.RESEND_API_KEY ??= 're_test_placeholder';
 process.env.RESEND_FROM_EMAIL ??= 'CyanShip <test@test.dev>';
 process.env.STRIPE_SECRET_KEY ??= 'sk_test_placeholder';
 process.env.STRIPE_WEBHOOK_SECRET ??= 'whsec_test_placeholder';
-process.env.STRIPE_PRICE_ID_SUBSCRIPTION ??= 'price_test_placeholder';
-process.env.STRIPE_PRICE_ID_CREDITS_5 ??= 'price_test_credits_5';
-process.env.STRIPE_PRICE_ID_CREDITS_10 ??= 'price_test_credits_10';
-process.env.STRIPE_PRICE_ID_CREDITS_20 ??= 'price_test_credits_20';
+// Dynamic: one env var per product from catalog
+for (const plan of SUBSCRIPTION_PLANS) {
+    process.env[`STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`] ??= `price_test_sub_${plan.code}`;
+}
+for (const pack of CREDIT_PACKS) {
+    process.env[`STRIPE_PRICE_ID_ONEOFF_${pack.code.toUpperCase()}`] ??= `price_test_oneoff_${pack.code}`;
+}
 process.env.PAYMENTS_SUBSCRIPTION_ENABLED ??= 'true';
 process.env.PAYMENTS_ONE_OFF_ENABLED ??= 'true';
 process.env.AUTH_PASSWORD_MIN_LENGTH ??= '8';

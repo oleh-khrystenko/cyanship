@@ -15,9 +15,10 @@ import {
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
 import {
-    SUBSCRIPTION_PLAN,
-    CREDIT_PACK_CONFIG,
+    SUBSCRIPTION_PLANS,
+    CREDIT_PACKS,
     formatPrice,
+    type SubscriptionPlanCode,
     type CreditPackCode,
 } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
@@ -43,11 +44,13 @@ export default function BillingPage() {
         ).format(date instanceof Date ? date : new Date(date));
     };
 
-    const handleSubscriptionCheckout = async () => {
-        setLoadingAction('subscribe');
+    const handleSubscriptionCheckout = async (
+        planCode: SubscriptionPlanCode,
+    ) => {
+        setLoadingAction(`subscribe_${planCode}`);
         try {
             const { checkoutUrl } =
-                await createSubscriptionCheckout('monthly_usd');
+                await createSubscriptionCheckout(planCode);
             window.location.assign(checkoutUrl);
         } catch {
             toast.error(t('subscribe.error'));
@@ -88,45 +91,53 @@ export default function BillingPage() {
             {PAYMENTS_SUBSCRIPTION_ENABLED && (
                 <section>
                     {!hasActive ? (
-                        <div className="rounded-lg border-2 border-foreground bg-card p-6 md:p-8">
-                            <p className="text-base font-medium text-foreground">
-                                {t('subscribe.title')}
-                            </p>
-                            <p className="mt-2 text-4xl font-bold text-foreground">
-                                {formatPrice(
-                                    SUBSCRIPTION_PLAN.priceAmount,
-                                    SUBSCRIPTION_PLAN.currency,
-                                )}
-                                <span className="text-lg font-normal text-muted-foreground">
-                                    {' '}{t('subscribe.interval')}
-                                </span>
-                            </p>
+                        <div className={`grid gap-4 ${(SUBSCRIPTION_PLANS.length as number) === 1 ? '' : 'sm:grid-cols-2'}`}>
+                            {SUBSCRIPTION_PLANS.map((plan) => (
+                                <div
+                                    key={plan.code}
+                                    className="flex flex-col rounded-lg border-2 border-foreground bg-card p-6 md:p-8"
+                                >
+                                    <p className="text-base font-medium text-foreground">
+                                        {t(`plans.${plan.code}.name`, { defaultValue: plan.code })}
+                                    </p>
+                                    <p className="mt-2 text-4xl font-bold text-foreground">
+                                        {formatPrice(plan.priceAmount, plan.currency)}
+                                        <span className="text-lg font-normal text-muted-foreground">
+                                            {' '}{t(`subscribe.interval_${plan.interval}`)}
+                                        </span>
+                                    </p>
 
-                            <ul className="mt-6 space-y-3">
-                                {featureKeys.map((key) => (
-                                    <li
-                                        key={key}
-                                        className="flex items-center gap-2 text-sm text-muted-foreground"
+                                    <ul className="mt-6 space-y-3">
+                                        {featureKeys.map((key) => (
+                                            <li
+                                                key={key}
+                                                className="flex items-center gap-2 text-sm text-muted-foreground"
+                                            >
+                                                <Check className="h-4 w-4 shrink-0 text-success" />
+                                                {t(`subscribe.features.${key}`)}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <UiButton
+                                        variant="filled"
+                                        size="lg"
+                                        className="mt-8 w-full justify-center"
+                                        onClick={() =>
+                                            handleSubscriptionCheckout(plan.code)
+                                        }
+                                        disabled={
+                                            loadingAction === `subscribe_${plan.code}`
+                                        }
                                     >
-                                        <Check className="h-4 w-4 shrink-0 text-success" />
-                                        {t(`subscribe.features.${key}`)}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <UiButton
-                                variant="filled"
-                                size="lg"
-                                className="mt-8 w-full justify-center"
-                                onClick={handleSubscriptionCheckout}
-                                disabled={loadingAction === 'subscribe'}
-                            >
-                                {loadingAction === 'subscribe' ? (
-                                    <UiSpinner size="sm" />
-                                ) : (
-                                    t('subscribe.button')
-                                )}
-                            </UiButton>
+                                        {loadingAction === `subscribe_${plan.code}` ? (
+                                            <UiSpinner size="sm" />
+                                        ) : (
+                                            t('subscribe.button')
+                                        )}
+                                    </UiButton>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="rounded-lg border border-border bg-card p-6 md:p-8">
@@ -206,15 +217,10 @@ export default function BillingPage() {
                         </p>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-3">
-                        {(
-                            Object.entries(CREDIT_PACK_CONFIG) as [
-                                CreditPackCode,
-                                (typeof CREDIT_PACK_CONFIG)[CreditPackCode],
-                            ][]
-                        ).map(([packCode, pack]) => (
+                    <div className={`grid gap-4 ${(CREDIT_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                        {CREDIT_PACKS.map((pack) => (
                             <div
-                                key={packCode}
+                                key={pack.code}
                                 className="flex flex-col rounded-lg border border-border bg-card p-5"
                             >
                                 <p className="text-foreground text-lg font-semibold">
@@ -231,14 +237,14 @@ export default function BillingPage() {
                                     size="md"
                                     className="mt-4 w-full justify-center"
                                     onClick={() =>
-                                        handleOneOffCheckout(packCode)
+                                        handleOneOffCheckout(pack.code)
                                     }
                                     disabled={
-                                        loadingAction === `oneoff_${packCode}`
+                                        loadingAction === `oneoff_${pack.code}`
                                     }
                                 >
                                     {loadingAction ===
-                                    `oneoff_${packCode}` ? (
+                                    `oneoff_${pack.code}` ? (
                                         <UiSpinner size="sm" />
                                     ) : (
                                         t('credits.buy_button')

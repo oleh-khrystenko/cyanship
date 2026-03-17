@@ -1,8 +1,12 @@
 import { apiClient } from './client';
-import { PAYMENT_TYPE, type CreditPackCode } from '@cyanship/types';
+import {
+    PAYMENT_TYPE,
+    type SubscriptionPlanCode,
+    type CreditPackCode,
+} from '@cyanship/types';
 
 export async function createSubscriptionCheckout(
-    planCode: string,
+    planCode: SubscriptionPlanCode,
 ): Promise<{ checkoutUrl: string }> {
     const { data } = await apiClient.post<{
         data: { checkoutUrl: string };

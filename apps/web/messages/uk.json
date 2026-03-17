@@ -296,9 +296,13 @@
             "description": "Це демо живої інтеграції зі Stripe. Реальні кошти не списуються.",
             "test_card": "Тестова картка: 4242 4242 4242 4242 · Будь-яка майбутня дата · Будь-який CVC"
         },
+        "plans": {
+            "starter": { "name": "Starter" },
+            "pro": { "name": "Pro" }
+        },
         "subscribe": {
-            "title": "Pro Plan",
-            "interval": "/ місяць",
+            "interval_month": "/ місяць",
+            "interval_year": "/ рік",
             "features": {
                 "item_1": "Необмежений доступ",
                 "item_2": "Пріоритетна підтримка",

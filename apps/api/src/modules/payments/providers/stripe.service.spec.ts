@@ -3,7 +3,6 @@ jest.mock('../../../config/env', () => ({
     ENV: {
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        STRIPE_PRICE_ID_SUBSCRIPTION: 'price_test_monthly',
     },
 }));
 
@@ -46,7 +45,7 @@ const makeCheckoutEvent = (overrides: Record<string, unknown> = {}) => ({
             mode: 'subscription',
             metadata: {
                 userId: 'user123',
-                planCode: 'monthly_usd',
+                planCode: 'pro',
                 credits: '0',
             },
             client_reference_id: 'user123',
@@ -82,8 +81,8 @@ const subscriptionInput: CreateCheckoutInput = {
     userId: 'user123',
     userEmail: 'test@example.com',
     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-    planCode: 'monthly_usd',
-    priceId: 'price_test_monthly',
+    planCode: 'pro',
+    priceId: 'price_test_pro',
     successUrl: 'http://localhost:3000/billing/success',
     cancelUrl: 'http://localhost:3000/billing/cancel',
 };
@@ -116,7 +115,7 @@ describe('StripeService', () => {
             expect(mockCheckoutCreate).toHaveBeenCalledWith({
                 mode: 'subscription',
                 customer_email: subscriptionInput.userEmail,
-                line_items: [{ price: 'price_test_monthly', quantity: 1 }],
+                line_items: [{ price: 'price_test_pro', quantity: 1 }],
                 metadata: {
                     userId: subscriptionInput.userId,
                     planCode: subscriptionInput.planCode,
@@ -179,8 +178,8 @@ describe('StripeService', () => {
                 userId: 'user123',
                 userEmail: 'test@example.com',
                 paymentType: PAYMENT_TYPE.ONE_OFF,
-                planCode: 'credits_5',
-                priceId: 'price_credits5_test',
+                planCode: 'basic',
+                priceId: 'price_test_basic',
                 credits: 5,
                 successUrl: 'https://example.com/success',
                 cancelUrl: 'https://example.com/cancel',
@@ -196,7 +195,7 @@ describe('StripeService', () => {
             expect(mockCheckoutCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     mode: 'payment',
-                    line_items: [{ price: 'price_credits5_test', quantity: 1 }],
+                    line_items: [{ price: 'price_test_basic', quantity: 1 }],
                     metadata: expect.objectContaining({
                         credits: '5',
                     }),
@@ -260,7 +259,7 @@ describe('StripeService', () => {
         it('should fall back to client_reference_id when metadata.userId is absent', () => {
             mockConstructEvent.mockReturnValue(
                 makeCheckoutEvent({
-                    metadata: { planCode: 'monthly_usd', credits: '0' },
+                    metadata: { planCode: 'pro', credits: '0' },
                     client_reference_id: 'ref_user456',
                 })
             );
@@ -355,7 +354,7 @@ describe('StripeService', () => {
                         metadata: {
                             userId: 'user123',
                             credits: '5',
-                            planCode: 'credits_5',
+                            planCode: 'basic',
                         },
                         client_reference_id: 'user123',
                     })
@@ -378,7 +377,7 @@ describe('StripeService', () => {
                         metadata: {
                             userId: 'user123',
                             credits: '5',
-                            planCode: 'credits_5',
+                            planCode: 'basic',
                         },
                         client_reference_id: 'user123',
                     })
@@ -418,7 +417,7 @@ describe('StripeService', () => {
                             metadata: {
                                 userId: 'user_async',
                                 credits: '10',
-                                planCode: 'credits_10',
+                                planCode: 'max',
                             },
                             client_reference_id: 'user_async',
                         },
@@ -432,7 +431,7 @@ describe('StripeService', () => {
                     providerEventId: 'evt_async_paid',
                     userId: 'user_async',
                     creditsAmount: 10,
-                    packCode: 'credits_10',
+                    packCode: 'max',
                 });
             });
 

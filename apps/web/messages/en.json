@@ -296,9 +296,13 @@
             "description": "This is a live Stripe integration demo. No real charges will be made.",
             "test_card": "Test card: 4242 4242 4242 4242 · Any future date · Any CVC"
         },
+        "plans": {
+            "starter": { "name": "Starter" },
+            "pro": { "name": "Pro" }
+        },
         "subscribe": {
-            "title": "Pro Plan",
-            "interval": "/ month",
+            "interval_month": "/ month",
+            "interval_year": "/ year",
             "features": {
                 "item_1": "Unlimited access",
                 "item_2": "Priority support",

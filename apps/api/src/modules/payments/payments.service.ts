@@ -14,8 +14,13 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreateCheckoutSession,
+    type SubscriptionPlanCode,
 } from '@cyanship/types';
-import { ENV, STRIPE_CREDIT_PACKS } from '../../config/env';
+import {
+    ENV,
+    STRIPE_SUBSCRIPTION_PLANS,
+    STRIPE_CREDIT_PACKS,
+} from '../../config/env';
 import {
     PAYMENT_PROVIDER,
     IPaymentProvider,
@@ -90,7 +95,11 @@ export class PaymentsService {
                     message: 'Already subscribed',
                 });
             }
-            const priceId = ENV.STRIPE_PRICE_ID_SUBSCRIPTION;
+            const planEntry =
+                STRIPE_SUBSCRIPTION_PLANS[planCode as SubscriptionPlanCode];
+            if (!planEntry) {
+                throw new BadRequestException('Invalid planCode');
+            }
             const result = await this.paymentProvider.createCheckoutSession({
                 userId,
                 userEmail: user.email,
@@ -98,7 +107,7 @@ export class PaymentsService {
                     user.billing?.providerCustomerId ?? undefined,
                 paymentType,
                 planCode: planCode!,
-                priceId,
+                priceId: planEntry.priceId,
                 successUrl,
                 cancelUrl,
             });

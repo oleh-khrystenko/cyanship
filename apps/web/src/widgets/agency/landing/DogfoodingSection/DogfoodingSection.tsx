@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 import {
-    SUBSCRIPTION_PLAN,
-    CREDIT_PACK_CONFIG,
+    SUBSCRIPTION_PLANS,
+    CREDIT_PACKS,
     formatPrice,
 } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
@@ -28,13 +28,18 @@ const DogfoodingSection = () => {
         }
     };
 
+    const firstPlan = SUBSCRIPTION_PLANS[0];
+    const cheapestPack = [...CREDIT_PACKS].sort(
+        (a, b) => a.priceAmount - b.priceAmount,
+    )[0];
+
     const subscriptionPrice = formatPrice(
-        SUBSCRIPTION_PLAN.priceAmount,
-        SUBSCRIPTION_PLAN.currency,
+        firstPlan.priceAmount,
+        firstPlan.currency,
     );
     const creditsFromPrice = formatPrice(
-        CREDIT_PACK_CONFIG.credits_5.priceAmount,
-        CREDIT_PACK_CONFIG.credits_5.currency,
+        cheapestPack.priceAmount,
+        cheapestPack.currency,
     );
 
     return (

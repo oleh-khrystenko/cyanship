@@ -37,7 +37,6 @@ jest.mock('../src/config/env', () => ({
         RESEND_FROM_EMAIL: 'CyanShip <test@test.com>',
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        STRIPE_PRICE_ID_SUBSCRIPTION: 'price_test_monthly',
     },
 }));
 
