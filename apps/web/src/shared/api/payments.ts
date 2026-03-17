@@ -10,7 +10,7 @@ export async function createSubscriptionCheckout(
 ): Promise<{ checkoutUrl: string }> {
     const { data } = await apiClient.post<{
         data: { checkoutUrl: string };
-    }>('/api/payments/checkout-session', {
+    }>('/payments/checkout-session', {
         paymentType: PAYMENT_TYPE.SUBSCRIPTION,
         planCode,
     });
@@ -22,7 +22,7 @@ export async function createOneOffCheckout(
 ): Promise<{ checkoutUrl: string }> {
     const { data } = await apiClient.post<{
         data: { checkoutUrl: string };
-    }>('/api/payments/checkout-session', {
+    }>('/payments/checkout-session', {
         paymentType: PAYMENT_TYPE.ONE_OFF,
         packCode,
     });
@@ -34,6 +34,6 @@ export async function createPortalSession(): Promise<{
 }> {
     const { data } = await apiClient.post<{
         data: { portalUrl: string };
-    }>('/api/payments/portal-session');
+    }>('/payments/portal-session');
     return data.data;
 }
