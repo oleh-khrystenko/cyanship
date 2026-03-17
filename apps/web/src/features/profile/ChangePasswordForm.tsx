@@ -117,7 +117,6 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     type="submit"
                     variant="filled"
                     size="md"
-                    className="rounded-lg"
                     disabled={submitting || !newPwd || !currentPwd}
                 >
                     {submitting ? (

@@ -320,7 +320,7 @@ export default function SigninPage() {
             <UiButton
                 variant="text"
                 size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary hover:text-foreground"
+                className="w-full justify-center gap-3 border border-border bg-card text-foreground hover:bg-secondary hover:text-foreground"
                 IconLeft={<GoogleIcon />}
                 onClick={handleGoogleSignin}
             >
@@ -350,7 +350,7 @@ export default function SigninPage() {
                     type="submit"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg"
+                    className="w-full justify-center"
                     disabled={!email}
                 >
                     {t('continue_button')}
@@ -414,7 +414,7 @@ export default function SigninPage() {
                 type="submit"
                 variant="filled"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 disabled={submitting || !password}
             >
                 {submitting ? (
@@ -429,7 +429,7 @@ export default function SigninPage() {
                     type="button"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
+                    className="w-full justify-center border border-border bg-card text-foreground hover:bg-secondary"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
                     IconLeft={<Mail />}
@@ -500,7 +500,7 @@ export default function SigninPage() {
             <UiButton
                 variant="filled"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 disabled={submitting}
                 onClick={handleRestore}
             >
@@ -514,7 +514,7 @@ export default function SigninPage() {
             <UiButton
                 variant="text"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 onClick={goBackToEmail}
             >
                 {tRecovery('logout_button')}
@@ -534,7 +534,7 @@ export default function SigninPage() {
             <UiButton
                 variant="filled"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 onClick={goBackToEmail}
             >
                 {t('continue_button')}

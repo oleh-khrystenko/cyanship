@@ -103,7 +103,7 @@ const DangerZone = () => {
                 <UiButton
                     variant="destructive-outline"
                     size="md"
-                    className="mt-4 rounded-lg"
+                    className="mt-4"
                     onClick={() => void handleDelete()}
                     disabled={isPendingDeletion ? resendDisabled : loading}
                 >

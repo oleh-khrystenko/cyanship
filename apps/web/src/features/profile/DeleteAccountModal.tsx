@@ -114,7 +114,6 @@ const DeleteAccountModal = ({
                             type="submit"
                             variant="destructive-outline"
                             size="md"
-                            className="rounded-lg"
                             disabled={submitting || !password}
                         >
                             {submitting ? (

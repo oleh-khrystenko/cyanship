@@ -95,7 +95,6 @@ function VerifyContent() {
                     href={`/${locale}/auth/signin`}
                     variant="filled"
                     size="md"
-                    className="rounded-lg"
                 >
                     {t('deleted_signin_button')}
                 </UiButton>
@@ -117,7 +116,6 @@ function VerifyContent() {
                     href={`/${locale}/auth/signin`}
                     variant="filled"
                     size="md"
-                    className="rounded-lg"
                 >
                     {t('retry_button')}
                 </UiButton>

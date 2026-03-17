@@ -24,7 +24,7 @@ const HeroSection = () => {
                                 href="#pricing"
                                 variant="filled"
                                 size="lg"
-                                className="h-12 rounded-lg px-8 text-base font-semibold"
+                                className="h-12 px-8 text-base font-semibold"
                                 IconRight={<ArrowRight />}
                             >
                                 {t('cta_primary')}

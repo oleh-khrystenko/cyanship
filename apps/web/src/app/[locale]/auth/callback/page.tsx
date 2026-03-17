@@ -84,7 +84,7 @@ export default function CallbackPage() {
                     <UiButton
                         variant="filled"
                         size="lg"
-                        className="w-full justify-center rounded-lg"
+                        className="w-full justify-center"
                         disabled={submitting}
                         onClick={() => void handleRestore()}
                     >

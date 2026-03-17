@@ -122,7 +122,7 @@ const UiButton = forwardRef<
     } = props;
 
     const classes = composeClasses(
-        'inline-flex items-center justify-center',
+        'inline-flex items-center justify-center rounded-lg',
         variant !== 'icon' && variant !== 'icon-compact' && 'gap-2',
         'cursor-pointer disabled:cursor-not-allowed',
         'focus:outline-none',
