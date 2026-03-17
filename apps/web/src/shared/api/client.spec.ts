@@ -58,7 +58,7 @@ describe('client', () => {
             setAccessToken('my-token');
 
             const handler =
-                apiClient.interceptors.request.handlers[0]!.fulfilled!;
+                apiClient.interceptors.request.handlers![0]!.fulfilled!;
             const config = await handler({
                 headers: new axios.AxiosHeaders(),
             } as any);
@@ -70,7 +70,7 @@ describe('client', () => {
             setAccessToken(null);
 
             const handler =
-                apiClient.interceptors.request.handlers[0]!.fulfilled!;
+                apiClient.interceptors.request.handlers![0]!.fulfilled!;
             const config = await handler({
                 headers: new axios.AxiosHeaders(),
             } as any);
@@ -86,7 +86,7 @@ describe('client', () => {
         beforeEach(() => {
             mockAxiosPost = jest.spyOn(axios, 'post');
             handler =
-                apiClient.interceptors.response.handlers[0]!.rejected!;
+                apiClient.interceptors.response.handlers![0]!.rejected!;
         });
 
         afterEach(() => {
