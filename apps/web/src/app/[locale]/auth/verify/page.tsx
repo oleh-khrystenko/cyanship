@@ -8,6 +8,7 @@ import { CheckCircle } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { verifyMagicLink, getMe, acceptTerms, getApiMessageKey } from '@/shared/api';
+import { isValidRedirect } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
 type VerifyStatus = 'verifying' | 'success' | 'deleted' | 'error';
@@ -19,6 +20,11 @@ function VerifyContent() {
     const { locale } = useParams<{ locale: string }>();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
+    const rawRedirect = searchParams.get('redirect');
+    const redirectTarget =
+        rawRedirect && isValidRedirect(rawRedirect)
+            ? rawRedirect
+            : `/${locale}/profile`;
     const [status, setStatus] = useState<VerifyStatus>(
         token ? 'verifying' : 'error'
     );
@@ -37,7 +43,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/profile`);
+                        router.replace(redirectTarget);
                         break;
                     }
 
@@ -46,7 +52,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/profile`);
+                        router.replace(redirectTarget);
                         break;
                     }
 
@@ -60,7 +66,7 @@ function VerifyContent() {
                         const user = await getMe();
                         useAuthStore.getState().setUser(user);
                         setStatus('success');
-                        router.replace(`/${locale}/profile`);
+                        router.replace(redirectTarget);
                     }
                 }
             } catch (err) {

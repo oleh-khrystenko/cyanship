@@ -34,9 +34,10 @@ export async function loginWithPassword(
 export async function sendMagicLink(
     email: string,
     lang?: string,
-    purpose?: MagicLinkPurpose
+    purpose?: MagicLinkPurpose,
+    redirectTo?: string
 ): Promise<void> {
-    await apiClient.post('/auth/magic-link/send', { email, lang, purpose });
+    await apiClient.post('/auth/magic-link/send', { email, lang, purpose, redirectTo });
 }
 
 export async function setPassword(password: string): Promise<void> {

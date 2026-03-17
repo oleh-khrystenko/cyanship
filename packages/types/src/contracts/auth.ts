@@ -31,6 +31,7 @@ export const SendMagicLinkSchema = z.object({
     email: z.string().email(),
     lang: z.enum(langValues).optional(),
     purpose: MagicLinkPurposeSchema.optional(),
+    redirectTo: z.string().startsWith('/').max(2048).optional(),
 });
 
 export const VerifyMagicLinkSchema = z.object({

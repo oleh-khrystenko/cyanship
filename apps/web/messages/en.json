@@ -51,7 +51,10 @@
             "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow.",
             "step_2": "Click the Stripe checkout to see the payment integration.",
-            "step_3": "Experience the load speed firsthand."
+            "step_3": "Experience the load speed firsthand.",
+            "try_cta": "Try it",
+            "preview_subscription": "Pro Plan — {price}/mo",
+            "preview_credits": "Credit Packs from {price}"
         },
         "portfolio": {
             "label": "Portfolio",
@@ -286,40 +289,49 @@
     },
     "billing_page": {
         "head": {
-            "title": "Subscription"
+            "title": "Billing"
+        },
+        "demo_banner": {
+            "title": "Stripe Test Mode Demo",
+            "description": "This is a live Stripe integration demo. No real charges will be made.",
+            "test_card": "Test card: 4242 4242 4242 4242 · Any future date · Any CVC"
         },
         "subscribe": {
-            "title": "Subscribe",
-            "description": "Unlock all premium features and take your product further.",
-            "plan_label": "Plan: Monthly",
+            "title": "Pro Plan",
+            "interval": "/ month",
+            "features": {
+                "item_1": "Unlimited access",
+                "item_2": "Priority support",
+                "item_3": "All premium features"
+            },
             "button": "Subscribe",
             "error": "Failed to create checkout session"
         },
         "active": {
-            "title": "Your subscription",
+            "title": "Your Subscription",
             "status_active": "Active",
             "status_canceling": "Active until {date}",
             "plan_label": "Plan: {plan}",
             "next_billing": "Next billing: {date}",
-            "cancel_notice": "Your subscription will be canceled at the end of the current period.",
-            "manage_button": "Manage subscription",
+            "cancel_notice": "Your subscription will end at the current period's close.",
+            "manage_button": "Manage Subscription",
             "manage_error": "Failed to open management portal"
+        },
+        "credits": {
+            "title": "Credit Packs",
+            "description": "Purchase credits to use platform services.",
+            "balance": "Your balance: {count} credits",
+            "pack_label": "{credits} credits — {price}",
+            "buy_button": "Buy",
+            "error": "Failed to create payment session"
         },
         "callback": {
             "loading": "Processing payment…",
-            "success": "Subscription activated",
+            "success": "Payment successful!",
             "canceled": "Payment canceled",
             "refresh_error": "Failed to update data. Please reload the page."
         },
-        "credits": {
-            "title": "Credits",
-            "description": "Purchase credits to use services. Each action uses 1 credit.",
-            "balance": "Current balance: {count} cr.",
-            "pack_label": "{count} credits",
-            "buy_button": "Buy",
-            "error": "Failed to create payment session. Please try again."
-        },
-        "checkout_terms_note": "By proceeding, you confirm that you agree to the <terms>payment terms</terms>."
+        "checkout_terms_note": "By proceeding, you agree to the <terms>payment terms</terms>."
     },
     "components": {
         "header": {
