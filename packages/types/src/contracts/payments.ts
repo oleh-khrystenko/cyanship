@@ -12,8 +12,8 @@ export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
 // --- Product Catalog (single source of truth) ---
 
 export const SUBSCRIPTION_PLANS = [
-    { code: 'starter', priceAmount: 500, currency: 'usd', interval: 'month' },
-    { code: 'pro', priceAmount: 900, currency: 'usd', interval: 'month' },
+    { code: 'starter', priceAmount: 1900, currency: 'usd', interval: 'month', credits: 1000 },
+    { code: 'pro', priceAmount: 4900, currency: 'usd', interval: 'month', credits: 10000 },
 ] as const;
 
 export type SubscriptionPlanCode = (typeof SUBSCRIPTION_PLANS)[number]['code'];
@@ -23,8 +23,8 @@ export const SUBSCRIPTION_PLAN_MAP = Object.fromEntries(
 ) as { [K in SubscriptionPlanCode]: Extract<(typeof SUBSCRIPTION_PLANS)[number], { code: K }> };
 
 export const CREDIT_PACKS = [
-    { code: 'basic', credits: 5, priceAmount: 500, currency: 'usd' },
-    { code: 'max', credits: 20, priceAmount: 1500, currency: 'usd' },
+    { code: 'basic', credits: 5000, priceAmount: 2900, currency: 'usd' },
+    { code: 'max', credits: 25000, priceAmount: 9900, currency: 'usd' },
 ] as const;
 
 export type CreditPackCode = (typeof CREDIT_PACKS)[number]['code'];

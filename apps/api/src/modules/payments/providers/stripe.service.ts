@@ -125,6 +125,7 @@ export class StripeService implements IPaymentProvider {
 
         // Subscription checkout (mode=subscription)
         if (session.mode === 'subscription') {
+            const credits = parseInt(session.metadata?.credits ?? '0', 10);
             return {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                 providerEventId: event.id,
@@ -133,6 +134,7 @@ export class StripeService implements IPaymentProvider {
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                 currentPeriodEnd: null,
                 cancelAtPeriodEnd: false,
+                creditsAmount: credits || undefined,
                 raw: this.toRaw(event.data.object),
             };
         }

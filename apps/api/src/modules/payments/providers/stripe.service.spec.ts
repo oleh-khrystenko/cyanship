@@ -388,7 +388,27 @@ describe('StripeService', () => {
                 expect(result).toBeNull();
             });
 
-            it('should return CHECKOUT_COMPLETED for mode=subscription', () => {
+            it('should return CHECKOUT_COMPLETED for mode=subscription with creditsAmount from metadata', () => {
+                mockConstructEvent.mockReturnValue(
+                    makeCheckoutEvent({
+                        mode: 'subscription',
+                        metadata: {
+                            userId: 'user123',
+                            planCode: 'starter',
+                            credits: '1000',
+                        },
+                    })
+                );
+
+                const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+                expect(result?.type).toBe(
+                    BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
+                );
+                expect(result?.creditsAmount).toBe(1000);
+            });
+
+            it('should return CHECKOUT_COMPLETED without creditsAmount when credits metadata is 0', () => {
                 mockConstructEvent.mockReturnValue(
                     makeCheckoutEvent({ mode: 'subscription' })
                 );
@@ -398,6 +418,7 @@ describe('StripeService', () => {
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
                 );
+                expect(result?.creditsAmount).toBeUndefined();
             });
         });
 

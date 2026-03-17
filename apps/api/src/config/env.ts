@@ -95,13 +95,13 @@ if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
 
 // Dynamic: one env var per subscription plan, fail-fast when subscriptions enabled
 export const STRIPE_SUBSCRIPTION_PLANS: Partial<
-    Record<SubscriptionPlanCode, { priceId: string }>
+    Record<SubscriptionPlanCode, { priceId: string; credits: number }>
 > = (() => {
     if (!subscriptionEnabled) return {};
-    const result: Record<string, { priceId: string }> = {};
+    const result: Record<string, { priceId: string; credits: number }> = {};
     for (const plan of SUBSCRIPTION_PLANS) {
         const envName = `STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`;
-        result[plan.code] = { priceId: getEnvVar(envName) };
+        result[plan.code] = { priceId: getEnvVar(envName), credits: plan.credits };
     }
     return result;
 })();

@@ -108,6 +108,7 @@ export class PaymentsService {
                 paymentType,
                 planCode: planCode!,
                 priceId: planEntry.priceId,
+                credits: planEntry.credits,
                 successUrl,
                 cancelUrl,
             });
@@ -267,6 +268,11 @@ export class PaymentsService {
                     return;
                 }
             }
+
+            // Allocate credits on initial subscription checkout
+            if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
+                await this.applySubscriptionCredits(userId, event);
+            }
         }
 
         this.logger.log(
@@ -376,6 +382,23 @@ export class PaymentsService {
                     : String(deleteError)
             );
         }
+    }
+
+    private async applySubscriptionCredits(
+        userId: string,
+        event: BillingWebhookEvent
+    ): Promise<void> {
+        const credits = event.creditsAmount ?? 0;
+        if (!Number.isFinite(credits) || credits <= 0) {
+            this.logger.warn(
+                `CHECKOUT_COMPLETED event ${event.providerEventId} has no creditsAmount`
+            );
+            return;
+        }
+        await this.usersService.addCredits(userId, credits);
+        this.logger.log(
+            `Added ${credits} subscription credits to user ${userId} (event: ${event.providerEventId})`
+        );
     }
 
     private async applyOneOffPayment(

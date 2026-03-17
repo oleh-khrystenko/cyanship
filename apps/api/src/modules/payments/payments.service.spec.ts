@@ -23,19 +23,19 @@ jest.mock('../../config/env', () => ({
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
     STRIPE_SUBSCRIPTION_PLANS: {
-        starter: { priceId: 'price_test_starter' },
-        pro: { priceId: 'price_test_pro' },
+        starter: { priceId: 'price_test_starter', credits: 1000 },
+        pro: { priceId: 'price_test_pro', credits: 10000 },
     },
     STRIPE_CREDIT_PACKS: {
-        basic: { priceId: 'price_test_basic', credits: 5 },
-        max: { priceId: 'price_test_max', credits: 20 },
+        basic: { priceId: 'price_test_basic', credits: 5000 },
+        max: { priceId: 'price_test_max', credits: 25000 },
     },
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
 const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
-    STRIPE_SUBSCRIPTION_PLANS: Record<string, { priceId: string }>;
+    STRIPE_SUBSCRIPTION_PLANS: Record<string, { priceId: string; credits: number }>;
     STRIPE_CREDIT_PACKS: Record<string, { priceId: string; credits: number }>;
 };
 
@@ -140,6 +140,7 @@ describe('PaymentsService', () => {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                     planCode: 'pro',
                     priceId: 'price_test_pro',
+                    credits: 10000,
                     successUrl: 'http://localhost:3000/en/billing/success',
                     cancelUrl: 'http://localhost:3000/en/billing/cancel',
                 })
@@ -250,7 +251,7 @@ describe('PaymentsService', () => {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
                     planCode: 'basic',
                     priceId: 'price_test_basic',
-                    credits: 5,
+                    credits: 5000,
                 })
             );
         });
@@ -1014,6 +1015,92 @@ describe('PaymentsService', () => {
                 for (const key of Object.keys(update.$set)) {
                     expect(key).toMatch(/^billing\./);
                 }
+            });
+        });
+
+        // ── Subscription credits ──────────────────────────────────────
+
+        describe('subscription credits', () => {
+            const occurredAt = new Date('2024-01-01T00:00:00Z');
+
+            it('should add credits on CHECKOUT_COMPLETED when creditsAmount is present', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                    providerEventId: 'evt_sub_credits',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    creditsAmount: 1000,
+                    raw: {
+                        customer: 'cus_credits',
+                        subscription: 'sub_credits',
+                        currency: 'usd',
+                        status: 'complete',
+                        metadata: { planCode: 'starter', credits: '1000' },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+                mockUsersService.addCredits.mockResolvedValue(undefined);
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    1000
+                );
+            });
+
+            it('should NOT add credits on CHECKOUT_COMPLETED when creditsAmount is missing', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                    providerEventId: 'evt_sub_no_credits',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        customer: 'cus_no_credits',
+                        subscription: 'sub_no_credits',
+                        currency: 'usd',
+                        status: 'complete',
+                        metadata: { planCode: 'pro' },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+            });
+
+            it('should NOT add credits on SUBSCRIPTION_UPDATED', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_sub_updated_no_credits',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: { status: 'active' },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
             });
         });
 
