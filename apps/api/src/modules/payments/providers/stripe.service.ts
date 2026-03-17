@@ -163,7 +163,9 @@ export class StripeService implements IPaymentProvider {
             userId: '',
             subscriptionStatus: this.mapSubscriptionStatus(subscription.status),
             currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            cancelAtPeriodEnd:
+                subscription.cancel_at_period_end ||
+                subscription.cancel_at != null,
             raw: this.toRaw(event.data.object),
         };
     }

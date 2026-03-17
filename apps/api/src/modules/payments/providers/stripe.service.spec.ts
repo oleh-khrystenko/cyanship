@@ -283,6 +283,23 @@ describe('StripeService', () => {
             });
         });
 
+        it('should set cancelAtPeriodEnd=true when cancel_at is set (even if cancel_at_period_end is false)', () => {
+            mockConstructEvent.mockReturnValue(
+                makeSubscriptionEvent('customer.subscription.updated', 'active', {
+                    cancel_at_period_end: false,
+                    cancel_at: 1_776_443_119,
+                })
+            );
+
+            const result = service.handleWebhookPayload(rawBody, sigHeader);
+
+            expect(result).toMatchObject({
+                type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                cancelAtPeriodEnd: true,
+            });
+        });
+
         it('should return SUBSCRIPTION_UPDATED with PAST_DUE when stripe status is past_due', () => {
             mockConstructEvent.mockReturnValue(
                 makeSubscriptionEvent(
