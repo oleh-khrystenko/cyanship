@@ -88,7 +88,7 @@ For each:
 
 1. Go to **Developers** → **Webhooks** → **Add endpoint**
 2. Endpoint URL: `https://<your-api-domain>/api/payments/webhook/stripe`
-    - For local dev: use Stripe CLI (`stripe listen --forward-to localhost:3001/api/payments/webhook/stripe`)
+    - For local dev: use Stripe CLI (`stripe listen --forward-to localhost:4000/api/payments/webhook/stripe`)
 3. Events to listen for:
     - `checkout.session.completed`
     - `checkout.session.async_payment_succeeded`
@@ -116,30 +116,52 @@ NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED=true
 
 ---
 
-## Phase 2 — Add Price Display Constants
+## Phase 2 — Structured Pricing Constants (Single Source of Truth)
 
-### Step 2.1: Add display prices to shared types
+### Step 2.1: Add structured pricing to shared types
 
 **File:** `packages/types/src/contracts/payments.ts`
 
-Add display-only pricing info alongside `CREDIT_PACK_CONFIG`. This is used by the frontend only — it does NOT affect Stripe (Stripe uses Price IDs from env). Prices must match what is configured in Stripe Dashboard in Phase 1.
+Add structured pricing data alongside `CREDIT_PACK_CONFIG`. Prices stored as **cents + currency** — formatted on frontend via `Intl.NumberFormat`. This is the **single source of truth** for all display prices across the app (billing page, landing teaser, translations). Prices must match what is configured in Stripe Dashboard in Phase 1.
 
 ```ts
 export const SUBSCRIPTION_PLAN = {
   code: 'monthly_usd',
   label: 'Pro',
-  priceDisplay: '$9',
+  priceAmount: 900,    // cents
+  currency: 'usd',
   interval: 'month',
 } as const;
 
 export const CREDIT_PACK_CONFIG = {
-  credits_5:  { credits: 5,  priceDisplay: '$5'  },
-  credits_10: { credits: 10, priceDisplay: '$9'  },
-  credits_20: { credits: 20, priceDisplay: '$15' },
+  credits_5:  { credits: 5,  priceAmount: 500,  currency: 'usd' },
+  credits_10: { credits: 10, priceAmount: 900,  currency: 'usd' },
+  credits_20: { credits: 20, priceAmount: 1500, currency: 'usd' },
 } as const;
 ```
 
-> **Note:** `CREDIT_PACK_CONFIG` already exists but currently only has `{ credits: number }`. Add the `priceDisplay` field. Update `CreditPackCode` type if needed — it should still work since it's derived from `keyof typeof CREDIT_PACK_CONFIG`.
+> **Note:** `CREDIT_PACK_CONFIG` already exists but currently only has `{ credits: number }`. Add `priceAmount` and `currency` fields. `CreditPackCode` type derived from `keyof typeof CREDIT_PACK_CONFIG` — should still work.
+
+### Step 2.2: Add `formatPrice` utility
+
+**File:** `packages/types/src/utils/format-price.ts` (new)
+
+Utility function to format price from cents + currency into display string using `Intl.NumberFormat`. Used by frontend to render prices from `SUBSCRIPTION_PLAN` and `CREDIT_PACK_CONFIG`.
+
+```ts
+export function formatPrice(amountCents: number, currency: string): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amountCents / 100);
+}
+```
+
+Export from `packages/types/src/index.ts`.
+
+> **Why cents?** Stripe works in cents. Storing in cents avoids floating-point issues and keeps our constants aligned with Stripe's model. If we add EUR/UAH later — just change `currency`, formatting adapts automatically.
 
 ---
 
@@ -147,16 +169,18 @@ export const CREDIT_PACK_CONFIG = {
 
 ### Step 3.1: Create demo banner component
 
-**File:** `apps/web/src/widgets/billing/DemoBanner/DemoBanner.tsx` (new)
+**File:** `apps/web/src/features/billing/ui/DemoBanner/DemoBanner.tsx` (new)
 
 A prominent banner at the top of the Billing page:
 - Yellow/amber accent background (using existing design tokens)
 - Icon: info or test-tube
-- Text: "This is a live Stripe demo in test mode. No real charges."
-- Below: monospace block with test card details: `4242 4242 4242 4242 · Any future date · Any CVC`
+- Text from translations: `billing_page.demo_banner.title` + `billing_page.demo_banner.description`
+- Below: monospace block with test card from translations: `billing_page.demo_banner.test_card`
 - The banner should be visually clear but not overwhelming
 
-Create barrel export: `apps/web/src/widgets/billing/DemoBanner/index.ts`
+Create barrel export: `apps/web/src/features/billing/ui/DemoBanner/index.ts`
+
+> **Why `features/billing/` not `widgets/billing/`?** DemoBanner is a stateless presentational component tied to the billing feature domain. In FSD, `widgets/` are compositional blocks combining multiple features. A single-purpose UI component belongs in `features/`.
 
 ### Step 3.2: Redesign Billing page with pricing cards
 
@@ -169,12 +193,12 @@ Complete rewrite of the current page. New layout:
 2. **Subscription section** — single pricing card:
     - Card with border accent (similar to PricingSection on landing)
     - Title: "Pro Plan"
-    - Price: "$9 / month" (from `SUBSCRIPTION_PLAN.priceDisplay`)
-    - Short feature list (3-4 items, keep simple — e.g. "Unlimited access", "Priority support", "All features")
+    - Price: formatted via `formatPrice(SUBSCRIPTION_PLAN.priceAmount, SUBSCRIPTION_PLAN.currency)` + `" / " + t('subscribe.interval')`
+    - Feature list from translations: `billing_page.subscribe.features` (array of 3-4 items — e.g. "Unlimited access", "Priority support", "All premium features")
     - CTA button: "Subscribe" (when no active subscription)
     - OR: Active subscription status card (when subscribed) with: status badge, next billing date, "Manage subscription" button
 3. **Credits section** — three cards in a row:
-    - Each card shows: pack name, credit count, price (from `CREDIT_PACK_CONFIG[packCode].priceDisplay`)
+    - Each card shows: pack name, credit count, price formatted via `formatPrice(pack.priceAmount, pack.currency)`
     - "Buy" button on each
     - Current balance displayed above the cards: "Your balance: X credits"
 4. Terms note at bottom (existing `checkout_terms_note` translation)
@@ -190,12 +214,12 @@ Complete rewrite of the current page. New layout:
 - Responsive: cards stack on mobile, grid on desktop
 - Use existing color tokens: `text-foreground`, `text-muted-foreground`, `bg-card`, `border-border`, etc.
 
-### Step 3.3: Create barrel export for billing widgets
+### Step 3.3: Create barrel export for billing feature UI
 
-**File:** `apps/web/src/widgets/billing/index.ts` (new)
+**File:** `apps/web/src/features/billing/index.ts` (new)
 
 ```ts
-export { DemoBanner } from './DemoBanner';
+export { DemoBanner } from './ui/DemoBanner';
 ```
 
 ---
@@ -209,8 +233,9 @@ export { DemoBanner } from './DemoBanner';
 Modify the existing section to include an interactive element below the existing steps list:
 
 - Add a mini "pricing preview" card inside the section (NOT a full duplicate of billing page — just a teaser)
-- Shows: "Pro Plan — $9/mo" and "Credit Packs from $5" as two compact cards
-- Each has a "Try it →" button
+- Shows subscription and credits info with prices formatted via `formatPrice()` from shared constants — **no hardcoded price strings**
+- Labels from translations: `landing_page.dogfooding.preview_subscription` (with `{price}` interpolation) and `landing_page.dogfooding.preview_credits` (with `{price}` interpolation)
+- Each has a CTA button with text from `landing_page.dogfooding.try_cta`
 - On click:
     - If user is authenticated → navigate to `/billing`
     - If user is NOT authenticated → navigate to `/auth/signin?redirect=/billing`
@@ -221,14 +246,33 @@ Modify the existing section to include an interactive element below the existing
 
 ### Step 4.2: Add redirect support to auth flow
 
-**File:** `apps/web/src/app/[locale]/auth/signin/page.tsx`
+> **Scope:** This is a non-trivial change that touches multiple files in the auth flow. The `redirect` parameter must be preserved through the entire authentication chain.
 
-Check if the signin page already supports a `redirect` query parameter after successful login. If not, add:
-- Read `searchParams.redirect` from URL
-- After successful authentication, redirect to that URL instead of the default route
-- Sanitize the redirect URL (must start with `/` — no external redirects)
+**Touch points (all need review/modification):**
 
-> **Note:** Review the existing auth callback flow (`apps/web/src/app/[locale]/auth/callback/page.tsx`) and `AuthInitializer.tsx` to understand where the post-login redirect happens. The redirect param must be preserved through the entire auth flow (signin → magic link/Google OAuth → callback → redirect target).
+1. **Signin page** (`apps/web/src/app/[locale]/auth/signin/page.tsx`):
+   - Read `searchParams.redirect` from URL
+   - Sanitize: must start with `/` — reject external URLs (open redirect prevention)
+   - Pass `redirect` to all auth method handlers
+
+2. **Password login flow** (signin page):
+   - After successful `loginWithPassword()` → redirect to `redirect` param or default route
+   - Simplest case — just change the `router.push()` target
+
+3. **Magic link flow**:
+   - `sendMagicLink()` must include `redirect` param so it's available after email click
+   - Two options: (a) encode `redirect` in the magic link URL as query param, or (b) store in `sessionStorage` before sending
+   - Option (a) is cleaner — magic link verify page reads `redirect` from URL after token validation
+   - **File:** `apps/web/src/app/[locale]/auth/verify/page.tsx` — after successful verification, redirect to param or default
+
+4. **Google OAuth flow**:
+   - Store `redirect` in `sessionStorage` before initiating OAuth (Google redirects externally, query params are lost)
+   - **File:** `apps/web/src/app/[locale]/auth/callback/page.tsx` — after OAuth callback, read `redirect` from `sessionStorage`, clean up, redirect
+
+5. **Security:**
+   - Validate `redirect` starts with `/` at every consumption point (defense in depth)
+   - Never redirect to external URLs
+   - Clear `sessionStorage` redirect after use
 
 ---
 
@@ -253,11 +297,12 @@ Update the `billing_page` section:
     },
     "subscribe": {
       "title": "Pro Plan",
-      "price": "$9",
       "interval": "/ month",
-      "feature_1": "Unlimited access",
-      "feature_2": "Priority support",
-      "feature_3": "All premium features",
+      "features": {
+        "item_1": "Unlimited access",
+        "item_2": "Priority support",
+        "item_3": "All premium features"
+      },
       "button": "Subscribe",
       "error": "Failed to create checkout session"
     },
@@ -275,6 +320,7 @@ Update the `billing_page` section:
       "title": "Credit Packs",
       "description": "Purchase credits to use platform services.",
       "balance": "Your balance: {count} credits",
+      "pack_label": "{credits} credits — {price}",
       "buy_button": "Buy",
       "error": "Failed to create payment session"
     },
@@ -289,7 +335,11 @@ Update the `billing_page` section:
 }
 ```
 
-> **Note:** Remove `credits.pack_label` — pack labels will be generated dynamically from `CREDIT_PACK_CONFIG` (e.g. "5 credits — $5"). Remove `subscribe.description` and `subscribe.plan_label` — replaced by the card layout.
+> **Key decisions:**
+> - **No hardcoded prices in translations.** Prices come from `SUBSCRIPTION_PLAN` / `CREDIT_PACK_CONFIG` constants and are formatted via `formatPrice()`. Translations use `{price}` interpolation where needed.
+> - **Feature list** in `subscribe.features` — iterable via `Object.keys()`, easy to add/remove items.
+> - **`credits.pack_label`** uses `{credits}` and `{price}` interpolation — both values computed from `CREDIT_PACK_CONFIG` + `formatPrice()`.
+> - Removed old `subscribe.price` — price is rendered programmatically from constants.
 
 ### Step 5.2: Update Ukrainian translations
 
@@ -304,10 +354,12 @@ Add to both `en.json` and `uk.json` under `landing_page.dogfooding`:
 ```json
 {
   "try_cta": "Try it",
-  "preview_subscription": "Pro Plan — $9/mo",
-  "preview_credits": "Credit Packs from $5"
+  "preview_subscription": "Pro Plan — {price}/mo",
+  "preview_credits": "Credit Packs from {price}"
 }
 ```
+
+> **Note:** `{price}` is interpolated at render time from `formatPrice(SUBSCRIPTION_PLAN.priceAmount, SUBSCRIPTION_PLAN.currency)` and `formatPrice(CREDIT_PACK_CONFIG.credits_5.priceAmount, CREDIT_PACK_CONFIG.credits_5.currency)` respectively. No hardcoded price strings in translations.
 
 ---
 
@@ -318,7 +370,7 @@ Add to both `en.json` and `uk.json` under `landing_page.dogfooding`:
 Use Stripe CLI for local webhook forwarding:
 
 ```bash
-stripe listen --forward-to localhost:3001/api/payments/webhook/stripe
+stripe listen --forward-to localhost:4000/api/payments/webhook/stripe
 ```
 
 Copy the webhook signing secret from CLI output → set as `STRIPE_WEBHOOK_SECRET` in `.env`.
@@ -367,16 +419,20 @@ Copy the webhook signing secret from CLI output → set as `STRIPE_WEBHOOK_SECRE
 
 ## File Change Summary
 
-| Action   | File                                                                     | Description                                       |
-| -------- | ------------------------------------------------------------------------ | ------------------------------------------------- |
-| MODIFY   | `packages/types/src/contracts/payments.ts`                               | Add `SUBSCRIPTION_PLAN`, `priceDisplay` to packs  |
-| CREATE   | `apps/web/src/widgets/billing/DemoBanner/DemoBanner.tsx`                 | Demo mode banner component                        |
-| CREATE   | `apps/web/src/widgets/billing/DemoBanner/index.ts`                       | Barrel export                                     |
-| CREATE   | `apps/web/src/widgets/billing/index.ts`                                  | Barrel export                                     |
-| REWRITE  | `apps/web/src/app/[locale]/(protected)/billing/page.tsx`                 | Full redesign with pricing cards                  |
-| MODIFY   | `apps/web/src/widgets/agency/landing/DogfoodingSection/DogfoodingSection.tsx` | Add interactive checkout preview widget       |
-| MODIFY   | `apps/web/src/app/[locale]/auth/signin/page.tsx`                         | Add redirect query param support (if not present) |
-| MODIFY   | `apps/web/messages/en.json`                                              | Update billing + dogfooding translations          |
-| MODIFY   | `apps/web/messages/uk.json`                                              | Update billing + dogfooding translations          |
+| Action | File | Description |
+|--------|------|-------------|
+| MODIFY | `packages/types/src/contracts/payments.ts` | Add `SUBSCRIPTION_PLAN`, `priceAmount`+`currency` to packs |
+| CREATE | `packages/types/src/utils/format-price.ts` | `formatPrice()` utility (cents + currency → display string) |
+| MODIFY | `packages/types/src/index.ts` | Export `formatPrice` |
+| CREATE | `apps/web/src/features/billing/ui/DemoBanner/DemoBanner.tsx` | Demo mode banner component |
+| CREATE | `apps/web/src/features/billing/ui/DemoBanner/index.ts` | Barrel export |
+| CREATE | `apps/web/src/features/billing/index.ts` | Barrel export |
+| REWRITE | `apps/web/src/app/[locale]/(protected)/billing/page.tsx` | Full redesign with pricing cards |
+| MODIFY | `apps/web/src/widgets/agency/landing/DogfoodingSection/DogfoodingSection.tsx` | Add interactive checkout preview widget |
+| MODIFY | `apps/web/src/app/[locale]/auth/signin/page.tsx` | Add redirect query param support |
+| MODIFY | `apps/web/src/app/[locale]/auth/verify/page.tsx` | Read redirect param after magic link verification |
+| MODIFY | `apps/web/src/app/[locale]/auth/callback/page.tsx` | Read redirect from sessionStorage after OAuth |
+| MODIFY | `apps/web/messages/en.json` | Update billing + dogfooding translations |
+| MODIFY | `apps/web/messages/uk.json` | Update billing + dogfooding translations |
 
 **No backend code changes required** — all existing API endpoints, services, webhooks, and guards are already implemented correctly.
