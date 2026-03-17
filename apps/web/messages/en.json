@@ -318,6 +318,7 @@
             "plan_label": "Plan: {plan}",
             "next_billing": "Next billing: {date}",
             "cancel_notice": "Your subscription will end at the current period's close.",
+            "scheduled_change": "Switching to {plan} plan on {date}",
             "manage_button": "Manage Subscription",
             "manage_error": "Failed to open management portal"
         },

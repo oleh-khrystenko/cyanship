@@ -180,6 +180,17 @@ export default function BillingPage() {
                                         {t('active.cancel_notice')}
                                     </p>
                                 )}
+                                {billing?.scheduledPlanCode && (
+                                    <p className="text-info">
+                                        {t('active.scheduled_change', {
+                                            plan: billing.scheduledPlanCode,
+                                            date: formatDate(
+                                                billing.scheduledChangeDate ??
+                                                    null,
+                                            ),
+                                        })}
+                                    </p>
+                                )}
                             </div>
 
                             <UiButton

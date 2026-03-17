@@ -113,6 +113,8 @@ export const UserBillingSchema = z.object({
     cancelAtPeriodEnd: z.boolean(),
     hasActiveSubscription: z.boolean(),
     lastProviderEventAt: z.coerce.date().nullable(),
+    scheduledPlanCode: z.string().nullable(),
+    scheduledChangeDate: z.coerce.date().nullable(),
 });
 
 export type UserBilling = z.infer<typeof UserBillingSchema>;
@@ -142,6 +144,8 @@ export const BillingWebhookEventSchema = z.object({
         .optional(),
     currentPeriodEnd: z.coerce.date().nullable().optional(),
     cancelAtPeriodEnd: z.boolean().optional(),
+    scheduledPlanCode: z.string().nullable().optional(),
+    scheduledChangeDate: z.coerce.date().nullable().optional(),
     // --- One-off fields (присутні тільки для ONE_OFF_PAYMENT_COMPLETED) ---
     creditsAmount: z.number().int().positive().optional(),
     packCode: z.string().optional(),

@@ -7,7 +7,7 @@ import {
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
 } from '@cyanship/types';
-import { ENV } from '../../../config/env';
+import { ENV, STRIPE_PRICE_TO_PLAN } from '../../../config/env';
 import {
     IPaymentProvider,
     CreateCheckoutInput,
@@ -72,10 +72,10 @@ export class StripeService implements IPaymentProvider {
         return { portalUrl: session.url };
     }
 
-    handleWebhookPayload(
+    async handleWebhookPayload(
         rawBody: Buffer,
         signatureHeader: string
-    ): BillingWebhookEvent | null {
+    ): Promise<BillingWebhookEvent | null> {
         const event = this.stripe.webhooks.constructEvent(
             rawBody,
             signatureHeader,
@@ -134,8 +134,8 @@ export class StripeService implements IPaymentProvider {
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                 currentPeriodEnd: null,
                 cancelAtPeriodEnd: false,
-                creditsAmount: credits || undefined,
                 raw: this.toRaw(event.data.object),
+                creditsAmount: credits || undefined,
             };
         }
 
@@ -146,15 +146,18 @@ export class StripeService implements IPaymentProvider {
         return null;
     }
 
-    private handleSubscriptionEvent(
+    private async handleSubscriptionEvent(
         event: Stripe.Event,
         type:
             | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED
             | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED
-    ): BillingWebhookEvent {
+    ): Promise<BillingWebhookEvent> {
         const subscription = event.data.object as Stripe.Subscription;
         const periodEnd =
             subscription.items?.data?.[0]?.current_period_end ?? null;
+
+        // Resolve scheduled plan change (downgrade deferred to period end)
+        const schedule = await this.resolveScheduledChange(subscription);
 
         return {
             type,
@@ -166,8 +169,62 @@ export class StripeService implements IPaymentProvider {
             cancelAtPeriodEnd:
                 subscription.cancel_at_period_end ||
                 subscription.cancel_at != null,
+            scheduledPlanCode: schedule?.planCode ?? null,
+            scheduledChangeDate: schedule?.changeDate ?? null,
             raw: this.toRaw(event.data.object),
         };
+    }
+
+    private async resolveScheduledChange(
+        subscription: Stripe.Subscription
+    ): Promise<{ planCode: string; changeDate: Date } | null> {
+        const scheduleId =
+            typeof subscription.schedule === 'string'
+                ? subscription.schedule
+                : subscription.schedule?.id;
+
+        if (!scheduleId) {
+            return null;
+        }
+
+        try {
+            const schedule =
+                await this.stripe.subscriptionSchedules.retrieve(scheduleId);
+            const phases = schedule.phases;
+            if (!phases || phases.length < 2) {
+                return null;
+            }
+
+            // The last phase contains the upcoming plan after the switch
+            const lastPhase = phases[phases.length - 1];
+            const priceId =
+                typeof lastPhase.items[0]?.price === 'string'
+                    ? lastPhase.items[0].price
+                    : lastPhase.items[0]?.price?.id;
+
+            if (!priceId) {
+                return null;
+            }
+
+            const planCode = STRIPE_PRICE_TO_PLAN[priceId];
+            if (!planCode) {
+                this.logger.warn(
+                    `Unknown priceId ${priceId} in subscription schedule ${scheduleId}`
+                );
+                return null;
+            }
+
+            return {
+                planCode,
+                changeDate: new Date(lastPhase.start_date * 1000),
+            };
+        } catch (error) {
+            this.logger.error(
+                `Failed to retrieve subscription schedule ${scheduleId}`,
+                error instanceof Error ? error.stack : String(error)
+            );
+            return null;
+        }
     }
 
     private mapSubscriptionStatus(stripeStatus: string): SubscriptionStatus {

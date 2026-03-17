@@ -30,7 +30,7 @@ export interface IPaymentProvider {
     handleWebhookPayload(
         rawBody: Buffer,
         signatureHeader: string
-    ): BillingWebhookEvent | null;
+    ): Promise<BillingWebhookEvent | null>;
 }
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');

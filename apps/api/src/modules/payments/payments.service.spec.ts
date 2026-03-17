@@ -369,7 +369,7 @@ describe('PaymentsService', () => {
 
         describe('basic flow', () => {
             it('should return without action when handleWebhookPayload returns null', async () => {
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(null);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(null);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -396,7 +396,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -448,7 +448,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -470,7 +470,7 @@ describe('PaymentsService', () => {
                 };
 
                 const foundUser = { _id: { toString: () => MOCK_USER_ID } };
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockUserModel.findOne.mockReturnValue(chainQuery(foundUser));
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
@@ -494,7 +494,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
@@ -514,7 +514,7 @@ describe('PaymentsService', () => {
                     raw: { id: 'sub_not_found' },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockUserModel.findOne.mockReturnValue(chainQuery(null));
 
                 await service.handleWebhook('stripe', rawBody, signature);
@@ -539,7 +539,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 const dupError = Object.assign(
                     new Error('E11000 duplicate key'),
                     {
@@ -574,7 +574,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 const dupError = Object.assign(
                     new Error('E11000 duplicate key'),
                     {
@@ -610,7 +610,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockRejectedValue(
                     new Error('connection error')
                 );
@@ -630,7 +630,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockRejectedValue(
@@ -662,7 +662,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
                 mockUsersService.addCredits.mockRejectedValue(
@@ -695,7 +695,7 @@ describe('PaymentsService', () => {
             it('should include atomic out-of-order guard in findOneAndUpdate filter', async () => {
                 const staleAt = new Date('2024-05-31T00:00:00Z');
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
                     makeEvent(staleAt)
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
@@ -724,7 +724,7 @@ describe('PaymentsService', () => {
             it('should skip when findOneAndUpdate returns null (stale or orphan event)', async () => {
                 const staleAt = new Date('2024-05-31T00:00:00Z');
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
                     makeEvent(staleAt)
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
@@ -744,7 +744,7 @@ describe('PaymentsService', () => {
             it('should apply when findOneAndUpdate returns document (valid event)', async () => {
                 const newerAt = new Date('2024-06-01T00:00:00Z');
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
                     makeEvent(newerAt)
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
@@ -784,7 +784,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -821,7 +821,7 @@ describe('PaymentsService', () => {
                     raw: { status: 'active' },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -854,7 +854,7 @@ describe('PaymentsService', () => {
                     raw: { status: 'trialing' },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -885,7 +885,7 @@ describe('PaymentsService', () => {
                     raw: { status: 'past_due' },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -921,7 +921,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -956,7 +956,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -985,7 +985,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1023,7 +1023,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 // Phase 1 returns null (billing is null, so $ne: null doesn't match)
                 mockUserModel.findOneAndUpdate
@@ -1077,7 +1077,7 @@ describe('PaymentsService', () => {
                     raw: { status: 'past_due' },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1116,7 +1116,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
                 mockUsersService.addCredits.mockResolvedValue(undefined);
@@ -1147,7 +1147,7 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1168,7 +1168,7 @@ describe('PaymentsService', () => {
                     raw: { status: 'active' },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1191,7 +1191,7 @@ describe('PaymentsService', () => {
             };
 
             it('should add credits on ONE_OFF_PAYMENT_COMPLETED', async () => {
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
                     oneOffEvent
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
@@ -1211,7 +1211,7 @@ describe('PaymentsService', () => {
                 const staleUserBilling = {
                     lastProviderEventAt: new Date('2026-03-15'),
                 };
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
                     occurredAt: new Date('2026-02-01'),
                 });
@@ -1230,7 +1230,7 @@ describe('PaymentsService', () => {
             });
 
             it('should warn and skip if creditsAmount is 0', async () => {
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
                     creditsAmount: 0,
                 });
@@ -1243,7 +1243,7 @@ describe('PaymentsService', () => {
             });
 
             it('should skip if creditsAmount is undefined', async () => {
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
                     creditsAmount: undefined,
                 });
@@ -1256,7 +1256,7 @@ describe('PaymentsService', () => {
             });
 
             it('should skip if creditsAmount is negative', async () => {
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
                     creditsAmount: -5,
                 });
@@ -1284,7 +1284,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 // findOneAndUpdate returns null — user not found or stale
                 mockUserModel.findOneAndUpdate.mockResolvedValue(null);
@@ -1308,7 +1308,7 @@ describe('PaymentsService', () => {
                     raw: {},
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(null));
 

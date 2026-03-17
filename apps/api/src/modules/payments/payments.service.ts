@@ -163,7 +163,7 @@ export class PaymentsService {
         signatureHeader: string
     ): Promise<void> {
         // 1. Parse and verify webhook payload
-        const event = this.paymentProvider.handleWebhookPayload(
+        const event = await this.paymentProvider.handleWebhookPayload(
             rawBody,
             signatureHeader
         );
@@ -471,6 +471,12 @@ export class PaymentsService {
                         fields['planCode'] = newPlanCode;
                     }
                 }
+
+                // Scheduled plan change (downgrade deferred to period end)
+                fields['scheduledPlanCode'] =
+                    event.scheduledPlanCode ?? null;
+                fields['scheduledChangeDate'] =
+                    event.scheduledChangeDate ?? null;
                 break;
             }
 
