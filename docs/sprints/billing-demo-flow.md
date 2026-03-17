@@ -246,33 +246,79 @@ Modify the existing section to include an interactive element below the existing
 
 ### Step 4.2: Add redirect support to auth flow
 
-> **Scope:** This is a non-trivial change that touches multiple files in the auth flow. The `redirect` parameter must be preserved through the entire authentication chain.
+> **Scope:** Redirect parameter must survive 3 different auth flows. Each flow has свій механізм збереження стану, тому використовуємо **два механізми** залежно від flow.
 
-**Touch points (all need review/modification):**
+**Проблема:** `sessionStorage` — per-tab. Password login і Google OAuth працюють в тій самій вкладці → `sessionStorage` підходить. Magic link відкривається з email у **новій вкладці** → `sessionStorage` з signin page **недоступний**. Тому для magic link потрібно прокинути `redirect` через backend у URL verify-посилання.
 
-1. **Signin page** (`apps/web/src/app/[locale]/auth/signin/page.tsx`):
-   - Read `searchParams.redirect` from URL
-   - Sanitize: must start with `/` — reject external URLs (open redirect prevention)
-   - Pass `redirect` to all auth method handlers
+#### 4.2.1: Shared — redirect validation utility
 
-2. **Password login flow** (signin page):
-   - After successful `loginWithPassword()` → redirect to `redirect` param or default route
-   - Simplest case — just change the `router.push()` target
+**File:** `apps/web/src/shared/lib/redirect.ts` (new)
 
-3. **Magic link flow**:
-   - `sendMagicLink()` must include `redirect` param so it's available after email click
-   - Two options: (a) encode `redirect` in the magic link URL as query param, or (b) store in `sessionStorage` before sending
-   - Option (a) is cleaner — magic link verify page reads `redirect` from URL after token validation
-   - **File:** `apps/web/src/app/[locale]/auth/verify/page.tsx` — after successful verification, redirect to param or default
+```ts
+const REDIRECT_KEY = 'auth_redirect';
 
-4. **Google OAuth flow**:
-   - Store `redirect` in `sessionStorage` before initiating OAuth (Google redirects externally, query params are lost)
-   - **File:** `apps/web/src/app/[locale]/auth/callback/page.tsx` — after OAuth callback, read `redirect` from `sessionStorage`, clean up, redirect
+/** Validate redirect path — must start with `/`, no protocol, no `//` */
+export function isValidRedirect(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//') && !path.includes('://');
+}
 
-5. **Security:**
-   - Validate `redirect` starts with `/` at every consumption point (defense in depth)
-   - Never redirect to external URLs
-   - Clear `sessionStorage` redirect after use
+export function saveRedirect(path: string): void {
+  if (isValidRedirect(path)) sessionStorage.setItem(REDIRECT_KEY, path);
+}
+
+export function consumeRedirect(fallback: string): string {
+  const saved = sessionStorage.getItem(REDIRECT_KEY);
+  sessionStorage.removeItem(REDIRECT_KEY);
+  return saved && isValidRedirect(saved) ? saved : fallback;
+}
+```
+
+#### 4.2.2: Signin page — read and store redirect
+
+**File:** `apps/web/src/app/[locale]/auth/signin/page.tsx`
+
+- Read `searchParams.redirect` from URL
+- On mount: `if (redirect) saveRedirect(redirect)` → зберігає в `sessionStorage`
+- **Password login:** after successful `loginWithPassword()` → `router.replace(consumeRedirect('/${locale}/profile'))`
+- **Google OAuth:** `sessionStorage` вже має redirect → user натискає Google → та сама вкладка → `callback/page.tsx` читає через `consumeRedirect()`
+- **Magic link:** redirect передається як параметр в API (Step 4.2.4)
+
+#### 4.2.3: Callback page (Google OAuth) — consume redirect
+
+**File:** `apps/web/src/app/[locale]/auth/callback/page.tsx`
+
+- After successful auth: `router.replace(consumeRedirect('/${locale}/profile'))`
+- `consumeRedirect()` автоматично видаляє з `sessionStorage`
+
+#### 4.2.4: Magic link — backend passthrough
+
+Magic link відкривається в новій вкладці → `sessionStorage` недоступний. Тому `redirect` прокидається через backend в URL.
+
+**Frontend change** (`apps/web/src/shared/api/auth.ts`):
+- `sendMagicLink(email, purpose, lang, redirectTo?)` — додати optional параметр
+- Signin page передає redirect: `sendMagicLink(email, 'login', locale, redirect)`
+
+**Backend changes** (мінімальні, ~5 рядків):
+- `apps/api/src/modules/auth/auth.service.ts` → `sendMagicLink()`: зберегти `redirectTo` в Redis payload поруч з `{email, purpose, lang}`
+- `apps/api/src/modules/auth/services/email.service.ts` → `sendMagicLink()`: якщо `redirectTo` є, додати `&redirect=${encodeURIComponent(redirectTo)}` до verify URL
+- Zod schema для `sendMagicLink` DTO: додати optional `redirectTo` string field з валідацією (starts with `/`)
+
+**Result:** magic link URL стає `${WEB_URL}/auth/verify?token=${token}&redirect=/billing`
+
+#### 4.2.5: Verify page (Magic link) — read redirect from URL
+
+**File:** `apps/web/src/app/[locale]/auth/verify/page.tsx`
+
+- Read `searchParams.redirect` from URL (прийшов через magic link)
+- Validate via `isValidRedirect()` (defense in depth — навіть якщо backend вже валідував)
+- After successful verification: `router.replace(redirect || '/${locale}/profile')`
+
+#### 4.2.6: Security checklist
+
+- `isValidRedirect()` перевіряє на **кожному consumption point** (defense in depth)
+- Backend валідує `redirectTo` через Zod DTO (starts with `/`, no protocol)
+- `sessionStorage` автоматично очищується через `consumeRedirect()`
+- Ніколи не redirect на зовнішні URL
 
 ---
 
@@ -399,14 +445,29 @@ Copy the webhook signing secret from CLI output → set as `STRIPE_WEBHOOK_SECRE
 5. Repeat for 10 and 20 credit packs
 6. Check MongoDB: `user.credits.balance` incremented correctly
 
-### Step 6.4: Test DogfoodingSection flow
+### Step 6.4: Test DogfoodingSection + redirect flow
 
+**Password login path:**
 1. Open landing page as unauthenticated user
-2. Scroll to DogfoodingSection
-3. Click "Try it" on either preview card
-4. Verify: redirected to signin page with `?redirect=/billing`
-5. Complete authentication
-6. Verify: redirected to `/billing` (not default dashboard)
+2. Click "Try it" → verify redirect to `/auth/signin?redirect=/billing`
+3. Login with password
+4. Verify: redirected to `/billing` (not `/profile`)
+
+**Magic link path:**
+1. Click "Try it" → `/auth/signin?redirect=/billing`
+2. Enter email → receive magic link
+3. Click magic link from email (opens new tab)
+4. Verify: URL contains `?token=xxx&redirect=/billing`
+5. After verification → redirected to `/billing`
+
+**Google OAuth path:**
+1. Click "Try it" → `/auth/signin?redirect=/billing`
+2. Click "Sign in with Google" → complete OAuth
+3. After callback → redirected to `/billing`
+
+**Authenticated user:**
+1. Login first, then open landing page
+2. Click "Try it" → verify direct navigation to `/billing` (no signin page)
 
 ### Step 6.5: Test edge cases
 
@@ -419,20 +480,40 @@ Copy the webhook signing secret from CLI output → set as `STRIPE_WEBHOOK_SECRE
 
 ## File Change Summary
 
+### Shared types (`packages/types/`)
 | Action | File | Description |
 |--------|------|-------------|
-| MODIFY | `packages/types/src/contracts/payments.ts` | Add `SUBSCRIPTION_PLAN`, `priceAmount`+`currency` to packs |
-| CREATE | `packages/types/src/utils/format-price.ts` | `formatPrice()` utility (cents + currency → display string) |
-| MODIFY | `packages/types/src/index.ts` | Export `formatPrice` |
-| CREATE | `apps/web/src/features/billing/ui/DemoBanner/DemoBanner.tsx` | Demo mode banner component |
-| CREATE | `apps/web/src/features/billing/ui/DemoBanner/index.ts` | Barrel export |
-| CREATE | `apps/web/src/features/billing/index.ts` | Barrel export |
-| REWRITE | `apps/web/src/app/[locale]/(protected)/billing/page.tsx` | Full redesign with pricing cards |
-| MODIFY | `apps/web/src/widgets/agency/landing/DogfoodingSection/DogfoodingSection.tsx` | Add interactive checkout preview widget |
-| MODIFY | `apps/web/src/app/[locale]/auth/signin/page.tsx` | Add redirect query param support |
-| MODIFY | `apps/web/src/app/[locale]/auth/verify/page.tsx` | Read redirect param after magic link verification |
-| MODIFY | `apps/web/src/app/[locale]/auth/callback/page.tsx` | Read redirect from sessionStorage after OAuth |
+| MODIFY | `src/contracts/payments.ts` | Add `SUBSCRIPTION_PLAN`, `priceAmount`+`currency` to packs |
+| CREATE | `src/utils/format-price.ts` | `formatPrice()` utility (cents + currency → display string) |
+| MODIFY | `src/index.ts` | Export `formatPrice` |
+
+### Frontend — Billing UI (`apps/web/`)
+| Action | File | Description |
+|--------|------|-------------|
+| CREATE | `src/features/billing/ui/DemoBanner/DemoBanner.tsx` | Demo mode banner component |
+| CREATE | `src/features/billing/ui/DemoBanner/index.ts` | Barrel export |
+| CREATE | `src/features/billing/index.ts` | Barrel export |
+| REWRITE | `src/app/[locale]/(protected)/billing/page.tsx` | Full redesign with pricing cards |
+| MODIFY | `src/widgets/agency/landing/DogfoodingSection/DogfoodingSection.tsx` | Add interactive checkout preview widget |
+
+### Frontend — Auth redirect (`apps/web/`)
+| Action | File | Description |
+|--------|------|-------------|
+| CREATE | `src/shared/lib/redirect.ts` | `saveRedirect()`, `consumeRedirect()`, `isValidRedirect()` |
+| MODIFY | `src/shared/api/auth.ts` | Add optional `redirectTo` to `sendMagicLink()` |
+| MODIFY | `src/app/[locale]/auth/signin/page.tsx` | Read `?redirect`, save to sessionStorage, use after login |
+| MODIFY | `src/app/[locale]/auth/verify/page.tsx` | Read `?redirect` from URL after magic link verification |
+| MODIFY | `src/app/[locale]/auth/callback/page.tsx` | `consumeRedirect()` from sessionStorage after OAuth |
+
+### Backend — Magic link redirect passthrough (`apps/api/`)
+| Action | File | Description |
+|--------|------|-------------|
+| MODIFY | `src/modules/auth/auth.service.ts` | Store `redirectTo` in Redis with magic link token |
+| MODIFY | `src/modules/auth/services/email.service.ts` | Append `&redirect=` to verify URL if `redirectTo` provided |
+| MODIFY | `src/modules/auth/dto/` | Add optional `redirectTo` to send-magic-link DTO |
+
+### Translations
+| Action | File | Description |
+|--------|------|-------------|
 | MODIFY | `apps/web/messages/en.json` | Update billing + dogfooding translations |
 | MODIFY | `apps/web/messages/uk.json` | Update billing + dogfooding translations |
-
-**No backend code changes required** — all existing API endpoints, services, webhooks, and guards are already implemented correctly.
