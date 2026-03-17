@@ -30,6 +30,10 @@ jest.mock('../../config/env', () => ({
         basic: { priceId: 'price_test_basic', credits: 5000 },
         max: { priceId: 'price_test_max', credits: 25000 },
     },
+    STRIPE_PRICE_TO_PLAN: {
+        price_test_starter: 'starter',
+        price_test_pro: 'pro',
+    },
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
@@ -37,6 +41,7 @@ const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
     STRIPE_SUBSCRIPTION_PLANS: Record<string, { priceId: string; credits: number }>;
     STRIPE_CREDIT_PACKS: Record<string, { priceId: string; credits: number }>;
+    STRIPE_PRICE_TO_PLAN: Record<string, string>;
 };
 
 const MOCK_USER_ID = '507f1f77bcf86cd799439011';
@@ -893,6 +898,75 @@ describe('PaymentsService', () => {
                             'billing.hasActiveSubscription': false,
                             'billing.subscriptionStatus':
                                 SUBSCRIPTION_STATUS.PAST_DUE,
+                        }),
+                    },
+                    { maxTimeMS: 10000 }
+                );
+            });
+
+            it('should update planCode when SUBSCRIPTION_UPDATED contains a known priceId (plan switch)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_plan_switch',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_starter' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
+                    {
+                        $set: expect.objectContaining({
+                            'billing.planCode': 'starter',
+                            'billing.hasActiveSubscription': true,
+                        }),
+                    },
+                    { maxTimeMS: 10000 }
+                );
+            });
+
+            it('should not set planCode when SUBSCRIPTION_UPDATED has unknown priceId', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_unknown_price',
+                    occurredAt,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_unknown_xxx' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockReturnValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({ _id: MOCK_USER_ID }),
+                    {
+                        $set: expect.not.objectContaining({
+                            'billing.planCode': expect.anything(),
                         }),
                     },
                     { maxTimeMS: 10000 }

@@ -20,6 +20,7 @@ import {
     ENV,
     STRIPE_SUBSCRIPTION_PLANS,
     STRIPE_CREDIT_PACKS,
+    STRIPE_PRICE_TO_PLAN,
 } from '../../config/env';
 import {
     PAYMENT_PROVIDER,
@@ -458,6 +459,18 @@ export class PaymentsService {
 
             case BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED: {
                 fields['providerSubscriptionStatus'] = str(event.raw.status);
+
+                // Detect plan switch via reverse priceId → planCode lookup
+                const items = event.raw.items as
+                    | { data?: Array<{ price?: { id?: string } }> }
+                    | undefined;
+                const priceId = str(items?.data?.[0]?.price?.id ?? null);
+                if (priceId) {
+                    const newPlanCode = STRIPE_PRICE_TO_PLAN[priceId];
+                    if (newPlanCode) {
+                        fields['planCode'] = newPlanCode;
+                    }
+                }
                 break;
             }
 

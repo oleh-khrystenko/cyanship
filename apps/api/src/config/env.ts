@@ -106,6 +106,15 @@ export const STRIPE_SUBSCRIPTION_PLANS: Partial<
     return result;
 })();
 
+// Reverse lookup: Stripe priceId → plan code (for webhook plan-switch detection)
+export const STRIPE_PRICE_TO_PLAN: Record<string, string> = (() => {
+    const result: Record<string, string> = {};
+    for (const [code, entry] of Object.entries(STRIPE_SUBSCRIPTION_PLANS)) {
+        if (entry) result[entry.priceId] = code;
+    }
+    return result;
+})();
+
 // Dynamic: one env var per credit pack, fail-fast when one-off enabled
 export const STRIPE_CREDIT_PACKS: Partial<
     Record<CreditPackCode, { priceId: string; credits: number }>
