@@ -2,19 +2,17 @@
 
 import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { Pencil, ShieldCheck, ShieldOff } from 'lucide-react';
 import type { UserProfile } from '@cyanship/types';
-import { ChangePasswordSchema, passwordSchema } from '@cyanship/types';
+import { passwordSchema } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import {
-    setPassword,
-    changePassword,
-    getMe,
-} from '@/shared/api';
+import { setPassword, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import ChangePasswordForm from './ChangePasswordForm';
 
 export type ProfileMode = 'new' | 'set-password' | null;
 
@@ -29,9 +27,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     const setUser = useAuthStore((s) => s.setUser);
 
     const [editing, setEditing] = useState(false);
-    const [currentPwd, setCurrentPwd] = useState('');
     const [newPwd, setNewPwd] = useState('');
-    const [currentPwdError, setCurrentPwdError] = useState('');
     const [newPwdError, setNewPwdError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -50,27 +46,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     // View mode: has password, normal mode, not editing
     const isViewMode = isChangeMode && !editing;
 
-    const resetForm = () => {
-        setCurrentPwd('');
-        setNewPwd('');
-        setCurrentPwdError('');
-        setNewPwdError('');
-    };
-
-    const handleCancel = () => {
-        resetForm();
-        setEditing(false);
-    };
-
-    const validateNewPassword = (): boolean => {
-        const result = passwordSchema.safeParse(newPwd);
-        if (!result.success) {
-            setNewPwdError(t('password_too_short'));
-            return false;
-        }
-        return true;
-    };
-
     const handleSetPassword = async (e: FormEvent) => {
         e.preventDefault();
 
@@ -78,7 +53,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             return;
         }
 
-        if (!validateNewPassword()) return;
+        const result = passwordSchema.safeParse(newPwd);
+        if (!result.success) {
+            setNewPwdError(t('password_too_short'));
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -86,44 +65,19 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             const me = await getMe();
             setUser(me);
             toast.success(t('password_set'));
-            resetForm();
-        } catch {
-            setNewPwdError(t('password_invalid'));
-        } finally {
-            setSubmitting(false);
-        }
-    };
+            setNewPwd('');
+            setNewPwdError('');
+        } catch (err) {
+            const code =
+                err instanceof AxiosError
+                    ? err.response?.data?.error?.code
+                    : undefined;
 
-    const handleChangePassword = async (e: FormEvent) => {
-        e.preventDefault();
-
-        const parsed = ChangePasswordSchema.safeParse({
-            currentPassword: currentPwd,
-            newPassword: newPwd,
-        });
-        if (!parsed.success) {
-            for (const issue of parsed.error.issues) {
-                if (issue.path[0] === 'newPassword') {
-                    setNewPwdError(
-                        issue.code === 'custom'
-                            ? t('password_same_as_current')
-                            : t('password_too_short')
-                    );
-                }
+            if (code === 'RATE_LIMIT_EXCEEDED') {
+                toast.error(t('error_rate_limit'));
+            } else {
+                toast.error(t('error_generic'));
             }
-            return;
-        }
-
-        setSubmitting(true);
-        try {
-            await changePassword(currentPwd, newPwd);
-            const me = await getMe();
-            setUser(me);
-            toast.success(t('password_changed'));
-            resetForm();
-            setEditing(false);
-        } catch {
-            setCurrentPwdError(t('password_invalid'));
         } finally {
             setSubmitting(false);
         }
@@ -214,73 +168,10 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Change password form */}
             {isChangeMode && editing && (
-                <form onSubmit={handleChangePassword} className="mt-5 space-y-4">
-                    <div>
-                        <label className="text-muted-foreground mb-1.5 block text-sm">
-                            {t('current_password_label')}
-                        </label>
-                        <UiPasswordInput
-                            placeholder={t('password_placeholder')}
-                            value={currentPwd}
-                            onChange={(e) => {
-                                setCurrentPwd(e.target.value);
-                                if (currentPwdError) setCurrentPwdError('');
-                            }}
-                            error={currentPwdError || undefined}
-                            required
-                            size="lg"
-                            showLabel={t('show_password')}
-                            hideLabel={t('hide_password')}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-muted-foreground mb-1.5 block text-sm">
-                            {t('new_password_label')}
-                        </label>
-                        <UiPasswordInput
-                            placeholder={t('password_placeholder')}
-                            value={newPwd}
-                            onChange={(e) => {
-                                setNewPwd(e.target.value);
-                                if (newPwdError) setNewPwdError('');
-                            }}
-                            error={newPwdError || undefined}
-                            required
-                            size="lg"
-                            showLabel={t('show_password')}
-                            hideLabel={t('hide_password')}
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <UiButton
-                            type="submit"
-                            variant="filled"
-                            size="md"
-                            className="rounded-lg"
-                            disabled={
-                                submitting || !newPwd || !currentPwd
-                            }
-                        >
-                            {submitting ? (
-                                <UiSpinner size="sm" />
-                            ) : (
-                                t('change_password')
-                            )}
-                        </UiButton>
-
-                        <UiButton
-                            type="button"
-                            variant="text"
-                            size="md"
-                            onClick={handleCancel}
-                            disabled={submitting}
-                        >
-                            {t('cancel')}
-                        </UiButton>
-                    </div>
-                </form>
+                <ChangePasswordForm
+                    onDone={() => setEditing(false)}
+                    onCancel={() => setEditing(false)}
+                />
             )}
         </section>
     );
