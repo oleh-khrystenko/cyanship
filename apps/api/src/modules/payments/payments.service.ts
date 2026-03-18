@@ -31,6 +31,10 @@ import {
     ProcessedWebhookEvent,
     ProcessedWebhookEventDocument,
 } from './schemas/processed-webhook-event.schema';
+import {
+    OrphanedProviderCustomer,
+    OrphanedProviderCustomerDocument,
+} from './schemas/orphaned-provider-customer.schema';
 import { UsersService } from '../users/users.service';
 
 /** Max time for any single MongoDB operation in the webhook path (ms). */
@@ -49,6 +53,9 @@ export class PaymentsService {
 
         @InjectModel(ProcessedWebhookEvent.name)
         private readonly webhookEventModel: Model<ProcessedWebhookEventDocument>,
+
+        @InjectModel(OrphanedProviderCustomer.name)
+        private readonly orphanModel: Model<OrphanedProviderCustomerDocument>,
 
         private readonly usersService: UsersService
     ) {}
@@ -176,7 +183,7 @@ export class PaymentsService {
         });
         await this.webhookEventModel.deleteMany({ userId });
 
-        // 2. Clean up Stripe (best-effort — DB is already clean).
+        // 2. Clean up Stripe — on failure, persist for retry by cron.
         if (providerCustomerId) {
             try {
                 await this.paymentProvider.deleteCustomerData(
@@ -184,8 +191,13 @@ export class PaymentsService {
                 );
             } catch (error) {
                 this.logger.error(
-                    `Failed to delete Stripe customer ${providerCustomerId} during reset (DB already cleaned)`,
+                    `Failed to delete Stripe customer ${providerCustomerId} during reset, queued for retry`,
                     error instanceof Error ? error.stack : String(error)
+                );
+                await this.enqueueOrphanedCustomer(
+                    'stripe',
+                    providerCustomerId,
+                    'billing_reset'
                 );
             }
         }
@@ -524,5 +536,32 @@ export class PaymentsService {
         }
 
         return fields;
+    }
+
+    async enqueueOrphanedCustomer(
+        provider: string,
+        providerCustomerId: string,
+        reason: string
+    ): Promise<void> {
+        try {
+            await this.orphanModel.create({
+                provider,
+                providerCustomerId,
+                reason,
+                failedAt: new Date(),
+                attempts: 0,
+                lastAttemptAt: null,
+            });
+        } catch (error: unknown) {
+            // Duplicate — already queued, nothing to do
+            if (
+                error instanceof Error &&
+                'code' in error &&
+                (error as { code: number }).code === 11000
+            ) {
+                return;
+            }
+            throw error;
+        }
     }
 }
