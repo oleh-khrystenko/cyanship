@@ -5,7 +5,7 @@ import {
 } from 'react';
 import { LinkProps } from 'next/link';
 
-export type UiButtonVariant = 'filled' | 'text' | 'icon' | 'icon-compact';
+export type UiButtonVariant = 'filled' | 'destructive-outline' | 'text' | 'icon' | 'icon-compact';
 export type UiButtonSize = 'sm' | 'md' | 'lg';
 
 /**

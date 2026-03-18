@@ -85,6 +85,8 @@ export class User {
             cancelAtPeriodEnd: { type: Boolean, default: false },
             hasActiveSubscription: { type: Boolean, default: false },
             lastProviderEventAt: { type: Date, default: null },
+            scheduledPlanCode: { type: String, default: null },
+            scheduledChangeDate: { type: Date, default: null },
         },
         default: null,
         _id: false,
@@ -101,6 +103,8 @@ export class User {
         cancelAtPeriodEnd: boolean;
         hasActiveSubscription: boolean;
         lastProviderEventAt: Date | null;
+        scheduledPlanCode: string | null;
+        scheduledChangeDate: Date | null;
     } | null;
 }
 

@@ -60,19 +60,16 @@ jest.mock('../src/config/env', () => ({
         AUTH_PASSWORD_MIN_LENGTH: 8,
         STRIPE_SECRET_KEY: 'sk_test_payments_e2e',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        STRIPE_PRICE_MONTHLY_USD: 'price_test_monthly',
-        STRIPE_PRICE_CREDITS_5_USD: 'price_credits5_test',
-        STRIPE_PRICE_CREDITS_10_USD: 'price_credits10_test',
-        STRIPE_PRICE_CREDITS_20_USD: 'price_credits20_test',
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
+    STRIPE_SUBSCRIPTION_PLANS: {
+        starter: { priceId: 'price_test_starter' },
+        pro: { priceId: 'price_test_pro' },
+    },
     STRIPE_CREDIT_PACKS: {
-        credits_5: { priceId: 'price_credits5_test', credits: 5 },
-        credits_10: { priceId: 'price_credits10_test', credits: 10 },
-        credits_20: { priceId: 'price_credits20_test', credits: 20 },
+        basic: { priceId: 'price_test_basic', credits: 5 },
+        max: { priceId: 'price_test_max', credits: 20 },
     },
     parseLockoutThresholds: (raw: string) =>
         raw.split(',').map((entry: string) => {
@@ -335,7 +332,7 @@ describe('Payments E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'pro' })
                 .expect(201)
                 .expect((res: supertest.Response) => {
                     expect(
@@ -355,7 +352,7 @@ describe('Payments E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'pro' })
                 .expect(409)
                 .expect((res: supertest.Response) => {
                     expect(
@@ -367,7 +364,7 @@ describe('Payments E2E', () => {
         it('should return 401 when JWT token is missing', async () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
-                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'pro' })
                 .expect(401);
         });
 
@@ -513,7 +510,7 @@ describe('Payments E2E', () => {
             const res = await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'pro' })
                 .expect(201);
 
             expect(res.body).toHaveProperty('data');
@@ -525,7 +522,7 @@ describe('Payments E2E', () => {
         it('error response has { error: { code, message } } shape', async () => {
             const res = await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
-                .send({ paymentType: 'subscription', planCode: 'monthly_usd' })
+                .send({ paymentType: 'subscription', planCode: 'pro' })
                 .expect(401);
 
             const body = res.body as {
@@ -564,7 +561,7 @@ describe('Payments E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ paymentType: 'one_off', packCode: 'credits_5' })
+                .send({ paymentType: 'one_off', packCode: 'basic' })
                 .expect(201)
                 .expect((res: supertest.Response) => {
                     expect(
@@ -637,7 +634,7 @@ describe('Payments E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/payments/checkout-session')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ paymentType: 'one_off', packCode: 'credits_5' })
+                .send({ paymentType: 'one_off', packCode: 'basic' })
                 .expect(400)
                 .expect((res: supertest.Response) => {
                     expect(
@@ -657,7 +654,7 @@ describe('Payments E2E', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send({
                     paymentType: 'subscription',
-                    planCode: 'monthly_usd',
+                    planCode: 'pro',
                 })
                 .expect(400)
                 .expect((res: supertest.Response) => {
@@ -688,7 +685,7 @@ describe('Payments E2E', () => {
                     subscription: 'sub_idempotency_test',
                     currency: 'usd',
                     status: 'complete',
-                    metadata: { planCode: 'monthly_usd' },
+                    metadata: { planCode: 'pro' },
                 },
             };
 
@@ -814,7 +811,7 @@ describe('Payments E2E', () => {
                     subscription: 'sub_ooo',
                     currency: 'usd',
                     status: 'complete',
-                    metadata: { planCode: 'monthly_usd' },
+                    metadata: { planCode: 'pro' },
                 },
             };
 
@@ -887,7 +884,7 @@ describe('Payments E2E', () => {
                     subscription: 'sub_lifecycle',
                     currency: 'usd',
                     status: 'complete',
-                    metadata: { planCode: 'monthly_usd' },
+                    metadata: { planCode: 'pro' },
                 },
             };
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
@@ -980,8 +977,8 @@ describe('Payments E2E', () => {
                 providerEventId: 'evt_oneoff_dup_001',
                 occurredAt: new Date(),
                 userId,
-                creditsAmount: 10,
-                packCode: 'credits_10',
+                creditsAmount: 20,
+                packCode: 'max',
                 raw: {},
             };
 
@@ -989,7 +986,7 @@ describe('Payments E2E', () => {
                 oneOffEvent
             );
 
-            // First call — should add 10 credits
+            // First call — should add 20 credits
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
                 .set('stripe-signature', 'test-sig')
@@ -998,9 +995,9 @@ describe('Payments E2E', () => {
                 .expect(201);
 
             const afterFirst = await userModel.findById(userId).lean();
-            expect(afterFirst?.credits?.balance).toBe(10);
+            expect(afterFirst?.credits?.balance).toBe(20);
 
-            // Second call with same providerEventId — idempotent, credits should stay at 10
+            // Second call with same providerEventId — idempotent, credits should stay at 20
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
                 .set('stripe-signature', 'test-sig')
@@ -1009,7 +1006,7 @@ describe('Payments E2E', () => {
                 .expect(201);
 
             const afterSecond = await userModel.findById(userId).lean();
-            expect(afterSecond?.credits?.balance).toBe(10);
+            expect(afterSecond?.credits?.balance).toBe(20);
         });
     });
 
@@ -1022,7 +1019,7 @@ describe('Payments E2E', () => {
                 provider: 'stripe',
                 providerCustomerId: 'cus_resolve',
                 providerSubscriptionId: 'sub_resolve_xxx',
-                planCode: 'monthly_usd',
+                planCode: 'pro',
                 currency: 'usd',
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                 hasActiveSubscription: true,

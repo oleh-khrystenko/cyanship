@@ -6,8 +6,7 @@ import { PaymentsService } from './payments.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
-        BILLING_SUCCESS_URL: 'http://localhost:3000/billing/success',
-        BILLING_CANCEL_URL: 'http://localhost:3000/billing/cancel',
+        WEB_URL: 'http://localhost:3000',
     },
 }));
 
@@ -43,7 +42,7 @@ describe('PaymentsController', () => {
         it('should create checkout session with subscription type', async () => {
             const dto = {
                 paymentType: 'subscription' as const,
-                planCode: 'monthly_usd',
+                planCode: 'pro',
             };
             mockPaymentsService.createCheckoutSession.mockResolvedValue({
                 checkoutUrl: 'https://checkout.stripe.com/test',
@@ -65,7 +64,7 @@ describe('PaymentsController', () => {
         it('should create checkout session with one-off type', async () => {
             const dto = {
                 paymentType: 'one_off' as const,
-                packCode: 'credits_5' as const,
+                packCode: 'basic' as const,
             };
             mockPaymentsService.createCheckoutSession.mockResolvedValue({
                 checkoutUrl: 'https://checkout.stripe.com/oneoff',

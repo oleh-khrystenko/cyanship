@@ -1,7 +1,7 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { FormEvent, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
@@ -22,6 +22,7 @@ import {
     getMe,
     getApiMessageKey,
 } from '@/shared/api';
+import { saveRedirect, consumeRedirect } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
 type SigninState =
@@ -32,12 +33,14 @@ type SigninState =
     | 'recovery'
     | 'error';
 
-export default function SigninPage() {
+function SigninContent() {
     const t = useTranslations('auth_page.signin');
     const tRecovery = useTranslations('auth_page.recovery');
     const tErrors = useTranslations();
     const locale = useLocale();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get('redirect');
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const setUser = useAuthStore((s) => s.setUser);
 
@@ -58,8 +61,12 @@ export default function SigninPage() {
     const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
     useEffect(() => {
+        if (redirect) saveRedirect(redirect);
+    }, [redirect]);
+
+    useEffect(() => {
         if (isAuthenticated) {
-            router.replace(`/${locale}/profile`);
+            router.replace(consumeRedirect(`/${locale}/profile`));
         }
     }, [isAuthenticated, locale, router]);
 
@@ -149,7 +156,7 @@ export default function SigninPage() {
             } else {
                 const purpose = isNewUser ? 'register' : 'login';
                 lastPurposeRef.current = purpose;
-                await sendMagicLink(email, locale, purpose);
+                await sendMagicLink(email, locale, purpose, redirect ?? undefined);
                 startResendTimer();
                 setState('magic-link-sent');
             }
@@ -189,7 +196,7 @@ export default function SigninPage() {
             } else {
                 const me = await getMe();
                 setUser(me);
-                router.push(`/${locale}/profile`);
+                router.push(consumeRedirect(`/${locale}/profile`));
             }
         } catch (err) {
             setSubmitting(false);
@@ -233,7 +240,7 @@ export default function SigninPage() {
             toast.success(tRecovery('restored'));
             const me = await getMe();
             setUser(me);
-            router.push(`/${locale}/profile`);
+            router.push(consumeRedirect(`/${locale}/profile`));
         } catch (err) {
             setSubmitting(false);
             handleError(err);
@@ -320,7 +327,7 @@ export default function SigninPage() {
             <UiButton
                 variant="text"
                 size="lg"
-                className="w-full justify-center gap-3 rounded-lg border border-border bg-card text-foreground hover:bg-secondary hover:text-foreground"
+                className="w-full justify-center gap-3 border border-border bg-card text-foreground hover:bg-secondary hover:text-foreground"
                 IconLeft={<GoogleIcon />}
                 onClick={handleGoogleSignin}
             >
@@ -350,7 +357,7 @@ export default function SigninPage() {
                     type="submit"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg"
+                    className="w-full justify-center"
                     disabled={!email}
                 >
                     {t('continue_button')}
@@ -414,7 +421,7 @@ export default function SigninPage() {
                 type="submit"
                 variant="filled"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 disabled={submitting || !password}
             >
                 {submitting ? (
@@ -429,7 +436,7 @@ export default function SigninPage() {
                     type="button"
                     variant="filled"
                     size="lg"
-                    className="w-full justify-center rounded-lg border border-border bg-card text-foreground hover:bg-secondary"
+                    className="w-full justify-center border border-border bg-card text-foreground hover:bg-secondary"
                     disabled={submitting}
                     onClick={handleSendMagicLinkFromPassword}
                     IconLeft={<Mail />}
@@ -500,7 +507,7 @@ export default function SigninPage() {
             <UiButton
                 variant="filled"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 disabled={submitting}
                 onClick={handleRestore}
             >
@@ -514,7 +521,7 @@ export default function SigninPage() {
             <UiButton
                 variant="text"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 onClick={goBackToEmail}
             >
                 {tRecovery('logout_button')}
@@ -534,7 +541,7 @@ export default function SigninPage() {
             <UiButton
                 variant="filled"
                 size="lg"
-                className="w-full justify-center rounded-lg"
+                className="w-full justify-center"
                 onClick={goBackToEmail}
             >
                 {t('continue_button')}
@@ -555,5 +562,19 @@ export default function SigninPage() {
                 {state === 'error' && renderErrorState()}
             </div>
         </main>
+    );
+}
+
+export default function SigninPage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="flex min-h-screen items-center justify-center px-4">
+                    <UiSpinner size="lg" />
+                </main>
+            }
+        >
+            <SigninContent />
+        </Suspense>
     );
 }

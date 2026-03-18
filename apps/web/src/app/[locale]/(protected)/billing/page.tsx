@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { Check } from 'lucide-react';
 import {
     PAYMENTS_SUBSCRIPTION_ENABLED,
     PAYMENTS_ONE_OFF_ENABLED,
@@ -11,22 +12,34 @@ import {
     createSubscriptionCheckout,
     createOneOffCheckout,
     createPortalSession,
+    resetBilling,
 } from '@/shared/api/payments';
+import { getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
-import { CREDIT_PACK_CONFIG, type CreditPackCode } from '@cyanship/types';
+import {
+    SUBSCRIPTION_PLANS,
+    CREDIT_PACKS,
+    formatPrice,
+    type SubscriptionPlanCode,
+    type CreditPackCode,
+} from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
+import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
+import { DemoBanner } from '@/features/billing';
 
 export default function BillingPage() {
     const t = useTranslations('billing_page');
     const locale = useLocale();
     const user = useAuthStore((s) => s.user);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
     if (!user) return null;
 
     const billing = user.billing;
     const hasActive = billing?.hasActiveSubscription === true;
+    const hasBillingData = billing != null || user.credits.balance > 0;
 
     const formatDate = (date: Date | string | null) => {
         if (!date) return '';
@@ -36,11 +49,13 @@ export default function BillingPage() {
         ).format(date instanceof Date ? date : new Date(date));
     };
 
-    const handleSubscriptionCheckout = async () => {
-        setLoadingAction('subscribe');
+    const handleSubscriptionCheckout = async (
+        planCode: SubscriptionPlanCode,
+    ) => {
+        setLoadingAction(`subscribe_${planCode}`);
         try {
             const { checkoutUrl } =
-                await createSubscriptionCheckout('monthly_usd');
+                await createSubscriptionCheckout(planCode);
             window.location.assign(checkoutUrl);
         } catch {
             toast.error(t('subscribe.error'));
@@ -70,54 +85,87 @@ export default function BillingPage() {
         }
     };
 
+    const handleReset = async () => {
+        setLoadingAction('reset');
+        try {
+            await resetBilling();
+            const me = await getMe();
+            useAuthStore.getState().setUser(me);
+            setResetDialogOpen(false);
+            toast.success(t('reset.success'));
+        } catch {
+            toast.error(t('reset.error'));
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
+    const featureKeys = ['item_1', 'item_2', 'item_3'] as const;
+
     return (
-        <div className="mx-auto max-w-lg space-y-12 px-4 py-12">
+        <div className="mx-auto max-w-3xl space-y-10 px-4 py-12">
+            {/* ── Demo Banner ── */}
+            <DemoBanner />
+
             {/* ── Subscription Section ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && (
                 <section>
                     {!hasActive ? (
-                        <>
-                            <h2 className="text-foreground mb-2 text-2xl font-bold">
-                                {t('subscribe.title')}
-                            </h2>
-                            <p className="text-muted-foreground mb-6">
-                                {t('subscribe.description')}
-                            </p>
-                            <p className="text-foreground mb-6 font-medium">
-                                {t('subscribe.plan_label')}
-                            </p>
-                            <p className="text-muted-foreground mb-6 text-xs">
-                                {t.rich('checkout_terms_note', {
-                                    terms: (chunks) => (
-                                        <a
-                                            href={`/${locale}/terms`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-primary underline hover:no-underline"
-                                        >
-                                            {chunks}
-                                        </a>
-                                    ),
-                                })}
-                            </p>
-                            <UiButton
-                                onClick={handleSubscriptionCheckout}
-                                disabled={loadingAction === 'subscribe'}
-                            >
-                                {loadingAction === 'subscribe' ? (
-                                    <UiSpinner size="sm" />
-                                ) : (
-                                    t('subscribe.button')
-                                )}
-                            </UiButton>
-                        </>
+                        <div className={`grid gap-4 ${(SUBSCRIPTION_PLANS.length as number) === 1 ? '' : 'sm:grid-cols-2'}`}>
+                            {SUBSCRIPTION_PLANS.map((plan) => (
+                                <div
+                                    key={plan.code}
+                                    className="flex flex-col rounded-lg border-2 border-foreground bg-card p-6 md:p-8"
+                                >
+                                    <p className="text-base font-medium text-foreground">
+                                        {t(`plans.${plan.code}.name`, { defaultValue: plan.code })}
+                                    </p>
+                                    <p className="mt-2 text-4xl font-bold text-foreground">
+                                        {formatPrice(plan.priceAmount, plan.currency)}
+                                        <span className="text-lg font-normal text-muted-foreground">
+                                            {' '}{t(`subscribe.interval_${plan.interval}`)}
+                                        </span>
+                                    </p>
+
+                                    <ul className="mt-6 space-y-3">
+                                        {featureKeys.map((key) => (
+                                            <li
+                                                key={key}
+                                                className="flex items-center gap-2 text-sm text-muted-foreground"
+                                            >
+                                                <Check className="h-4 w-4 shrink-0 text-success" />
+                                                {t(`subscribe.features.${key}`)}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <UiButton
+                                        variant="filled"
+                                        size="lg"
+                                        className="mt-8 w-full justify-center"
+                                        onClick={() =>
+                                            handleSubscriptionCheckout(plan.code)
+                                        }
+                                        disabled={
+                                            loadingAction === `subscribe_${plan.code}`
+                                        }
+                                    >
+                                        {loadingAction === `subscribe_${plan.code}` ? (
+                                            <UiSpinner size="sm" />
+                                        ) : (
+                                            t('subscribe.button')
+                                        )}
+                                    </UiButton>
+                                </div>
+                            ))}
+                        </div>
                     ) : (
-                        <>
-                            <h2 className="text-foreground mb-6 text-2xl font-bold">
-                                {t('active.title')}
-                            </h2>
-                            <div className="mb-6 space-y-2">
-                                <p className="text-muted-foreground">
+                        <div className="rounded-lg border border-border bg-card p-6 md:p-8">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-lg font-semibold text-foreground">
+                                    {t('active.title')}
+                                </h2>
+                                <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-medium text-success">
                                     {billing?.cancelAtPeriodEnd
                                         ? t('active.status_canceling', {
                                               date: formatDate(
@@ -126,9 +174,12 @@ export default function BillingPage() {
                                               ),
                                           })
                                         : t('active.status_active')}
-                                </p>
+                                </span>
+                            </div>
+
+                            <div className="mt-4 space-y-1 text-sm text-muted-foreground">
                                 {billing?.planCode && (
-                                    <p className="text-muted-foreground">
+                                    <p>
                                         {t('active.plan_label', {
                                             plan: billing.planCode,
                                         })}
@@ -136,7 +187,7 @@ export default function BillingPage() {
                                 )}
                                 {billing?.currentPeriodEnd &&
                                     !billing?.cancelAtPeriodEnd && (
-                                        <p className="text-muted-foreground">
+                                        <p>
                                             {t('active.next_billing', {
                                                 date: formatDate(
                                                     billing.currentPeriodEnd,
@@ -145,12 +196,27 @@ export default function BillingPage() {
                                         </p>
                                     )}
                                 {billing?.cancelAtPeriodEnd && (
-                                    <p className="text-warning text-sm">
+                                    <p className="text-warning">
                                         {t('active.cancel_notice')}
                                     </p>
                                 )}
+                                {billing?.scheduledPlanCode && (
+                                    <p className="text-info">
+                                        {t('active.scheduled_change', {
+                                            plan: billing.scheduledPlanCode,
+                                            date: formatDate(
+                                                billing.scheduledChangeDate ??
+                                                    null,
+                                            ),
+                                        })}
+                                    </p>
+                                )}
                             </div>
+
                             <UiButton
+                                variant="filled"
+                                size="md"
+                                className="mt-6"
                                 onClick={handlePortal}
                                 disabled={loadingAction === 'portal'}
                             >
@@ -160,65 +226,56 @@ export default function BillingPage() {
                                     t('active.manage_button')
                                 )}
                             </UiButton>
-                        </>
+                        </div>
                     )}
                 </section>
             )}
 
-            {/* ── Credits Section (One-Off) ── */}
+            {/* ── Credits Section ── */}
             {PAYMENTS_ONE_OFF_ENABLED && (
                 <section>
-                    <h2 className="text-foreground mb-2 text-2xl font-bold">
-                        {t('credits.title')}
-                    </h2>
-                    <p className="text-muted-foreground mb-6">
-                        {t('credits.description')}
-                    </p>
-                    <p className="text-muted-foreground mb-6">
-                        {t('credits.balance', {
-                            count: user.credits.balance,
-                        })}
-                    </p>
-                    <p className="text-muted-foreground mb-6 text-xs">
-                        {t.rich('checkout_terms_note', {
-                            terms: (chunks) => (
-                                <a
-                                    href={`/${locale}/terms`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary underline hover:no-underline"
-                                >
-                                    {chunks}
-                                </a>
-                            ),
-                        })}
-                    </p>
-                    <div className="space-y-3">
-                        {(
-                            Object.entries(CREDIT_PACK_CONFIG) as [
-                                CreditPackCode,
-                                { credits: number },
-                            ][]
-                        ).map(([packCode, pack]) => (
+                    <div className="mb-6">
+                        <h2 className="text-foreground text-2xl font-bold">
+                            {t('credits.title')}
+                        </h2>
+                        <p className="text-muted-foreground mt-1">
+                            {t('credits.description')}
+                        </p>
+                        <p className="text-foreground mt-2 font-medium">
+                            {t('credits.balance', {
+                                count: user.credits.balance,
+                            })}
+                        </p>
+                    </div>
+
+                    <div className={`grid gap-4 ${(CREDIT_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                        {CREDIT_PACKS.map((pack) => (
                             <div
-                                key={packCode}
-                                className="flex items-center justify-between"
+                                key={pack.code}
+                                className="flex flex-col rounded-lg border border-border bg-card p-5"
                             >
-                                <span className="text-foreground">
+                                <p className="text-foreground text-lg font-semibold">
                                     {t('credits.pack_label', {
-                                        count: pack.credits,
+                                        credits: pack.credits,
+                                        price: formatPrice(
+                                            pack.priceAmount,
+                                            pack.currency,
+                                        ),
                                     })}
-                                </span>
+                                </p>
                                 <UiButton
+                                    variant="filled"
+                                    size="md"
+                                    className="mt-4 w-full justify-center"
                                     onClick={() =>
-                                        handleOneOffCheckout(packCode)
+                                        handleOneOffCheckout(pack.code)
                                     }
-                                    disabled={loadingAction === `oneoff_${packCode}`}
-                                    variant="text"
-                                    size="sm"
+                                    disabled={
+                                        loadingAction === `oneoff_${pack.code}`
+                                    }
                                 >
                                     {loadingAction ===
-                                    `oneoff_${packCode}` ? (
+                                    `oneoff_${pack.code}` ? (
                                         <UiSpinner size="sm" />
                                     ) : (
                                         t('credits.buy_button')
@@ -229,6 +286,56 @@ export default function BillingPage() {
                     </div>
                 </section>
             )}
+
+            {/* ── Reset Billing ── */}
+            {hasBillingData && <section className="border-t border-border pt-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-foreground text-lg font-semibold">
+                            {t('reset.button')}
+                        </h2>
+                        <p className="text-muted-foreground mt-1 text-sm">
+                            {t('reset.description')}
+                        </p>
+                    </div>
+                    <UiButton
+                        variant="destructive-outline"
+                        size="md"
+                        className="shrink-0"
+                        onClick={() => setResetDialogOpen(true)}
+                    >
+                        {t('reset.button')}
+                    </UiButton>
+                </div>
+
+                <UiConfirmDialog
+                    open={resetDialogOpen}
+                    onOpenChange={setResetDialogOpen}
+                    title={t('reset.dialog_title')}
+                    description={t('reset.dialog_description')}
+                    confirmLabel={t('reset.dialog_confirm')}
+                    cancelLabel={t('reset.dialog_cancel')}
+                    variant="destructive"
+                    loading={loadingAction === 'reset'}
+                    onConfirm={handleReset}
+                />
+            </section>}
+
+            {/* ── Terms Note ── */}
+            <p className="text-muted-foreground text-center text-xs">
+                {t.rich('checkout_terms_note', {
+                    terms: (chunks) => (
+                        <a
+                            href={`/${locale}/terms`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                        >
+                            {chunks}
+                        </a>
+                    ),
+                })}
+            </p>
         </div>
     );
 }

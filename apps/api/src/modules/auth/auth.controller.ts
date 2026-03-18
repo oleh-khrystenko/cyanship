@@ -129,7 +129,8 @@ export class AuthController {
         await this.authService.sendMagicLink(
             dto.email,
             dto.purpose ?? MAGIC_LINK_PURPOSE.LOGIN,
-            dto.lang
+            dto.lang,
+            dto.redirectTo
         );
         return {
             data: {

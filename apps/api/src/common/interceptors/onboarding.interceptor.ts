@@ -17,10 +17,13 @@ import type { UserDocument } from '../../modules/users/schemas/user.schema';
 export class OnboardingInterceptor implements NestInterceptor {
     constructor(private readonly reflector: Reflector) {}
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    intercept(
+        context: ExecutionContext,
+        next: CallHandler
+    ): Observable<unknown> {
         const skip = this.reflector.getAllAndOverride<boolean>(
             SKIP_ONBOARDING_KEY,
-            [context.getHandler(), context.getClass()],
+            [context.getHandler(), context.getClass()]
         );
 
         if (skip) {

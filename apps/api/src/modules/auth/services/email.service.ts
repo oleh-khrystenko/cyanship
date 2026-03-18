@@ -83,12 +83,17 @@ export class EmailService {
         email: string,
         token: string,
         purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
-        lang: string = LANG.EN
+        lang: string = LANG.EN,
+        redirectTo?: string
     ): Promise<void> {
-        const link =
+        let link =
             purpose === MAGIC_LINK_PURPOSE.RESET_PASSWORD
                 ? `${ENV.WEB_URL}/auth/reset-password?token=${token}`
                 : `${ENV.WEB_URL}/auth/verify?token=${token}`;
+
+        if (redirectTo && purpose !== MAGIC_LINK_PURPOSE.RESET_PASSWORD) {
+            link += `&redirect=${encodeURIComponent(redirectTo)}`;
+        }
         const t = TEMPLATES[purpose][lang] ?? TEMPLATES[purpose][LANG.EN];
 
         const { error } = await this.resend.emails.send({

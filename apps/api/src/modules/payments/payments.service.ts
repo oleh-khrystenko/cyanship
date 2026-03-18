@@ -14,8 +14,14 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreateCheckoutSession,
+    type SubscriptionPlanCode,
 } from '@cyanship/types';
-import { ENV, STRIPE_CREDIT_PACKS } from '../../config/env';
+import {
+    ENV,
+    STRIPE_SUBSCRIPTION_PLANS,
+    STRIPE_CREDIT_PACKS,
+    STRIPE_PRICE_TO_PLAN,
+} from '../../config/env';
 import {
     PAYMENT_PROVIDER,
     IPaymentProvider,
@@ -25,6 +31,10 @@ import {
     ProcessedWebhookEvent,
     ProcessedWebhookEventDocument,
 } from './schemas/processed-webhook-event.schema';
+import {
+    OrphanedProviderCustomer,
+    OrphanedProviderCustomerDocument,
+} from './schemas/orphaned-provider-customer.schema';
 import { UsersService } from '../users/users.service';
 
 /** Max time for any single MongoDB operation in the webhook path (ms). */
@@ -43,6 +53,9 @@ export class PaymentsService {
 
         @InjectModel(ProcessedWebhookEvent.name)
         private readonly webhookEventModel: Model<ProcessedWebhookEventDocument>,
+
+        @InjectModel(OrphanedProviderCustomer.name)
+        private readonly orphanModel: Model<OrphanedProviderCustomerDocument>,
 
         private readonly usersService: UsersService
     ) {}
@@ -78,6 +91,10 @@ export class PaymentsService {
             throw new BadRequestException('User not found');
         }
 
+        const locale = user.preferredLang;
+        const successUrl = `${ENV.WEB_URL}/${locale}/billing/success`;
+        const cancelUrl = `${ENV.WEB_URL}/${locale}/billing/cancel`;
+
         // Subscription-specific validation
         if (paymentType === PAYMENT_TYPE.SUBSCRIPTION) {
             if (user.billing?.hasActiveSubscription) {
@@ -86,7 +103,11 @@ export class PaymentsService {
                     message: 'Already subscribed',
                 });
             }
-            const priceId = ENV.STRIPE_PRICE_MONTHLY_USD;
+            const planEntry =
+                STRIPE_SUBSCRIPTION_PLANS[planCode as SubscriptionPlanCode];
+            if (!planEntry) {
+                throw new BadRequestException('Invalid planCode');
+            }
             const result = await this.paymentProvider.createCheckoutSession({
                 userId,
                 userEmail: user.email,
@@ -94,9 +115,10 @@ export class PaymentsService {
                     user.billing?.providerCustomerId ?? undefined,
                 paymentType,
                 planCode: planCode!,
-                priceId,
-                successUrl: ENV.BILLING_SUCCESS_URL,
-                cancelUrl: ENV.BILLING_CANCEL_URL,
+                priceId: planEntry.priceId,
+                credits: planEntry.credits,
+                successUrl,
+                cancelUrl,
             });
             return { checkoutUrl: result.checkoutUrl };
         }
@@ -114,8 +136,8 @@ export class PaymentsService {
             planCode: packCode!,
             priceId: pack.priceId,
             credits: pack.credits,
-            successUrl: ENV.BILLING_SUCCESS_URL,
-            cancelUrl: ENV.BILLING_CANCEL_URL,
+            successUrl,
+            cancelUrl,
         });
         return { checkoutUrl: result.checkoutUrl };
     }
@@ -133,11 +155,54 @@ export class PaymentsService {
             });
         }
 
+        const returnUrl = `${ENV.WEB_URL}/${user.preferredLang}/billing`;
         const result = await this.paymentProvider.createPortalSession(
-            user.billing.providerCustomerId
+            user.billing.providerCustomerId,
+            returnUrl
         );
 
         return { portalUrl: result.portalUrl };
+    }
+
+    async resetBilling(userId: string): Promise<void> {
+        const user = await this.userModel.findById(userId).lean();
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        const providerCustomerId = user.billing?.providerCustomerId;
+
+        // 1. Reset DB first — this prevents in-flight webhooks from
+        //    re-creating billing (they'll hit billing=null and the
+        //    out-of-order guard will skip them as orphan events).
+        await this.userModel.findByIdAndUpdate(userId, {
+            $set: {
+                billing: null,
+                credits: { balance: 0, freeReportUsed: false },
+            },
+        });
+        await this.webhookEventModel.deleteMany({ userId });
+
+        // 2. Clean up Stripe — on failure, persist for retry by cron.
+        if (providerCustomerId) {
+            try {
+                await this.paymentProvider.deleteCustomerData(
+                    providerCustomerId
+                );
+            } catch (error) {
+                this.logger.error(
+                    `Failed to delete Stripe customer ${providerCustomerId} during reset, queued for retry`,
+                    error instanceof Error ? error.stack : String(error)
+                );
+                await this.enqueueOrphanedCustomer(
+                    'stripe',
+                    providerCustomerId,
+                    'billing_reset'
+                );
+            }
+        }
+
+        this.logger.log(`Billing reset for user ${userId}`);
     }
 
     async handleWebhook(
@@ -146,7 +211,7 @@ export class PaymentsService {
         signatureHeader: string
     ): Promise<void> {
         // 1. Parse and verify webhook payload
-        const event = this.paymentProvider.handleWebhookPayload(
+        const event = await this.paymentProvider.handleWebhookPayload(
             rawBody,
             signatureHeader
         );
@@ -251,6 +316,11 @@ export class PaymentsService {
                     );
                     return;
                 }
+            }
+
+            // Allocate credits on initial subscription checkout
+            if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
+                await this.applySubscriptionCredits(userId, event);
             }
         }
 
@@ -363,6 +433,23 @@ export class PaymentsService {
         }
     }
 
+    private async applySubscriptionCredits(
+        userId: string,
+        event: BillingWebhookEvent
+    ): Promise<void> {
+        const credits = event.creditsAmount ?? 0;
+        if (!Number.isFinite(credits) || credits <= 0) {
+            this.logger.warn(
+                `CHECKOUT_COMPLETED event ${event.providerEventId} has no creditsAmount`
+            );
+            return;
+        }
+        await this.usersService.addCredits(userId, credits);
+        this.logger.log(
+            `Added ${credits} subscription credits to user ${userId} (event: ${event.providerEventId})`
+        );
+    }
+
     private async applyOneOffPayment(
         userId: string,
         event: BillingWebhookEvent
@@ -420,6 +507,23 @@ export class PaymentsService {
 
             case BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED: {
                 fields['providerSubscriptionStatus'] = str(event.raw.status);
+
+                // Detect plan switch via reverse priceId → planCode lookup
+                const items = event.raw.items as
+                    | { data?: Array<{ price?: { id?: string } }> }
+                    | undefined;
+                const priceId = str(items?.data?.[0]?.price?.id ?? null);
+                if (priceId) {
+                    const newPlanCode = STRIPE_PRICE_TO_PLAN[priceId];
+                    if (newPlanCode) {
+                        fields['planCode'] = newPlanCode;
+                    }
+                }
+
+                // Scheduled plan change (downgrade deferred to period end)
+                fields['scheduledPlanCode'] = event.scheduledPlanCode ?? null;
+                fields['scheduledChangeDate'] =
+                    event.scheduledChangeDate ?? null;
                 break;
             }
 
@@ -432,5 +536,32 @@ export class PaymentsService {
         }
 
         return fields;
+    }
+
+    async enqueueOrphanedCustomer(
+        provider: string,
+        providerCustomerId: string,
+        reason: string
+    ): Promise<void> {
+        try {
+            await this.orphanModel.create({
+                provider,
+                providerCustomerId,
+                reason,
+                failedAt: new Date(),
+                attempts: 0,
+                lastAttemptAt: null,
+            });
+        } catch (error: unknown) {
+            // Duplicate — already queued, nothing to do
+            if (
+                error instanceof Error &&
+                'code' in error &&
+                (error as { code: number }).code === 11000
+            ) {
+                return;
+            }
+            throw error;
+        }
     }
 }

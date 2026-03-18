@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { ENV } from './config/env';
 
 @Controller()
 export class AppController {
@@ -15,7 +16,7 @@ export class AppController {
         return {
             status: 'ok',
             timestamp: new Date().toISOString(),
-            environment: process.env.NODE_ENV || 'development',
+            environment: ENV.NODE_ENV,
         };
     }
 }
