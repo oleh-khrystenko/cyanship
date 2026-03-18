@@ -489,7 +489,8 @@ describe('AuthService', () => {
                 'user@example.com',
                 expect.stringMatching(/^[a-f0-9]{64}$/),
                 'login',
-                'en'
+                'en',
+                undefined
             );
         });
 
@@ -585,7 +586,8 @@ describe('AuthService', () => {
                 email,
                 expect.any(String),
                 'login',
-                'en'
+                'en',
+                undefined
             );
         });
 

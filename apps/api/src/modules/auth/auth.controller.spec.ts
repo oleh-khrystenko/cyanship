@@ -206,6 +206,7 @@ describe('AuthController', () => {
             expect(mockAuthService.sendMagicLink).toHaveBeenCalledWith(
                 'test@gmail.com',
                 MAGIC_LINK_PURPOSE.LOGIN,
+                undefined,
                 undefined
             );
         });
@@ -221,6 +222,7 @@ describe('AuthController', () => {
             expect(mockAuthService.sendMagicLink).toHaveBeenCalledWith(
                 'test@gmail.com',
                 MAGIC_LINK_PURPOSE.REGISTER,
+                undefined,
                 undefined
             );
         });
