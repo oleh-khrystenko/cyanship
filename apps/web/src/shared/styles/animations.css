@@ -78,6 +78,14 @@
     --tw-exit-opacity: 0;
 }
 
+/* Zoom */
+@utility zoom-in-95 {
+    --tw-enter-scale: 0.95;
+}
+@utility zoom-out-95 {
+    --tw-exit-scale: 0.95;
+}
+
 /* Slide */
 @utility slide-in-from-right {
     --tw-enter-translate-x: 100%;

@@ -25,6 +25,7 @@ import {
 } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
+import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
 import { DemoBanner } from '@/features/billing';
 
 export default function BillingPage() {
@@ -32,6 +33,7 @@ export default function BillingPage() {
     const locale = useLocale();
     const user = useAuthStore((s) => s.user);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
     if (!user) return null;
 
@@ -83,12 +85,12 @@ export default function BillingPage() {
     };
 
     const handleReset = async () => {
-        if (!confirm(t('reset.confirm'))) return;
         setLoadingAction('reset');
         try {
             await resetBilling();
             const me = await getMe();
             useAuthStore.getState().setUser(me);
+            setResetDialogOpen(false);
             toast.success(t('reset.success'));
         } catch {
             toast.error(t('reset.error'));
@@ -292,23 +294,30 @@ export default function BillingPage() {
                             {t('reset.button')}
                         </h2>
                         <p className="text-muted-foreground mt-1 text-sm">
-                            {t('reset.confirm')}
+                            {t('reset.description')}
                         </p>
                     </div>
                     <UiButton
                         variant="destructive-outline"
                         size="md"
                         className="shrink-0"
-                        onClick={handleReset}
-                        disabled={loadingAction === 'reset'}
+                        onClick={() => setResetDialogOpen(true)}
                     >
-                        {loadingAction === 'reset' ? (
-                            <UiSpinner size="sm" />
-                        ) : (
-                            t('reset.button')
-                        )}
+                        {t('reset.button')}
                     </UiButton>
                 </div>
+
+                <UiConfirmDialog
+                    open={resetDialogOpen}
+                    onOpenChange={setResetDialogOpen}
+                    title={t('reset.dialog_title')}
+                    description={t('reset.dialog_description')}
+                    confirmLabel={t('reset.dialog_confirm')}
+                    cancelLabel={t('reset.dialog_cancel')}
+                    variant="destructive"
+                    loading={loadingAction === 'reset'}
+                    onConfirm={handleReset}
+                />
             </section>
 
             {/* ── Terms Note ── */}

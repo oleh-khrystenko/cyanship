@@ -339,7 +339,11 @@
         "checkout_terms_note": "By proceeding, you agree to the <terms>payment terms</terms>.",
         "reset": {
             "button": "Reset billing",
-            "confirm": "Are you sure? All subscriptions, credits and payment history will be deleted.",
+            "description": "Deletes subscriptions, credits and payment history in Stripe and the database.",
+            "dialog_title": "Reset billing?",
+            "dialog_description": "All subscriptions, credits and payment history will be deleted. This action cannot be undone.",
+            "dialog_confirm": "Reset",
+            "dialog_cancel": "Cancel",
             "success": "Billing reset successfully",
             "error": "Failed to reset billing"
         }
