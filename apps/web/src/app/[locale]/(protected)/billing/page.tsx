@@ -39,6 +39,7 @@ export default function BillingPage() {
 
     const billing = user.billing;
     const hasActive = billing?.hasActiveSubscription === true;
+    const hasBillingData = billing != null || user.credits.balance > 0;
 
     const formatDate = (date: Date | string | null) => {
         if (!date) return '';
@@ -287,7 +288,7 @@ export default function BillingPage() {
             )}
 
             {/* ── Reset Billing ── */}
-            <section className="border-t border-border pt-8">
+            {hasBillingData && <section className="border-t border-border pt-8">
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-foreground text-lg font-semibold">
@@ -318,7 +319,7 @@ export default function BillingPage() {
                     loading={loadingAction === 'reset'}
                     onConfirm={handleReset}
                 />
-            </section>
+            </section>}
 
             {/* ── Terms Note ── */}
             <p className="text-muted-foreground text-center text-xs">
