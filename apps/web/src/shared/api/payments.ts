@@ -37,3 +37,7 @@ export async function createPortalSession(): Promise<{
     }>('/payments/portal-session');
     return data.data;
 }
+
+export async function resetBilling(): Promise<void> {
+    await apiClient.post('/payments/reset');
+}

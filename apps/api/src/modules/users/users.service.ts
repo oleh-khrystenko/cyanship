@@ -159,7 +159,7 @@ export class UsersService {
                     termsAcceptedAt: new Date(),
                     termsVersion,
                 },
-            },
+            }
         );
     }
 

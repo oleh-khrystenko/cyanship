@@ -12,7 +12,9 @@ import {
     createSubscriptionCheckout,
     createOneOffCheckout,
     createPortalSession,
+    resetBilling,
 } from '@/shared/api/payments';
+import { getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import {
     SUBSCRIPTION_PLANS,
@@ -76,6 +78,21 @@ export default function BillingPage() {
             window.location.assign(portalUrl);
         } catch {
             toast.error(t('active.manage_error'));
+            setLoadingAction(null);
+        }
+    };
+
+    const handleReset = async () => {
+        if (!confirm(t('reset.confirm'))) return;
+        setLoadingAction('reset');
+        try {
+            await resetBilling();
+            const me = await getMe();
+            useAuthStore.getState().setUser(me);
+            toast.success(t('reset.success'));
+        } catch {
+            toast.error(t('reset.error'));
+        } finally {
             setLoadingAction(null);
         }
     };
@@ -266,6 +283,33 @@ export default function BillingPage() {
                     </div>
                 </section>
             )}
+
+            {/* ── Reset Billing ── */}
+            <section className="border-t border-border pt-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-foreground text-lg font-semibold">
+                            {t('reset.button')}
+                        </h2>
+                        <p className="text-muted-foreground mt-1 text-sm">
+                            {t('reset.confirm')}
+                        </p>
+                    </div>
+                    <UiButton
+                        variant="destructive-outline"
+                        size="md"
+                        className="shrink-0"
+                        onClick={handleReset}
+                        disabled={loadingAction === 'reset'}
+                    >
+                        {loadingAction === 'reset' ? (
+                            <UiSpinner size="sm" />
+                        ) : (
+                            t('reset.button')
+                        )}
+                    </UiButton>
+                </div>
+            </section>
 
             {/* ── Terms Note ── */}
             <p className="text-muted-foreground text-center text-xs">

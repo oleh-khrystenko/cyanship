@@ -222,7 +222,10 @@ describe('StripeService', () => {
                 url: 'https://billing.stripe.com/test',
             });
 
-            await service.createPortalSession('cus_test_xxx', 'http://localhost:3000/en/billing');
+            await service.createPortalSession(
+                'cus_test_xxx',
+                'http://localhost:3000/en/billing'
+            );
 
             expect(mockPortalCreate).toHaveBeenCalledWith({
                 customer: 'cus_test_xxx',
@@ -235,7 +238,10 @@ describe('StripeService', () => {
                 url: 'https://billing.stripe.com/test',
             });
 
-            const result = await service.createPortalSession('cus_test_xxx', 'http://localhost:3000/en/billing');
+            const result = await service.createPortalSession(
+                'cus_test_xxx',
+                'http://localhost:3000/en/billing'
+            );
 
             expect(result).toEqual({
                 portalUrl: 'https://billing.stripe.com/test',
@@ -252,7 +258,10 @@ describe('StripeService', () => {
         it('should return CHECKOUT_COMPLETED event with userId from metadata for subscription checkout', async () => {
             mockConstructEvent.mockReturnValue(makeCheckoutEvent());
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result).toMatchObject({
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
@@ -271,7 +280,10 @@ describe('StripeService', () => {
                 })
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result?.userId).toBe('ref_user456');
         });
@@ -281,7 +293,10 @@ describe('StripeService', () => {
                 makeSubscriptionEvent('customer.subscription.updated', 'active')
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result).toMatchObject({
                 type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
@@ -294,13 +309,20 @@ describe('StripeService', () => {
 
         it('should set cancelAtPeriodEnd=true when cancel_at is set (even if cancel_at_period_end is false)', async () => {
             mockConstructEvent.mockReturnValue(
-                makeSubscriptionEvent('customer.subscription.updated', 'active', {
-                    cancel_at_period_end: false,
-                    cancel_at: 1_776_443_119,
-                })
+                makeSubscriptionEvent(
+                    'customer.subscription.updated',
+                    'active',
+                    {
+                        cancel_at_period_end: false,
+                        cancel_at: 1_776_443_119,
+                    }
+                )
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result).toMatchObject({
                 type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
@@ -311,9 +333,13 @@ describe('StripeService', () => {
 
         it('should resolve scheduled plan change when subscription has a schedule', async () => {
             mockConstructEvent.mockReturnValue(
-                makeSubscriptionEvent('customer.subscription.updated', 'active', {
-                    schedule: 'sub_sched_abc123',
-                })
+                makeSubscriptionEvent(
+                    'customer.subscription.updated',
+                    'active',
+                    {
+                        schedule: 'sub_sched_abc123',
+                    }
+                )
             );
             mockScheduleRetrieve.mockResolvedValue({
                 phases: [
@@ -328,9 +354,14 @@ describe('StripeService', () => {
                 ],
             });
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
-            expect(mockScheduleRetrieve).toHaveBeenCalledWith('sub_sched_abc123');
+            expect(mockScheduleRetrieve).toHaveBeenCalledWith(
+                'sub_sched_abc123'
+            );
             expect(result).toMatchObject({
                 scheduledPlanCode: 'starter',
                 scheduledChangeDate: new Date(1_703_000_000 * 1000),
@@ -339,12 +370,19 @@ describe('StripeService', () => {
 
         it('should set scheduledPlanCode=null when schedule is cleared', async () => {
             mockConstructEvent.mockReturnValue(
-                makeSubscriptionEvent('customer.subscription.updated', 'active', {
-                    schedule: null,
-                })
+                makeSubscriptionEvent(
+                    'customer.subscription.updated',
+                    'active',
+                    {
+                        schedule: null,
+                    }
+                )
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(mockScheduleRetrieve).not.toHaveBeenCalled();
             expect(result).toMatchObject({
@@ -361,7 +399,10 @@ describe('StripeService', () => {
                 )
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result?.subscriptionStatus).toBe(
                 SUBSCRIPTION_STATUS.PAST_DUE
@@ -376,7 +417,10 @@ describe('StripeService', () => {
                 )
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result?.subscriptionStatus).toBe(
                 SUBSCRIPTION_STATUS.CANCELED
@@ -391,7 +435,10 @@ describe('StripeService', () => {
                 )
             );
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result).toMatchObject({
                 type: BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED,
@@ -408,7 +455,10 @@ describe('StripeService', () => {
                 data: { object: {} },
             });
 
-            const result = await service.handleWebhookPayload(rawBody, sigHeader);
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
 
             expect(result).toBeNull();
         });
@@ -430,7 +480,10 @@ describe('StripeService', () => {
                     })
                 );
 
-                const result = await service.handleWebhookPayload(rawBody, sigHeader);
+                const result = await service.handleWebhookPayload(
+                    rawBody,
+                    sigHeader
+                );
 
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED
@@ -453,7 +506,10 @@ describe('StripeService', () => {
                     })
                 );
 
-                const result = await service.handleWebhookPayload(rawBody, sigHeader);
+                const result = await service.handleWebhookPayload(
+                    rawBody,
+                    sigHeader
+                );
 
                 expect(result).toBeNull();
             });
@@ -470,7 +526,10 @@ describe('StripeService', () => {
                     })
                 );
 
-                const result = await service.handleWebhookPayload(rawBody, sigHeader);
+                const result = await service.handleWebhookPayload(
+                    rawBody,
+                    sigHeader
+                );
 
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
@@ -483,7 +542,10 @@ describe('StripeService', () => {
                     makeCheckoutEvent({ mode: 'subscription' })
                 );
 
-                const result = await service.handleWebhookPayload(rawBody, sigHeader);
+                const result = await service.handleWebhookPayload(
+                    rawBody,
+                    sigHeader
+                );
 
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
@@ -515,7 +577,10 @@ describe('StripeService', () => {
                     },
                 });
 
-                const result = await service.handleWebhookPayload(rawBody, sigHeader);
+                const result = await service.handleWebhookPayload(
+                    rawBody,
+                    sigHeader
+                );
 
                 expect(result).toMatchObject({
                     type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
@@ -542,7 +607,10 @@ describe('StripeService', () => {
                     },
                 });
 
-                const result = await service.handleWebhookPayload(rawBody, sigHeader);
+                const result = await service.handleWebhookPayload(
+                    rawBody,
+                    sigHeader
+                );
 
                 expect(result).toBeNull();
             });

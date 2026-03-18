@@ -227,6 +227,24 @@ export class StripeService implements IPaymentProvider {
         }
     }
 
+    async deleteCustomerData(providerCustomerId: string): Promise<void> {
+        // Cancel all non-canceled subscriptions (auto-paginate handles >10)
+        for await (const sub of this.stripe.subscriptions.list({
+            customer: providerCustomerId,
+            status: 'all',
+        })) {
+            if (sub.status !== 'canceled') {
+                await this.stripe.subscriptions.cancel(sub.id);
+            }
+        }
+
+        // Delete the customer (removes payment methods, invoices, etc.)
+        await this.stripe.customers.del(providerCustomerId);
+        this.logger.log(
+            `Deleted Stripe customer ${providerCustomerId} and all subscriptions`
+        );
+    }
+
     private mapSubscriptionStatus(stripeStatus: string): SubscriptionStatus {
         const mapping: Record<string, SubscriptionStatus> = {
             active: SUBSCRIPTION_STATUS.ACTIVE,

@@ -157,6 +157,42 @@ export class PaymentsService {
         return { portalUrl: result.portalUrl };
     }
 
+    async resetBilling(userId: string): Promise<void> {
+        const user = await this.userModel.findById(userId).lean();
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        const providerCustomerId = user.billing?.providerCustomerId;
+
+        // 1. Reset DB first — this prevents in-flight webhooks from
+        //    re-creating billing (they'll hit billing=null and the
+        //    out-of-order guard will skip them as orphan events).
+        await this.userModel.findByIdAndUpdate(userId, {
+            $set: {
+                billing: null,
+                credits: { balance: 0, freeReportUsed: false },
+            },
+        });
+        await this.webhookEventModel.deleteMany({ userId });
+
+        // 2. Clean up Stripe (best-effort — DB is already clean).
+        if (providerCustomerId) {
+            try {
+                await this.paymentProvider.deleteCustomerData(
+                    providerCustomerId
+                );
+            } catch (error) {
+                this.logger.error(
+                    `Failed to delete Stripe customer ${providerCustomerId} during reset (DB already cleaned)`,
+                    error instanceof Error ? error.stack : String(error)
+                );
+            }
+        }
+
+        this.logger.log(`Billing reset for user ${userId}`);
+    }
+
     async handleWebhook(
         provider: string,
         rawBody: Buffer,
@@ -473,8 +509,7 @@ export class PaymentsService {
                 }
 
                 // Scheduled plan change (downgrade deferred to period end)
-                fields['scheduledPlanCode'] =
-                    event.scheduledPlanCode ?? null;
+                fields['scheduledPlanCode'] = event.scheduledPlanCode ?? null;
                 fields['scheduledChangeDate'] =
                     event.scheduledChangeDate ?? null;
                 break;

@@ -350,7 +350,10 @@ export class AuthService {
         await user.save();
 
         if (termsVersion) {
-            await this.usersService.acceptTerms(user._id.toString(), termsVersion);
+            await this.usersService.acceptTerms(
+                user._id.toString(),
+                termsVersion
+            );
         }
 
         // 6. Generate tokens
@@ -410,9 +413,7 @@ export class AuthService {
         const raw = await this.redis.getdel(magicKey);
 
         if (!raw) {
-            throw new UnauthorizedException(
-                'Invalid or expired reset token'
-            );
+            throw new UnauthorizedException('Invalid or expired reset token');
         }
 
         const { email, purpose } = JSON.parse(raw) as {

@@ -63,10 +63,7 @@ export const ENV = {
         getEnvVar('AUTH_LOGIN_ATTEMPTS_TTL_MIN'),
         10
     ),
-    AUTH_MAGIC_LINK_TTL_MIN: parseInt(
-        getEnvVar('AUTH_MAGIC_LINK_TTL_MIN'),
-        10
-    ),
+    AUTH_MAGIC_LINK_TTL_MIN: parseInt(getEnvVar('AUTH_MAGIC_LINK_TTL_MIN'), 10),
     AUTH_MAGIC_LINK_RATE_LIMIT: parseInt(
         getEnvVar('AUTH_MAGIC_LINK_RATE_LIMIT'),
         10
@@ -101,7 +98,10 @@ export const STRIPE_SUBSCRIPTION_PLANS: Partial<
     const result: Record<string, { priceId: string; credits: number }> = {};
     for (const plan of SUBSCRIPTION_PLANS) {
         const envName = `STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`;
-        result[plan.code] = { priceId: getEnvVar(envName), credits: plan.credits };
+        result[plan.code] = {
+            priceId: getEnvVar(envName),
+            credits: plan.credits,
+        };
     }
     return result;
 })();
@@ -123,7 +123,10 @@ export const STRIPE_CREDIT_PACKS: Partial<
     const result: Record<string, { priceId: string; credits: number }> = {};
     for (const pack of CREDIT_PACKS) {
         const envName = `STRIPE_PRICE_ID_ONEOFF_${pack.code.toUpperCase()}`;
-        result[pack.code] = { priceId: getEnvVar(envName), credits: pack.credits };
+        result[pack.code] = {
+            priceId: getEnvVar(envName),
+            credits: pack.credits,
+        };
     }
     return result;
 })();

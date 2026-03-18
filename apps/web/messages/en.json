@@ -336,7 +336,13 @@
             "canceled": "Payment canceled",
             "refresh_error": "Failed to update data. Please reload the page."
         },
-        "checkout_terms_note": "By proceeding, you agree to the <terms>payment terms</terms>."
+        "checkout_terms_note": "By proceeding, you agree to the <terms>payment terms</terms>.",
+        "reset": {
+            "button": "Reset billing",
+            "confirm": "Are you sure? All subscriptions, credits and payment history will be deleted.",
+            "success": "Billing reset successfully",
+            "error": "Failed to reset billing"
+        }
     },
     "components": {
         "header": {

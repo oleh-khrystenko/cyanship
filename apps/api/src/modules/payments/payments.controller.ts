@@ -3,6 +3,8 @@ import {
     Body,
     Controller,
     Headers,
+    HttpCode,
+    HttpStatus,
     Param,
     Post,
     Req,
@@ -44,6 +46,16 @@ export class PaymentsController {
             user._id.toString()
         );
         return { data: { portalUrl: result.portalUrl } };
+    }
+
+    @UseGuards(JwtActiveGuard)
+    @Post('reset')
+    @HttpCode(HttpStatus.OK)
+    async resetBilling(
+        @CurrentUser() user: UserDocument
+    ): Promise<{ data: null }> {
+        await this.paymentsService.resetBilling(user._id.toString());
+        return { data: null };
     }
 
     private static readonly SUPPORTED_PROVIDERS = new Set(['stripe']);

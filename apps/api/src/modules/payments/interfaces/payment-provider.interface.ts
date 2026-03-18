@@ -31,6 +31,7 @@ export interface IPaymentProvider {
         rawBody: Buffer,
         signatureHeader: string
     ): Promise<BillingWebhookEvent | null>;
+    deleteCustomerData(providerCustomerId: string): Promise<void>;
 }
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
