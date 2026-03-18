@@ -14,6 +14,7 @@ import { PaymentsService } from './payments.service';
 import { PAYMENT_PROVIDER } from './interfaces/payment-provider.interface';
 import { User } from '../users/schemas/user.schema';
 import { ProcessedWebhookEvent } from './schemas/processed-webhook-event.schema';
+import { OrphanedProviderCustomer } from './schemas/orphaned-provider-customer.schema';
 import { UsersService } from '../users/users.service';
 
 jest.mock('../../config/env', () => ({
@@ -85,6 +86,12 @@ const mockWebhookEventModel = {
     deleteOne: jest.fn(),
 };
 
+const mockOrphanModel = {
+    create: jest.fn(),
+    findOne: jest.fn(),
+    deleteOne: jest.fn(),
+};
+
 const mockUsersService = {
     addCredits: jest.fn(),
 };
@@ -104,6 +111,10 @@ describe('PaymentsService', () => {
                 {
                     provide: getModelToken(ProcessedWebhookEvent.name),
                     useValue: mockWebhookEventModel,
+                },
+                {
+                    provide: getModelToken(OrphanedProviderCustomer.name),
+                    useValue: mockOrphanModel,
                 },
                 { provide: UsersService, useValue: mockUsersService },
             ],
