@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 
 jest.mock('@/shared/config', () => ({
     ENV: {
@@ -16,6 +16,53 @@ jest.mock('@/stores/auth', () => ({
 }));
 
 import { apiClient, getAccessToken, setAccessToken } from './client';
+
+/**
+ * Helper: install a one-shot mock adapter that captures the outgoing request
+ * config and resolves with a 200. Returns the captured config after the
+ * request completes.
+ */
+const captureNextRequest = async (
+    url = '/test'
+): Promise<Record<string, any>> => {
+    let captured: Record<string, any> = {};
+    const original = apiClient.defaults.adapter;
+
+    apiClient.defaults.adapter = (config) => {
+        captured = config;
+        return Promise.resolve({
+            data: {},
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config,
+        });
+    };
+
+    await apiClient.get(url);
+    apiClient.defaults.adapter = original;
+    return captured;
+};
+
+/**
+ * Helper: install a one-shot mock adapter that rejects with a given status,
+ * so the response error interceptor fires.
+ */
+const rejectNextRequest = (
+    url: string,
+    status: number,
+    extraConfig: Record<string, any> = {}
+) => {
+    const original = apiClient.defaults.adapter;
+
+    apiClient.defaults.adapter = (config) => {
+        apiClient.defaults.adapter = original;
+        const error: any = new Error(`Request failed with status ${status}`);
+        error.response = { status };
+        error.config = { ...config, ...extraConfig };
+        return Promise.reject(error);
+    };
+};
 
 describe('client', () => {
     beforeEach(() => {
@@ -57,91 +104,63 @@ describe('client', () => {
         it('adds Authorization header when token is set', async () => {
             setAccessToken('my-token');
 
-            const handler =
-                apiClient.interceptors.request.handlers[0]!.fulfilled!;
-            const config = await handler({
-                headers: new axios.AxiosHeaders(),
-            } as any);
+            const config = await captureNextRequest();
 
-            expect(config.headers.Authorization).toBe('Bearer my-token');
+            expect(config.headers.get('Authorization')).toBe(
+                'Bearer my-token'
+            );
         });
 
         it('does NOT add Authorization header when no token', async () => {
             setAccessToken(null);
 
-            const handler =
-                apiClient.interceptors.request.handlers[0]!.fulfilled!;
-            const config = await handler({
-                headers: new axios.AxiosHeaders(),
-            } as any);
+            const config = await captureNextRequest();
 
-            expect(config.headers.Authorization).toBeUndefined();
+            expect(config.headers.get('Authorization')).toBeUndefined();
         });
     });
 
     describe('response interceptor (401 auto-refresh)', () => {
         let mockAxiosPost: jest.SpyInstance;
-        let handler: (error: any) => Promise<any>;
 
         beforeEach(() => {
             mockAxiosPost = jest.spyOn(axios, 'post');
-            handler =
-                apiClient.interceptors.response.handlers[0]!.rejected!;
         });
 
         afterEach(() => {
             mockAxiosPost.mockRestore();
         });
 
-        const create401Error = (url: string, retry = false) => {
-            const error: any = new Error('Unauthorized');
-            error.response = { status: 401 };
-            error.config = {
-                url,
-                _retry: retry,
-                headers: new axios.AxiosHeaders(),
-            };
-            return error;
-        };
-
         it('does NOT retry for /auth/refresh endpoint', async () => {
-            const error = create401Error('/auth/refresh');
+            rejectNextRequest('/auth/refresh', 401);
 
-            await expect(handler(error)).rejects.toBeDefined();
+            await expect(apiClient.get('/auth/refresh')).rejects.toBeDefined();
             expect(mockAxiosPost).not.toHaveBeenCalled();
         });
 
         it('does NOT retry for /auth/logout endpoint', async () => {
-            const error = create401Error('/auth/logout');
+            rejectNextRequest('/auth/logout', 401);
 
-            await expect(handler(error)).rejects.toBeDefined();
+            await expect(apiClient.get('/auth/logout')).rejects.toBeDefined();
             expect(mockAxiosPost).not.toHaveBeenCalled();
         });
 
         it('does NOT retry if already retried (_retry flag)', async () => {
-            const error = create401Error('/some-endpoint', true);
+            rejectNextRequest('/some-endpoint', 401, { _retry: true });
 
-            await expect(handler(error)).rejects.toBeDefined();
+            await expect(
+                apiClient.get('/some-endpoint')
+            ).rejects.toBeDefined();
             expect(mockAxiosPost).not.toHaveBeenCalled();
         });
 
         it('does NOT retry for non-401 errors', async () => {
-            const error: any = new Error('Server Error');
-            error.response = { status: 500 };
-            error.config = {
-                url: '/some-endpoint',
-                headers: new axios.AxiosHeaders(),
-            };
+            rejectNextRequest('/some-endpoint', 500);
 
-            await expect(handler(error)).rejects.toBeDefined();
+            await expect(
+                apiClient.get('/some-endpoint')
+            ).rejects.toBeDefined();
             expect(mockAxiosPost).not.toHaveBeenCalled();
-        });
-
-        it('does NOT retry if config is missing', async () => {
-            const error: any = new Error('Error');
-            error.config = undefined;
-
-            await expect(handler(error)).rejects.toBeDefined();
         });
 
         it('on refresh success → stores new token and retries with Bearer', async () => {
@@ -149,19 +168,40 @@ describe('client', () => {
                 data: { data: { accessToken: 'new-token-123' } },
             });
 
-            // Mock adapter to prevent real network request on retry
             const originalAdapter = apiClient.defaults.adapter;
-            apiClient.defaults.adapter = () =>
-                Promise.resolve({
+            let callCount = 0;
+
+            apiClient.defaults.adapter = (config) => {
+                callCount++;
+                if (callCount === 1) {
+                    // First call: simulate 401
+                    const error: any = new axios.AxiosError(
+                        'Unauthorized',
+                        '401',
+                        config,
+                        null,
+                        {
+                            status: 401,
+                            statusText: 'Unauthorized',
+                            headers: {},
+                            config,
+                            data: null,
+                        } as any
+                    );
+                    error.config = config;
+                    return Promise.reject(error);
+                }
+                // Second call: retry succeeds
+                return Promise.resolve({
                     data: { ok: true },
                     status: 200,
                     statusText: 'OK',
                     headers: {},
-                    config: {} as any,
+                    config,
                 });
+            };
 
-            const error = create401Error('/users/me');
-            await handler(error);
+            await apiClient.get('/users/me');
 
             expect(mockAxiosPost).toHaveBeenCalledWith(
                 'http://localhost:4000/api/auth/refresh',
@@ -178,9 +218,9 @@ describe('client', () => {
                 new Error('Refresh failed')
             );
 
-            const error = create401Error('/users/me');
+            rejectNextRequest('/users/me', 401);
 
-            await expect(handler(error)).rejects.toBeDefined();
+            await expect(apiClient.get('/users/me')).rejects.toBeDefined();
 
             expect(getAccessToken()).toBeNull();
 

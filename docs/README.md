@@ -21,7 +21,6 @@
 - `docs/conventions/fail-fast.md`
 - `docs/conventions/tone.md`
 - `docs/conventions/i18n.md`
-- `docs/conventions/env-sync.md`
 - `docs/conventions/modular-boundaries.md`
 - `docs/prompts/codex/update-context.md`
 - `docs/prompts/gemini/update-context.md`

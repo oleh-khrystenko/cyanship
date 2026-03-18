@@ -138,9 +138,7 @@ describe('EmailService', () => {
                     purpose === 'reset-password'
                         ? `/auth/reset-password?token=${token}`
                         : `/auth/verify?token=${token}`;
-                expect(html).toContain(
-                    `http://localhost:3000${expectedPath}`
-                );
+                expect(html).toContain(`http://localhost:3000${expectedPath}`);
             }
         });
 

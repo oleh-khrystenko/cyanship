@@ -56,10 +56,13 @@ const DeleteAccountModal = ({
                 err instanceof AxiosError
                     ? err.response?.data?.error?.code
                     : undefined;
+
             if (code === 'UNAUTHORIZED') {
                 setError(t('invalid_password'));
+            } else if (code === 'RATE_LIMIT_EXCEEDED') {
+                setError(t('rate_limit'));
             } else {
-                setError(t('invalid_password'));
+                setError(t('error_generic'));
             }
         } finally {
             setSubmitting(false);
@@ -109,9 +112,8 @@ const DeleteAccountModal = ({
                         </UiButton>
                         <UiButton
                             type="submit"
-                            variant="filled"
+                            variant="destructive-outline"
                             size="md"
-                            className="rounded-lg bg-destructive"
                             disabled={submitting || !password}
                         >
                             {submitting ? (

@@ -7,7 +7,7 @@ import {
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
 } from '@cyanship/types';
-import { ENV } from '../../../config/env';
+import { ENV, STRIPE_PRICE_TO_PLAN } from '../../../config/env';
 import {
     IPaymentProvider,
     CreateCheckoutInput,
@@ -61,20 +61,21 @@ export class StripeService implements IPaymentProvider {
     }
 
     async createPortalSession(
-        providerCustomerId: string
+        providerCustomerId: string,
+        returnUrl: string
     ): Promise<PortalResult> {
         const session = await this.stripe.billingPortal.sessions.create({
             customer: providerCustomerId,
-            return_url: ENV.BILLING_SUCCESS_URL,
+            return_url: returnUrl,
         });
 
         return { portalUrl: session.url };
     }
 
-    handleWebhookPayload(
+    async handleWebhookPayload(
         rawBody: Buffer,
         signatureHeader: string
-    ): BillingWebhookEvent | null {
+    ): Promise<BillingWebhookEvent | null> {
         const event = this.stripe.webhooks.constructEvent(
             rawBody,
             signatureHeader,
@@ -124,6 +125,7 @@ export class StripeService implements IPaymentProvider {
 
         // Subscription checkout (mode=subscription)
         if (session.mode === 'subscription') {
+            const credits = parseInt(session.metadata?.credits ?? '0', 10);
             return {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                 providerEventId: event.id,
@@ -133,6 +135,7 @@ export class StripeService implements IPaymentProvider {
                 currentPeriodEnd: null,
                 cancelAtPeriodEnd: false,
                 raw: this.toRaw(event.data.object),
+                creditsAmount: credits || undefined,
             };
         }
 
@@ -143,15 +146,18 @@ export class StripeService implements IPaymentProvider {
         return null;
     }
 
-    private handleSubscriptionEvent(
+    private async handleSubscriptionEvent(
         event: Stripe.Event,
         type:
             | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED
             | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED
-    ): BillingWebhookEvent {
+    ): Promise<BillingWebhookEvent> {
         const subscription = event.data.object as Stripe.Subscription;
         const periodEnd =
             subscription.items?.data?.[0]?.current_period_end ?? null;
+
+        // Resolve scheduled plan change (downgrade deferred to period end)
+        const schedule = await this.resolveScheduledChange(subscription);
 
         return {
             type,
@@ -160,9 +166,83 @@ export class StripeService implements IPaymentProvider {
             userId: '',
             subscriptionStatus: this.mapSubscriptionStatus(subscription.status),
             currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            cancelAtPeriodEnd:
+                subscription.cancel_at_period_end ||
+                subscription.cancel_at != null,
+            scheduledPlanCode: schedule?.planCode ?? null,
+            scheduledChangeDate: schedule?.changeDate ?? null,
             raw: this.toRaw(event.data.object),
         };
+    }
+
+    private async resolveScheduledChange(
+        subscription: Stripe.Subscription
+    ): Promise<{ planCode: string; changeDate: Date } | null> {
+        const scheduleId =
+            typeof subscription.schedule === 'string'
+                ? subscription.schedule
+                : subscription.schedule?.id;
+
+        if (!scheduleId) {
+            return null;
+        }
+
+        try {
+            const schedule =
+                await this.stripe.subscriptionSchedules.retrieve(scheduleId);
+            const phases = schedule.phases;
+            if (!phases || phases.length < 2) {
+                return null;
+            }
+
+            // The last phase contains the upcoming plan after the switch
+            const lastPhase = phases[phases.length - 1];
+            const priceId =
+                typeof lastPhase.items[0]?.price === 'string'
+                    ? lastPhase.items[0].price
+                    : lastPhase.items[0]?.price?.id;
+
+            if (!priceId) {
+                return null;
+            }
+
+            const planCode = STRIPE_PRICE_TO_PLAN[priceId];
+            if (!planCode) {
+                this.logger.warn(
+                    `Unknown priceId ${priceId} in subscription schedule ${scheduleId}`
+                );
+                return null;
+            }
+
+            return {
+                planCode,
+                changeDate: new Date(lastPhase.start_date * 1000),
+            };
+        } catch (error) {
+            this.logger.error(
+                `Failed to retrieve subscription schedule ${scheduleId}`,
+                error instanceof Error ? error.stack : String(error)
+            );
+            return null;
+        }
+    }
+
+    async deleteCustomerData(providerCustomerId: string): Promise<void> {
+        // Cancel all non-canceled subscriptions (auto-paginate handles >10)
+        for await (const sub of this.stripe.subscriptions.list({
+            customer: providerCustomerId,
+            status: 'all',
+        })) {
+            if (sub.status !== 'canceled') {
+                await this.stripe.subscriptions.cancel(sub.id);
+            }
+        }
+
+        // Delete the customer (removes payment methods, invoices, etc.)
+        await this.stripe.customers.del(providerCustomerId);
+        this.logger.log(
+            `Deleted Stripe customer ${providerCustomerId} and all subscriptions`
+        );
     }
 
     private mapSubscriptionStatus(stripeStatus: string): SubscriptionStatus {

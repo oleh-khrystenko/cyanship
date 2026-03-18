@@ -61,6 +61,10 @@ export class UsersController {
                           subscriptionStatus: user.billing.subscriptionStatus,
                           currentPeriodEnd: user.billing.currentPeriodEnd,
                           cancelAtPeriodEnd: user.billing.cancelAtPeriodEnd,
+                          scheduledPlanCode:
+                              user.billing.scheduledPlanCode ?? null,
+                          scheduledChangeDate:
+                              user.billing.scheduledChangeDate ?? null,
                       }
                     : null,
             },
@@ -116,7 +120,10 @@ export class UsersController {
         @CurrentUser() user: UserDocument,
         @Body() dto: AcceptTermsDto
     ): Promise<ApiMessageResponse> {
-        await this.usersService.acceptTerms(user._id.toString(), dto.termsVersion);
+        await this.usersService.acceptTerms(
+            user._id.toString(),
+            dto.termsVersion
+        );
         return {
             data: {
                 code: RESPONSE_CODE.TERMS_ACCEPTED,

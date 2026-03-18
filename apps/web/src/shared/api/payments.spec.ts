@@ -32,7 +32,7 @@ describe('payments api', () => {
             await createSubscriptionCheckout('monthly_usd');
 
             expect(mockPost).toHaveBeenCalledWith(
-                '/api/payments/checkout-session',
+                '/payments/checkout-session',
                 {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                     planCode: 'monthly_usd',
@@ -70,7 +70,7 @@ describe('payments api', () => {
             await createOneOffCheckout('credits_5');
 
             expect(mockPost).toHaveBeenCalledWith(
-                '/api/payments/checkout-session',
+                '/payments/checkout-session',
                 {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
                     packCode: 'credits_5',
@@ -107,7 +107,7 @@ describe('payments api', () => {
 
             await createPortalSession();
 
-            expect(mockPost).toHaveBeenCalledWith('/api/payments/portal-session');
+            expect(mockPost).toHaveBeenCalledWith('/payments/portal-session');
         });
 
         it('should return { portalUrl } extracted from response.data.data', async () => {

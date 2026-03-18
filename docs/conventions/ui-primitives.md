@@ -35,6 +35,7 @@ Ui-компоненти інкапсулюють:
 | `UiSpinner` | Кастомні loading-індикатори | -- (sizes: sm/md/lg) |
 | `UiDropdownMenu` | Context menus, action menus, option pickers | align: `start`/`end`; sizes: sm/md/lg |
 | `UiFullPageLoader` | Full-screen centered spinner з optional message | композиція UiSpinner; для Suspense fallback та loading states |
+| `UiConfirmDialog` | `window.confirm()`, кастомні confirmation modals | `default`, `destructive`; controlled (open/onOpenChange); Radix AlertDialog |
 
 ## Rules
 
@@ -51,6 +52,7 @@ Ui-компоненти інкапсулюють:
 | `<input type="password">` | `UiPasswordInput` |
 | `<select>` | `UiSelect` |
 | `<input type="checkbox">` (toggle) | `UiSwitch` |
+| `window.confirm()` | `UiConfirmDialog` |
 
 **Винятки:**
 - `<input type="hidden">`, `<input type="file">` та інші спеціалізовані input-типи, для яких ще не створено Ui-обгортку, дозволені до появи відповідного примітиву.

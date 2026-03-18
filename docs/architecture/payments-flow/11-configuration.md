@@ -8,15 +8,15 @@
 |--------|------|
 | `STRIPE_SECRET_KEY` | Stripe API secret key |
 | `STRIPE_WEBHOOK_SECRET` | Webhook endpoint signing secret |
-| `STRIPE_PRICE_MONTHLY_USD` | Stripe Price ID для subscription plan |
+| `STRIPE_PRICE_ID_SUBSCRIPTION` | Stripe Price ID для subscription plan |
 
 ## Required when one-off enabled
 
 | Змінна | Опис |
 |--------|------|
-| `STRIPE_PRICE_CREDITS_5_USD` | Stripe Price ID для пакету 5 кредитів |
-| `STRIPE_PRICE_CREDITS_10_USD` | Stripe Price ID для пакету 10 кредитів |
-| `STRIPE_PRICE_CREDITS_20_USD` | Stripe Price ID для пакету 20 кредитів |
+| `STRIPE_PRICE_ID_CREDITS_5` | Stripe Price ID для пакету 5 кредитів |
+| `STRIPE_PRICE_ID_CREDITS_10` | Stripe Price ID для пакету 10 кредитів |
+| `STRIPE_PRICE_ID_CREDITS_20` | Stripe Price ID для пакету 20 кредитів |
 
 Ці змінні обов'язкові тільки коли `PAYMENTS_ONE_OFF_ENABLED=true`. При `false` мають fallback на порожній рядок.
 

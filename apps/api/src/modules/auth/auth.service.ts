@@ -163,7 +163,8 @@ export class AuthService {
     async sendMagicLink(
         email: string,
         purpose: MagicLinkPurpose = MAGIC_LINK_PURPOSE.LOGIN,
-        requestLang?: string
+        requestLang?: string,
+        redirectTo?: string
     ): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
@@ -187,7 +188,12 @@ export class AuthService {
         }
 
         const token = randomBytes(32).toString('hex');
-        const payload = JSON.stringify({ email: normalizedEmail, purpose, lang: requestLang });
+        const payload = JSON.stringify({
+            email: normalizedEmail,
+            purpose,
+            lang: requestLang,
+            ...(redirectTo && { redirectTo }),
+        });
         const magicLinkTtl = ENV.AUTH_MAGIC_LINK_TTL_MIN * 60;
 
         const pipeline = this.redis.pipeline();
@@ -202,7 +208,8 @@ export class AuthService {
             normalizedEmail,
             token,
             purpose,
-            lang
+            lang,
+            redirectTo
         );
     }
 
@@ -343,7 +350,10 @@ export class AuthService {
         await user.save();
 
         if (termsVersion) {
-            await this.usersService.acceptTerms(user._id.toString(), termsVersion);
+            await this.usersService.acceptTerms(
+                user._id.toString(),
+                termsVersion
+            );
         }
 
         // 6. Generate tokens
@@ -403,9 +413,7 @@ export class AuthService {
         const raw = await this.redis.getdel(magicKey);
 
         if (!raw) {
-            throw new UnauthorizedException(
-                'Invalid or expired reset token'
-            );
+            throw new UnauthorizedException('Invalid or expired reset token');
         }
 
         const { email, purpose } = JSON.parse(raw) as {

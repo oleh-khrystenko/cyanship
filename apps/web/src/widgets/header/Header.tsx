@@ -256,7 +256,7 @@ const Header = () => {
                             href={cta.href}
                             variant="filled"
                             size="sm"
-                            className="ml-2 rounded-lg"
+                            className="ml-2"
                         >
                             {cta.label}
                         </UiButton>
@@ -401,7 +401,7 @@ const Header = () => {
                                         href={cta.href}
                                         variant="filled"
                                         size="md"
-                                        className="mt-2 w-full rounded-lg"
+                                        className="mt-2 w-full"
                                         onClick={() =>
                                             setIsSheetOpen(false)
                                         }

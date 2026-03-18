@@ -1,10 +1,7 @@
 // ============================================================
 // FAIL FAST POLICY:
-// NEVER add fallback values for URLs, secrets, or API keys.
+// Every env var is required. No fallbacks. No defaults in code.
 // If a variable is missing, crash immediately.
-// Silent failures with localhost fallbacks are invisible in
-// production and break SEO (canonical URLs, Open Graph), auth,
-// and API connectivity.
 //
 // IMPORTANT: NEXT_PUBLIC_* vars MUST use direct process.env.VAR
 // access (not dynamic process.env[name]) so Next.js can inline
@@ -29,12 +26,14 @@ export const ENV = {
     ),
 } as const;
 
-// Payment type toggles (sync with backend PAYMENTS_*_ENABLED)
-// Must match backend logic: only 'true' enables, everything else disables.
-// Unset / missing defaults to 'true' (same as backend).
 export const PAYMENTS_SUBSCRIPTION_ENABLED =
-    (process.env.NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED ?? 'true') ===
-    'true';
+    assertEnv(
+        process.env.NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED,
+        'NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED'
+    ) === 'true';
 
 export const PAYMENTS_ONE_OFF_ENABLED =
-    (process.env.NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED ?? 'true') === 'true';
+    assertEnv(
+        process.env.NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED,
+        'NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED'
+    ) === 'true';

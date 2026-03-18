@@ -9,9 +9,7 @@ config({ path: resolve(__dirname, '../../.env') });
 // Reverse proxy: all /api requests are forwarded to the backend.
 // This keeps API and Web on the same origin, so cookies (bid_refresh)
 // are set on the web domain and visible to middleware.
-// Default: http://localhost:4000 for local dev.
-// Docker/prod: override via API_INTERNAL_URL env var.
-const apiInternalUrl = process.env.API_INTERNAL_URL || 'http://localhost:4000';
+const apiInternalUrl = process.env.API_INTERNAL_URL;
 
 const nextConfig: NextConfig = {
     output: 'standalone',
@@ -24,12 +22,14 @@ const nextConfig: NextConfig = {
             },
         ],
     },
-    rewrites: async () => [
-        {
-            source: '/api/:path*',
-            destination: `${apiInternalUrl}/api/:path*`,
-        },
-    ],
+    ...(apiInternalUrl && {
+        rewrites: async () => [
+            {
+                source: '/api/:path*',
+                destination: `${apiInternalUrl}/api/:path*`,
+            },
+        ],
+    }),
 };
 
 const withNextIntl = createNextIntlPlugin();

@@ -116,12 +116,12 @@ RESEND_API_KEY=your-resend-api-key
 # Stripe
 STRIPE_SECRET_KEY=your-stripe-secret-key
 STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-STRIPE_PRICE_MONTHLY_USD=your-stripe-price-id
+STRIPE_PRICE_ID_SUBSCRIPTION=your-stripe-price-id
 
 # Stripe credit packs (потрібні при PAYMENTS_ONE_OFF_ENABLED=true)
-# STRIPE_PRICE_CREDITS_5_USD=price_xxx
-# STRIPE_PRICE_CREDITS_10_USD=price_xxx
-# STRIPE_PRICE_CREDITS_20_USD=price_xxx
+# STRIPE_PRICE_ID_CREDITS_5=price_xxx
+# STRIPE_PRICE_ID_CREDITS_10=price_xxx
+# STRIPE_PRICE_ID_CREDITS_20=price_xxx
 
 # Web
 NEXT_PUBLIC_BASE_URL=http://localhost:3000

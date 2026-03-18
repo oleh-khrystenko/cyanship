@@ -11,7 +11,7 @@
 - `paymentType: 'subscription'`
 - `planCode: 'monthly_usd'` — єдиний план
 - Stripe Checkout mode: `subscription`
-- Price ID: `STRIPE_PRICE_MONTHLY_USD` (env var)
+- Price ID: `STRIPE_PRICE_ID_SUBSCRIPTION` (env var)
 - **Валідація:** якщо `user.billing?.hasActiveSubscription === true` -> 409 ALREADY_SUBSCRIBED
 
 ### 2. One-off (кредитні пакети)
@@ -38,9 +38,9 @@ Runtime mapping packCode -> priceId в `apps/api/src/config/env.ts`:
 
 ```typescript
 STRIPE_CREDIT_PACKS = {
-    credits_5: { priceId: STRIPE_PRICE_CREDITS_5_USD, credits: 5 },
-    credits_10: { priceId: STRIPE_PRICE_CREDITS_10_USD, credits: 10 },
-    credits_20: { priceId: STRIPE_PRICE_CREDITS_20_USD, credits: 20 },
+    credits_5: { priceId: STRIPE_PRICE_ID_CREDITS_5, credits: 5 },
+    credits_10: { priceId: STRIPE_PRICE_ID_CREDITS_10, credits: 10 },
+    credits_20: { priceId: STRIPE_PRICE_ID_CREDITS_20, credits: 20 },
 }
 ```
 

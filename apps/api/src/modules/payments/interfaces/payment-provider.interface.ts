@@ -23,11 +23,15 @@ export interface PortalResult {
 
 export interface IPaymentProvider {
     createCheckoutSession(input: CreateCheckoutInput): Promise<CheckoutResult>;
-    createPortalSession(providerCustomerId: string): Promise<PortalResult>;
+    createPortalSession(
+        providerCustomerId: string,
+        returnUrl: string
+    ): Promise<PortalResult>;
     handleWebhookPayload(
         rawBody: Buffer,
         signatureHeader: string
-    ): BillingWebhookEvent | null;
+    ): Promise<BillingWebhookEvent | null>;
+    deleteCustomerData(providerCustomerId: string): Promise<void>;
 }
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');

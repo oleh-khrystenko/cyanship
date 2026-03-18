@@ -147,10 +147,10 @@ Global prefix: `/api`.
 - Data/runtime: `MONGODB_URI`, `REDIS_URL`
 - Auth: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
 - OAuth/email: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`
-- Payments: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_USD`
+- Payments: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_SUBSCRIPTION`
 
 **API env: conditionally required / optional defaults**
-- One-off Stripe prices are required only when `PAYMENTS_ONE_OFF_ENABLED=true`: `STRIPE_PRICE_CREDITS_5_USD`, `STRIPE_PRICE_CREDITS_10_USD`, `STRIPE_PRICE_CREDITS_20_USD`
+- One-off Stripe prices are required only when `PAYMENTS_ONE_OFF_ENABLED=true`: `STRIPE_PRICE_ID_CREDITS_5`, `STRIPE_PRICE_ID_CREDITS_10`, `STRIPE_PRICE_ID_CREDITS_20`
 - Dev-only fallback exists for `RESEND_FROM_EMAIL`; production must provide a verified sender
 - `BILLING_SUCCESS_URL` and `BILLING_CANCEL_URL` default from `WEB_URL`
 - Auth tuning defaults live in `apps/api/src/config/env.ts`: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
@@ -167,7 +167,7 @@ Global prefix: `/api`.
 
 **Policy**
 - `docs/conventions/fail-fast.md` is the rule for env handling
-- `docs/conventions/env-sync.md` requires updating `env.ts`, `.env.example`, and `.env` together
+- `docs/conventions/fail-fast.md` requires updating `env.ts`, `.env.example`, and `.env` together
 
 ## Common Commands
 
@@ -208,7 +208,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 ## Rules & Conventions
 
 - Source of truth for repo-wide rules: `docs/conventions/README.md`
-- Read and follow before touching user-facing copy, env/config, or UI structure: `tone.md`, `fail-fast.md`, `i18n.md`, `env-sync.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
+- Read and follow before touching user-facing copy, env/config, or UI structure: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
 - Full auth and billing behavior docs live in `docs/architecture/auth-flow/README.md` and `docs/architecture/payments-flow/README.md`
 
 ## Known Complexities & Debt

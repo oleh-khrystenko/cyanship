@@ -139,7 +139,6 @@ const ProfileForm = ({
                             type="submit"
                             variant="filled"
                             size="md"
-                            className="rounded-lg"
                             disabled={submitting}
                         >
                             {submitting ? (

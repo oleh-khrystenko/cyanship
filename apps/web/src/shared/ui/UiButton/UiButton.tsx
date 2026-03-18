@@ -45,6 +45,8 @@ const iconCompactSizeStyles: Record<UiButtonSize, string> = {
  */
 const variantStyles: Record<UiButtonVariant, string> = {
     filled: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
+    'destructive-outline':
+        'border border-destructive bg-transparent text-destructive hover:bg-destructive/10 active:bg-destructive/20',
     text: 'bg-transparent text-muted-foreground hover:text-foreground',
     icon: 'bg-transparent text-muted-foreground hover:text-foreground',
     'icon-compact':
@@ -120,7 +122,7 @@ const UiButton = forwardRef<
     } = props;
 
     const classes = composeClasses(
-        'inline-flex items-center justify-center',
+        'inline-flex items-center justify-center rounded-lg',
         variant !== 'icon' && variant !== 'icon-compact' && 'gap-2',
         'cursor-pointer disabled:cursor-not-allowed',
         'focus:outline-none',
