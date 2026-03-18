@@ -3,7 +3,11 @@ jest.mock('./client', () => ({
 }));
 
 import { apiClient } from './client';
-import { PAYMENT_TYPE } from '@cyanship/types';
+import {
+    CREDIT_PACKS,
+    PAYMENT_TYPE,
+    SUBSCRIPTION_PLANS,
+} from '@cyanship/types';
 import {
     createSubscriptionCheckout,
     createOneOffCheckout,
@@ -24,77 +28,95 @@ describe('payments api', () => {
     // ─── createSubscriptionCheckout ───────────────────────────────────
 
     describe('createSubscriptionCheckout', () => {
-        it('should POST to /api/payments/checkout-session with paymentType and planCode', async () => {
-            mockPost.mockResolvedValue({
-                data: { data: { checkoutUrl: 'https://checkout.stripe.com/test' } },
-            });
+        it.each(SUBSCRIPTION_PLANS)(
+            'should POST to /api/payments/checkout-session with paymentType and planCode for $code',
+            async ({ code }) => {
+                mockPost.mockResolvedValue({
+                    data: { data: { checkoutUrl: 'https://checkout.stripe.com/test' } },
+                });
 
-            await createSubscriptionCheckout('monthly_usd');
+                await createSubscriptionCheckout(code);
 
-            expect(mockPost).toHaveBeenCalledWith(
-                '/payments/checkout-session',
-                {
-                    paymentType: PAYMENT_TYPE.SUBSCRIPTION,
-                    planCode: 'monthly_usd',
-                },
-            );
-        });
+                expect(mockPost).toHaveBeenCalledWith(
+                    '/payments/checkout-session',
+                    {
+                        paymentType: PAYMENT_TYPE.SUBSCRIPTION,
+                        planCode: code,
+                    },
+                );
+            },
+        );
 
-        it('should return { checkoutUrl } extracted from response.data.data', async () => {
-            mockPost.mockResolvedValue({
-                data: { data: { checkoutUrl: 'https://checkout.stripe.com/test' } },
-            });
+        it.each(SUBSCRIPTION_PLANS)(
+            'should return { checkoutUrl } extracted from response.data.data for $code',
+            async ({ code }) => {
+                mockPost.mockResolvedValue({
+                    data: { data: { checkoutUrl: 'https://checkout.stripe.com/test' } },
+                });
 
-            const result = await createSubscriptionCheckout('monthly_usd');
+                const result = await createSubscriptionCheckout(code);
 
-            expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/test' });
-        });
+                expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/test' });
+            },
+        );
 
-        it('should propagate errors from apiClient.post', async () => {
-            mockPost.mockRejectedValue(new Error('Network error'));
+        it.each(SUBSCRIPTION_PLANS)(
+            'should propagate errors from apiClient.post for $code',
+            async ({ code }) => {
+                mockPost.mockRejectedValue(new Error('Network error'));
 
-            await expect(createSubscriptionCheckout('monthly_usd')).rejects.toThrow(
-                'Network error',
-            );
-        });
+                await expect(createSubscriptionCheckout(code)).rejects.toThrow(
+                    'Network error',
+                );
+            },
+        );
     });
 
     // ─── createOneOffCheckout ─────────────────────────────────────────
 
     describe('createOneOffCheckout', () => {
-        it('should POST to /api/payments/checkout-session with paymentType and packCode', async () => {
-            mockPost.mockResolvedValue({
-                data: { data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' } },
-            });
+        it.each(CREDIT_PACKS)(
+            'should POST to /api/payments/checkout-session with paymentType and packCode for $code',
+            async ({ code }) => {
+                mockPost.mockResolvedValue({
+                    data: { data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' } },
+                });
 
-            await createOneOffCheckout('credits_5');
+                await createOneOffCheckout(code);
 
-            expect(mockPost).toHaveBeenCalledWith(
-                '/payments/checkout-session',
-                {
-                    paymentType: PAYMENT_TYPE.ONE_OFF,
-                    packCode: 'credits_5',
-                },
-            );
-        });
+                expect(mockPost).toHaveBeenCalledWith(
+                    '/payments/checkout-session',
+                    {
+                        paymentType: PAYMENT_TYPE.ONE_OFF,
+                        packCode: code,
+                    },
+                );
+            },
+        );
 
-        it('should return { checkoutUrl } extracted from response.data.data', async () => {
-            mockPost.mockResolvedValue({
-                data: { data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' } },
-            });
+        it.each(CREDIT_PACKS)(
+            'should return { checkoutUrl } extracted from response.data.data for $code',
+            async ({ code }) => {
+                mockPost.mockResolvedValue({
+                    data: { data: { checkoutUrl: 'https://checkout.stripe.com/oneoff' } },
+                });
 
-            const result = await createOneOffCheckout('credits_10');
+                const result = await createOneOffCheckout(code);
 
-            expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/oneoff' });
-        });
+                expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/oneoff' });
+            },
+        );
 
-        it('should propagate errors from apiClient.post', async () => {
-            mockPost.mockRejectedValue(new Error('Payment failed'));
+        it.each(CREDIT_PACKS)(
+            'should propagate errors from apiClient.post for $code',
+            async ({ code }) => {
+                mockPost.mockRejectedValue(new Error('Payment failed'));
 
-            await expect(createOneOffCheckout('credits_5')).rejects.toThrow(
-                'Payment failed',
-            );
-        });
+                await expect(createOneOffCheckout(code)).rejects.toThrow(
+                    'Payment failed',
+                );
+            },
+        );
     });
 
     // ─── createPortalSession ──────────────────────────────────────────
