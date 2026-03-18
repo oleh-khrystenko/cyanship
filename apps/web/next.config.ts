@@ -10,9 +10,6 @@ config({ path: resolve(__dirname, '../../.env') });
 // This keeps API and Web on the same origin, so cookies (bid_refresh)
 // are set on the web domain and visible to middleware.
 const apiInternalUrl = process.env.API_INTERNAL_URL;
-if (!apiInternalUrl) {
-    throw new Error('❌ Environment variable "API_INTERNAL_URL" is not defined');
-}
 
 const nextConfig: NextConfig = {
     output: 'standalone',
@@ -25,12 +22,14 @@ const nextConfig: NextConfig = {
             },
         ],
     },
-    rewrites: async () => [
-        {
-            source: '/api/:path*',
-            destination: `${apiInternalUrl}/api/:path*`,
-        },
-    ],
+    ...(apiInternalUrl && {
+        rewrites: async () => [
+            {
+                source: '/api/:path*',
+                destination: `${apiInternalUrl}/api/:path*`,
+            },
+        ],
+    }),
 };
 
 const withNextIntl = createNextIntlPlugin();
