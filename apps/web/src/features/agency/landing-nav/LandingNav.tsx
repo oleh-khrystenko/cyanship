@@ -7,7 +7,7 @@ import { useHeaderNavStore } from '@/stores/headerNav';
 const navKeys = [
     { key: 'approach', href: '#problem' },
     { key: 'proof', href: '#dogfooding' },
-    { key: 'portfolio', href: '#portfolio' },
+    // { key: 'portfolio', href: '#portfolio' },
     { key: 'workflow', href: '#workflow' },
     { key: 'pricing', href: '#pricing' },
     { key: 'get_started', href: '#footer-cta' },
