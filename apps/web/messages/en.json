@@ -95,7 +95,9 @@
             "faq_3_q": "What's the payment structure?",
             "faq_3_a": "50% upfront to secure your slot, 50% upon successful delivery. I operate as a registered independent contractor. Payments are made securely via SWIFT, Payoneer, or wire transfer against official B2B invoices.",
             "faq_4_q": "Can you help with hosting?",
-            "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package."
+            "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package.",
+            "faq_5_q": "What happens after the MVP is launched?",
+            "faq_5_a": "You have full control. You can take the clean, documented Next.js/NestJS codebase to an in-house team, or retain me for ongoing feature development via a monthly retainer or fixed hourly rate."
         },
         "footer_cta": {
             "label": "Contact",
