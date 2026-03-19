@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+    workflow_run:
+        workflows: [CI]
+        types: [completed]
+        branches: [main]
+
+concurrency:
+    group: deploy-production
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        name: Deploy to VPS
+        runs-on: ubuntu-latest
+        if: github.event.workflow_run.conclusion == 'success'
+
+        steps:
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@v1
+              with:
+                  host: ${{ secrets.VPS_HOST }}
+                  username: ${{ secrets.VPS_USER }}
+                  key: ${{ secrets.VPS_SSH_KEY }}
+                  script_stop: true
+                  script: |
+                      set -euo pipefail
+
+                      cd ${{ secrets.VPS_DEPLOY_PATH }}
+
+                      # Pull latest code
+                      git fetch origin main
+                      git reset --hard origin/main
+
+                      # Build and restart containers
+                      docker compose build --parallel
+                      docker compose up -d --remove-orphans
+
+                      # Wait for containers to start
+                      sleep 5
+
+                      # Health check — verify web container responds
+                      if ! curl -sf --max-time 10 http://127.0.0.1:3000 > /dev/null; then
+                          echo "Health check failed — rolling back"
+                          git reset --hard HEAD~1
+                          docker compose build --parallel
+                          docker compose up -d --remove-orphans
+                          exit 1
+                      fi
+
+                      # Health check — verify API via web proxy
+                      if ! curl -sf --max-time 10 http://127.0.0.1:3000/api/health > /dev/null; then
+                          echo "API health check failed — rolling back"
+                          git reset --hard HEAD~1
+                          docker compose build --parallel
+                          docker compose up -d --remove-orphans
+                          exit 1
+                      fi
+
+                      # Cleanup old images
+                      docker image prune -f
+
+                      echo "Deploy successful"

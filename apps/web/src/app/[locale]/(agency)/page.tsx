@@ -5,7 +5,7 @@ import {
     HeroSection,
     ProblemSection,
     DogfoodingSection,
-    PortfolioSection,
+    // PortfolioSection,
     WorkflowSection,
     PricingSection,
     FooterCtaSection,
@@ -22,7 +22,7 @@ export default function HomePage() {
             <HeroSection />
             <ProblemSection />
             <DogfoodingSection />
-            <PortfolioSection />
+            {/* <PortfolioSection /> */}
             <WorkflowSection />
             <PricingSection />
             <FooterCtaSection />
