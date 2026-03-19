@@ -29,6 +29,9 @@ jobs:
 
                       cd ${{ secrets.VPS_DEPLOY_PATH }}
 
+                      # Save current commit for rollback
+                      PREV_COMMIT=$(git rev-parse HEAD)
+
                       # Pull latest code
                       git fetch origin main
                       git reset --hard origin/main
@@ -37,22 +40,32 @@ jobs:
                       docker compose build --parallel
                       docker compose up -d --remove-orphans
 
-                      # Wait for containers to start
-                      sleep 5
+                      # Health check with retries (wait up to 30s for services to start)
+                      check_health() {
+                          local url=$1
+                          local label=$2
+                          for i in 1 2 3 4 5 6; do
+                              if curl -sf --max-time 5 "$url" > /dev/null 2>&1; then
+                                  echo "$label OK"
+                                  return 0
+                              fi
+                              echo "$label attempt $i failed, retrying in 5s..."
+                              sleep 5
+                          done
+                          return 1
+                      }
 
-                      # Health check — verify web container responds
-                      if ! curl -sf --max-time 10 http://127.0.0.1:3000 > /dev/null; then
-                          echo "Health check failed — rolling back"
-                          git reset --hard HEAD~1
+                      if ! check_health "http://127.0.0.1:3000" "Web"; then
+                          echo "Web health check failed — rolling back to $PREV_COMMIT"
+                          git reset --hard "$PREV_COMMIT"
                           docker compose build --parallel
                           docker compose up -d --remove-orphans
                           exit 1
                       fi
 
-                      # Health check — verify API via web proxy
-                      if ! curl -sf --max-time 10 http://127.0.0.1:3000/api/health > /dev/null; then
-                          echo "API health check failed — rolling back"
-                          git reset --hard HEAD~1
+                      if ! check_health "http://127.0.0.1:3000/api/health" "API"; then
+                          echo "API health check failed — rolling back to $PREV_COMMIT"
+                          git reset --hard "$PREV_COMMIT"
                           docker compose build --parallel
                           docker compose up -d --remove-orphans
                           exit 1
@@ -61,4 +74,4 @@ jobs:
                       # Cleanup old images
                       docker image prune -f
 
-                      echo "Deploy successful"
+                      echo "Deploy successful ($(git rev-parse --short HEAD))"
