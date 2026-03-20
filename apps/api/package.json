@@ -64,6 +64,7 @@
         "@types/passport-google-oauth20": "^2.0.17",
         "@types/passport-jwt": "^4.0.1",
         "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
         "@types/supertest": "^6.0.3",
         "eslint": "^9.38.0",
         "eslint-config-prettier": "^10.1.8",
@@ -85,15 +86,16 @@
         "moduleFileExtensions": [
             "js",
             "json",
-            "ts"
+            "ts",
+            "tsx"
         ],
         "rootDir": "src",
         "testRegex": ".*\\.spec\\.ts$",
         "transform": {
-            "^.+\\.(t|j)s$": "ts-jest"
+            "^.+\\.(t|j)sx?$": "ts-jest"
         },
         "collectCoverageFrom": [
-            "**/*.(t|j)s"
+            "**/*.(t|j)sx?"
         ],
         "coverageDirectory": "../coverage",
         "testEnvironment": "node",
