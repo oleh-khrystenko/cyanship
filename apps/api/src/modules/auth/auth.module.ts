@@ -31,12 +31,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         forwardRef(() => UsersModule),
     ],
     controllers: [AuthController],
-    providers: [
-        AuthService,
-        JwtStrategy,
-        GoogleStrategy,
-        redisProvider,
-    ],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, redisProvider],
     exports: [AuthService, REDIS_CLIENT],
 })
 export class AuthModule implements OnModuleInit, OnModuleDestroy {

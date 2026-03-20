@@ -33,8 +33,7 @@ export const en = {
         subject: 'Your account has been deactivated',
         body: (formattedDate: string) =>
             `Your CyanShip account has been deactivated. All data will be permanently deleted on ${formattedDate}.`,
-        instruction:
-            'To restore your account, simply sign in within 30 days.',
+        instruction: 'To restore your account, simply sign in within 30 days.',
         cta: 'Sign In',
         footer: "If you didn't request deletion — sign in to your account as soon as possible.",
     },

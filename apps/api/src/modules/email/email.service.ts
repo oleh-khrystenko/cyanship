@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LANG, MAGIC_LINK_PURPOSE, type MagicLinkPurpose } from '@cyanship/types';
+import {
+    LANG,
+    MAGIC_LINK_PURPOSE,
+    type MagicLinkPurpose,
+} from '@cyanship/types';
 import { Resend } from 'resend';
 
 import { ENV } from '../../config/env';
@@ -51,7 +55,7 @@ export class EmailService {
 
         const formattedDate = deletionDate.toLocaleDateString(
             DATE_LOCALE[lang] ?? DATE_LOCALE[LANG.EN],
-            { year: 'numeric', month: 'long', day: 'numeric' },
+            { year: 'numeric', month: 'long', day: 'numeric' }
         );
 
         await this.send({
@@ -80,7 +84,7 @@ export class EmailService {
 
         if (error) {
             this.logger.error(
-                `Failed to send email to ${options.to}: ${error.message}`,
+                `Failed to send email to ${options.to}: ${error.message}`
             );
             throw new Error(`Failed to send email: ${error.message}`);
         }
@@ -89,7 +93,7 @@ export class EmailService {
     private buildMagicLink(
         token: string,
         purpose: MagicLinkPurpose,
-        redirectTo?: string,
+        redirectTo?: string
     ): string {
         let link =
             purpose === MAGIC_LINK_PURPOSE.RESET_PASSWORD

@@ -55,7 +55,7 @@ describe('EmailService', () => {
                     to: email,
                     subject: 'Вхід до CyanShip',
                     react: expect.anything(),
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -73,7 +73,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Ласкаво просимо до CyanShip',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -91,7 +91,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Скидання пароля',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -109,7 +109,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Підтвердження видалення акаунту',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -128,7 +128,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Sign in to CyanShip',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -146,7 +146,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Welcome to CyanShip',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -164,7 +164,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Reset Your Password',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -182,7 +182,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Confirm Account Deletion',
-                }),
+                })
             );
 
             const html = getRenderedHtml();
@@ -199,7 +199,7 @@ describe('EmailService', () => {
 
             const html = getRenderedHtml();
             expect(html).toContain(
-                `http://localhost:3000/auth/verify?token=${token}`,
+                `http://localhost:3000/auth/verify?token=${token}`
             );
         });
 
@@ -213,7 +213,7 @@ describe('EmailService', () => {
 
             const html = getRenderedHtml();
             expect(html).toContain(
-                `http://localhost:3000/auth/reset-password?token=${token}`,
+                `http://localhost:3000/auth/reset-password?token=${token}`
             );
         });
 
@@ -228,7 +228,7 @@ describe('EmailService', () => {
 
             const html = getRenderedHtml();
             expect(html).toContain(
-                `redirect=${encodeURIComponent('/dashboard')}`,
+                `redirect=${encodeURIComponent('/dashboard')}`
             );
         });
 
@@ -256,7 +256,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Sign in to CyanShip',
-                }),
+                })
             );
         });
 
@@ -271,7 +271,7 @@ describe('EmailService', () => {
                     token,
                     purpose: 'login',
                     lang: 'uk',
-                }),
+                })
             ).rejects.toThrow('Failed to send email: Send failed');
         });
     });
@@ -292,7 +292,7 @@ describe('EmailService', () => {
                     to: email,
                     subject: 'Ваш акаунт деактивовано',
                     react: expect.anything(),
-                }),
+                })
             );
         });
 
@@ -306,7 +306,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Your account has been deactivated',
-                }),
+                })
             );
         });
 
@@ -342,7 +342,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subject: 'Your account has been deactivated',
-                }),
+                })
             );
         });
 
@@ -356,7 +356,7 @@ describe('EmailService', () => {
                     email,
                     deletionDate,
                     lang: 'uk',
-                }),
+                })
             ).rejects.toThrow('Failed to send email: Send failed');
         });
     });
