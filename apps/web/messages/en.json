@@ -225,6 +225,7 @@
         "new_heading": "Complete your profile",
         "form": {
             "heading": "Personal info",
+            "email_label": "Email",
             "name_label": "First name",
             "name_placeholder": "Your name",
             "name_required": "Name is required",
