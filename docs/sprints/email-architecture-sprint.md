@@ -86,7 +86,7 @@ DeletionConfirmationEmail extends BaseLayout
 | `background` | `#f8f8fa` | Фон body | `--background` |
 | `surface` | `#ffffff` | Фон контейнера | `--card` (≈white) |
 | `foreground` | `#13161b` | Основний текст | `--foreground` |
-| `mutedForeground` | `#72727a` | Другорядний текст, footer | `--muted-foreground` |
+| `mutedForeground` | `#6e7278` | Другорядний текст, footer | `--muted-foreground` |
 | `primary` | `#00a7a8` | CTA кнопка | `--primary` |
 | `primaryForeground` | `#f8f8fa` | Текст на CTA кнопці | `--primary-foreground` |
 
@@ -139,7 +139,7 @@ export const EMAIL_COLORS = {
   background: '#f8f8fa',
   surface: '#ffffff',
   foreground: '#13161b',
-  mutedForeground: '#72727a',
+  mutedForeground: '#6e7278',
   primary: '#00a7a8',
   primaryForeground: '#f8f8fa',
 } as const;
