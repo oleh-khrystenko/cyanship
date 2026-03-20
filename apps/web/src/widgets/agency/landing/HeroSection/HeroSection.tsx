@@ -7,8 +7,14 @@ const HeroSection = () => {
     const tBrand = useTranslations('brand');
 
     return (
-        <section className="flex min-h-[calc(100svh-4rem)] items-center py-20 md:py-28">
-            <div className="container px-6">
+        <section className="relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden py-20 md:py-28">
+            {/* Ambient glow — backlighting effect */}
+            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                <div className="absolute left-1/2 top-1/3 size-[min(36rem,90vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.07] blur-[100px] dark:bg-primary/[0.12]" />
+                <div className="absolute left-1/2 top-1/3 size-[min(20rem,60vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.05] blur-[60px] dark:bg-primary/[0.08]" />
+            </div>
+
+            <div className="relative container px-6">
                 <div className="mx-auto max-w-3xl text-center">
                     <p className="text-sm font-medium tracking-widest text-primary uppercase">
                         {tBrand('slogan')}
