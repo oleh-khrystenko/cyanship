@@ -42,9 +42,9 @@ const HeroSection = () => {
                         <UiButton
                             as="link"
                             href="/auth/signin"
-                            variant="text"
+                            variant="outline"
                             size="lg"
-                            className="h-12 text-base text-muted-foreground hover:text-foreground"
+                            className="h-12 px-8 text-base"
                         >
                             {t('cta_secondary')}
                         </UiButton>

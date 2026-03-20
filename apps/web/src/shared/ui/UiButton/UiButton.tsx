@@ -45,6 +45,8 @@ const iconCompactSizeStyles: Record<UiButtonSize, string> = {
  */
 const variantStyles: Record<UiButtonVariant, string> = {
     filled: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
+    outline:
+        'border border-border bg-transparent text-foreground hover:bg-muted active:bg-muted/70',
     'destructive-outline':
         'border border-destructive bg-transparent text-destructive hover:bg-destructive/10 active:bg-destructive/20',
     text: 'bg-transparent text-muted-foreground hover:text-foreground',
