@@ -142,7 +142,7 @@ export default function BillingPage() {
                                     <UiButton
                                         variant="filled"
                                         size="lg"
-                                        className="mt-8 w-full justify-center"
+                                        className="relative mt-8 w-full justify-center"
                                         onClick={() =>
                                             handleSubscriptionCheckout(plan.code)
                                         }
@@ -150,10 +150,11 @@ export default function BillingPage() {
                                             loadingAction === `subscribe_${plan.code}`
                                         }
                                     >
-                                        {loadingAction === `subscribe_${plan.code}` ? (
-                                            <UiSpinner size="sm" />
-                                        ) : (
-                                            t('subscribe.button')
+                                        <span className={loadingAction === `subscribe_${plan.code}` ? 'invisible' : ''}>
+                                            {t('subscribe.button')}
+                                        </span>
+                                        {loadingAction === `subscribe_${plan.code}` && (
+                                            <UiSpinner size="sm" className="absolute inset-0 m-auto" />
                                         )}
                                     </UiButton>
                                 </div>
@@ -216,14 +217,15 @@ export default function BillingPage() {
                             <UiButton
                                 variant="filled"
                                 size="md"
-                                className="mt-6"
+                                className="relative mt-6"
                                 onClick={handlePortal}
                                 disabled={loadingAction === 'portal'}
                             >
-                                {loadingAction === 'portal' ? (
-                                    <UiSpinner size="sm" />
-                                ) : (
-                                    t('active.manage_button')
+                                <span className={loadingAction === 'portal' ? 'invisible' : ''}>
+                                    {t('active.manage_button')}
+                                </span>
+                                {loadingAction === 'portal' && (
+                                    <UiSpinner size="sm" className="absolute inset-0 m-auto" />
                                 )}
                             </UiButton>
                         </div>
@@ -266,7 +268,7 @@ export default function BillingPage() {
                                 <UiButton
                                     variant="filled"
                                     size="md"
-                                    className="mt-4 w-full justify-center"
+                                    className="relative mt-4 w-full justify-center"
                                     onClick={() =>
                                         handleOneOffCheckout(pack.code)
                                     }
@@ -274,11 +276,11 @@ export default function BillingPage() {
                                         loadingAction === `oneoff_${pack.code}`
                                     }
                                 >
-                                    {loadingAction ===
-                                    `oneoff_${pack.code}` ? (
-                                        <UiSpinner size="sm" />
-                                    ) : (
-                                        t('credits.buy_button')
+                                    <span className={loadingAction === `oneoff_${pack.code}` ? 'invisible' : ''}>
+                                        {t('credits.buy_button')}
+                                    </span>
+                                    {loadingAction === `oneoff_${pack.code}` && (
+                                        <UiSpinner size="sm" className="absolute inset-0 m-auto" />
                                     )}
                                 </UiButton>
                             </div>
