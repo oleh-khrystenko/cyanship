@@ -28,13 +28,13 @@ const HeroSection = () => {
                         {t('description')}
                     </p>
 
-                    <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
                         <UiButton
                             as="a"
                             href="#pricing"
                             variant="filled"
-                            size="lg"
-                            className="h-12 px-8 text-base font-semibold"
+                            size="md"
+                            className="w-full font-semibold sm:h-12 sm:w-auto sm:px-8 sm:text-base"
                             IconRight={<ArrowRight />}
                         >
                             {t('cta_primary')}
@@ -43,8 +43,8 @@ const HeroSection = () => {
                             as="link"
                             href="/auth/signin"
                             variant="outline"
-                            size="lg"
-                            className="h-12 px-8 text-base"
+                            size="md"
+                            className="w-full sm:h-12 sm:w-auto sm:px-8 sm:text-base"
                         >
                             {t('cta_secondary')}
                         </UiButton>

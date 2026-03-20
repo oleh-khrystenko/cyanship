@@ -370,7 +370,7 @@ const Header = () => {
                                                     );
                                                 }}
                                             >
-                                                <span className="size-4">
+                                                <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
                                                     {item.icon}
                                                 </span>
                                                 <span>{item.label}</span>
