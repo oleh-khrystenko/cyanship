@@ -22,6 +22,7 @@ import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/modules/auth/auth.module';
+import { EmailModule } from '../src/modules/email/email.module';
 import { UsersModule } from '../src/modules/users/users.module';
 import { ReportsModule } from '../src/modules/reports/reports.module';
 import { StorageModule } from '../src/modules/storage/storage.module';
@@ -31,7 +32,7 @@ import {
     ProcessedWebhookEvent,
     ProcessedWebhookEventDocument,
 } from '../src/modules/payments/schemas/processed-webhook-event.schema';
-import { EmailService } from '../src/modules/auth/services/email.service';
+import { EmailService } from '../src/modules/email/email.service';
 import { PAYMENT_PROVIDER } from '../src/modules/payments/interfaces/payment-provider.interface';
 
 // ─── Mock ENV ────────────────────────────────────────────────────────────────
@@ -231,6 +232,7 @@ describe('Payments E2E', () => {
                 }),
                 MongooseModule.forRoot(mongoServer.getUri()),
                 AuthModule,
+                EmailModule,
                 UsersModule,
                 ReportsModule,
                 StorageModule,

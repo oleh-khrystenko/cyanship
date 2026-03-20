@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { REDIS_CLIENT } from '../../common/providers/redis.provider';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
-import { EmailService } from './services/email.service';
+import { EmailService } from '../email/email.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
@@ -429,15 +429,15 @@ describe('AuthService', () => {
             const after = new Date();
             after.setDate(after.getDate() + 30);
 
-            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith(
-                'test@gmail.com',
-                expect.any(Date),
-                'uk'
-            );
+            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith({
+                email: 'test@gmail.com',
+                deletionDate: expect.any(Date),
+                lang: 'uk',
+            });
 
             const calledDate = (
                 emailService.sendDeletionConfirmation as jest.Mock
-            ).mock.calls[0][1] as Date;
+            ).mock.calls[0][0].deletionDate as Date;
             expect(calledDate.getTime()).toBeGreaterThanOrEqual(
                 before.getTime()
             );
@@ -450,11 +450,11 @@ describe('AuthService', () => {
                 'en'
             );
 
-            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith(
-                'test@gmail.com',
-                expect.any(Date),
-                'en'
-            );
+            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith({
+                email: 'test@gmail.com',
+                deletionDate: expect.any(Date),
+                lang: 'en',
+            });
         });
     });
 
@@ -485,13 +485,13 @@ describe('AuthService', () => {
                 'EX',
                 900
             );
-            expect(emailService.sendMagicLink).toHaveBeenCalledWith(
-                'user@example.com',
-                expect.stringMatching(/^[a-f0-9]{64}$/),
-                'login',
-                'en',
-                undefined
-            );
+            expect(emailService.sendMagicLink).toHaveBeenCalledWith({
+                email: 'user@example.com',
+                token: expect.stringMatching(/^[a-f0-9]{64}$/),
+                purpose: 'login',
+                lang: 'en',
+                redirectTo: undefined,
+            });
         });
 
         it('should store purpose in Redis JSON payload', async () => {
@@ -582,13 +582,13 @@ describe('AuthService', () => {
 
             await authService.sendMagicLink(email);
 
-            expect(emailService.sendMagicLink).toHaveBeenCalledWith(
+            expect(emailService.sendMagicLink).toHaveBeenCalledWith({
                 email,
-                expect.any(String),
-                'login',
-                'en',
-                undefined
-            );
+                token: expect.any(String),
+                purpose: 'login',
+                lang: 'en',
+                redirectTo: undefined,
+            });
         });
 
         it('should rate limit per-email regardless of purpose', async () => {
@@ -752,11 +752,11 @@ describe('AuthService', () => {
             expect(mockRedis.smembers).toHaveBeenCalledWith(
                 'refresh_family:507f1f77bcf86cd799439011'
             );
-            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith(
-                'user@example.com',
-                expect.any(Date),
-                'uk'
-            );
+            expect(emailService.sendDeletionConfirmation).toHaveBeenCalledWith({
+                email: 'user@example.com',
+                deletionDate: expect.any(Date),
+                lang: 'uk',
+            });
         });
 
         it('should throw NotFoundException for delete-account if user not found', async () => {
