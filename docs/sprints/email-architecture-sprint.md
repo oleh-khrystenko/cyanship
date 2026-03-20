@@ -79,18 +79,20 @@ DeletionConfirmationEmail extends BaseLayout
 - Email завжди рендерить один фіксований набір кольорів (inline styles)
 - Різні контексти з різними технічними обмеженнями = свідоме розділення
 
+**Правило:** `EMAIL_COLORS` — строга проекція `themes.css` (light-тема). Назви ключів 1:1 з CSS-змінними. Жодних вигаданих кольорів чи імен.
+
 Набір email-кольорів мінімальний (~6 значень), синхронізований з light-темою:
 
-| Константа | Значення | Призначення | Відповідність themes.css |
-|-----------|----------|-------------|--------------------------|
-| `background` | `#f8f8fa` | Фон body | `--background` |
-| `surface` | `#ffffff` | Фон контейнера | `--card` (≈white) |
+| Ключ | Значення | Призначення | CSS-змінна в themes.css |
+|------|----------|-------------|------------------------|
+| `background` | `#f8f8fa` | Фон body листа | `--background` |
+| `card` | `#fbfcfc` | Фон контейнера з контентом | `--card` |
 | `foreground` | `#13161b` | Основний текст | `--foreground` |
 | `mutedForeground` | `#6e7278` | Другорядний текст, footer | `--muted-foreground` |
 | `primary` | `#00a7a8` | CTA кнопка | `--primary` |
 | `primaryForeground` | `#f8f8fa` | Текст на CTA кнопці | `--primary-foreground` |
 
-> Примітка: hex-значення конвертовані з oklch light-теми. Точні hex підбираються при реалізації щоб візуально співпадати.
+> Hex-значення конвертовані з oklch light-теми `themes.css`. Єдине джерело істини — `themes.css`, `EMAIL_COLORS` є його проекцією.
 
 ---
 
@@ -133,15 +135,20 @@ apps/api/src/modules/
 
 **Файли:** `packages/types/src/constants/`
 
-1.1. Створити `email-colors.ts`:
+1.1. Створити `email-colors.ts` — строга проекція light-теми `themes.css`, назви 1:1 з CSS-змінними:
 ```typescript
+/**
+ * Email-кольори — проекція light-теми з themes.css.
+ * Назви ключів відповідають CSS-змінним (camelCase).
+ * Єдине джерело істини: apps/web/src/shared/styles/themes.css
+ */
 export const EMAIL_COLORS = {
-  background: '#f8f8fa',
-  surface: '#ffffff',
-  foreground: '#13161b',
-  mutedForeground: '#6e7278',
-  primary: '#00a7a8',
-  primaryForeground: '#f8f8fa',
+  background: '#f8f8fa',       // --background
+  card: '#fbfcfc',             // --card
+  foreground: '#13161b',       // --foreground
+  mutedForeground: '#6e7278',  // --muted-foreground
+  primary: '#00a7a8',          // --primary
+  primaryForeground: '#f8f8fa', // --primary-foreground
 } as const;
 ```
 
