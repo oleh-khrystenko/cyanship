@@ -245,7 +245,7 @@ export default function BillingPage() {
                         </p>
                         <p className="text-foreground mt-2 font-medium">
                             {t('credits.balance', {
-                                count: user.credits.balance,
+                                count: user.credits.balance.toLocaleString('en-US'),
                             })}
                         </p>
                     </div>

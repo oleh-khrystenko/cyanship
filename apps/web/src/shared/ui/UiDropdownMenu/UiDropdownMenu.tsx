@@ -79,6 +79,11 @@ const UiDropdownMenu = forwardRef<HTMLDivElement, UiDropdownMenuProps>(
                                         <span className="whitespace-nowrap">
                                             {item.label}
                                         </span>
+                                        {item.badge != null && (
+                                            <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-xs leading-none text-muted-foreground">
+                                                {item.badge}
+                                            </span>
+                                        )}
                                     </button>
                                 </MenuItem>
                             );

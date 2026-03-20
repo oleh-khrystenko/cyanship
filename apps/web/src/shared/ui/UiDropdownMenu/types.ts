@@ -7,6 +7,7 @@ export interface UiDropdownMenuItem {
     label: ReactNode;
     value: string;
     icon?: ReactNode;
+    badge?: ReactNode;
 }
 
 export interface UiDropdownMenuProps {

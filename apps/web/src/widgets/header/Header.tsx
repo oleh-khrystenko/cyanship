@@ -100,11 +100,14 @@ const Header = () => {
         window.location.assign(`/${locale}`);
     };
 
+    const formattedCredits = (user?.credits.balance ?? 0).toLocaleString('en-US');
+
     const allUserMenuItems: {
         value: string;
         label: string;
         icon: React.ReactNode;
         route?: string;
+        badge?: string;
     }[] = [
         {
             value: 'profile',
@@ -113,10 +116,11 @@ const Header = () => {
             route: `/${locale}/profile`,
         },
         {
-            value: 'credits',
-            label: `${user?.credits.balance ?? 0} ${t('credits')}`,
+            value: 'billing',
+            label: t('billing'),
             icon: <CreditCard />,
             route: `/${locale}/billing`,
+            badge: formattedCredits,
         },
         {
             value: 'logout',
@@ -374,6 +378,11 @@ const Header = () => {
                                                     {item.icon}
                                                 </span>
                                                 <span>{item.label}</span>
+                                                {item.badge != null && (
+                                                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs leading-none text-muted-foreground">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
                                             </button>
                                         ))}
                                     </div>
