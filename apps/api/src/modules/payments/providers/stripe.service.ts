@@ -36,6 +36,7 @@ export class StripeService implements IPaymentProvider {
 
         const session = await this.stripe.checkout.sessions.create({
             mode,
+            payment_method_types: ['card'],
             ...(input.providerCustomerId
                 ? { customer: input.providerCustomerId }
                 : { customer_email: input.userEmail }),
