@@ -27,6 +27,7 @@ const socialLinks = [
 
 const LandingFooter = () => {
     const t = useTranslations('landing_page.footer');
+    const tBrand = useTranslations('brand');
 
     return (
         <footer className="border-border bg-card border-t">
@@ -37,7 +38,7 @@ const LandingFooter = () => {
                     <div className="lg:col-span-5">
                         <Logo />
                         <p className="text-muted-foreground mt-4 max-w-xs text-sm leading-relaxed">
-                            {t('slogan')}
+                            {tBrand('slogan')}
                         </p>
                     </div>
 

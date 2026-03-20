@@ -1,4 +1,7 @@
 {
+    "brand": {
+        "slogan": "B2B SaaS без шаблонного коду."
+    },
     "legal": {
         "privacy": {
             "title": "Політика конфіденційності – CyanShip",
@@ -114,7 +117,6 @@
             "step_4_sub": "Без тиску, без продажних дзвінків"
         },
         "footer": {
-            "slogan": "B2B SaaS без шаблонного коду.",
             "col_product": "Продукт",
             "col_legal": "Юридичне",
             "col_connect": "Контакти",
