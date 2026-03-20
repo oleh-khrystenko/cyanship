@@ -219,6 +219,27 @@ const Header = () => {
                             items={userMenuItems}
                             onSelect={handleUserMenuSelect}
                             size="sm"
+                            header={
+                                <div className="flex items-center gap-2.5">
+                                    <UiAvatar size="sm">
+                                        <UiAvatarImage
+                                            src={user.profile.avatar ?? undefined}
+                                            alt={user.profile.name ?? ''}
+                                        />
+                                        <UiAvatarFallback size="sm">
+                                            {initials}
+                                        </UiAvatarFallback>
+                                    </UiAvatar>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">
+                                            {user.profile.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {user.email}
+                                        </span>
+                                    </div>
+                                </div>
+                            }
                             trigger={
                                 <button
                                     type="button"

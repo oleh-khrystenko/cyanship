@@ -15,6 +15,7 @@ export interface UiDropdownMenuProps {
     onSelect: (value: string) => void;
     activeValue?: string;
     trigger: ReactNode;
+    header?: ReactNode;
     align?: UiDropdownMenuAlign;
     size?: UiDropdownMenuSize;
     className?: string;
