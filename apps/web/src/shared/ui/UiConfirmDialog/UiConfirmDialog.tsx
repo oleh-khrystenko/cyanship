@@ -58,6 +58,7 @@ function UiConfirmDialog({
                             className={composeClasses(
                                 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium',
                                 'border border-border bg-background text-foreground',
+                                'cursor-pointer disabled:cursor-not-allowed',
                                 'hover:bg-accent focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none',
                                 'disabled:pointer-events-none disabled:opacity-50'
                             )}
@@ -69,13 +70,17 @@ function UiConfirmDialog({
                         <AlertDialogPrimitive.Action
                             className={composeClasses(
                                 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium',
+                                'cursor-pointer disabled:cursor-not-allowed',
                                 'focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none',
                                 'disabled:pointer-events-none disabled:opacity-50',
                                 variant === 'destructive'
                                     ? 'border border-destructive text-destructive hover:bg-destructive/10'
                                     : 'bg-primary text-primary-foreground hover:bg-primary/90'
                             )}
-                            onClick={onConfirm}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                onConfirm?.();
+                            }}
                             disabled={loading}
                         >
                             {loading ? <UiSpinner size="sm" /> : confirmLabel}
