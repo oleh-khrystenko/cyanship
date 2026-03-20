@@ -31,6 +31,8 @@
         "@nestjs/platform-express": "^11.1.8",
         "@nestjs/schedule": "^6.1.1",
         "@nestjs/throttler": "^6.5.0",
+        "@react-email/components": "^1.0.10",
+        "@react-email/render": "^2.0.4",
         "bcrypt": "^6.0.0",
         "cookie-parser": "^1.4.7",
         "dotenv": "^17.3.1",
@@ -94,7 +96,9 @@
         ],
         "coverageDirectory": "../coverage",
         "testEnvironment": "node",
-        "setupFiles": ["./test-setup.ts"],
+        "setupFiles": [
+            "./test-setup.ts"
+        ],
         "moduleNameMapper": {
             "^@cyanship/types$": "<rootDir>/../../../packages/types/src/index.ts",
             "^@cyanship/types/(.*)$": "<rootDir>/../../../packages/types/src/$1"
