@@ -1,7 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+} from '@nestjs/common';
 import {
     LANG,
     MAGIC_LINK_PURPOSE,
+    RESPONSE_CODE,
     type MagicLinkPurpose,
 } from '@cyanship/types';
 import { Resend } from 'resend';
@@ -86,7 +91,10 @@ export class EmailService {
             this.logger.error(
                 `Failed to send email to ${options.to}: ${error.message}`
             );
-            throw new Error(`Failed to send email: ${error.message}`);
+            throw new InternalServerErrorException({
+                code: RESPONSE_CODE.EMAIL_SEND_FAILED,
+                message: `Failed to send email: ${error.message}`,
+            });
         }
     }
 

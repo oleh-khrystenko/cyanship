@@ -218,6 +218,7 @@
         "generic": {
             "validation_error": "Please check the entered data",
             "rate_limit_exceeded": "Too many requests. Please try again in 15 minutes",
+            "email_send_failed": "Failed to send the email. Please try again later",
             "internal_error": "Something went wrong. Please try again later",
             "unknown": "Something went wrong. Please try again later"
         }

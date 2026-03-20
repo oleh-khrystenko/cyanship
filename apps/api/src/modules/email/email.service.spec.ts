@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { renderToStaticMarkup } from 'react-dom/server';
 
@@ -272,7 +273,7 @@ describe('EmailService', () => {
                     purpose: 'login',
                     lang: 'uk',
                 })
-            ).rejects.toThrow('Failed to send email: Send failed');
+            ).rejects.toThrow(InternalServerErrorException);
         });
     });
 
@@ -357,7 +358,7 @@ describe('EmailService', () => {
                     deletionDate,
                     lang: 'uk',
                 })
-            ).rejects.toThrow('Failed to send email: Send failed');
+            ).rejects.toThrow(InternalServerErrorException);
         });
     });
 });
