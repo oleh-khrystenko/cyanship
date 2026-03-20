@@ -182,7 +182,7 @@ const Header = () => {
 
                 {/* Desktop nav */}
                 {hasNav && (
-                    <nav className="hidden items-center gap-8 md:flex">
+                    <nav className="hidden items-center gap-8 lg:flex">
                         {navItems.map(({ href, label }) => {
                             const isActive =
                                 activeSection === href.replace('#', '');
@@ -204,7 +204,7 @@ const Header = () => {
                 )}
 
                 {/* Desktop right side */}
-                <div className="hidden items-center gap-2 md:flex">
+                <div className="hidden items-center gap-2 lg:flex">
                     <ChangeLang />
                     <ChangeTheme />
 
@@ -264,7 +264,7 @@ const Header = () => {
                 </div>
 
                 {/* Mobile hamburger */}
-                <div className="md:hidden">
+                <div className="lg:hidden">
                     <UiSheet
                         open={isSheetOpen}
                         onOpenChange={setIsSheetOpen}
