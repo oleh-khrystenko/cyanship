@@ -9,5 +9,5 @@ export const EMAIL_COLORS = {
     foreground: '#13161b', // --foreground
     mutedForeground: '#6e7278', // --muted-foreground
     primary: '#00a7a8', // --primary
-    primaryForeground: '#05070b', // --primary-foreground
+    primaryForeground: '#ffffff', // --primary-foreground
 } as const;

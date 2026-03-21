@@ -300,18 +300,33 @@
             "test_card": "Test card: 4242 4242 4242 4242 · Any future date · Any CVC"
         },
         "plans": {
-            "starter": { "name": "Starter" },
-            "pro": { "name": "Pro" }
+            "starter": {
+                "name": "Starter",
+                "tagline": "For small teams getting started",
+                "features": {
+                    "item_1": "Up to 5 team members",
+                    "item_2": "10,000 API requests/month",
+                    "item_3": "Basic analytics",
+                    "item_4": "Email support"
+                }
+            },
+            "pro": {
+                "name": "Pro",
+                "tagline": "For growing businesses",
+                "badge": "Popular",
+                "features": {
+                    "item_1": "Unlimited team members",
+                    "item_2": "100,000 API requests/month",
+                    "item_3": "Advanced analytics",
+                    "item_4": "Priority support",
+                    "item_5": "Custom integrations"
+                }
+            }
         },
         "subscribe": {
             "heading": "Choose a Plan",
             "interval_month": "/ month",
             "interval_year": "/ year",
-            "features": {
-                "item_1": "Unlimited access",
-                "item_2": "Priority support",
-                "item_3": "All premium features"
-            },
             "button": "Subscribe",
             "error": "Failed to create checkout session"
         },

@@ -102,7 +102,10 @@ export default function BillingPage() {
         }
     };
 
-    const featureKeys = ['item_1', 'item_2', 'item_3'] as const;
+    const planFeatureKeys: Record<string, readonly string[]> = {
+        starter: ['item_1', 'item_2', 'item_3', 'item_4'],
+        pro: ['item_1', 'item_2', 'item_3', 'item_4', 'item_5'],
+    };
 
     return (
         <div className="mx-auto max-w-3xl space-y-10 px-4 py-12">
@@ -127,54 +130,73 @@ export default function BillingPage() {
                     </h2>
 
                     {!hasActive ? (
-                        <div className={`grid gap-4 ${(SUBSCRIPTION_PLANS.length as number) === 1 ? '' : 'sm:grid-cols-2'}`}>
-                            {SUBSCRIPTION_PLANS.map((plan) => (
-                                <div
-                                    key={plan.code}
-                                    className="flex flex-col rounded-lg border-2 border-foreground bg-card p-6 md:p-8"
-                                >
-                                    <p className="text-base font-medium text-foreground">
-                                        {t(`plans.${plan.code}.name`, { defaultValue: plan.code })}
-                                    </p>
-                                    <p className="mt-2 text-4xl font-bold text-foreground">
-                                        {formatPrice(plan.priceAmount, plan.currency)}
-                                        <span className="text-lg font-normal text-muted-foreground">
-                                            {' '}{t(`subscribe.interval_${plan.interval}`)}
-                                        </span>
-                                    </p>
+                        <div className={`grid gap-6 ${(SUBSCRIPTION_PLANS.length as number) === 1 ? '' : 'sm:grid-cols-2'}`}>
+                            {SUBSCRIPTION_PLANS.map((plan) => {
+                                const hasBadge = plan.code === 'pro';
 
-                                    <ul className="mt-6 space-y-3">
-                                        {featureKeys.map((key) => (
-                                            <li
-                                                key={key}
-                                                className="flex items-center gap-2 text-sm text-muted-foreground"
-                                            >
-                                                <Check className="h-4 w-4 shrink-0 text-success" />
-                                                {t(`subscribe.features.${key}`)}
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    <UiButton
-                                        variant="filled"
-                                        size="lg"
-                                        className="relative mt-8 w-full justify-center"
-                                        onClick={() =>
-                                            handleSubscriptionCheckout(plan.code)
-                                        }
-                                        disabled={
-                                            loadingAction === `subscribe_${plan.code}`
-                                        }
+                                return (
+                                    <div
+                                        key={plan.code}
+                                        className={`relative flex flex-col rounded-xl border-2 bg-card p-6 md:p-8 ${
+                                            hasBadge
+                                                ? 'border-primary shadow-sm'
+                                                : 'border-border'
+                                        }`}
                                     >
-                                        <span className={loadingAction === `subscribe_${plan.code}` ? 'invisible' : ''}>
-                                            {t('subscribe.button')}
-                                        </span>
-                                        {loadingAction === `subscribe_${plan.code}` && (
-                                            <UiSpinner size="sm" className="absolute inset-0 m-auto" />
+                                        {hasBadge && (
+                                            <span className="bg-primary text-primary-foreground absolute -top-3 right-5 rounded-full px-3 py-0.5 text-xs font-semibold">
+                                                {t(`plans.${plan.code}.badge`)}
+                                            </span>
                                         )}
-                                    </UiButton>
-                                </div>
-                            ))}
+
+                                        <h3 className="text-foreground text-xl font-bold">
+                                            {t(`plans.${plan.code}.name`, { defaultValue: plan.code })}
+                                        </h3>
+
+                                        <p className="mt-3 text-4xl font-bold tracking-tight text-foreground">
+                                            {formatPrice(plan.priceAmount, plan.currency)}
+                                            <span className="text-lg font-normal text-muted-foreground">
+                                                {' '}{t(`subscribe.interval_${plan.interval}`)}
+                                            </span>
+                                        </p>
+
+                                        <p className="text-muted-foreground mt-2 text-sm">
+                                            {t(`plans.${plan.code}.tagline`)}
+                                        </p>
+
+                                        <ul className="mt-6 space-y-3">
+                                            {(planFeatureKeys[plan.code] ?? []).map((key) => (
+                                                <li
+                                                    key={key}
+                                                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                                                >
+                                                    <Check className="h-4 w-4 shrink-0 text-success" />
+                                                    {t(`plans.${plan.code}.features.${key}`)}
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <UiButton
+                                            variant="filled"
+                                            size="lg"
+                                            className="relative mt-8 w-full justify-center"
+                                            onClick={() =>
+                                                handleSubscriptionCheckout(plan.code)
+                                            }
+                                            disabled={
+                                                loadingAction === `subscribe_${plan.code}`
+                                            }
+                                        >
+                                            <span className={loadingAction === `subscribe_${plan.code}` ? 'invisible' : ''}>
+                                                {t('subscribe.button')}
+                                            </span>
+                                            {loadingAction === `subscribe_${plan.code}` && (
+                                                <UiSpinner size="sm" className="absolute inset-0 m-auto" />
+                                            )}
+                                        </UiButton>
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="flex items-stretch gap-5 rounded-lg border border-border bg-card p-4 md:p-5">
