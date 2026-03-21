@@ -292,39 +292,62 @@ export default function BillingPage() {
                         </p>
                     </div>
 
-                    <div className={`grid gap-4 ${(CREDIT_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                    <div className={`grid gap-6 ${(CREDIT_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                         {CREDIT_PACKS.map((pack) => (
                             <div
                                 key={pack.code}
-                                className="flex flex-col rounded-lg border border-border bg-card p-5"
+                                className="flex flex-col rounded-xl border border-border bg-card p-5 md:p-6"
                             >
-                                <p className="text-foreground text-lg font-semibold">
-                                    {t('credits.pack_label', {
-                                        credits: pack.credits,
-                                        price: formatPrice(
-                                            pack.priceAmount,
-                                            pack.currency,
-                                        ),
-                                    })}
-                                </p>
-                                <UiButton
-                                    variant="filled"
-                                    size="md"
-                                    className="relative mt-4 w-full justify-center"
-                                    onClick={() =>
-                                        handleOneOffCheckout(pack.code)
-                                    }
-                                    disabled={
-                                        loadingAction === `oneoff_${pack.code}`
-                                    }
-                                >
-                                    <span className={loadingAction === `oneoff_${pack.code}` ? 'invisible' : ''}>
-                                        {t('credits.buy_button')}
-                                    </span>
-                                    {loadingAction === `oneoff_${pack.code}` && (
-                                        <UiSpinner size="sm" className="absolute inset-0 m-auto" />
-                                    )}
-                                </UiButton>
+                                {/* ── Upper: image + info ── */}
+                                <div className="flex items-center gap-4">
+                                    <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg">
+                                        <Image
+                                            src={`/images/packs/${pack.code}-light.png`}
+                                            alt={t(`packs.${pack.code}.name`)}
+                                            fill
+                                            className="block object-cover dark:hidden"
+                                        />
+                                        <Image
+                                            src={`/images/packs/${pack.code}-dark.png`}
+                                            alt={t(`packs.${pack.code}.name`)}
+                                            fill
+                                            className="hidden object-cover dark:block"
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-foreground text-base font-semibold">
+                                            {t(`packs.${pack.code}.name`)}
+                                        </p>
+                                        <p className="text-muted-foreground mt-0.5 text-sm">
+                                            {t(`packs.${pack.code}.per_credit`)}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* ── Lower: price + button ── */}
+                                <div className="mt-5 flex items-center justify-between border-t border-border pt-5">
+                                    <p className="text-foreground text-xl font-bold">
+                                        {formatPrice(pack.priceAmount, pack.currency)}
+                                    </p>
+                                    <UiButton
+                                        variant="outline"
+                                        size="md"
+                                        className="relative"
+                                        onClick={() =>
+                                            handleOneOffCheckout(pack.code)
+                                        }
+                                        disabled={
+                                            loadingAction === `oneoff_${pack.code}`
+                                        }
+                                    >
+                                        <span className={loadingAction === `oneoff_${pack.code}` ? 'invisible' : ''}>
+                                            {t('credits.buy_button')}
+                                        </span>
+                                        {loadingAction === `oneoff_${pack.code}` && (
+                                            <UiSpinner size="sm" className="absolute inset-0 m-auto" />
+                                        )}
+                                    </UiButton>
+                                </div>
                             </div>
                         ))}
                     </div>

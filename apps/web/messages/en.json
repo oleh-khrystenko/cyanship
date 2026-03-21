@@ -343,11 +343,19 @@
         },
         "credits": {
             "title": "Credit Packs",
-            "description": "Purchase credits to use platform services.",
             "balance": "Your balance: <accent>{count}</accent> credits",
-            "pack_label": "{credits} credits — {price}",
-            "buy_button": "Buy",
+            "buy_button": "Purchase",
             "error": "Failed to create payment session"
+        },
+        "packs": {
+            "basic": {
+                "name": "5,000 Credits",
+                "per_credit": "$0.005 per credit"
+            },
+            "max": {
+                "name": "25,000 Credits",
+                "per_credit": "$0.004 per credit"
+            }
         },
         "callback": {
             "loading": "Processing payment…",
