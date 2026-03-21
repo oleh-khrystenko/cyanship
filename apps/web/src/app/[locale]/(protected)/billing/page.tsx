@@ -293,63 +293,74 @@ export default function BillingPage() {
                     </div>
 
                     <div className={`grid gap-6 ${(CREDIT_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
-                        {CREDIT_PACKS.map((pack) => (
-                            <div
-                                key={pack.code}
-                                className="flex flex-col rounded-xl border border-border bg-card p-5 md:p-6"
-                            >
-                                {/* ── Upper: image + info ── */}
-                                <div className="flex items-center gap-4">
-                                    <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg">
-                                        <Image
-                                            src={`/images/packs/${pack.code}-light.png`}
-                                            alt={t(`packs.${pack.code}.name`)}
-                                            fill
-                                            className="block object-cover dark:hidden"
-                                        />
-                                        <Image
-                                            src={`/images/packs/${pack.code}-dark.png`}
-                                            alt={t(`packs.${pack.code}.name`)}
-                                            fill
-                                            className="hidden object-cover dark:block"
-                                        />
-                                    </div>
-                                    <div>
-                                        <p className="text-foreground text-base font-semibold">
-                                            {t(`packs.${pack.code}.name`)}
-                                        </p>
-                                        <p className="text-muted-foreground mt-0.5 text-sm">
-                                            {t(`packs.${pack.code}.per_credit`)}
-                                        </p>
-                                    </div>
-                                </div>
+                        {CREDIT_PACKS.map((pack) => {
+                            const isFeatured = pack.code === 'max';
 
-                                {/* ── Lower: price + button ── */}
-                                <div className="mt-5 flex items-center justify-between border-t border-border pt-5">
-                                    <p className="text-foreground text-xl font-bold">
-                                        {formatPrice(pack.priceAmount, pack.currency)}
-                                    </p>
-                                    <UiButton
-                                        variant="outline"
-                                        size="md"
-                                        className="relative"
-                                        onClick={() =>
-                                            handleOneOffCheckout(pack.code)
-                                        }
-                                        disabled={
-                                            loadingAction === `oneoff_${pack.code}`
-                                        }
-                                    >
-                                        <span className={loadingAction === `oneoff_${pack.code}` ? 'invisible' : ''}>
-                                            {t('credits.buy_button')}
-                                        </span>
-                                        {loadingAction === `oneoff_${pack.code}` && (
-                                            <UiSpinner size="sm" className="absolute inset-0 m-auto" />
-                                        )}
-                                    </UiButton>
+                            return (
+                                <div
+                                    key={pack.code}
+                                    className="flex flex-col rounded-xl border border-border bg-card p-5 md:p-6"
+                                >
+                                    {/* ── Upper: image + info + badge ── */}
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg">
+                                            <Image
+                                                src={`/images/packs/${pack.code}-light.png`}
+                                                alt={t(`packs.${pack.code}.name`)}
+                                                fill
+                                                className="block object-cover dark:hidden"
+                                            />
+                                            <Image
+                                                src={`/images/packs/${pack.code}-dark.png`}
+                                                alt={t(`packs.${pack.code}.name`)}
+                                                fill
+                                                className="hidden object-cover dark:block"
+                                            />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-foreground text-base font-semibold">
+                                                    {t(`packs.${pack.code}.name`)}
+                                                </p>
+                                                {isFeatured && (
+                                                    <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-3 py-0.5 text-xs font-medium text-muted-foreground">
+                                                        {t(`packs.${pack.code}.badge`)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-muted-foreground mt-0.5 text-sm">
+                                                {t(`packs.${pack.code}.per_credit`)}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Lower: price + button ── */}
+                                    <div className="mt-5 flex items-center justify-between border-t border-border pt-5">
+                                        <p className="text-foreground text-xl font-bold">
+                                            {formatPrice(pack.priceAmount, pack.currency)}
+                                        </p>
+                                        <UiButton
+                                            variant={isFeatured ? 'filled' : 'outline'}
+                                            size="md"
+                                            className={`relative ${!isFeatured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                            onClick={() =>
+                                                handleOneOffCheckout(pack.code)
+                                            }
+                                            disabled={
+                                                loadingAction === `oneoff_${pack.code}`
+                                            }
+                                        >
+                                            <span className={loadingAction === `oneoff_${pack.code}` ? 'invisible' : ''}>
+                                                {t('credits.buy_button')}
+                                            </span>
+                                            {loadingAction === `oneoff_${pack.code}` && (
+                                                <UiSpinner size="sm" className="absolute inset-0 m-auto" />
+                                            )}
+                                        </UiButton>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </section>
             )}
