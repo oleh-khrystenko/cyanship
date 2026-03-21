@@ -344,7 +344,7 @@
         "credits": {
             "title": "Credit Packs",
             "description": "Purchase credits to use platform services.",
-            "balance": "Your balance: {count} credits",
+            "balance": "Your balance: <accent>{count}</accent> credits",
             "pack_label": "{credits} credits — {price}",
             "buy_button": "Buy",
             "error": "Failed to create payment session"

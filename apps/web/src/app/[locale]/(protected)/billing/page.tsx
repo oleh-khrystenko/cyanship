@@ -278,16 +278,16 @@ export default function BillingPage() {
             {/* ── Credits Section ── */}
             {PAYMENTS_ONE_OFF_ENABLED && (
                 <section>
-                    <div className="mb-6">
+                    <div className="mb-6 flex items-baseline justify-between">
                         <h2 className="text-foreground text-2xl font-bold">
                             {t('credits.title')}
                         </h2>
-                        <p className="text-muted-foreground mt-1">
-                            {t('credits.description')}
-                        </p>
-                        <p className="text-foreground mt-2 font-medium">
-                            {t('credits.balance', {
+                        <p className="text-muted-foreground text-sm">
+                            {t.rich('credits.balance', {
                                 count: user.credits.balance.toLocaleString('en-US'),
+                                accent: (chunks) => (
+                                    <span className="text-primary font-semibold">{chunks}</span>
+                                ),
                             })}
                         </p>
                     </div>
