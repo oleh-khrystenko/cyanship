@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Check } from 'lucide-react';
+import { Check, ExternalLink } from 'lucide-react';
+import Image from 'next/image';
 import {
     PAYMENTS_SUBSCRIPTION_ENABLED,
     PAYMENTS_ONE_OFF_ENABLED,
@@ -18,6 +19,7 @@ import { getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import {
     SUBSCRIPTION_PLANS,
+    SUBSCRIPTION_PLAN_MAP,
     CREDIT_PACKS,
     formatPrice,
     type SubscriptionPlanCode,
@@ -175,70 +177,71 @@ export default function BillingPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="rounded-lg border border-border bg-card p-6 md:p-8">
-                            <div className="flex items-center justify-between">
-                                <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-medium text-success">
+                        <div className="flex items-stretch gap-5 rounded-lg border border-border bg-card p-4 md:p-5">
+                            {billing?.planCode && (
+                                <div className="relative hidden aspect-square w-20 shrink-0 overflow-hidden rounded-md sm:block">
+                                    <Image
+                                        src={`/images/plans/${billing.planCode}.png`}
+                                        alt={t(`plans.${billing.planCode as SubscriptionPlanCode}.name`, { defaultValue: billing.planCode })}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="flex min-w-0 flex-1 flex-col justify-center">
+                                <div className="flex items-center gap-3">
+                                    <p className="text-foreground text-base font-semibold">
+                                        {t('active.plan_name', {
+                                            plan: billing?.planCode
+                                                ? t(`plans.${billing.planCode as SubscriptionPlanCode}.name`, { defaultValue: billing.planCode })
+                                                : '',
+                                        })}
+                                    </p>
+                                    <span className="rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
+                                        {billing?.cancelAtPeriodEnd
+                                            ? t('active.status_canceling', {
+                                                  date: formatDate(billing?.currentPeriodEnd ?? null),
+                                              })
+                                            : t('active.status_active')}
+                                    </span>
+                                </div>
+
+                                <p className="text-muted-foreground mt-1 text-sm">
                                     {billing?.cancelAtPeriodEnd
-                                        ? t('active.status_canceling', {
-                                              date: formatDate(
-                                                  billing?.currentPeriodEnd ??
-                                                      null,
-                                              ),
-                                          })
-                                        : t('active.status_active')}
-                                </span>
-                            </div>
-
-                            <div className="mt-4 space-y-1 text-sm text-muted-foreground">
-                                {billing?.planCode && (
-                                    <p>
-                                        {t('active.plan_label', {
-                                            plan: billing.planCode,
-                                        })}
-                                    </p>
-                                )}
-                                {billing?.currentPeriodEnd &&
-                                    !billing?.cancelAtPeriodEnd && (
-                                        <p>
-                                            {t('active.next_billing', {
-                                                date: formatDate(
-                                                    billing.currentPeriodEnd,
-                                                ),
+                                        ? t('active.cancel_notice')
+                                        : billing?.currentPeriodEnd
+                                          ? t('active.next_billing_credits', {
+                                                date: formatDate(billing.currentPeriodEnd),
+                                                credits: billing.planCode && billing.planCode in SUBSCRIPTION_PLAN_MAP
+                                                    ? SUBSCRIPTION_PLAN_MAP[billing.planCode as SubscriptionPlanCode].credits.toLocaleString('en-US')
+                                                    : '',
+                                            })
+                                          : null}
+                                    {billing?.scheduledPlanCode && (
+                                        <span className="text-info">
+                                            {' · '}
+                                            {t('active.scheduled_change', {
+                                                plan: billing.scheduledPlanCode,
+                                                date: formatDate(billing.scheduledChangeDate ?? null),
                                             })}
-                                        </p>
+                                        </span>
                                     )}
-                                {billing?.cancelAtPeriodEnd && (
-                                    <p className="text-warning">
-                                        {t('active.cancel_notice')}
-                                    </p>
-                                )}
-                                {billing?.scheduledPlanCode && (
-                                    <p className="text-info">
-                                        {t('active.scheduled_change', {
-                                            plan: billing.scheduledPlanCode,
-                                            date: formatDate(
-                                                billing.scheduledChangeDate ??
-                                                    null,
-                                            ),
-                                        })}
-                                    </p>
-                                )}
+                                </p>
                             </div>
 
-                            <UiButton
-                                variant="filled"
-                                size="md"
-                                className="relative mt-6"
+                            <button
                                 onClick={handlePortal}
                                 disabled={loadingAction === 'portal'}
+                                className="text-muted-foreground hover:text-foreground flex shrink-0 items-center self-center p-2 transition-colors disabled:opacity-50"
+                                aria-label={t('active.manage_button')}
                             >
-                                <span className={loadingAction === 'portal' ? 'invisible' : ''}>
-                                    {t('active.manage_button')}
-                                </span>
-                                {loadingAction === 'portal' && (
-                                    <UiSpinner size="sm" className="absolute inset-0 m-auto" />
+                                {loadingAction === 'portal' ? (
+                                    <UiSpinner size="sm" />
+                                ) : (
+                                    <ExternalLink className="h-5 w-5" />
                                 )}
-                            </UiButton>
+                            </button>
                         </div>
                     )}
                 </section>

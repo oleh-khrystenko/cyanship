@@ -317,12 +317,12 @@
         },
         "active": {
             "heading": "Ваша підписка",
+            "plan_name": "План {plan}",
             "status_active": "Активна",
             "status_canceling": "Активна до {date}",
-            "plan_label": "План: {plan}",
-            "next_billing": "Наступне списання: {date}",
+            "next_billing_credits": "Наступне списання {date} · {credits} кредитів",
             "cancel_notice": "Підписку буде скасовано після завершення поточного періоду.",
-            "scheduled_change": "Перехід на план {plan} з {date}",
+            "scheduled_change": "Перехід на {plan} з {date}",
             "manage_button": "Керувати підпискою",
             "manage_error": "Не вдалося відкрити портал керування"
         },

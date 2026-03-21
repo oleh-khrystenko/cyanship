@@ -317,12 +317,12 @@
         },
         "active": {
             "heading": "Your Subscription",
+            "plan_name": "{plan} Plan",
             "status_active": "Active",
             "status_canceling": "Active until {date}",
-            "plan_label": "Plan: {plan}",
-            "next_billing": "Next billing: {date}",
+            "next_billing_credits": "Next billing on {date} · {credits} credits",
             "cancel_notice": "Your subscription will end at the current period's close.",
-            "scheduled_change": "Switching to {plan} plan on {date}",
+            "scheduled_change": "Switching to {plan} on {date}",
             "manage_button": "Manage Subscription",
             "manage_error": "Failed to open management portal"
         },
