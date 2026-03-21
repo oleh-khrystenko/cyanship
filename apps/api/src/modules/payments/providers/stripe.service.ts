@@ -103,9 +103,9 @@ export class StripeService implements IPaymentProvider {
         }
     }
 
-    private handleCheckoutCompleted(
+    private async handleCheckoutCompleted(
         event: Stripe.Event
-    ): BillingWebhookEvent | null {
+    ): Promise<BillingWebhookEvent | null> {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId =
             session.metadata?.userId || session.client_reference_id || '';
@@ -127,13 +127,15 @@ export class StripeService implements IPaymentProvider {
         // Subscription checkout (mode=subscription)
         if (session.mode === 'subscription') {
             const credits = parseInt(session.metadata?.credits ?? '0', 10);
+            const currentPeriodEnd = await this.resolveSubscriptionPeriodEnd(session.subscription);
+
             return {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                 providerEventId: event.id,
                 occurredAt: new Date(event.created * 1000),
                 userId,
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
-                currentPeriodEnd: null,
+                currentPeriodEnd,
                 cancelAtPeriodEnd: false,
                 raw: this.toRaw(event.data.object),
                 creditsAmount: credits || undefined,
@@ -174,6 +176,33 @@ export class StripeService implements IPaymentProvider {
             scheduledChangeDate: schedule?.changeDate ?? null,
             raw: this.toRaw(event.data.object),
         };
+    }
+
+    private async resolveSubscriptionPeriodEnd(
+        subscriptionRef: string | Stripe.Subscription | null | undefined
+    ): Promise<Date | null> {
+        const subscriptionId =
+            typeof subscriptionRef === 'string'
+                ? subscriptionRef
+                : subscriptionRef?.id;
+
+        if (!subscriptionId) {
+            return null;
+        }
+
+        try {
+            const subscription =
+                await this.stripe.subscriptions.retrieve(subscriptionId);
+            const periodEnd =
+                subscription.items?.data?.[0]?.current_period_end ?? null;
+            return periodEnd ? new Date(periodEnd * 1000) : null;
+        } catch (error) {
+            this.logger.error(
+                `Failed to retrieve subscription ${subscriptionId} for period end`,
+                error instanceof Error ? error.stack : String(error)
+            );
+            return null;
+        }
     }
 
     private async resolveScheduledChange(

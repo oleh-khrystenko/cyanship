@@ -27,11 +27,13 @@ const mockCheckoutCreate = jest.fn();
 const mockPortalCreate = jest.fn();
 const mockConstructEvent = jest.fn();
 const mockScheduleRetrieve = jest.fn();
+const mockSubscriptionRetrieve = jest.fn();
 
 const mockStripeInstance = {
     checkout: { sessions: { create: mockCheckoutCreate } },
     billingPortal: { sessions: { create: mockPortalCreate } },
     webhooks: { constructEvent: mockConstructEvent },
+    subscriptions: { retrieve: mockSubscriptionRetrieve },
     subscriptionSchedules: { retrieve: mockScheduleRetrieve },
 };
 
@@ -254,8 +256,15 @@ describe('StripeService', () => {
     describe('handleWebhookPayload', () => {
         const rawBody = Buffer.from('{}');
         const sigHeader = 'stripe-sig';
+        const subscriptionPeriodEnd = 1_703_000_000;
 
-        it('should return CHECKOUT_COMPLETED event with userId from metadata for subscription checkout', async () => {
+        beforeEach(() => {
+            mockSubscriptionRetrieve.mockResolvedValue({
+                items: { data: [{ current_period_end: subscriptionPeriodEnd }] },
+            });
+        });
+
+        it('should return CHECKOUT_COMPLETED event with userId and currentPeriodEnd from subscription', async () => {
             mockConstructEvent.mockReturnValue(makeCheckoutEvent());
 
             const result = await service.handleWebhookPayload(
@@ -268,8 +277,9 @@ describe('StripeService', () => {
                 userId: 'user123',
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                 cancelAtPeriodEnd: false,
-                currentPeriodEnd: null,
+                currentPeriodEnd: new Date(subscriptionPeriodEnd * 1000),
             });
+            expect(mockSubscriptionRetrieve).toHaveBeenCalledWith('sub_test_xxx');
         });
 
         it('should fall back to client_reference_id when metadata.userId is absent', async () => {
@@ -286,6 +296,23 @@ describe('StripeService', () => {
             );
 
             expect(result?.userId).toBe('ref_user456');
+        });
+
+        it('should return currentPeriodEnd as null when subscription retrieve fails', async () => {
+            mockSubscriptionRetrieve.mockRejectedValue(
+                new Error('Stripe API error')
+            );
+            mockConstructEvent.mockReturnValue(makeCheckoutEvent());
+
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
+
+            expect(result).toMatchObject({
+                type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                currentPeriodEnd: null,
+            });
         });
 
         it('should return SUBSCRIPTION_UPDATED event with ACTIVE status and empty userId', async () => {

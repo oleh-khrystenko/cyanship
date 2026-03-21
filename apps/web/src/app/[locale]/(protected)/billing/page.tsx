@@ -239,7 +239,7 @@ export default function BillingPage() {
                             <UiButton
                                 variant="outline"
                                 size="sm"
-                                IconRight={<ExternalLink />}
+                                IconRight={loadingAction !== 'portal' ? <ExternalLink /> : undefined}
                                 className="relative shrink-0 self-center"
                                 onClick={handlePortal}
                                 disabled={loadingAction === 'portal'}
