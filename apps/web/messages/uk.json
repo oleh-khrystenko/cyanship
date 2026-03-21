@@ -292,6 +292,8 @@
         "head": {
             "title": "Білінг"
         },
+        "heading": "Білінг",
+        "description": "Керуйте підпискою та кредитами. Усі платежі безпечно обробляються через Stripe.",
         "demo_banner": {
             "title": "Демо Stripe в тестовому режимі",
             "description": "Це демо живої інтеграції зі Stripe. Реальні кошти не списуються.",
@@ -302,6 +304,7 @@
             "pro": { "name": "Pro" }
         },
         "subscribe": {
+            "heading": "Оберіть план",
             "interval_month": "/ місяць",
             "interval_year": "/ рік",
             "features": {
@@ -313,7 +316,7 @@
             "error": "Не вдалося створити сесію оплати"
         },
         "active": {
-            "title": "Ваша підписка",
+            "heading": "Ваша підписка",
             "status_active": "Активна",
             "status_canceling": "Активна до {date}",
             "plan_label": "План: {plan}",

@@ -107,9 +107,23 @@ export default function BillingPage() {
             {/* ── Demo Banner ── */}
             <DemoBanner />
 
+            {/* ── Page Header ── */}
+            <div>
+                <h1 className="text-foreground text-3xl font-bold tracking-tight">
+                    {t('heading')}
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                    {t('description')}
+                </p>
+            </div>
+
             {/* ── Subscription Section ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && (
                 <section>
+                    <h2 className="text-foreground mb-6 text-2xl font-bold">
+                        {hasActive ? t('active.heading') : t('subscribe.heading')}
+                    </h2>
+
                     {!hasActive ? (
                         <div className={`grid gap-4 ${(SUBSCRIPTION_PLANS.length as number) === 1 ? '' : 'sm:grid-cols-2'}`}>
                             {SUBSCRIPTION_PLANS.map((plan) => (
@@ -163,9 +177,6 @@ export default function BillingPage() {
                     ) : (
                         <div className="rounded-lg border border-border bg-card p-6 md:p-8">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-foreground">
-                                    {t('active.title')}
-                                </h2>
                                 <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-medium text-success">
                                     {billing?.cancelAtPeriodEnd
                                         ? t('active.status_canceling', {

@@ -292,6 +292,8 @@
         "head": {
             "title": "Billing"
         },
+        "heading": "Billing",
+        "description": "Manage your subscription and credits. All payments are processed securely via Stripe.",
         "demo_banner": {
             "title": "Stripe Test Mode Demo",
             "description": "This is a live Stripe integration demo. No real charges will be made.",
@@ -302,6 +304,7 @@
             "pro": { "name": "Pro" }
         },
         "subscribe": {
+            "heading": "Choose a Plan",
             "interval_month": "/ month",
             "interval_year": "/ year",
             "features": {
@@ -313,7 +316,7 @@
             "error": "Failed to create checkout session"
         },
         "active": {
-            "title": "Your Subscription",
+            "heading": "Your Subscription",
             "status_active": "Active",
             "status_canceling": "Active until {date}",
             "plan_label": "Plan: {plan}",
