@@ -4,14 +4,14 @@ const Logo = () => {
     return (
         <div className="flex items-center gap-2">
             <Image
-                src="/logo-light-theme.svg"
+                src="/logo/light-theme.svg"
                 alt="CyanShip"
                 width={32}
                 height={33}
                 className="block dark:hidden"
             />
             <Image
-                src="/logo-dark-theme.svg"
+                src="/logo/dark-theme.svg"
                 alt="CyanShip"
                 width={32}
                 height={33}
