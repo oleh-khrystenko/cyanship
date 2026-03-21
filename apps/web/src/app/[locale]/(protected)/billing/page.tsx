@@ -181,10 +181,16 @@ export default function BillingPage() {
                             {billing?.planCode && (
                                 <div className="relative hidden aspect-square w-20 shrink-0 overflow-hidden rounded-md sm:block">
                                     <Image
-                                        src={`/images/plans/${billing.planCode}.png`}
+                                        src={`/images/plans/${billing.planCode}-light.png`}
                                         alt={t(`plans.${billing.planCode as SubscriptionPlanCode}.name`, { defaultValue: billing.planCode })}
                                         fill
-                                        className="object-cover"
+                                        className="block object-cover dark:hidden"
+                                    />
+                                    <Image
+                                        src={`/images/plans/${billing.planCode}-dark.png`}
+                                        alt={t(`plans.${billing.planCode as SubscriptionPlanCode}.name`, { defaultValue: billing.planCode })}
+                                        fill
+                                        className="hidden object-cover dark:block"
                                     />
                                 </div>
                             )}
@@ -230,18 +236,21 @@ export default function BillingPage() {
                                 </p>
                             </div>
 
-                            <button
+                            <UiButton
+                                variant="outline"
+                                size="sm"
+                                IconRight={<ExternalLink />}
+                                className="relative shrink-0 self-center"
                                 onClick={handlePortal}
                                 disabled={loadingAction === 'portal'}
-                                className="text-muted-foreground hover:text-foreground flex shrink-0 items-center self-center p-2 transition-colors disabled:opacity-50"
-                                aria-label={t('active.manage_button')}
                             >
-                                {loadingAction === 'portal' ? (
-                                    <UiSpinner size="sm" />
-                                ) : (
-                                    <ExternalLink className="h-5 w-5" />
+                                <span className={loadingAction === 'portal' ? 'invisible' : ''}>
+                                    {t('active.manage_button')}
+                                </span>
+                                {loadingAction === 'portal' && (
+                                    <UiSpinner size="sm" className="absolute inset-0 m-auto" />
                                 )}
-                            </button>
+                            </UiButton>
                         </div>
                     )}
                 </section>
