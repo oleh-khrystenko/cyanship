@@ -327,7 +327,7 @@
             "heading": "Choose a Plan",
             "interval_month": "/ month",
             "interval_year": "/ year",
-            "button": "Subscribe",
+            "button": "Subscribe to {plan}",
             "error": "Failed to create checkout session"
         },
         "active": {

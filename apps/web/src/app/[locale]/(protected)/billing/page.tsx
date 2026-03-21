@@ -137,21 +137,18 @@ export default function BillingPage() {
                                 return (
                                     <div
                                         key={plan.code}
-                                        className={`relative flex flex-col rounded-xl border-2 bg-card p-6 md:p-8 ${
-                                            hasBadge
-                                                ? 'border-primary shadow-sm'
-                                                : 'border-border'
-                                        }`}
+                                        className="flex flex-col rounded-xl border border-border bg-card p-6 md:p-8"
                                     >
-                                        {hasBadge && (
-                                            <span className="bg-primary text-primary-foreground absolute -top-3 right-5 rounded-full px-3 py-0.5 text-xs font-semibold">
-                                                {t(`plans.${plan.code}.badge`)}
-                                            </span>
-                                        )}
-
-                                        <h3 className="text-foreground text-xl font-bold">
-                                            {t(`plans.${plan.code}.name`, { defaultValue: plan.code })}
-                                        </h3>
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-foreground text-xl font-bold">
+                                                {t(`plans.${plan.code}.name`, { defaultValue: plan.code })}
+                                            </h3>
+                                            {hasBadge && (
+                                                <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-3 py-0.5 text-xs font-medium text-muted-foreground">
+                                                    {t(`plans.${plan.code}.badge`)}
+                                                </span>
+                                            )}
+                                        </div>
 
                                         <p className="mt-3 text-4xl font-bold tracking-tight text-foreground">
                                             {formatPrice(plan.priceAmount, plan.currency)}
@@ -164,7 +161,7 @@ export default function BillingPage() {
                                             {t(`plans.${plan.code}.tagline`)}
                                         </p>
 
-                                        <ul className="mt-6 space-y-3">
+                                        <ul className="mt-6 flex-1 space-y-3">
                                             {(planFeatureKeys[plan.code] ?? []).map((key) => (
                                                 <li
                                                     key={key}
@@ -177,9 +174,9 @@ export default function BillingPage() {
                                         </ul>
 
                                         <UiButton
-                                            variant="filled"
+                                            variant={hasBadge ? 'filled' : 'outline'}
                                             size="lg"
-                                            className="relative mt-8 w-full justify-center"
+                                            className={`relative mt-8 w-full justify-center ${!hasBadge ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
                                             onClick={() =>
                                                 handleSubscriptionCheckout(plan.code)
                                             }
@@ -188,7 +185,7 @@ export default function BillingPage() {
                                             }
                                         >
                                             <span className={loadingAction === `subscribe_${plan.code}` ? 'invisible' : ''}>
-                                                {t('subscribe.button')}
+                                                {t('subscribe.button', { plan: t(`plans.${plan.code}.name`, { defaultValue: plan.code }) })}
                                             </span>
                                             {loadingAction === `subscribe_${plan.code}` && (
                                                 <UiSpinner size="sm" className="absolute inset-0 m-auto" />
