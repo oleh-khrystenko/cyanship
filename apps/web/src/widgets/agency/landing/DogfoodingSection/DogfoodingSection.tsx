@@ -20,10 +20,15 @@ const DogfoodingSection = () => {
     const isMobile = () => !window.matchMedia('(min-width: 1024px)').matches;
 
     const handleTabChange = (tab: ProofTabKey) => {
-        setActiveTab(tab);
-
         if (isMobile()) {
-            setSheetOpen(true);
+            if (sheetOpen && activeTab === tab) {
+                setSheetOpen(false);
+            } else {
+                setActiveTab(tab);
+                setSheetOpen(true);
+            }
+        } else {
+            setActiveTab(tab);
         }
     };
 
@@ -79,7 +84,7 @@ const DogfoodingSection = () => {
                                 {t('proof_shell.sheet_title')}
                             </UiSheetTitle>
                         </UiSheetHeader>
-                        <div className="h-[70vh] overflow-y-auto p-4 pt-0">
+                        <div className="h-[60vh] overflow-y-auto p-4 pt-0">
                             {activeTab && (
                                 <ProofWindow
                                     activeTab={activeTab}
