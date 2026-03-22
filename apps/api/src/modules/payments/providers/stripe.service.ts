@@ -157,8 +157,17 @@ export class StripeService implements IPaymentProvider {
             | typeof BILLING_EVENT_TYPE.SUBSCRIPTION_DELETED
     ): Promise<BillingWebhookEvent> {
         const subscription = event.data.object as Stripe.Subscription;
+        const periodStart =
+            subscription.items?.data?.[0]?.current_period_start ?? null;
         const periodEnd =
             subscription.items?.data?.[0]?.current_period_end ?? null;
+
+        // Detect plan change via previous_attributes (only present when items changed)
+        const previousPriceId = this.extractPreviousPriceId(
+            event.data.previous_attributes as
+                | Record<string, unknown>
+                | undefined,
+        );
 
         // Resolve scheduled plan change (downgrade deferred to period end)
         const schedule = await this.resolveScheduledChange(subscription);
@@ -169,14 +178,30 @@ export class StripeService implements IPaymentProvider {
             occurredAt: new Date(event.created * 1000),
             userId: '',
             subscriptionStatus: this.mapSubscriptionStatus(subscription.status),
+            currentPeriodStart: periodStart
+                ? new Date(periodStart * 1000)
+                : null,
             currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
             cancelAtPeriodEnd:
                 subscription.cancel_at_period_end ||
                 subscription.cancel_at != null,
+            previousPriceId,
             scheduledPlanCode: schedule?.planCode ?? null,
             scheduledChangeDate: schedule?.changeDate ?? null,
             raw: this.toRaw(event.data.object),
         };
+    }
+
+    private extractPreviousPriceId(
+        previousAttributes: Record<string, unknown> | undefined,
+    ): string | null {
+        if (!previousAttributes) return null;
+
+        const items = previousAttributes.items as
+            | { data?: Array<{ price?: { id?: string } }> }
+            | undefined;
+        const priceId = items?.data?.[0]?.price?.id;
+        return typeof priceId === 'string' ? priceId : null;
     }
 
     private async resolveSubscriptionPeriodEnd(

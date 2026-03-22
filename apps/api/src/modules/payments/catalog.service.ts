@@ -104,6 +104,16 @@ export class CatalogService implements OnModuleInit {
         return map;
     }
 
+    /** Returns a reverse lookup map: Stripe priceId → executions count (subscription plans only). */
+    async getPriceToExecutionsMap(): Promise<Record<string, number>> {
+        const catalog = await this.getCatalog();
+        const map: Record<string, number> = {};
+        for (const plan of catalog.subscriptionPlans) {
+            map[plan.priceId] = plan.executions;
+        }
+        return map;
+    }
+
     private validateCatalog(catalog: PaymentsCatalog): void {
         const planCodes = new Set(catalog.subscriptionPlans.map((p) => p.code));
         const packCodes = new Set(catalog.executionPacks.map((p) => p.code));

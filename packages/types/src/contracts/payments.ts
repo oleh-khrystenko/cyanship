@@ -144,8 +144,10 @@ export const BillingWebhookEventSchema = z.object({
         ])
         .nullable()
         .optional(),
+    currentPeriodStart: z.coerce.date().nullable().optional(),
     currentPeriodEnd: z.coerce.date().nullable().optional(),
     cancelAtPeriodEnd: z.boolean().optional(),
+    previousPriceId: z.string().nullable().optional(),
     scheduledPlanCode: z.string().nullable().optional(),
     scheduledChangeDate: z.coerce.date().nullable().optional(),
     // --- One-off fields (присутні тільки для ONE_OFF_PAYMENT_COMPLETED) ---

@@ -49,6 +49,11 @@ const TEST_PRICE_TO_PLAN: Record<string, string> = {
     price_test_pro: 'pro',
 };
 
+const TEST_PRICE_TO_EXECUTIONS: Record<string, number> = {
+    price_test_starter: 10000,
+    price_test_pro: 50000,
+};
+
 const mockCatalogService = {
     getSubscriptionPlan: jest.fn((code: string) =>
         Promise.resolve(TEST_CATALOG.subscriptionPlans.find(p => p.code === code)),
@@ -57,6 +62,7 @@ const mockCatalogService = {
         Promise.resolve(TEST_CATALOG.executionPacks.find(p => p.code === code)),
     ),
     getPriceToPlanMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_PLAN),
+    getPriceToExecutionsMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_EXECUTIONS),
     getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
 };
 
@@ -108,6 +114,7 @@ const mockOrphanModel = {
 
 const mockUsersService = {
     addExecutions: jest.fn(),
+    deductExecutions: jest.fn(),
 };
 
 describe('PaymentsService', () => {
@@ -1232,7 +1239,7 @@ describe('PaymentsService', () => {
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
             });
 
-            it('should NOT add executions on SUBSCRIPTION_UPDATED', async () => {
+            it('should NOT add executions on SUBSCRIPTION_UPDATED without plan change', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_sub_updated_no_credits',
@@ -1253,6 +1260,234 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+            });
+        });
+
+        // ── Plan change proration ────────────────────────────────────
+
+        describe('plan change proration', () => {
+            // Period: 30 days, event occurs at day 15 → remainingRatio = 0.5
+            const periodStart = new Date('2024-01-01T00:00:00Z');
+            const periodEnd = new Date('2024-01-31T00:00:00Z');
+            const midPeriod = new Date('2024-01-16T00:00:00Z');
+
+            it('should add prorated executions on upgrade (starter → pro)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_upgrade',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_starter',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // delta = 50000 - 10000 = 40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
+                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    20000,
+                );
+                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+            });
+
+            it('should deduct prorated executions on downgrade (pro → starter)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_downgrade',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_pro',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_starter' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // delta = 10000 - 50000 = -40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
+                expect(mockUsersService.deductExecutions).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    20000,
+                );
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+            });
+
+            it('should skip proration when previousPriceId is absent (no plan change)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_no_change',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+            });
+
+            it('should skip proration when previousPriceId equals current priceId', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_same_price',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_pro',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+            });
+
+            it('should skip proration when price is unknown in catalog', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_unknown_plan',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_unknown_old',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+            });
+
+            it('should use full period when period boundaries are missing', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_no_period',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_starter',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // No period info → ratio = 1.0 → full delta = 40000
+                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    40000,
+                );
+            });
+
+            it('should floor the prorated adjustment', async () => {
+                // Period: 30 days, event at day 10 → remaining 20/30 ≈ 0.6667
+                const earlyEvent = new Date('2024-01-11T00:00:00Z');
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_floor',
+                    occurredAt: earlyEvent,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_starter',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // delta = 40000, remaining = 20 days out of 30 → ratio = 20/30
+                // adjustment = floor(40000 * 20/30) = floor(26666.67) = 26666
+                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
+                    MOCK_USER_ID,
+                    26666,
+                );
             });
         });
 

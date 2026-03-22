@@ -317,6 +317,11 @@ export class PaymentsService {
             if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
                 await this.applySubscriptionExecutions(userId, event);
             }
+
+            // Prorated execution adjustment on plan change via Portal
+            if (event.type === BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED) {
+                await this.applyPlanChangeExecutions(userId, event);
+            }
         }
 
         this.logger.log(
@@ -460,6 +465,85 @@ export class PaymentsService {
         this.logger.log(
             `Added ${executionsAmount} executions to user ${userId} (event: ${event.providerEventId})`
         );
+    }
+
+    private async applyPlanChangeExecutions(
+        userId: string,
+        event: BillingWebhookEvent,
+    ): Promise<void> {
+        if (!event.previousPriceId) return;
+
+        // Resolve current price from subscription items
+        const items = event.raw.items as
+            | { data?: Array<{ price?: { id?: string } }> }
+            | undefined;
+        const currentPriceId =
+            typeof items?.data?.[0]?.price?.id === 'string'
+                ? items.data[0].price.id
+                : null;
+
+        if (!currentPriceId || currentPriceId === event.previousPriceId) return;
+
+        const priceToExecutions =
+            await this.catalogService.getPriceToExecutionsMap();
+        const oldExecutions = priceToExecutions[event.previousPriceId];
+        const newExecutions = priceToExecutions[currentPriceId];
+
+        if (oldExecutions == null || newExecutions == null) {
+            this.logger.warn(
+                `Cannot calculate prorated executions: ` +
+                    `old price ${event.previousPriceId} (${oldExecutions ?? 'unknown'}), ` +
+                    `new price ${currentPriceId} (${newExecutions ?? 'unknown'}) ` +
+                    `(event: ${event.providerEventId})`
+            );
+            return;
+        }
+
+        const delta = newExecutions - oldExecutions;
+        if (delta === 0) return;
+
+        const remainingRatio = this.calculateRemainingPeriodRatio(event);
+        const adjustment = Math.floor(Math.abs(delta) * remainingRatio);
+        if (adjustment <= 0) return;
+
+        if (delta > 0) {
+            await this.usersService.addExecutions(userId, adjustment);
+            this.logger.log(
+                `Added ${adjustment} prorated executions for plan upgrade ` +
+                    `(user: ${userId}, event: ${event.providerEventId})`
+            );
+        } else {
+            await this.usersService.deductExecutions(userId, adjustment);
+            this.logger.log(
+                `Deducted ${adjustment} prorated executions for plan downgrade ` +
+                    `(user: ${userId}, event: ${event.providerEventId})`
+            );
+        }
+    }
+
+    private calculateRemainingPeriodRatio(
+        event: BillingWebhookEvent,
+    ): number {
+        const periodStart = event.currentPeriodStart;
+        const periodEnd = event.currentPeriodEnd;
+
+        if (!periodStart || !periodEnd) {
+            this.logger.warn(
+                `Missing period boundaries for proration (event: ${event.providerEventId}), ` +
+                    `defaulting to full period`
+            );
+            return 1;
+        }
+
+        const now = event.occurredAt.getTime();
+        const start = periodStart.getTime();
+        const end = periodEnd.getTime();
+        const totalPeriod = end - start;
+
+        if (totalPeriod <= 0) return 0;
+
+        const remaining = end - now;
+        return Math.max(0, Math.min(1, remaining / totalPeriod));
     }
 
     private buildBillingUpdate(

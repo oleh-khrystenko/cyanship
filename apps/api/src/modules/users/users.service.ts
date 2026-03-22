@@ -91,6 +91,21 @@ export class UsersService {
         });
     }
 
+    async deductExecutions(userId: string, amount: number): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, [
+            {
+                $set: {
+                    'executions.balance': {
+                        $max: [
+                            0,
+                            { $subtract: ['$executions.balance', amount] },
+                        ],
+                    },
+                },
+            },
+        ]);
+    }
+
     async deductExecution(userId: string): Promise<boolean> {
         // Try atomic paid-execution deduction first (no race condition).
         const paid = await this.userModel.findOneAndUpdate(
