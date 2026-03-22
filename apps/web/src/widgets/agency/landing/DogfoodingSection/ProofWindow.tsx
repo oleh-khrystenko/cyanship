@@ -6,6 +6,7 @@ import type { ProofTabKey } from './types';
 
 interface ProofWindowProps {
     activeTab: ProofTabKey;
+    title: string;
     onRequestAuth: () => void;
 }
 
@@ -15,7 +16,7 @@ const panels: Record<ProofTabKey, React.ComponentType<{ onRequestAuth?: () => vo
     lighthouse: ProofLighthouse,
 };
 
-const ProofWindow = ({ activeTab, onRequestAuth }: ProofWindowProps) => {
+const ProofWindow = ({ activeTab, title, onRequestAuth }: ProofWindowProps) => {
     const [displayedTab, setDisplayedTab] = useState(activeTab);
     const [visible, setVisible] = useState(true);
 
@@ -35,7 +36,8 @@ const ProofWindow = ({ activeTab, onRequestAuth }: ProofWindowProps) => {
     const Panel = panels[displayedTab];
 
     return (
-        <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-6">
+        <div className="flex flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-card p-6">
+            <h3 className="mb-4 font-semibold text-foreground">{title}</h3>
             <div
                 className="transition-opacity duration-150"
                 style={{ opacity: visible ? 1 : 0 }}

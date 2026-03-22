@@ -93,6 +93,7 @@ const DogfoodingSection = () => {
                         {activeTab && (
                             <ProofWindow
                                 activeTab={activeTab}
+                                title={t(`proof_shell.sheet_title_${activeTab}`)}
                                 onRequestAuth={handleRequestAuth}
                             />
                         )}
@@ -107,13 +108,14 @@ const DogfoodingSection = () => {
                     >
                         <UiSheetHeader>
                             <UiSheetTitle>
-                                {t('proof_shell.sheet_title')}
+                                {activeTab && t(`proof_shell.sheet_title_${activeTab}`)}
                             </UiSheetTitle>
                         </UiSheetHeader>
                         <div className="h-[60vh] overflow-y-auto p-4 pt-0">
                             {activeTab && (
                                 <ProofWindow
                                     activeTab={activeTab}
+                                    title={t(`proof_shell.sheet_title_${activeTab}`)}
                                     onRequestAuth={handleRequestAuth}
                                 />
                             )}

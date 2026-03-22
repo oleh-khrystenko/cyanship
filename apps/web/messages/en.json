@@ -51,7 +51,9 @@
             "step_2": "Click the Stripe checkout to see the payment integration",
             "step_3": "Experience the load speed firsthand",
             "proof_shell": {
-                "sheet_title": "Try it yourself",
+                "sheet_title_auth": "One-Click Auth",
+                "sheet_title_billing": "Stripe-Powered Checkout",
+                "sheet_title_lighthouse": "Built for Speed",
                 "try_it": "Try it"
             }
         },

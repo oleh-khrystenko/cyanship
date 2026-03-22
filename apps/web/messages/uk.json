@@ -51,8 +51,10 @@
             "step_2": "Натисніть на Stripe checkout, щоб побачити платіжну інтеграцію",
             "step_3": "Відчуйте швидкість завантаження на власному досвіді",
             "proof_shell": {
-                "sheet_title": "Спробуйте самі",
-                "try_it": "Спробувати"
+                "sheet_title_auth": "Автентифікація в один клік",
+                "sheet_title_billing": "Checkout на Stripe",
+                "sheet_title_lighthouse": "Створено для швидкості",
+                "try_it": "Демо"
             }
         },
         "portfolio": {
