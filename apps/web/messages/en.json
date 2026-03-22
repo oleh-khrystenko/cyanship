@@ -51,7 +51,8 @@
             "step_2": "Click the Stripe checkout to see the payment integration",
             "step_3": "Experience the load speed firsthand",
             "proof_shell": {
-                "sheet_title": "Try it yourself"
+                "sheet_title": "Try it yourself",
+                "try_it": "Try it"
             }
         },
         "portfolio": {

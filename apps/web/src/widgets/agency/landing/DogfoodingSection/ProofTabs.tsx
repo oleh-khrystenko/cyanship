@@ -47,6 +47,9 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
                             <Icon className="size-4" />
                         </div>
                         <span className="text-foreground">{t(labelKey)}</span>
+                        <span className="ml-auto text-sm text-muted-foreground">
+                            {t('proof_shell.try_it')}
+                        </span>
                     </button>
                 );
             })}
