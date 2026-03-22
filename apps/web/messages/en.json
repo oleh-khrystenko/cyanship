@@ -350,11 +350,11 @@
         "packs": {
             "basic": {
                 "name": "5,000 Executions",
-                "per_execution": "$0.005 per execution"
+                "per_execution": "$0.006 per execution"
             },
             "max": {
-                "name": "20,000 Executions",
-                "per_execution": "$0.005 per execution",
+                "name": "25,000 Executions",
+                "per_execution": "$0.004 per execution",
                 "badge": "Best Value"
             }
         },

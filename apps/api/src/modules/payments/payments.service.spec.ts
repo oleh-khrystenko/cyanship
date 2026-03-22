@@ -29,7 +29,7 @@ jest.mock('../../config/env', () => ({
     },
     STRIPE_EXECUTION_PACKS: {
         basic: { priceId: 'price_test_basic', executions: 5000 },
-        max: { priceId: 'price_test_max', executions: 20000 },
+        max: { priceId: 'price_test_max', executions: 25000 },
     },
     STRIPE_PRICE_TO_PLAN: {
         price_test_starter: 'starter',

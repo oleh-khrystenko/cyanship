@@ -24,7 +24,7 @@ export const SUBSCRIPTION_PLAN_MAP = Object.fromEntries(
 
 export const EXECUTION_PACKS = [
     { code: 'basic', executions: 5000, priceAmount: 2900, currency: 'usd' },
-    { code: 'max', executions: 20000, priceAmount: 9900, currency: 'usd' },
+    { code: 'max', executions: 25000, priceAmount: 9900, currency: 'usd' },
 ] as const;
 
 export type ExecutionPackCode = (typeof EXECUTION_PACKS)[number]['code'];
