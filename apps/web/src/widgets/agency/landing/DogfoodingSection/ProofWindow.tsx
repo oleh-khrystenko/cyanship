@@ -18,7 +18,7 @@ const ProofWindow = ({ activeTab, onRequestAuth }: ProofWindowProps) => {
     const Panel = panels[activeTab];
 
     return (
-        <div>
+        <div className="h-[420px] overflow-y-auto rounded-xl border border-border bg-card p-6">
             <Panel onRequestAuth={onRequestAuth} />
         </div>
     );
