@@ -26,12 +26,12 @@ apps/
 │   ├── main.ts, app.module.ts
 │   ├── config/          # fail-fast env loader
 │   ├── common/          # decorators, filters, guards, interceptors, providers
-│   └── modules/         # auth, users, payments, agency, reports, storage
+│   └── modules/         # auth, email, users, payments, agency, reports, storage
 ├── web/src/
 │   ├── app/[locale]/    # pages: auth, (protected), (agency)
 │   ├── features/        # auth, change-lang, change-theme, profile, billing, agency
 │   ├── widgets/         # header, agency/landing
-│   ├── shared/          # api, ui, config, styles, icons, seo, lib
+│   ├── shared/          # api, ui, config, styles, icons, seo, lib, types
 │   ├── stores/          # auth, headerNav (Zustand)
 │   └── i18n/            # routing, request config
 packages/
@@ -47,7 +47,7 @@ docs/
 Файл: `apps/api/src/modules/users/schemas/user.schema.ts` | Zod: `packages/types/src/entities/user.ts`
 - Soft-delete через `deletedAt` + `accountDeletionRequestedAt` (grace period, щоденний cron hard-delete)
 - Embedded `billing` subdocument (nullable, створюється лише при першій billing-події) з `lastProviderEventAt` для out-of-order webhook protection
-- Embedded `credits` subdocument (`balance`, `freeReportUsed`) з atomic `$inc` операціями
+- Embedded `executions` subdocument (`balance`, `freeReportUsed`) з atomic `$inc` операціями
 - Sparse indexes: `provider.id`, `billing.providerCustomerId`, `billing.providerSubscriptionId`
 
 ### ProcessedWebhookEvent
@@ -62,9 +62,10 @@ docs/
 
 ## Module Dependency Map
 
-- `AppModule` → `AuthModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`
+- `AppModule` → `AuthModule`, `EmailModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`
 - `AppModule` global providers: `ThrottlerGuard` (APP_GUARD), `OnboardingInterceptor` (APP_INTERCEPTOR)
 - `AuthModule` ↔ `UsersModule` (`forwardRef`, circular)
+- `EmailModule` — `@Global()`, доступний всім модулям
 - `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` injection token + `CatalogService` + `REDIS_CLIENT`
 - `CatalogService` → own Stripe SDK instance + `REDIS_CLIENT` (no dependency on `IPaymentProvider`)
 - `CleanupService` (cron, 3 AM) → `AuthService` + `UserModel`
@@ -104,6 +105,9 @@ API повертає machine-readable `code` через `AllExceptionsFilter`; w
 
 ### Soft-delete lifecycle
 Запит на видалення → `accountDeletionRequestedAt` + `deletedAt` → grace period (configurable) → `CleanupService` cron щоночі о 3:00 hard-delete + revoke tokens. Файл: `apps/api/src/modules/users/cleanup.service.ts`
+
+### Frontend auth flow
+`AuthInitializer` (client effect) → `refreshToken()` → `getMe()` → hydrate `authStore`. Перевіряє terms version, показує modal при outdated. `AuthGuard` компонент в protected layout перевіряє auth + onboarding completion. Middleware (`middleware.ts`) перевіряє `bid_refresh` cookie для server-side redirects.
 
 ## API Overview
 
@@ -247,3 +251,4 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 - **Orphaned customer retry cap**: `PaymentsCleanupService` робить максимум 5 спроб видалити Stripe customer. Після 5 невдач запис залишається в колекції назавжни — потребує ручного втручання.
 - **CatalogService own Stripe instance**: `CatalogService` створює власний `new Stripe(...)` для читання Products/Prices. Це зроблено щоб уникнути circular DI з `IPaymentProvider` → `StripeService`. Обидва інстанси використовують один `STRIPE_SECRET_KEY`.
 - **Catalog cache startup**: `CatalogService.onModuleInit()` робить warm fetch до Stripe. Якщо Stripe недоступний при старті — app crash (fail-fast). Після старту cache fallback працює через Redis TTL.
+- **Execution proration на plan change**: `calculatePlanChangeAdjustment()` в `PaymentsService` рахує пропорцію залишку періоду для коригування executions при upgrade/downgrade. Використовує `previousPriceId` з webhook event та `getPriceToExecutionsMap()` з CatalogService.
