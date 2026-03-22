@@ -114,7 +114,6 @@ const mockOrphanModel = {
 
 const mockUsersService = {
     addExecutions: jest.fn(),
-    deductExecutions: jest.fn(),
 };
 
 describe('PaymentsService', () => {
@@ -1171,12 +1170,37 @@ describe('PaymentsService', () => {
             });
         });
 
-        // ── Subscription executions ──────────────────────────────────
+        // ── Subscription executions (atomic pipeline) ────────────────
+
+        /**
+         * Extracts the execution adjustment amount embedded in a
+         * findOneAndUpdate aggregation pipeline call, or null if the
+         * update was a plain object (no execution adjustment).
+         */
+        const pipelineAdjustment = (callIndex = 0): number | null => {
+            const update =
+                mockUserModel.findOneAndUpdate.mock.calls[callIndex]?.[1];
+            if (!Array.isArray(update)) return null;
+            try {
+                const stage = update[0] as Record<
+                    string,
+                    Record<string, unknown>
+                >;
+                const balance = stage.$set['executions.balance'] as {
+                    $cond: {
+                        then: { $max: [number, { $add: [string, number] }] };
+                    };
+                };
+                return balance.$cond.then.$max[1].$add[1];
+            } catch {
+                return null;
+            }
+        };
 
         describe('subscription executions', () => {
             const occurredAt = new Date('2024-01-01T00:00:00Z');
 
-            it('should add executions on CHECKOUT_COMPLETED when executionsAmount is present', async () => {
+            it('should include execution adjustment in atomic pipeline on CHECKOUT_COMPLETED', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_sub_credits',
@@ -1200,17 +1224,15 @@ describe('PaymentsService', () => {
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUsersService.addExecutions.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    10000
-                );
+                // Execution adjustment is inside the atomic pipeline, NOT a separate call
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBe(10000);
             });
 
-            it('should NOT add executions on CHECKOUT_COMPLETED when executionsAmount is missing', async () => {
+            it('should use plain $set on CHECKOUT_COMPLETED when executionsAmount is missing', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_sub_no_credits',
@@ -1237,9 +1259,10 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
             });
 
-            it('should NOT add executions on SUBSCRIPTION_UPDATED without plan change', async () => {
+            it('should use plain $set on SUBSCRIPTION_UPDATED without plan change', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_sub_updated_no_credits',
@@ -1260,11 +1283,11 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
-                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
             });
         });
 
-        // ── Plan change proration ────────────────────────────────────
+        // ── Plan change proration (atomic pipeline) ──────────────────
 
         describe('plan change proration', () => {
             // Period: 30 days, event occurs at day 15 → remainingRatio = 0.5
@@ -1272,7 +1295,7 @@ describe('PaymentsService', () => {
             const periodEnd = new Date('2024-01-31T00:00:00Z');
             const midPeriod = new Date('2024-01-16T00:00:00Z');
 
-            it('should add prorated executions on upgrade (starter → pro)', async () => {
+            it('should include prorated upgrade adjustment in atomic pipeline (starter → pro)', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_upgrade',
@@ -1298,14 +1321,11 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // delta = 50000 - 10000 = 40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
-                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    20000,
-                );
-                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBe(20000);
             });
 
-            it('should deduct prorated executions on downgrade (pro → starter)', async () => {
+            it('should include prorated downgrade adjustment in atomic pipeline (pro → starter)', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_downgrade',
@@ -1330,15 +1350,11 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                // delta = 10000 - 50000 = -40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
-                expect(mockUsersService.deductExecutions).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    20000,
-                );
-                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                // delta = 10000 - 50000 = -40000, ratio ≈ 0.5, adjustment = -20000
+                expect(pipelineAdjustment()).toBe(-20000);
             });
 
-            it('should skip proration when previousPriceId is absent (no plan change)', async () => {
+            it('should use plain $set when previousPriceId is absent (no plan change)', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_no_change',
@@ -1362,11 +1378,10 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
-                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
             });
 
-            it('should skip proration when previousPriceId equals current priceId', async () => {
+            it('should use plain $set when previousPriceId equals current priceId', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_same_price',
@@ -1391,11 +1406,10 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
-                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
             });
 
-            it('should skip proration when price is unknown in catalog', async () => {
+            it('should use plain $set when price is unknown in catalog', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_unknown_plan',
@@ -1420,11 +1434,10 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
-                expect(mockUsersService.deductExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
             });
 
-            it('should use full period when period boundaries are missing', async () => {
+            it('should use full delta when period boundaries are missing', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_no_period',
@@ -1449,10 +1462,7 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // No period info → ratio = 1.0 → full delta = 40000
-                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    40000,
-                );
+                expect(pipelineAdjustment()).toBe(40000);
             });
 
             it('should floor the prorated adjustment', async () => {
@@ -1484,10 +1494,7 @@ describe('PaymentsService', () => {
 
                 // delta = 40000, remaining = 20 days out of 30 → ratio = 20/30
                 // adjustment = floor(40000 * 20/30) = floor(26666.67) = 26666
-                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    26666,
-                );
+                expect(pipelineAdjustment()).toBe(26666);
             });
         });
 
