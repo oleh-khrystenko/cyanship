@@ -30,7 +30,7 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
                         type="button"
                         onClick={() => onTabChange(key)}
                         className={composeClasses(
-                            'relative flex w-full cursor-pointer items-center gap-4 px-4 py-5 text-left transition-colors',
+                            'flex w-full cursor-pointer items-center gap-4 p-4 text-left transition-colors',
                             isActive
                                 ? 'bg-primary/5'
                                 : 'bg-card hover:bg-accent'
@@ -49,7 +49,7 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
                         <span className="text-foreground">
                             {t(labelKey)}
                         </span>
-                        <span className="absolute right-3 bottom-1.5 whitespace-nowrap text-xs text-muted-foreground">
+                        <span className="ml-auto whitespace-nowrap text-xs text-primary lg:hidden">
                             {t('proof_shell.try_it')}
                         </span>
                     </button>
