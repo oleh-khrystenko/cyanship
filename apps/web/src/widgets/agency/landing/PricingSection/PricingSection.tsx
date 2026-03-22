@@ -18,7 +18,7 @@ const PricingSection = () => {
     return (
         <section
             id="pricing"
-            className="scroll-mt-28 border-t border-border py-24"
+            className="scroll-mt-16 border-t border-border py-24"
         >
             <div className="container px-6">
                 <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">

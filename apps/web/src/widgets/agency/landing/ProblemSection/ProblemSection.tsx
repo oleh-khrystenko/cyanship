@@ -11,7 +11,7 @@ const ProblemSection = () => {
     const t = useTranslations('landing_page.problem');
 
     return (
-        <section id="problem" className="scroll-mt-28 border-t border-border py-24">
+        <section id="problem" className="scroll-mt-16 border-t border-border py-24">
             <div className="container px-6">
                 <div className="max-w-2xl">
                     <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
