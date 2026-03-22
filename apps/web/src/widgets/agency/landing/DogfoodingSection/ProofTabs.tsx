@@ -20,7 +20,7 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
     const t = useTranslations('landing_page.dogfooding');
 
     return (
-        <div className="space-y-3">
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
             {tabs.map(({ key, icon: Icon, labelKey }) => {
                 const isActive = activeTab === key;
 
@@ -30,10 +30,10 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
                         type="button"
                         onClick={() => onTabChange(key)}
                         className={composeClasses(
-                            'flex w-full cursor-pointer items-start gap-4 rounded-lg border p-4 text-left transition-colors',
+                            'flex w-full cursor-pointer items-center gap-4 p-4 text-left transition-colors',
                             isActive
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-card hover:bg-accent'
+                                ? 'bg-primary/5'
+                                : 'bg-card hover:bg-accent'
                         )}
                     >
                         <div
