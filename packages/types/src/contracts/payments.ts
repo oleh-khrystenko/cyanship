@@ -12,8 +12,8 @@ export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
 // --- Product Catalog (single source of truth) ---
 
 export const SUBSCRIPTION_PLANS = [
-    { code: 'starter', priceAmount: 1900, currency: 'usd', interval: 'month', credits: 1000 },
-    { code: 'pro', priceAmount: 4900, currency: 'usd', interval: 'month', credits: 10000 },
+    { code: 'starter', priceAmount: 1900, currency: 'usd', interval: 'month', executions: 10000 },
+    { code: 'pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000 },
 ] as const;
 
 export type SubscriptionPlanCode = (typeof SUBSCRIPTION_PLANS)[number]['code'];
@@ -22,16 +22,16 @@ export const SUBSCRIPTION_PLAN_MAP = Object.fromEntries(
     SUBSCRIPTION_PLANS.map((p) => [p.code, p])
 ) as { [K in SubscriptionPlanCode]: Extract<(typeof SUBSCRIPTION_PLANS)[number], { code: K }> };
 
-export const CREDIT_PACKS = [
-    { code: 'basic', credits: 5000, priceAmount: 2900, currency: 'usd' },
-    { code: 'max', credits: 25000, priceAmount: 9900, currency: 'usd' },
+export const EXECUTION_PACKS = [
+    { code: 'basic', executions: 5000, priceAmount: 2900, currency: 'usd' },
+    { code: 'max', executions: 20000, priceAmount: 9900, currency: 'usd' },
 ] as const;
 
-export type CreditPackCode = (typeof CREDIT_PACKS)[number]['code'];
+export type ExecutionPackCode = (typeof EXECUTION_PACKS)[number]['code'];
 
-export const CREDIT_PACK_MAP = Object.fromEntries(
-    CREDIT_PACKS.map((p) => [p.code, p])
-) as { [K in CreditPackCode]: Extract<(typeof CREDIT_PACKS)[number], { code: K }> };
+export const EXECUTION_PACK_MAP = Object.fromEntries(
+    EXECUTION_PACKS.map((p) => [p.code, p])
+) as { [K in ExecutionPackCode]: Extract<(typeof EXECUTION_PACKS)[number], { code: K }> };
 
 export const SUBSCRIPTION_STATUS = {
     ACTIVE: 'ACTIVE',
@@ -71,9 +71,9 @@ export const CreateCheckoutSessionSchema = z
             .optional(),
         packCode: z
             .enum(
-                CREDIT_PACKS.map((p) => p.code) as [
-                    CreditPackCode,
-                    ...CreditPackCode[],
+                EXECUTION_PACKS.map((p) => p.code) as [
+                    ExecutionPackCode,
+                    ...ExecutionPackCode[],
                 ]
             )
             .optional(),
@@ -147,7 +147,7 @@ export const BillingWebhookEventSchema = z.object({
     scheduledPlanCode: z.string().nullable().optional(),
     scheduledChangeDate: z.coerce.date().nullable().optional(),
     // --- One-off fields (присутні тільки для ONE_OFF_PAYMENT_COMPLETED) ---
-    creditsAmount: z.number().int().positive().optional(),
+    executionsAmount: z.number().int().positive().optional(),
     packCode: z.string().optional(),
     raw: z.record(z.string(), z.unknown()),
 });

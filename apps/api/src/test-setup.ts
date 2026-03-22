@@ -1,4 +1,4 @@
-import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from '@cyanship/types';
+import { SUBSCRIPTION_PLANS, EXECUTION_PACKS } from '@cyanship/types';
 
 // Set test-only env vars that are required by fail-fast policy
 // but not needed for unit tests (mocked at service level).
@@ -22,7 +22,7 @@ for (const plan of SUBSCRIPTION_PLANS) {
     process.env[`STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`] ??=
         `price_test_sub_${plan.code}`;
 }
-for (const pack of CREDIT_PACKS) {
+for (const pack of EXECUTION_PACKS) {
     process.env[`STRIPE_PRICE_ID_ONEOFF_${pack.code.toUpperCase()}`] ??=
         `price_test_oneoff_${pack.code}`;
 }

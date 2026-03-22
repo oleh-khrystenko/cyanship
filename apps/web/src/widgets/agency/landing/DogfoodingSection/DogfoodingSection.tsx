@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 import {
     SUBSCRIPTION_PLANS,
-    CREDIT_PACKS,
+    EXECUTION_PACKS,
     formatPrice,
 } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
@@ -29,7 +29,7 @@ const DogfoodingSection = () => {
     };
 
     const firstPlan = SUBSCRIPTION_PLANS[0];
-    const cheapestPack = [...CREDIT_PACKS].sort(
+    const cheapestPack = [...EXECUTION_PACKS].sort(
         (a, b) => a.priceAmount - b.priceAmount,
     )[0];
 
@@ -37,7 +37,7 @@ const DogfoodingSection = () => {
         firstPlan.priceAmount,
         firstPlan.currency,
     );
-    const creditsFromPrice = formatPrice(
+    const executionsFromPrice = formatPrice(
         cheapestPack.priceAmount,
         cheapestPack.currency,
     );
@@ -90,7 +90,7 @@ const DogfoodingSection = () => {
 
                     <div className="flex flex-1 items-center justify-between rounded-lg border border-border bg-card p-4">
                         <span className="text-sm font-medium text-foreground">
-                            {t('preview_credits', { price: creditsFromPrice })}
+                            {t('preview_executions', { price: executionsFromPrice })}
                         </span>
                         <UiButton
                             variant="filled"

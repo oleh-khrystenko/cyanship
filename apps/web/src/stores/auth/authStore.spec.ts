@@ -4,7 +4,7 @@ const mockUser = {
     id: '507f1f77bcf86cd799439011',
     email: 'test@gmail.com',
     profile: { name: 'John Doe' },
-    credits: { balance: 0, freeReportUsed: false },
+    executions: { balance: 0, freeReportUsed: false },
     hasPassword: true,
     deletedAt: null,
     preferredLang: 'uk' as const,

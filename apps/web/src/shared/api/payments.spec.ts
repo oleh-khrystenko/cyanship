@@ -4,7 +4,7 @@ jest.mock('./client', () => ({
 
 import { apiClient } from './client';
 import {
-    CREDIT_PACKS,
+    EXECUTION_PACKS,
     PAYMENT_TYPE,
     SUBSCRIPTION_PLANS,
 } from '@cyanship/types';
@@ -75,7 +75,7 @@ describe('payments api', () => {
     // ─── createOneOffCheckout ─────────────────────────────────────────
 
     describe('createOneOffCheckout', () => {
-        it.each(CREDIT_PACKS)(
+        it.each(EXECUTION_PACKS)(
             'should POST to /api/payments/checkout-session with paymentType and packCode for $code',
             async ({ code }) => {
                 mockPost.mockResolvedValue({
@@ -94,7 +94,7 @@ describe('payments api', () => {
             },
         );
 
-        it.each(CREDIT_PACKS)(
+        it.each(EXECUTION_PACKS)(
             'should return { checkoutUrl } extracted from response.data.data for $code',
             async ({ code }) => {
                 mockPost.mockResolvedValue({
@@ -107,7 +107,7 @@ describe('payments api', () => {
             },
         );
 
-        it.each(CREDIT_PACKS)(
+        it.each(EXECUTION_PACKS)(
             'should propagate errors from apiClient.post for $code',
             async ({ code }) => {
                 mockPost.mockRejectedValue(new Error('Payment failed'));

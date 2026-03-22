@@ -85,25 +85,25 @@ export class UsersService {
         });
     }
 
-    async addCredits(userId: string, amount: number): Promise<void> {
+    async addExecutions(userId: string, amount: number): Promise<void> {
         await this.userModel.findByIdAndUpdate(userId, {
-            $inc: { 'credits.balance': amount },
+            $inc: { 'executions.balance': amount },
         });
     }
 
-    async deductCredit(userId: string): Promise<boolean> {
-        // Try atomic paid-credit deduction first (no race condition).
+    async deductExecution(userId: string): Promise<boolean> {
+        // Try atomic paid-execution deduction first (no race condition).
         const paid = await this.userModel.findOneAndUpdate(
-            { _id: userId, 'credits.balance': { $gt: 0 } },
-            { $inc: { 'credits.balance': -1 } },
+            { _id: userId, 'executions.balance': { $gt: 0 } },
+            { $inc: { 'executions.balance': -1 } },
             { new: true }
         );
         if (paid) return true;
 
         // Fallback: consume free report atomically.
         const free = await this.userModel.findOneAndUpdate(
-            { _id: userId, 'credits.freeReportUsed': false },
-            { $set: { 'credits.freeReportUsed': true } },
+            { _id: userId, 'executions.freeReportUsed': false },
+            { $set: { 'executions.freeReportUsed': true } },
             { new: true }
         );
         return free !== null;
@@ -163,10 +163,10 @@ export class UsersService {
         );
     }
 
-    async hasCredit(userId: string): Promise<boolean> {
+    async hasExecution(userId: string): Promise<boolean> {
         const user = await this.userModel.findById(userId).exec();
         if (!user) return false;
 
-        return user.credits.balance > 0 || !user.credits.freeReportUsed;
+        return user.executions.balance > 0 || !user.executions.freeReportUsed;
     }
 }

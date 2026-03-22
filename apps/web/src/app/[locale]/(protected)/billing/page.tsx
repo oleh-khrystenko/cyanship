@@ -20,10 +20,10 @@ import { useAuthStore } from '@/stores/auth';
 import {
     SUBSCRIPTION_PLANS,
     SUBSCRIPTION_PLAN_MAP,
-    CREDIT_PACKS,
+    EXECUTION_PACKS,
     formatPrice,
     type SubscriptionPlanCode,
-    type CreditPackCode,
+    type ExecutionPackCode,
 } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -41,7 +41,7 @@ export default function BillingPage() {
 
     const billing = user.billing;
     const hasActive = billing?.hasActiveSubscription === true;
-    const hasBillingData = billing != null || user.credits.balance > 0;
+    const hasBillingData = billing != null || user.executions.balance > 0;
 
     const formatDate = (date: Date | string | null) => {
         if (!date) return '';
@@ -65,13 +65,13 @@ export default function BillingPage() {
         }
     };
 
-    const handleOneOffCheckout = async (packCode: CreditPackCode) => {
+    const handleOneOffCheckout = async (packCode: ExecutionPackCode) => {
         setLoadingAction(`oneoff_${packCode}`);
         try {
             const { checkoutUrl } = await createOneOffCheckout(packCode);
             window.location.assign(checkoutUrl);
         } catch {
-            toast.error(t('credits.error'));
+            toast.error(t('executions.error'));
             setLoadingAction(null);
         }
     };
@@ -291,17 +291,17 @@ export default function BillingPage() {
                                     {billing?.cancelAtPeriodEnd
                                         ? t('active.cancel_notice')
                                         : billing?.currentPeriodEnd
-                                          ? t('active.next_billing_credits', {
+                                          ? t('active.next_billing_executions', {
                                                 date: formatDate(
                                                     billing.currentPeriodEnd
                                                 ),
-                                                credits:
+                                                executions:
                                                     billing.planCode &&
                                                     billing.planCode in
                                                         SUBSCRIPTION_PLAN_MAP
                                                         ? SUBSCRIPTION_PLAN_MAP[
                                                               billing.planCode as SubscriptionPlanCode
-                                                          ].credits.toLocaleString(
+                                                          ].executions.toLocaleString(
                                                               'en-US'
                                                           )
                                                         : '',
@@ -355,16 +355,16 @@ export default function BillingPage() {
                 </section>
             )}
 
-            {/* ── Credits Section ── */}
+            {/* ── Executions Section ── */}
             {PAYMENTS_ONE_OFF_ENABLED && (
                 <section>
                     <div className="mb-6 flex items-baseline justify-between">
                         <h2 className="text-foreground text-2xl font-bold">
-                            {t('credits.title')}
+                            {t('executions.title')}
                         </h2>
                         <p className="text-muted-foreground text-sm">
-                            {t.rich('credits.balance', {
-                                count: user.credits.balance.toLocaleString(
+                            {t.rich('executions.balance', {
+                                count: user.executions.balance.toLocaleString(
                                     'en-US'
                                 ),
                                 accent: (chunks) => (
@@ -377,9 +377,9 @@ export default function BillingPage() {
                     </div>
 
                     <div
-                        className={`grid gap-6 ${(CREDIT_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}
+                        className={`grid gap-6 ${(EXECUTION_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}
                     >
-                        {CREDIT_PACKS.map((pack) => {
+                        {EXECUTION_PACKS.map((pack) => {
                             const isFeatured = pack.code === 'max';
 
                             return (
@@ -424,7 +424,7 @@ export default function BillingPage() {
                                             </div>
                                             <p className="text-muted-foreground mt-0.5 text-sm">
                                                 {t(
-                                                    `packs.${pack.code}.per_credit`
+                                                    `packs.${pack.code}.per_execution`
                                                 )}
                                             </p>
                                         </div>
@@ -462,7 +462,7 @@ export default function BillingPage() {
                                                         : ''
                                                 }
                                             >
-                                                {t('credits.buy_button')}
+                                                {t('executions.buy_button')}
                                             </span>
                                             {loadingAction ===
                                                 `oneoff_${pack.code}` && (

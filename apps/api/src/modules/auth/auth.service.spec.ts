@@ -45,7 +45,7 @@ const mockUser = {
     _id: { toString: () => '507f1f77bcf86cd799439011' },
     email: 'test@gmail.com',
     profile: { name: 'John Doe' },
-    credits: { balance: 0, freeReportUsed: false },
+    executions: { balance: 0, freeReportUsed: false },
     passwordHash: null as string | null,
     lastLoginAt: null as Date | null,
     save: jest.fn().mockImplementation(function (this: unknown) {

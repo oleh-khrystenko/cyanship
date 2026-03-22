@@ -100,7 +100,7 @@ const Header = () => {
         window.location.assign(`/${locale}`);
     };
 
-    const formattedCredits = (user?.credits.balance ?? 0).toLocaleString('en-US');
+    const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
 
     const allUserMenuItems: {
         value: string;
@@ -120,7 +120,7 @@ const Header = () => {
             label: t('billing'),
             icon: <CreditCard />,
             route: `/${locale}/billing`,
-            badge: formattedCredits,
+            badge: formattedExecutions,
         },
         {
             value: 'logout',

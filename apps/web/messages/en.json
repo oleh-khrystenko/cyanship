@@ -52,7 +52,7 @@
             "step_3": "Experience the load speed firsthand.",
             "try_cta": "Try it",
             "preview_subscription": "Pro Plan — {price}/mo",
-            "preview_credits": "Credit Packs from {price}"
+            "preview_executions": "Execution Packs from {price}"
         },
         "portfolio": {
             "label": "Portfolio",
@@ -293,7 +293,7 @@
             "title": "Billing"
         },
         "heading": "Billing",
-        "description": "Manage your subscription and credits. All payments are processed securely via Stripe.",
+        "description": "Manage your subscription and executions. All payments are processed securely via Stripe.",
         "demo_banner": {
             "title": "Stripe Test Mode Demo",
             "description": "This is a live Stripe integration demo. No real charges will be made.",
@@ -335,26 +335,26 @@
             "plan_name": "{plan} Plan",
             "status_active": "Active",
             "status_canceling": "Active until {date}",
-            "next_billing_credits": "Next billing on {date} · {credits} credits",
+            "next_billing_executions": "Next billing on {date} · {executions} executions",
             "cancel_notice": "Your subscription will end at the current period's close.",
             "scheduled_change": "Switching to {plan} on {date}",
             "manage_button": "Manage Subscription",
             "manage_error": "Failed to open management portal"
         },
-        "credits": {
-            "title": "Credit Packs",
-            "balance": "Your balance: <accent>{count}</accent> credits",
+        "executions": {
+            "title": "Execution Packs",
+            "balance": "Your balance: <accent>{count}</accent> executions",
             "buy_button": "Purchase",
             "error": "Failed to create payment session"
         },
         "packs": {
             "basic": {
-                "name": "5,000 Credits",
-                "per_credit": "$0.005 per credit"
+                "name": "5,000 Executions",
+                "per_execution": "$0.005 per execution"
             },
             "max": {
-                "name": "25,000 Credits",
-                "per_credit": "$0.004 per credit",
+                "name": "20,000 Executions",
+                "per_execution": "$0.005 per execution",
                 "badge": "Best Value"
             }
         },
@@ -367,9 +367,9 @@
         "checkout_terms_note": "By proceeding, you agree to the <terms>payment terms</terms>.",
         "reset": {
             "button": "Reset billing",
-            "description": "Deletes subscriptions, credits and payment history in Stripe and the database.",
+            "description": "Deletes subscriptions, executions and payment history in Stripe and the database.",
             "dialog_title": "Reset billing?",
-            "dialog_description": "All subscriptions, credits and payment history will be deleted. This action cannot be undone.",
+            "dialog_description": "All subscriptions, executions and payment history will be deleted. This action cannot be undone.",
             "dialog_confirm": "Reset",
             "dialog_cancel": "Cancel",
             "success": "Billing reset successfully",

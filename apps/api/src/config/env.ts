@@ -9,9 +9,9 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import {
     SUBSCRIPTION_PLANS,
-    CREDIT_PACKS,
+    EXECUTION_PACKS,
     type SubscriptionPlanCode,
-    type CreditPackCode,
+    type ExecutionPackCode,
 } from '@cyanship/types';
 
 // Load .env from monorepo root before reading process.env.
@@ -92,15 +92,15 @@ if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
 
 // Dynamic: one env var per subscription plan, fail-fast when subscriptions enabled
 export const STRIPE_SUBSCRIPTION_PLANS: Partial<
-    Record<SubscriptionPlanCode, { priceId: string; credits: number }>
+    Record<SubscriptionPlanCode, { priceId: string; executions: number }>
 > = (() => {
     if (!subscriptionEnabled) return {};
-    const result: Record<string, { priceId: string; credits: number }> = {};
+    const result: Record<string, { priceId: string; executions: number }> = {};
     for (const plan of SUBSCRIPTION_PLANS) {
         const envName = `STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`;
         result[plan.code] = {
             priceId: getEnvVar(envName),
-            credits: plan.credits,
+            executions: plan.executions,
         };
     }
     return result;
@@ -115,17 +115,17 @@ export const STRIPE_PRICE_TO_PLAN: Record<string, string> = (() => {
     return result;
 })();
 
-// Dynamic: one env var per credit pack, fail-fast when one-off enabled
-export const STRIPE_CREDIT_PACKS: Partial<
-    Record<CreditPackCode, { priceId: string; credits: number }>
+// Dynamic: one env var per execution pack, fail-fast when one-off enabled
+export const STRIPE_EXECUTION_PACKS: Partial<
+    Record<ExecutionPackCode, { priceId: string; executions: number }>
 > = (() => {
     if (!oneOffEnabled) return {};
-    const result: Record<string, { priceId: string; credits: number }> = {};
-    for (const pack of CREDIT_PACKS) {
+    const result: Record<string, { priceId: string; executions: number }> = {};
+    for (const pack of EXECUTION_PACKS) {
         const envName = `STRIPE_PRICE_ID_ONEOFF_${pack.code.toUpperCase()}`;
         result[pack.code] = {
             priceId: getEnvVar(envName),
-            credits: pack.credits,
+            executions: pack.executions,
         };
     }
     return result;

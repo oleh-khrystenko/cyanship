@@ -44,7 +44,7 @@ export class StripeService implements IPaymentProvider {
             metadata: {
                 userId: input.userId,
                 planCode: input.planCode,
-                credits: String(input.credits ?? 0),
+                executions: String(input.executions ?? 0),
             },
             client_reference_id: input.userId,
             success_url: input.successUrl,
@@ -112,13 +112,13 @@ export class StripeService implements IPaymentProvider {
 
         // One-off payment (mode=payment, paid)
         if (session.mode === 'payment' && session.payment_status === 'paid') {
-            const credits = parseInt(session.metadata?.credits ?? '0', 10);
+            const executions = parseInt(session.metadata?.executions ?? '0', 10);
             return {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                 providerEventId: event.id,
                 occurredAt: new Date(event.created * 1000),
                 userId,
-                creditsAmount: credits,
+                executionsAmount: executions,
                 packCode: session.metadata?.planCode || undefined,
                 raw: this.toRaw(event.data.object),
             };
@@ -126,7 +126,7 @@ export class StripeService implements IPaymentProvider {
 
         // Subscription checkout (mode=subscription)
         if (session.mode === 'subscription') {
-            const credits = parseInt(session.metadata?.credits ?? '0', 10);
+            const executions = parseInt(session.metadata?.executions ?? '0', 10);
             const currentPeriodEnd = await this.resolveSubscriptionPeriodEnd(session.subscription);
 
             return {
@@ -138,7 +138,7 @@ export class StripeService implements IPaymentProvider {
                 currentPeriodEnd,
                 cancelAtPeriodEnd: false,
                 raw: this.toRaw(event.data.object),
-                creditsAmount: credits || undefined,
+                executionsAmount: executions || undefined,
             };
         }
 
