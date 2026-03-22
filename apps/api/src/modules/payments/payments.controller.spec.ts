@@ -3,12 +3,37 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { CatalogService } from './catalog.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
         WEB_URL: 'http://localhost:3000',
+        PAYMENTS_SUBSCRIPTION_ENABLED: true,
+        PAYMENTS_ONE_OFF_ENABLED: true,
     },
 }));
+
+// ─── Test catalog data ───────────────────────────────────────────────────────
+
+const TEST_CATALOG = {
+    subscriptionPlans: [
+        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
+        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+    ],
+    executionPacks: [
+        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
+        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+    ],
+};
+
+const mockCatalogService = {
+    getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
+    getSubscriptionPlan: jest.fn(),
+    getExecutionPack: jest.fn(),
+    getPriceToPlanMap: jest.fn(),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const mockUser = {
     _id: { toString: () => '507f1f77bcf86cd799439011' },
@@ -29,11 +54,28 @@ describe('PaymentsController', () => {
             controllers: [PaymentsController],
             providers: [
                 { provide: PaymentsService, useValue: mockPaymentsService },
+                { provide: CatalogService, useValue: mockCatalogService },
             ],
         }).compile();
 
         controller = module.get<PaymentsController>(PaymentsController);
         jest.clearAllMocks();
+    });
+
+    // ─── GET /payments/catalog ───────────────────────────────────────
+
+    describe('GET /payments/catalog', () => {
+        it('should return catalog data with subscriptionPlans and executionPacks', async () => {
+            const result = await controller.getCatalog();
+
+            expect(mockCatalogService.getCatalog).toHaveBeenCalled();
+            expect(result).toEqual({
+                data: {
+                    subscriptionPlans: TEST_CATALOG.subscriptionPlans,
+                    executionPacks: TEST_CATALOG.executionPacks,
+                },
+            });
+        });
     });
 
     // ─── POST /payments/checkout-session ────────────────────────────

@@ -7,12 +7,6 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import {
-    SUBSCRIPTION_PLANS,
-    EXECUTION_PACKS,
-    type SubscriptionPlanCode,
-    type ExecutionPackCode,
-} from '@cyanship/types';
 
 // Load .env from monorepo root before reading process.env.
 // Use __dirname (relative to this file) instead of process.cwd() which varies by runner.
@@ -89,47 +83,6 @@ if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
             'Set PAYMENTS_SUBSCRIPTION_ENABLED or PAYMENTS_ONE_OFF_ENABLED to "true".'
     );
 }
-
-// Dynamic: one env var per subscription plan, fail-fast when subscriptions enabled
-export const STRIPE_SUBSCRIPTION_PLANS: Partial<
-    Record<SubscriptionPlanCode, { priceId: string; executions: number }>
-> = (() => {
-    if (!subscriptionEnabled) return {};
-    const result: Record<string, { priceId: string; executions: number }> = {};
-    for (const plan of SUBSCRIPTION_PLANS) {
-        const envName = `STRIPE_PRICE_ID_SUB_${plan.code.toUpperCase()}`;
-        result[plan.code] = {
-            priceId: getEnvVar(envName),
-            executions: plan.executions,
-        };
-    }
-    return result;
-})();
-
-// Reverse lookup: Stripe priceId → plan code (for webhook plan-switch detection)
-export const STRIPE_PRICE_TO_PLAN: Record<string, string> = (() => {
-    const result: Record<string, string> = {};
-    for (const [code, entry] of Object.entries(STRIPE_SUBSCRIPTION_PLANS)) {
-        if (entry) result[entry.priceId] = code;
-    }
-    return result;
-})();
-
-// Dynamic: one env var per execution pack, fail-fast when one-off enabled
-export const STRIPE_EXECUTION_PACKS: Partial<
-    Record<ExecutionPackCode, { priceId: string; executions: number }>
-> = (() => {
-    if (!oneOffEnabled) return {};
-    const result: Record<string, { priceId: string; executions: number }> = {};
-    for (const pack of EXECUTION_PACKS) {
-        const envName = `STRIPE_PRICE_ID_ONEOFF_${pack.code.toUpperCase()}`;
-        result[pack.code] = {
-            priceId: getEnvVar(envName),
-            executions: pack.executions,
-        };
-    }
-    return result;
-})();
 
 // Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]
 export function parseLockoutThresholds(

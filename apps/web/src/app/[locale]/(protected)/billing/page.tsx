@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Check, ExternalLink } from 'lucide-react';
@@ -10,6 +10,7 @@ import {
     PAYMENTS_ONE_OFF_ENABLED,
 } from '@/shared/config/env';
 import {
+    getCatalog,
     createSubscriptionCheckout,
     createOneOffCheckout,
     createPortalSession,
@@ -17,14 +18,7 @@ import {
 } from '@/shared/api/payments';
 import { getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
-import {
-    SUBSCRIPTION_PLANS,
-    SUBSCRIPTION_PLAN_MAP,
-    EXECUTION_PACKS,
-    formatPrice,
-    type SubscriptionPlanCode,
-    type ExecutionPackCode,
-} from '@cyanship/types';
+import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
@@ -36,6 +30,15 @@ export default function BillingPage() {
     const user = useAuthStore((s) => s.user);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [catalog, setCatalog] = useState<PaymentsCatalog | null>(null);
+    const [catalogLoading, setCatalogLoading] = useState(true);
+
+    useEffect(() => {
+        getCatalog()
+            .then(setCatalog)
+            .catch(() => toast.error(t('catalog_error')))
+            .finally(() => setCatalogLoading(false));
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!user) return null;
 
@@ -51,9 +54,7 @@ export default function BillingPage() {
         ).format(date instanceof Date ? date : new Date(date));
     };
 
-    const handleSubscriptionCheckout = async (
-        planCode: SubscriptionPlanCode,
-    ) => {
+    const handleSubscriptionCheckout = async (planCode: string) => {
         setLoadingAction(`subscribe_${planCode}`);
         try {
             const { checkoutUrl } =
@@ -65,7 +66,7 @@ export default function BillingPage() {
         }
     };
 
-    const handleOneOffCheckout = async (packCode: ExecutionPackCode) => {
+    const handleOneOffCheckout = async (packCode: string) => {
         setLoadingAction(`oneoff_${packCode}`);
         try {
             const { checkoutUrl } = await createOneOffCheckout(packCode);
@@ -107,6 +108,11 @@ export default function BillingPage() {
         pro: ['item_1', 'item_2', 'item_3', 'item_4', 'item_5'],
     };
 
+    const activePlan = catalog?.subscriptionPlans.find(
+        (p) => p.code === billing?.planCode,
+    );
+
+
     return (
         <div className="mx-auto max-w-3xl space-y-10 px-4 py-12">
             {/* ── Demo Banner ── */}
@@ -120,8 +126,15 @@ export default function BillingPage() {
                 <p className="text-muted-foreground mt-2">{t('description')}</p>
             </div>
 
+            {/* ── Catalog Loading ── */}
+            {catalogLoading && (
+                <div className="flex justify-center py-16">
+                    <UiSpinner size="md" />
+                </div>
+            )}
+
             {/* ── Subscription Section ── */}
-            {PAYMENTS_SUBSCRIPTION_ENABLED && (
+            {PAYMENTS_SUBSCRIPTION_ENABLED && !catalogLoading && catalog && (
                 <section>
                     <h2 className="text-foreground mb-6 text-2xl font-bold">
                         {hasActive
@@ -131,109 +144,105 @@ export default function BillingPage() {
 
                     {!hasActive ? (
                         <div
-                            className={`grid gap-6 ${(SUBSCRIPTION_PLANS.length as number) === 1 ? '' : 'sm:grid-cols-2'}`}
+                            className={`grid gap-6 ${catalog.subscriptionPlans.length === 1 ? '' : 'sm:grid-cols-2'}`}
                         >
-                            {SUBSCRIPTION_PLANS.map((plan) => {
-                                const hasBadge = plan.code === 'pro';
-
-                                return (
-                                    <div
-                                        key={plan.code}
-                                        className="border-border bg-card flex flex-col rounded-xl border p-6 md:p-8"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="text-foreground text-xl font-bold">
-                                                {t(`plans.${plan.code}.name`, {
-                                                    defaultValue: plan.code,
-                                                })}
-                                            </h3>
-                                            {hasBadge && (
-                                                <span className="border-muted-foreground/25 bg-muted/50 text-muted-foreground rounded-full border px-3 py-0.5 text-xs font-medium">
-                                                    {t(
-                                                        `plans.${plan.code}.badge`
-                                                    )}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <p className="text-foreground mt-3 text-4xl font-bold tracking-tight">
-                                            {formatPrice(
-                                                plan.priceAmount,
-                                                plan.currency
-                                            )}
-                                            <span className="text-muted-foreground text-lg font-normal">
-                                                {' '}
+                            {catalog.subscriptionPlans.map((plan) => (
+                                <div
+                                    key={plan.code}
+                                    className="border-border bg-card flex flex-col rounded-xl border p-6 md:p-8"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-foreground text-xl font-bold">
+                                            {t(`plans.${plan.code}.name`, {
+                                                defaultValue: plan.code,
+                                            })}
+                                        </h3>
+                                        {plan.featured && (
+                                            <span className="border-muted-foreground/25 bg-muted/50 text-muted-foreground rounded-full border px-3 py-0.5 text-xs font-medium">
                                                 {t(
-                                                    `subscribe.interval_${plan.interval}`
+                                                    `plans.${plan.code}.badge`
                                                 )}
                                             </span>
-                                        </p>
+                                        )}
+                                    </div>
 
-                                        <p className="text-muted-foreground mt-2 text-sm">
-                                            {t(`plans.${plan.code}.tagline`)}
-                                        </p>
+                                    <p className="text-foreground mt-3 text-4xl font-bold tracking-tight">
+                                        {formatPrice(
+                                            plan.priceAmount,
+                                            plan.currency
+                                        )}
+                                        <span className="text-muted-foreground text-lg font-normal">
+                                            {' '}
+                                            {t(
+                                                `subscribe.interval_${plan.interval}`
+                                            )}
+                                        </span>
+                                    </p>
 
-                                        <ul className="mt-6 flex-1 space-y-3">
-                                            {(
-                                                planFeatureKeys[plan.code] ?? []
-                                            ).map((key) => (
-                                                <li
-                                                    key={key}
-                                                    className="text-muted-foreground flex items-center gap-2 text-sm"
-                                                >
-                                                    <Check className="text-success h-4 w-4 shrink-0" />
-                                                    {t(
-                                                        `plans.${plan.code}.features.${key}`
-                                                    )}
-                                                </li>
-                                            ))}
-                                        </ul>
+                                    <p className="text-muted-foreground mt-2 text-sm">
+                                        {t(`plans.${plan.code}.tagline`)}
+                                    </p>
 
-                                        <UiButton
-                                            variant={
-                                                hasBadge ? 'filled' : 'outline'
-                                            }
-                                            size="lg"
-                                            className={`relative mt-8 w-full justify-center ${!hasBadge ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
-                                            onClick={() =>
-                                                handleSubscriptionCheckout(
-                                                    plan.code
-                                                )
-                                            }
-                                            disabled={
+                                    <ul className="mt-6 flex-1 space-y-3">
+                                        {(
+                                            planFeatureKeys[plan.code] ?? []
+                                        ).map((key) => (
+                                            <li
+                                                key={key}
+                                                className="text-muted-foreground flex items-center gap-2 text-sm"
+                                            >
+                                                <Check className="text-success h-4 w-4 shrink-0" />
+                                                {t(
+                                                    `plans.${plan.code}.features.${key}`
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <UiButton
+                                        variant={
+                                            plan.featured ? 'filled' : 'outline'
+                                        }
+                                        size="lg"
+                                        className={`relative mt-8 w-full justify-center ${!plan.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                        onClick={() =>
+                                            handleSubscriptionCheckout(
+                                                plan.code
+                                            )
+                                        }
+                                        disabled={
+                                            loadingAction ===
+                                            `subscribe_${plan.code}`
+                                        }
+                                    >
+                                        <span
+                                            className={
                                                 loadingAction ===
                                                 `subscribe_${plan.code}`
+                                                    ? 'invisible'
+                                                    : ''
                                             }
                                         >
-                                            <span
-                                                className={
-                                                    loadingAction ===
-                                                    `subscribe_${plan.code}`
-                                                        ? 'invisible'
-                                                        : ''
-                                                }
-                                            >
-                                                {t('subscribe.button', {
-                                                    plan: t(
-                                                        `plans.${plan.code}.name`,
-                                                        {
-                                                            defaultValue:
-                                                                plan.code,
-                                                        }
-                                                    ),
-                                                })}
-                                            </span>
-                                            {loadingAction ===
-                                                `subscribe_${plan.code}` && (
-                                                <UiSpinner
-                                                    size="sm"
-                                                    className="absolute inset-0 m-auto"
-                                                />
-                                            )}
-                                        </UiButton>
-                                    </div>
-                                );
-                            })}
+                                            {t('subscribe.button', {
+                                                plan: t(
+                                                    `plans.${plan.code}.name`,
+                                                    {
+                                                        defaultValue:
+                                                            plan.code,
+                                                    }
+                                                ),
+                                            })}
+                                        </span>
+                                        {loadingAction ===
+                                            `subscribe_${plan.code}` && (
+                                            <UiSpinner
+                                                size="sm"
+                                                className="absolute inset-0 m-auto"
+                                            />
+                                        )}
+                                    </UiButton>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="border-border bg-card flex items-stretch gap-5 rounded-lg border p-4 md:p-5">
@@ -242,7 +251,7 @@ export default function BillingPage() {
                                     <Image
                                         src={`/images/plans/${billing.planCode}-light.svg`}
                                         alt={t(
-                                            `plans.${billing.planCode as SubscriptionPlanCode}.name`,
+                                            `plans.${billing.planCode}.name`,
                                             { defaultValue: billing.planCode }
                                         )}
                                         fill
@@ -251,7 +260,7 @@ export default function BillingPage() {
                                     <Image
                                         src={`/images/plans/${billing.planCode}-dark.svg`}
                                         alt={t(
-                                            `plans.${billing.planCode as SubscriptionPlanCode}.name`,
+                                            `plans.${billing.planCode}.name`,
                                             { defaultValue: billing.planCode }
                                         )}
                                         fill
@@ -266,7 +275,7 @@ export default function BillingPage() {
                                         {t('active.plan_name', {
                                             plan: billing?.planCode
                                                 ? t(
-                                                      `plans.${billing.planCode as SubscriptionPlanCode}.name`,
+                                                      `plans.${billing.planCode}.name`,
                                                       {
                                                           defaultValue:
                                                               billing.planCode,
@@ -296,12 +305,8 @@ export default function BillingPage() {
                                                     billing.currentPeriodEnd
                                                 ),
                                                 executions:
-                                                    billing.planCode &&
-                                                    billing.planCode in
-                                                        SUBSCRIPTION_PLAN_MAP
-                                                        ? SUBSCRIPTION_PLAN_MAP[
-                                                              billing.planCode as SubscriptionPlanCode
-                                                          ].executions.toLocaleString(
+                                                    activePlan
+                                                        ? activePlan.executions.toLocaleString(
                                                               'en-US'
                                                           )
                                                         : '',
@@ -356,7 +361,7 @@ export default function BillingPage() {
             )}
 
             {/* ── Executions Section ── */}
-            {PAYMENTS_ONE_OFF_ENABLED && (
+            {PAYMENTS_ONE_OFF_ENABLED && !catalogLoading && catalog && (
                 <section>
                     <div className="mb-6 flex items-baseline justify-between">
                         <h2 className="text-foreground text-2xl font-bold">
@@ -377,105 +382,98 @@ export default function BillingPage() {
                     </div>
 
                     <div
-                        className={`grid gap-6 ${(EXECUTION_PACKS.length as number) <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}
+                        className={`grid gap-6 ${catalog.executionPacks.length <= 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}
                     >
-                        {EXECUTION_PACKS.map((pack) => {
-                            const isFeatured = pack.code === 'max';
-
-                            return (
-                                <div
-                                    key={pack.code}
-                                    className="border-border bg-card flex flex-col rounded-xl border p-5 md:p-6"
-                                >
-                                    {/* ── Upper: image + info + badge ── */}
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg">
-                                            <Image
-                                                src={`/images/packs/${pack.code}-light.svg`}
-                                                alt={t(
-                                                    `packs.${pack.code}.name`
-                                                )}
-                                                fill
-                                                className="block object-cover dark:hidden"
-                                            />
-                                            <Image
-                                                src={`/images/packs/${pack.code}-dark.svg`}
-                                                alt={t(
-                                                    `packs.${pack.code}.name`
-                                                )}
-                                                fill
-                                                className="hidden object-cover dark:block"
-                                            />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-foreground text-base font-semibold">
-                                                    {t(
-                                                        `packs.${pack.code}.name`
-                                                    )}
-                                                </p>
-                                                {isFeatured && (
-                                                    <span className="border-muted-foreground/25 bg-muted/50 text-muted-foreground rounded-full border px-3 py-0.5 text-xs font-medium">
-                                                        {t(
-                                                            `packs.${pack.code}.badge`
-                                                        )}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-muted-foreground mt-0.5 text-sm">
-                                                {t(
-                                                    `packs.${pack.code}.per_execution`
-                                                )}
-                                            </p>
-                                        </div>
+                        {catalog.executionPacks.map((pack) => (
+                            <div
+                                key={pack.code}
+                                className="border-border bg-card flex flex-col rounded-xl border p-5 md:p-6"
+                            >
+                                {/* ── Upper: image + name + badge ── */}
+                                <div className="flex items-center gap-4">
+                                    <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg">
+                                        <Image
+                                            src={`/images/packs/${pack.code}-light.svg`}
+                                            alt={t(`packs.${pack.code}.name`)}
+                                            fill
+                                            className="block object-cover dark:hidden"
+                                        />
+                                        <Image
+                                            src={`/images/packs/${pack.code}-dark.svg`}
+                                            alt={t(`packs.${pack.code}.name`)}
+                                            fill
+                                            className="hidden object-cover dark:block"
+                                        />
                                     </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-foreground text-base font-semibold">
+                                                {t(`packs.${pack.code}.name`)}
+                                            </p>
+                                            {pack.featured && (
+                                                <span className="border-muted-foreground/25 bg-muted/50 text-muted-foreground rounded-full border px-3 py-0.5 text-xs font-medium">
+                                                    {t(`packs.${pack.code}.badge`)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-muted-foreground mt-0.5 text-sm">
+                                            {t(`packs.${pack.code}.tagline`)}
+                                        </p>
+                                    </div>
+                                </div>
 
-                                    {/* ── Lower: price + button ── */}
-                                    <div className="border-border mt-5 flex items-center justify-between border-t pt-5">
+                                {/* ── Lower: price + executions + button ── */}
+                                <div className="border-border mt-5 flex items-center justify-between border-t pt-5">
+                                    <div>
                                         <p className="text-foreground text-xl font-bold">
                                             {formatPrice(
                                                 pack.priceAmount,
                                                 pack.currency
                                             )}
                                         </p>
-                                        <UiButton
-                                            variant={
-                                                isFeatured
-                                                    ? 'filled'
-                                                    : 'outline'
-                                            }
-                                            size="md"
-                                            className={`relative ${!isFeatured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
-                                            onClick={() =>
-                                                handleOneOffCheckout(pack.code)
-                                            }
-                                            disabled={
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('packs.executions_count', {
+                                                count: pack.executions.toLocaleString('en-US'),
+                                            })}
+                                        </p>
+                                    </div>
+                                    <UiButton
+                                        variant={
+                                            pack.featured
+                                                ? 'filled'
+                                                : 'outline'
+                                        }
+                                        size="md"
+                                        className={`relative ${!pack.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                        onClick={() =>
+                                            handleOneOffCheckout(pack.code)
+                                        }
+                                        disabled={
+                                            loadingAction ===
+                                            `oneoff_${pack.code}`
+                                        }
+                                    >
+                                        <span
+                                            className={
                                                 loadingAction ===
                                                 `oneoff_${pack.code}`
+                                                    ? 'invisible'
+                                                    : ''
                                             }
                                         >
-                                            <span
-                                                className={
-                                                    loadingAction ===
-                                                    `oneoff_${pack.code}`
-                                                        ? 'invisible'
-                                                        : ''
-                                                }
-                                            >
-                                                {t('executions.buy_button')}
-                                            </span>
-                                            {loadingAction ===
-                                                `oneoff_${pack.code}` && (
-                                                <UiSpinner
-                                                    size="sm"
-                                                    className="absolute inset-0 m-auto"
-                                                />
-                                            )}
-                                        </UiButton>
-                                    </div>
+                                            {t('executions.buy_button')}
+                                        </span>
+                                        {loadingAction ===
+                                            `oneoff_${pack.code}` && (
+                                            <UiSpinner
+                                                size="sm"
+                                                className="absolute inset-0 m-auto"
+                                            />
+                                        )}
+                                    </UiButton>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
                 </section>
             )}
