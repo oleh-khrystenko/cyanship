@@ -1,6 +1,6 @@
 'use client';
 
-import { ProofAuth, ProofBilling, ProofLighthouse } from '@/features/proof';
+import { ProofAuth, ProofBilling, ProofLighthouse } from '@/features/agency/proof';
 import type { ProofTabKey } from './types';
 
 interface ProofWindowProps {
