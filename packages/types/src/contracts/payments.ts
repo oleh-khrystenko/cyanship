@@ -12,7 +12,7 @@ export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
 // --- Product Catalog (single source of truth) ---
 
 export const SUBSCRIPTION_PLANS = [
-    { code: 'starter', priceAmount: 1900, currency: 'usd', interval: 'month', executions: 10000 },
+    { code: 'starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000 },
     { code: 'pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000 },
 ] as const;
 

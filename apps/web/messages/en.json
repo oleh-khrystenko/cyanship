@@ -305,7 +305,7 @@
                 "tagline": "For small teams getting started",
                 "features": {
                     "item_1": "Up to 5 team members",
-                    "item_2": "10,000 API requests/month",
+                    "item_2": "10,000 API executions/month",
                     "item_3": "Basic analytics",
                     "item_4": "Email support"
                 }
@@ -316,7 +316,7 @@
                 "badge": "Popular",
                 "features": {
                     "item_1": "Unlimited team members",
-                    "item_2": "100,000 API requests/month",
+                    "item_2": "50,000 API executions/month",
                     "item_3": "Advanced analytics",
                     "item_4": "Priority support",
                     "item_5": "Custom integrations"
