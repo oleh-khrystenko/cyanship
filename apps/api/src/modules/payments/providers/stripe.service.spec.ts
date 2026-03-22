@@ -123,6 +123,7 @@ describe('StripeService', () => {
 
             expect(mockCheckoutCreate).toHaveBeenCalledWith({
                 mode: 'subscription',
+                payment_method_types: ['card'],
                 customer_email: subscriptionInput.userEmail,
                 line_items: [{ price: 'price_test_pro', quantity: 1 }],
                 metadata: {
