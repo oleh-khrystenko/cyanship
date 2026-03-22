@@ -13,8 +13,11 @@ export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
 // Structural identifiers used in DB records, i18n keys, image filenames.
 // Adding a new plan requires: code here + i18n keys + image assets + Stripe Product.
 
-export type SubscriptionPlanCode = 'starter' | 'pro';
-export type ExecutionPackCode = 'basic' | 'max';
+export const SUBSCRIPTION_PLAN_CODES = ['starter', 'pro'] as const;
+export type SubscriptionPlanCode = (typeof SUBSCRIPTION_PLAN_CODES)[number];
+
+export const EXECUTION_PACK_CODES = ['basic', 'max'] as const;
+export type ExecutionPackCode = (typeof EXECUTION_PACK_CODES)[number];
 
 // --- Catalog Types (fetched from Stripe at runtime) ---
 

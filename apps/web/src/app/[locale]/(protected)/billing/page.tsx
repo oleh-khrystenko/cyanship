@@ -31,11 +31,13 @@ export default function BillingPage() {
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
     const [catalog, setCatalog] = useState<PaymentsCatalog | null>(null);
+    const [catalogLoading, setCatalogLoading] = useState(true);
 
     useEffect(() => {
         getCatalog()
             .then(setCatalog)
-            .catch(() => toast.error(t('catalog_error')));
+            .catch(() => toast.error(t('catalog_error')))
+            .finally(() => setCatalogLoading(false));
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!user) return null;
@@ -112,8 +114,13 @@ export default function BillingPage() {
 
     const formatPerExecution = (priceAmount: number, executions: number, currency: string) => {
         if (executions <= 0) return '';
-        const perExecution = Math.round((priceAmount / executions) * 100);
-        return formatPrice(perExecution, currency);
+        const perExecution = priceAmount / 100 / executions;
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currency.toUpperCase(),
+            minimumFractionDigits: 3,
+            maximumFractionDigits: 3,
+        }).format(perExecution);
     };
 
     return (
@@ -129,8 +136,15 @@ export default function BillingPage() {
                 <p className="text-muted-foreground mt-2">{t('description')}</p>
             </div>
 
+            {/* ── Catalog Loading ── */}
+            {catalogLoading && (
+                <div className="flex justify-center py-16">
+                    <UiSpinner size="md" />
+                </div>
+            )}
+
             {/* ── Subscription Section ── */}
-            {PAYMENTS_SUBSCRIPTION_ENABLED && catalog && (
+            {PAYMENTS_SUBSCRIPTION_ENABLED && !catalogLoading && catalog && (
                 <section>
                     <h2 className="text-foreground mb-6 text-2xl font-bold">
                         {hasActive
@@ -357,7 +371,7 @@ export default function BillingPage() {
             )}
 
             {/* ── Executions Section ── */}
-            {PAYMENTS_ONE_OFF_ENABLED && catalog && (
+            {PAYMENTS_ONE_OFF_ENABLED && !catalogLoading && catalog && (
                 <section>
                     <div className="mb-6 flex items-baseline justify-between">
                         <h2 className="text-foreground text-2xl font-bold">
