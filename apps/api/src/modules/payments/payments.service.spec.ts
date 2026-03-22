@@ -11,6 +11,7 @@ import {
 } from '@cyanship/types';
 
 import { PaymentsService } from './payments.service';
+import { CatalogService } from './catalog.service';
 import { PAYMENT_PROVIDER } from './interfaces/payment-provider.interface';
 import { User } from '../users/schemas/user.schema';
 import { ProcessedWebhookEvent } from './schemas/processed-webhook-event.schema';
@@ -23,30 +24,43 @@ jest.mock('../../config/env', () => ({
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
-    STRIPE_SUBSCRIPTION_PLANS: {
-        starter: { priceId: 'price_test_starter', executions: 10000 },
-        pro: { priceId: 'price_test_pro', executions: 50000 },
-    },
-    STRIPE_EXECUTION_PACKS: {
-        basic: { priceId: 'price_test_basic', executions: 5000 },
-        max: { priceId: 'price_test_max', executions: 25000 },
-    },
-    STRIPE_PRICE_TO_PLAN: {
-        price_test_starter: 'starter',
-        price_test_pro: 'pro',
-    },
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
 const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
-    STRIPE_SUBSCRIPTION_PLANS: Record<
-        string,
-        { priceId: string; executions: number }
-    >;
-    STRIPE_EXECUTION_PACKS: Record<string, { priceId: string; executions: number }>;
-    STRIPE_PRICE_TO_PLAN: Record<string, string>;
 };
+
+// ─── Test catalog data ───────────────────────────────────────────────────────
+
+const TEST_CATALOG = {
+    subscriptionPlans: [
+        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
+        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+    ],
+    executionPacks: [
+        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
+        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+    ],
+};
+
+const TEST_PRICE_TO_PLAN: Record<string, string> = {
+    price_test_starter: 'starter',
+    price_test_pro: 'pro',
+};
+
+const mockCatalogService = {
+    getSubscriptionPlan: jest.fn((code: string) =>
+        Promise.resolve(TEST_CATALOG.subscriptionPlans.find(p => p.code === code)),
+    ),
+    getExecutionPack: jest.fn((code: string) =>
+        Promise.resolve(TEST_CATALOG.executionPacks.find(p => p.code === code)),
+    ),
+    getPriceToPlanMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_PLAN),
+    getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const MOCK_USER_ID = '507f1f77bcf86cd799439011';
 
@@ -117,6 +131,7 @@ describe('PaymentsService', () => {
                     useValue: mockOrphanModel,
                 },
                 { provide: UsersService, useValue: mockUsersService },
+                { provide: CatalogService, useValue: mockCatalogService },
             ],
         }).compile();
 

@@ -14,18 +14,13 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreateCheckoutSession,
-    type SubscriptionPlanCode,
 } from '@cyanship/types';
-import {
-    ENV,
-    STRIPE_SUBSCRIPTION_PLANS,
-    STRIPE_EXECUTION_PACKS,
-    STRIPE_PRICE_TO_PLAN,
-} from '../../config/env';
+import { ENV } from '../../config/env';
 import {
     PAYMENT_PROVIDER,
     IPaymentProvider,
 } from './interfaces/payment-provider.interface';
+import { CatalogService } from './catalog.service';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import {
     ProcessedWebhookEvent,
@@ -57,7 +52,9 @@ export class PaymentsService {
         @InjectModel(OrphanedProviderCustomer.name)
         private readonly orphanModel: Model<OrphanedProviderCustomerDocument>,
 
-        private readonly usersService: UsersService
+        private readonly usersService: UsersService,
+
+        private readonly catalogService: CatalogService,
     ) {}
 
     async createCheckoutSession(
@@ -103,8 +100,9 @@ export class PaymentsService {
                     message: 'Already subscribed',
                 });
             }
-            const planEntry =
-                STRIPE_SUBSCRIPTION_PLANS[planCode as SubscriptionPlanCode];
+            const planEntry = await this.catalogService.getSubscriptionPlan(
+                planCode!,
+            );
             if (!planEntry) {
                 throw new BadRequestException('Invalid planCode');
             }
@@ -124,7 +122,9 @@ export class PaymentsService {
         }
 
         // One-off payment
-        const pack = packCode ? STRIPE_EXECUTION_PACKS[packCode] : undefined;
+        const pack = packCode
+            ? await this.catalogService.getExecutionPack(packCode)
+            : undefined;
         if (!pack) {
             throw new BadRequestException('Invalid packCode');
         }
@@ -270,14 +270,9 @@ export class PaymentsService {
             await this.applyOneOffPayment(userId, event);
         } else {
             // Subscription: atomic out-of-order guard + update in one query.
-            // Prevents race condition where two concurrent webhooks read stale
-            // lastProviderEventAt and both pass the ordering check.
-            //
-            // Two-phase approach: MongoDB can't use dot-notation $set on a
-            // field that is explicitly null, so we handle billing=null
-            // (first-ever billing event) separately from billing={...}
-            // (subsequent events).
-            const billingFields = this.buildBillingUpdate(event);
+            const priceToPlan =
+                await this.catalogService.getPriceToPlanMap();
+            const billingFields = this.buildBillingUpdate(event, priceToPlan);
 
             // Phase 1: try dot-notation update for existing billing object
             const dotNotation: Record<string, unknown> = {};
@@ -468,7 +463,8 @@ export class PaymentsService {
     }
 
     private buildBillingUpdate(
-        event: BillingWebhookEvent
+        event: BillingWebhookEvent,
+        priceToPlan: Record<string, string>,
     ): Record<string, unknown> {
         const status = event.subscriptionStatus ?? SUBSCRIPTION_STATUS.UNKNOWN;
         const hasActive =
@@ -514,7 +510,7 @@ export class PaymentsService {
                     | undefined;
                 const priceId = str(items?.data?.[0]?.price?.id ?? null);
                 if (priceId) {
-                    const newPlanCode = STRIPE_PRICE_TO_PLAN[priceId];
+                    const newPlanCode = priceToPlan[priceId];
                     if (newPlanCode) {
                         fields['planCode'] = newPlanCode;
                     }

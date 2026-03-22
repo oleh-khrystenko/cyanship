@@ -65,7 +65,8 @@ docs/
 - `AppModule` → `AuthModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`
 - `AppModule` global providers: `ThrottlerGuard` (APP_GUARD), `OnboardingInterceptor` (APP_INTERCEPTOR)
 - `AuthModule` ↔ `UsersModule` (`forwardRef`, circular)
-- `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` injection token
+- `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` injection token + `CatalogService` + `REDIS_CLIENT`
+- `CatalogService` → own Stripe SDK instance + `REDIS_CLIENT` (no dependency on `IPaymentProvider`)
 - `CleanupService` (cron, 3 AM) → `AuthService` + `UserModel`
 - `PaymentsCleanupService` (cron, 4 AM) → `PAYMENT_PROVIDER` + `OrphanedProviderCustomerModel`
 - Web: `shared/api/client.ts` → axios interceptors → refresh dedupe → `authStore`
@@ -94,6 +95,9 @@ Access JWT в пам'яті (web), refresh JWT в `bid_refresh` httpOnly cookie,
 
 ### Billing/webhook processing
 Provider abstraction (`PAYMENT_PROVIDER` → `StripeService`), two-phase idempotency через `ProcessedWebhookEvent`, atomic out-of-order guard через `lastProviderEventAt` в MongoDB query. Feature flags контролюють subscription/one-off. Orphaned customer cleanup через `OrphanedProviderCustomer` + daily cron. Повна документація: `docs/architecture/payments-flow/README.md`
+
+### Billing catalog (Stripe as single source of truth)
+`CatalogService` (`apps/api/src/modules/payments/catalog.service.ts`) fetches Products/Prices from Stripe API, caches in Redis (TTL 5 min). Has own Stripe SDK instance (not via `IPaymentProvider`) to avoid circular DI. Warms cache on startup (fail-fast). Public endpoint `GET /payments/catalog` — no auth, applies feature flags. Plan/pack codes remain as TypeScript union types (`SubscriptionPlanCode`, `ExecutionPackCode`) — structural identifiers for i18n keys, images, DB records. Business data (prices, executions, display order, featured) comes exclusively from Stripe Product metadata (`code`, `purchase_type`, `executions`, `display_order`, `featured`).
 
 ### Error handling та i18n mapping
 API повертає machine-readable `code` через `AllExceptionsFilter`; web маппить codes на locale keys через `shared/api/mapApiCode.ts`. Конвенція: `docs/conventions/i18n.md`
@@ -141,6 +145,7 @@ Global prefix: `/api`. Rate limiting: `ThrottlerModule` (60 req/min global). Glo
 ### PaymentsController (`apps/api/src/modules/payments/payments.controller.ts`)
 | Метод | Шлях | Guard | Опис |
 |-------|------|-------|------|
+| GET | `/payments/catalog` | — + `@SkipOnboarding()` | Product catalog (from Stripe, cached) |
 | POST | `/payments/checkout-session` | `JwtActiveGuard` | Створення Stripe checkout |
 | POST | `/payments/portal-session` | `JwtActiveGuard` | Створення billing portal URL |
 | POST | `/payments/reset` | `JwtActiveGuard` | Скидання billing (видалення Stripe customer) |
@@ -163,8 +168,6 @@ Scaffold без ендпоінтів.
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_ID_SUB_{CODE}` — one per subscription plan in catalog (e.g. `STRIPE_PRICE_ID_SUB_STARTER`, `STRIPE_PRICE_ID_SUB_PRO`)
-- `STRIPE_PRICE_ID_ONEOFF_{CODE}` — one per credit pack in catalog (e.g. `STRIPE_PRICE_ID_ONEOFF_BASIC`, `STRIPE_PRICE_ID_ONEOFF_MAX`)
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED` (хоча б один `true`)
 - Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
@@ -241,4 +244,6 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 - **Web API double prefix**: `shared/api/payments.ts` додає `/api/payments/...` поверх `apiClient` base URL. З `.env.example` default `NEXT_PUBLIC_API_URL=/api` запити стають `/api/api/payments/...`.
 - **Magic link locale**: `sendMagicLink()` на фронті відправляє `lang`, але backend ігнорує і використовує `user.preferredLang` або fallback `LANG.UK`.
 - **Webhook route dynamic provider**: URL шаблон `/webhook/:provider`, але наразі підтримується тільки `stripe`. Невідомий provider тихо відхиляється.
-- **Orphaned customer retry cap**: `PaymentsCleanupService` робить максимум 5 спроб видалити Stripe customer. Після 5 невдач запис залишається в колекції назавжди — потребує ручного втручання.
+- **Orphaned customer retry cap**: `PaymentsCleanupService` робить максимум 5 спроб видалити Stripe customer. Після 5 невдач запис залишається в колекції назавжни — потребує ручного втручання.
+- **CatalogService own Stripe instance**: `CatalogService` створює власний `new Stripe(...)` для читання Products/Prices. Це зроблено щоб уникнути circular DI з `IPaymentProvider` → `StripeService`. Обидва інстанси використовують один `STRIPE_SECRET_KEY`.
+- **Catalog cache startup**: `CatalogService.onModuleInit()` робить warm fetch до Stripe. Якщо Stripe недоступний при старті — app crash (fail-fast). Після старту cache fallback працює через Redis TTL.

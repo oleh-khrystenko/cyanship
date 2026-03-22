@@ -9,29 +9,42 @@ export const PAYMENT_TYPE = {
 
 export type PaymentType = (typeof PAYMENT_TYPE)[keyof typeof PAYMENT_TYPE];
 
-// --- Product Catalog (single source of truth) ---
+// --- Plan/Pack Code Identifiers ---
+// Structural identifiers used in DB records, i18n keys, image filenames.
+// Adding a new plan requires: code here + i18n keys + image assets + Stripe Product.
 
-export const SUBSCRIPTION_PLANS = [
-    { code: 'starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000 },
-    { code: 'pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000 },
-] as const;
+export type SubscriptionPlanCode = 'starter' | 'pro';
+export type ExecutionPackCode = 'basic' | 'max';
 
-export type SubscriptionPlanCode = (typeof SUBSCRIPTION_PLANS)[number]['code'];
+// --- Catalog Types (fetched from Stripe at runtime) ---
 
-export const SUBSCRIPTION_PLAN_MAP = Object.fromEntries(
-    SUBSCRIPTION_PLANS.map((p) => [p.code, p])
-) as { [K in SubscriptionPlanCode]: Extract<(typeof SUBSCRIPTION_PLANS)[number], { code: K }> };
+export interface SubscriptionPlanItem {
+    code: string;
+    priceId: string;
+    priceAmount: number; // cents
+    currency: string;
+    interval: string; // 'month' | 'year'
+    executions: number;
+    displayOrder: number;
+    featured: boolean;
+}
 
-export const EXECUTION_PACKS = [
-    { code: 'basic', executions: 5000, priceAmount: 2900, currency: 'usd' },
-    { code: 'max', executions: 25000, priceAmount: 9900, currency: 'usd' },
-] as const;
+export interface ExecutionPackItem {
+    code: string;
+    priceId: string;
+    priceAmount: number; // cents
+    currency: string;
+    executions: number;
+    displayOrder: number;
+    featured: boolean;
+}
 
-export type ExecutionPackCode = (typeof EXECUTION_PACKS)[number]['code'];
+export interface PaymentsCatalog {
+    subscriptionPlans: SubscriptionPlanItem[];
+    executionPacks: ExecutionPackItem[];
+}
 
-export const EXECUTION_PACK_MAP = Object.fromEntries(
-    EXECUTION_PACKS.map((p) => [p.code, p])
-) as { [K in ExecutionPackCode]: Extract<(typeof EXECUTION_PACKS)[number], { code: K }> };
+// --- Status & Event Enums ---
 
 export const SUBSCRIPTION_STATUS = {
     ACTIVE: 'ACTIVE',
@@ -61,22 +74,8 @@ export type BillingEventType =
 export const CreateCheckoutSessionSchema = z
     .object({
         paymentType: z.enum([PAYMENT_TYPE.SUBSCRIPTION, PAYMENT_TYPE.ONE_OFF]),
-        planCode: z
-            .enum(
-                SUBSCRIPTION_PLANS.map((p) => p.code) as [
-                    SubscriptionPlanCode,
-                    ...SubscriptionPlanCode[],
-                ]
-            )
-            .optional(),
-        packCode: z
-            .enum(
-                EXECUTION_PACKS.map((p) => p.code) as [
-                    ExecutionPackCode,
-                    ...ExecutionPackCode[],
-                ]
-            )
-            .optional(),
+        planCode: z.string().min(1).optional(),
+        packCode: z.string().min(1).optional(),
     })
     .refine(
         (data) =>

@@ -348,16 +348,11 @@
             "error": "Failed to create payment session"
         },
         "packs": {
-            "basic": {
-                "name": "5,000 Executions",
-                "per_execution": "$0.006 per execution"
-            },
-            "max": {
-                "name": "25,000 Executions",
-                "per_execution": "$0.004 per execution",
-                "badge": "Best Value"
-            }
+            "name": "{count} Executions",
+            "per_execution": "{price} per execution",
+            "badge": "Best Value"
         },
+        "catalog_error": "Failed to load pricing information",
         "callback": {
             "loading": "Processing payment…",
             "success": "Payment successful!",

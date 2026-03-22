@@ -1,12 +1,15 @@
 import { apiClient } from './client';
-import {
-    PAYMENT_TYPE,
-    type SubscriptionPlanCode,
-    type ExecutionPackCode,
-} from '@cyanship/types';
+import { PAYMENT_TYPE, type PaymentsCatalog } from '@cyanship/types';
+
+export async function getCatalog(): Promise<PaymentsCatalog> {
+    const { data } = await apiClient.get<{ data: PaymentsCatalog }>(
+        '/payments/catalog',
+    );
+    return data.data;
+}
 
 export async function createSubscriptionCheckout(
-    planCode: SubscriptionPlanCode,
+    planCode: string,
 ): Promise<{ checkoutUrl: string }> {
     const { data } = await apiClient.post<{
         data: { checkoutUrl: string };
@@ -18,7 +21,7 @@ export async function createSubscriptionCheckout(
 }
 
 export async function createOneOffCheckout(
-    packCode: ExecutionPackCode,
+    packCode: string,
 ): Promise<{ checkoutUrl: string }> {
     const { data } = await apiClient.post<{
         data: { checkoutUrl: string };

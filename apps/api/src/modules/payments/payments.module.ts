@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PaymentsCleanupService } from './payments-cleanup.service';
+import { CatalogService } from './catalog.service';
 import { paymentProviderProvider } from './providers/payment-provider.provider';
 import { StripeService } from './providers/stripe.service';
 import {
@@ -14,6 +15,7 @@ import {
     OrphanedProviderCustomerSchema,
 } from './schemas/orphaned-provider-customer.schema';
 import { UsersModule } from '../users/users.module';
+import { redisProvider } from '../../common/providers/redis.provider';
 
 @Module({
     imports: [
@@ -33,9 +35,11 @@ import { UsersModule } from '../users/users.module';
     providers: [
         PaymentsService,
         PaymentsCleanupService,
+        CatalogService,
         StripeService,
         paymentProviderProvider,
+        redisProvider,
     ],
-    exports: [PaymentsService],
+    exports: [PaymentsService, CatalogService],
 })
 export class PaymentsModule {}

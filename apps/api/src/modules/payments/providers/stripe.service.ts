@@ -7,20 +7,21 @@ import {
     SUBSCRIPTION_STATUS,
     type SubscriptionStatus,
 } from '@cyanship/types';
-import { ENV, STRIPE_PRICE_TO_PLAN } from '../../../config/env';
+import { ENV } from '../../../config/env';
 import {
     IPaymentProvider,
     CreateCheckoutInput,
     CheckoutResult,
     PortalResult,
 } from '../interfaces/payment-provider.interface';
+import { CatalogService } from '../catalog.service';
 
 @Injectable()
 export class StripeService implements IPaymentProvider {
     private readonly stripe: Stripe;
     private readonly logger = new Logger(StripeService.name);
 
-    constructor() {
+    constructor(private readonly catalogService: CatalogService) {
         this.stripe = new Stripe(ENV.STRIPE_SECRET_KEY, {
             apiVersion: '2026-02-25.clover',
         });
@@ -236,7 +237,8 @@ export class StripeService implements IPaymentProvider {
                 return null;
             }
 
-            const planCode = STRIPE_PRICE_TO_PLAN[priceId];
+            const priceToPlan = await this.catalogService.getPriceToPlanMap();
+            const planCode = priceToPlan[priceId];
             if (!planCode) {
                 this.logger.warn(
                     `Unknown priceId ${priceId} in subscription schedule ${scheduleId}`
