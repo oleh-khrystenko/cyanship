@@ -48,6 +48,7 @@ const DogfoodingSection = () => {
         } else {
             if (sheetOpen && activeTab === tab) {
                 setSheetOpen(false);
+                setActiveTab(null);
             } else {
                 setActiveTab(tab);
                 setSheetOpen(true);
