@@ -77,8 +77,8 @@ const DogfoodingSection = () => {
                     </div>
                 </div>
 
-                <UiSheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
-                    <UiSheetContent side="bottom">
+                <UiSheet open={sheetOpen} onOpenChange={handleSheetOpenChange} modal={false}>
+                    <UiSheetContent side="bottom" hideOverlay>
                         <UiSheetHeader>
                             <UiSheetTitle>
                                 {t('proof_shell.sheet_title')}

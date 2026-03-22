@@ -49,11 +49,12 @@ function UiSheetContent({
     className,
     children,
     side = 'right',
+    hideOverlay = false,
     ...props
 }: UiSheetContentProps) {
     return (
         <DialogPrimitive.Portal>
-            <UiSheetOverlay />
+            {!hideOverlay && <UiSheetOverlay />}
             <DialogPrimitive.Content
                 className={composeClasses(
                     'bg-background fixed z-50 flex flex-col gap-4 shadow-lg',
