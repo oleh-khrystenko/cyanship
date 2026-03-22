@@ -38,13 +38,13 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
                     >
                         <div
                             className={composeClasses(
-                                'flex size-6 shrink-0 items-center justify-center rounded-full',
+                                'flex size-10 shrink-0 items-center justify-center rounded-lg',
                                 isActive
                                     ? 'bg-primary text-primary-foreground'
-                                    : 'bg-foreground text-background'
+                                    : 'border border-border bg-secondary text-muted-foreground'
                             )}
                         >
-                            <Icon className="size-3.5" />
+                            <Icon className="size-4" />
                         </div>
                         <span className="text-foreground">{t(labelKey)}</span>
                     </button>
