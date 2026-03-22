@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import {
     UiSheet,
@@ -12,31 +12,60 @@ import ProofTabs from './ProofTabs';
 import ProofWindow from './ProofWindow';
 import type { ProofTabKey } from './types';
 
+const DESKTOP_MQ = '(min-width: 1024px)';
+
 const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
     const [activeTab, setActiveTab] = useState<ProofTabKey | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(false);
+    const tabsRef = useRef<HTMLDivElement>(null);
 
-    const isMobile = () => !window.matchMedia('(min-width: 1024px)').matches;
+    useEffect(() => {
+        const mql = window.matchMedia(DESKTOP_MQ);
+
+        const update = (matches: boolean) => {
+            setIsDesktop(matches);
+
+            if (matches) {
+                setSheetOpen(false);
+                setActiveTab((prev) => prev ?? 'auth');
+            } else {
+                setActiveTab(null);
+            }
+        };
+
+        update(mql.matches);
+
+        const handler = (e: MediaQueryListEvent) => update(e.matches);
+        mql.addEventListener('change', handler);
+        return () => mql.removeEventListener('change', handler);
+    }, []);
 
     const handleTabChange = (tab: ProofTabKey) => {
-        if (isMobile()) {
+        if (isDesktop) {
+            setActiveTab(tab);
+        } else {
             if (sheetOpen && activeTab === tab) {
                 setSheetOpen(false);
             } else {
                 setActiveTab(tab);
                 setSheetOpen(true);
             }
-        } else {
-            setActiveTab(tab);
         }
     };
 
     const handleSheetOpenChange = (open: boolean) => {
         setSheetOpen(open);
 
-        if (!open && isMobile()) {
+        if (!open) {
             setActiveTab(null);
+        }
+    };
+
+    const handleInteractOutside = (e: Event) => {
+        if (tabsRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
         }
     };
 
@@ -59,7 +88,7 @@ const DogfoodingSection = () => {
                             {t('description')}
                         </p>
 
-                        <div className="mt-12">
+                        <div ref={tabsRef} className="mt-12">
                             <ProofTabs
                                 activeTab={activeTab}
                                 onTabChange={handleTabChange}
@@ -81,7 +110,7 @@ const DogfoodingSection = () => {
                     <UiSheetContent
                         side="bottom"
                         hideOverlay
-                        onInteractOutside={(e) => e.preventDefault()}
+                        onInteractOutside={handleInteractOutside}
                     >
                         <UiSheetHeader>
                             <UiSheetTitle>
