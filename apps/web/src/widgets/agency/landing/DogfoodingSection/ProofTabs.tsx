@@ -6,7 +6,7 @@ import { composeClasses } from '@/shared/lib';
 import type { ProofTabKey } from './types';
 
 interface ProofTabsProps {
-    activeTab: ProofTabKey;
+    activeTab: ProofTabKey | null;
     onTabChange: (tab: ProofTabKey) => void;
 }
 

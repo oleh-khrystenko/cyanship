@@ -14,14 +14,24 @@ import type { ProofTabKey } from './types';
 
 const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
-    const [activeTab, setActiveTab] = useState<ProofTabKey>('auth');
+    const [activeTab, setActiveTab] = useState<ProofTabKey | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
+
+    const isMobile = () => !window.matchMedia('(min-width: 1024px)').matches;
 
     const handleTabChange = (tab: ProofTabKey) => {
         setActiveTab(tab);
 
-        if (!window.matchMedia('(min-width: 1024px)').matches) {
+        if (isMobile()) {
             setSheetOpen(true);
+        }
+    };
+
+    const handleSheetOpenChange = (open: boolean) => {
+        setSheetOpen(open);
+
+        if (!open && isMobile()) {
+            setActiveTab(null);
         }
     };
 
@@ -53,25 +63,29 @@ const DogfoodingSection = () => {
                     </div>
 
                     <div className="hidden lg:flex lg:flex-col">
-                        <ProofWindow
-                            activeTab={activeTab}
-                            onRequestAuth={handleRequestAuth}
-                        />
+                        {activeTab && (
+                            <ProofWindow
+                                activeTab={activeTab}
+                                onRequestAuth={handleRequestAuth}
+                            />
+                        )}
                     </div>
                 </div>
 
-                <UiSheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <UiSheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
                     <UiSheetContent side="bottom">
                         <UiSheetHeader>
                             <UiSheetTitle>
                                 {t('proof_shell.sheet_title')}
                             </UiSheetTitle>
                         </UiSheetHeader>
-                        <div className="p-4 pt-0">
-                            <ProofWindow
-                                activeTab={activeTab}
-                                onRequestAuth={handleRequestAuth}
-                            />
+                        <div className="h-[70vh] overflow-y-auto p-4 pt-0">
+                            {activeTab && (
+                                <ProofWindow
+                                    activeTab={activeTab}
+                                    onRequestAuth={handleRequestAuth}
+                                />
+                            )}
                         </div>
                     </UiSheetContent>
                 </UiSheet>
