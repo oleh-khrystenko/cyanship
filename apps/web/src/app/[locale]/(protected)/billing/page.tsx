@@ -245,9 +245,9 @@ export default function BillingPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="border-border bg-card flex items-stretch gap-5 rounded-lg border p-4 md:p-5">
+                        <div className="border-border bg-card flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:gap-5 md:p-5">
                             {billing?.planCode && (
-                                <div className="relative hidden aspect-square w-20 shrink-0 overflow-hidden rounded-md sm:block">
+                                <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-md sm:w-20">
                                     <Image
                                         src={`/images/plans/${billing.planCode}-light.svg`}
                                         alt={t(
@@ -269,8 +269,8 @@ export default function BillingPage() {
                                 </div>
                             )}
 
-                            <div className="flex min-w-0 flex-1 flex-col justify-center">
-                                <div className="flex items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                                     <p className="text-foreground text-base font-semibold">
                                         {t('active.plan_name', {
                                             plan: billing?.planCode
@@ -335,7 +335,7 @@ export default function BillingPage() {
                                         <ExternalLink />
                                     ) : undefined
                                 }
-                                className="relative shrink-0 self-center"
+                                className="relative w-full justify-center sm:w-auto sm:shrink-0"
                                 onClick={handlePortal}
                                 disabled={loadingAction === 'portal'}
                             >
@@ -363,7 +363,7 @@ export default function BillingPage() {
             {/* ── Executions Section ── */}
             {PAYMENTS_ONE_OFF_ENABLED && !catalogLoading && catalog && (
                 <section>
-                    <div className="mb-6 flex items-baseline justify-between">
+                    <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                         <h2 className="text-foreground text-2xl font-bold">
                             {t('executions.title')}
                         </h2>
@@ -481,8 +481,8 @@ export default function BillingPage() {
             {/* ── Reset Billing ── */}
             {hasBillingData && (
                 <section className="border-border border-t pt-8">
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
                             <h2 className="text-foreground text-lg font-semibold">
                                 {t('reset.button')}
                             </h2>
@@ -493,7 +493,7 @@ export default function BillingPage() {
                         <UiButton
                             variant="destructive-outline"
                             size="md"
-                            className="shrink-0"
+                            className="w-full shrink-0 sm:w-auto"
                             onClick={() => setResetDialogOpen(true)}
                         >
                             {t('reset.button')}
