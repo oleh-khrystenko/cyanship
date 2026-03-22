@@ -17,9 +17,10 @@ const DESKTOP_MQ = '(min-width: 1024px)';
 const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
     const [activeTab, setActiveTab] = useState<ProofTabKey | null>(null);
-    const [sheetOpen, setSheetOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
     const tabsRef = useRef<HTMLDivElement>(null);
+
+    const sheetOpen = !isDesktop && activeTab !== null;
 
     useEffect(() => {
         const mql = window.matchMedia(DESKTOP_MQ);
@@ -28,7 +29,6 @@ const DogfoodingSection = () => {
             setIsDesktop(matches);
 
             if (matches) {
-                setSheetOpen(false);
                 setActiveTab((prev) => prev ?? 'auth');
             } else {
                 setActiveTab(null);
@@ -43,22 +43,14 @@ const DogfoodingSection = () => {
     }, []);
 
     const handleTabChange = (tab: ProofTabKey) => {
-        if (isDesktop) {
-            setActiveTab(tab);
+        if (!isDesktop && activeTab === tab) {
+            setActiveTab(null);
         } else {
-            if (sheetOpen && activeTab === tab) {
-                setSheetOpen(false);
-                setActiveTab(null);
-            } else {
-                setActiveTab(tab);
-                setSheetOpen(true);
-            }
+            setActiveTab(tab);
         }
     };
 
     const handleSheetOpenChange = (open: boolean) => {
-        setSheetOpen(open);
-
         if (!open) {
             setActiveTab(null);
         }
