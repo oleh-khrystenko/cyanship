@@ -112,16 +112,6 @@ export default function BillingPage() {
         (p) => p.code === billing?.planCode,
     );
 
-    const formatPerExecution = (priceAmount: number, executions: number, currency: string) => {
-        if (executions <= 0) return '';
-        const perExecution = priceAmount / 100 / executions;
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency.toUpperCase(),
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3,
-        }).format(perExecution);
-    };
 
     return (
         <div className="mx-auto max-w-3xl space-y-10 px-4 py-12">
@@ -399,22 +389,18 @@ export default function BillingPage() {
                                 key={pack.code}
                                 className="border-border bg-card flex flex-col rounded-xl border p-5 md:p-6"
                             >
-                                {/* ── Upper: image + info + badge ── */}
+                                {/* ── Upper: image + name + badge ── */}
                                 <div className="flex items-center gap-4">
                                     <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-lg">
                                         <Image
                                             src={`/images/packs/${pack.code}-light.svg`}
-                                            alt={t('packs.name', {
-                                                count: pack.executions.toLocaleString('en-US'),
-                                            })}
+                                            alt={t(`packs.${pack.code}.name`)}
                                             fill
                                             className="block object-cover dark:hidden"
                                         />
                                         <Image
                                             src={`/images/packs/${pack.code}-dark.svg`}
-                                            alt={t('packs.name', {
-                                                count: pack.executions.toLocaleString('en-US'),
-                                            })}
+                                            alt={t(`packs.${pack.code}.name`)}
                                             fill
                                             className="hidden object-cover dark:block"
                                         />
@@ -422,36 +408,35 @@ export default function BillingPage() {
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center justify-between">
                                             <p className="text-foreground text-base font-semibold">
-                                                {t('packs.name', {
-                                                    count: pack.executions.toLocaleString('en-US'),
-                                                })}
+                                                {t(`packs.${pack.code}.name`)}
                                             </p>
                                             {pack.featured && (
                                                 <span className="border-muted-foreground/25 bg-muted/50 text-muted-foreground rounded-full border px-3 py-0.5 text-xs font-medium">
-                                                    {t('packs.badge')}
+                                                    {t(`packs.${pack.code}.badge`)}
                                                 </span>
                                             )}
                                         </div>
                                         <p className="text-muted-foreground mt-0.5 text-sm">
-                                            {t('packs.per_execution', {
-                                                price: formatPerExecution(
-                                                    pack.priceAmount,
-                                                    pack.executions,
-                                                    pack.currency,
-                                                ),
-                                            })}
+                                            {t(`packs.${pack.code}.tagline`)}
                                         </p>
                                     </div>
                                 </div>
 
-                                {/* ── Lower: price + button ── */}
+                                {/* ── Lower: price + executions + button ── */}
                                 <div className="border-border mt-5 flex items-center justify-between border-t pt-5">
-                                    <p className="text-foreground text-xl font-bold">
-                                        {formatPrice(
-                                            pack.priceAmount,
-                                            pack.currency
-                                        )}
-                                    </p>
+                                    <div>
+                                        <p className="text-foreground text-xl font-bold">
+                                            {formatPrice(
+                                                pack.priceAmount,
+                                                pack.currency
+                                            )}
+                                        </p>
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('packs.executions_count', {
+                                                count: pack.executions.toLocaleString('en-US'),
+                                            })}
+                                        </p>
+                                    </div>
                                     <UiButton
                                         variant={
                                             pack.featured
