@@ -22,7 +22,7 @@ import { REDIS_CLIENT } from '../../common/providers/redis.provider';
 import { ENV, parseLockoutThresholds } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
-import { EmailService } from './services/email.service';
+import { EmailService } from '../email/email.service';
 import { GoogleValidatedUser } from './strategies/google.strategy';
 
 interface TokenPair {
@@ -204,13 +204,13 @@ export class AuthService {
         const user = await this.usersService.findByEmail(normalizedEmail);
         const lang = user?.preferredLang ?? requestLang ?? LANG.EN;
 
-        await this.emailService.sendMagicLink(
-            normalizedEmail,
+        await this.emailService.sendMagicLink({
+            email: normalizedEmail,
             token,
             purpose,
             lang,
-            redirectTo
-        );
+            redirectTo,
+        });
     }
 
     async verifyMagicLink(token: string): Promise<
@@ -272,11 +272,11 @@ export class AuthService {
         deletionDate.setDate(
             deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
         );
-        await this.emailService.sendDeletionConfirmation(
+        await this.emailService.sendDeletionConfirmation({
             email,
             deletionDate,
-            lang
-        );
+            lang,
+        });
     }
 
     private async handleDeleteAccountVerification(email: string): Promise<{

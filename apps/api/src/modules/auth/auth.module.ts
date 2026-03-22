@@ -18,7 +18,6 @@ import { ENV } from '../../config/env';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { EmailService } from './services/email.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
@@ -32,14 +31,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         forwardRef(() => UsersModule),
     ],
     controllers: [AuthController],
-    providers: [
-        AuthService,
-        EmailService,
-        JwtStrategy,
-        GoogleStrategy,
-        redisProvider,
-    ],
-    exports: [AuthService, EmailService, REDIS_CLIENT],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, redisProvider],
+    exports: [AuthService, REDIS_CLIENT],
 })
 export class AuthModule implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(AuthModule.name);

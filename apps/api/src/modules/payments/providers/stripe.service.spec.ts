@@ -27,11 +27,13 @@ const mockCheckoutCreate = jest.fn();
 const mockPortalCreate = jest.fn();
 const mockConstructEvent = jest.fn();
 const mockScheduleRetrieve = jest.fn();
+const mockSubscriptionRetrieve = jest.fn();
 
 const mockStripeInstance = {
     checkout: { sessions: { create: mockCheckoutCreate } },
     billingPortal: { sessions: { create: mockPortalCreate } },
     webhooks: { constructEvent: mockConstructEvent },
+    subscriptions: { retrieve: mockSubscriptionRetrieve },
     subscriptionSchedules: { retrieve: mockScheduleRetrieve },
 };
 
@@ -52,7 +54,7 @@ const makeCheckoutEvent = (overrides: Record<string, unknown> = {}) => ({
             metadata: {
                 userId: 'user123',
                 planCode: 'pro',
-                credits: '0',
+                executions: '0',
             },
             client_reference_id: 'user123',
             customer: 'cus_test_xxx',
@@ -121,12 +123,13 @@ describe('StripeService', () => {
 
             expect(mockCheckoutCreate).toHaveBeenCalledWith({
                 mode: 'subscription',
+                payment_method_types: ['card'],
                 customer_email: subscriptionInput.userEmail,
                 line_items: [{ price: 'price_test_pro', quantity: 1 }],
                 metadata: {
                     userId: subscriptionInput.userId,
                     planCode: subscriptionInput.planCode,
-                    credits: '0',
+                    executions: '0',
                 },
                 client_reference_id: subscriptionInput.userId,
                 success_url: subscriptionInput.successUrl,
@@ -187,7 +190,7 @@ describe('StripeService', () => {
                 paymentType: PAYMENT_TYPE.ONE_OFF,
                 planCode: 'basic',
                 priceId: 'price_test_basic',
-                credits: 5,
+                executions: 5,
                 successUrl: 'https://example.com/success',
                 cancelUrl: 'https://example.com/cancel',
             };
@@ -204,7 +207,7 @@ describe('StripeService', () => {
                     mode: 'payment',
                     line_items: [{ price: 'price_test_basic', quantity: 1 }],
                     metadata: expect.objectContaining({
-                        credits: '5',
+                        executions: '5',
                     }),
                 })
             );
@@ -254,8 +257,15 @@ describe('StripeService', () => {
     describe('handleWebhookPayload', () => {
         const rawBody = Buffer.from('{}');
         const sigHeader = 'stripe-sig';
+        const subscriptionPeriodEnd = 1_703_000_000;
 
-        it('should return CHECKOUT_COMPLETED event with userId from metadata for subscription checkout', async () => {
+        beforeEach(() => {
+            mockSubscriptionRetrieve.mockResolvedValue({
+                items: { data: [{ current_period_end: subscriptionPeriodEnd }] },
+            });
+        });
+
+        it('should return CHECKOUT_COMPLETED event with userId and currentPeriodEnd from subscription', async () => {
             mockConstructEvent.mockReturnValue(makeCheckoutEvent());
 
             const result = await service.handleWebhookPayload(
@@ -268,14 +278,15 @@ describe('StripeService', () => {
                 userId: 'user123',
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                 cancelAtPeriodEnd: false,
-                currentPeriodEnd: null,
+                currentPeriodEnd: new Date(subscriptionPeriodEnd * 1000),
             });
+            expect(mockSubscriptionRetrieve).toHaveBeenCalledWith('sub_test_xxx');
         });
 
         it('should fall back to client_reference_id when metadata.userId is absent', async () => {
             mockConstructEvent.mockReturnValue(
                 makeCheckoutEvent({
-                    metadata: { planCode: 'pro', credits: '0' },
+                    metadata: { planCode: 'pro', executions: '0' },
                     client_reference_id: 'ref_user456',
                 })
             );
@@ -286,6 +297,23 @@ describe('StripeService', () => {
             );
 
             expect(result?.userId).toBe('ref_user456');
+        });
+
+        it('should return currentPeriodEnd as null when subscription retrieve fails', async () => {
+            mockSubscriptionRetrieve.mockRejectedValue(
+                new Error('Stripe API error')
+            );
+            mockConstructEvent.mockReturnValue(makeCheckoutEvent());
+
+            const result = await service.handleWebhookPayload(
+                rawBody,
+                sigHeader
+            );
+
+            expect(result).toMatchObject({
+                type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
+                currentPeriodEnd: null,
+            });
         });
 
         it('should return SUBSCRIPTION_UPDATED event with ACTIVE status and empty userId', async () => {
@@ -473,7 +501,7 @@ describe('StripeService', () => {
                         payment_status: 'paid',
                         metadata: {
                             userId: 'user123',
-                            credits: '5',
+                            executions: '5',
                             planCode: 'basic',
                         },
                         client_reference_id: 'user123',
@@ -488,7 +516,7 @@ describe('StripeService', () => {
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED
                 );
-                expect(result?.creditsAmount).toBe(5);
+                expect(result?.executionsAmount).toBe(5);
                 expect(result?.userId).toBe('user123');
             });
 
@@ -499,7 +527,7 @@ describe('StripeService', () => {
                         payment_status: 'unpaid',
                         metadata: {
                             userId: 'user123',
-                            credits: '5',
+                            executions: '5',
                             planCode: 'basic',
                         },
                         client_reference_id: 'user123',
@@ -514,14 +542,14 @@ describe('StripeService', () => {
                 expect(result).toBeNull();
             });
 
-            it('should return CHECKOUT_COMPLETED for mode=subscription with creditsAmount from metadata', async () => {
+            it('should return CHECKOUT_COMPLETED for mode=subscription with executionsAmount from metadata', async () => {
                 mockConstructEvent.mockReturnValue(
                     makeCheckoutEvent({
                         mode: 'subscription',
                         metadata: {
                             userId: 'user123',
                             planCode: 'starter',
-                            credits: '1000',
+                            executions: '10000',
                         },
                     })
                 );
@@ -534,10 +562,10 @@ describe('StripeService', () => {
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
                 );
-                expect(result?.creditsAmount).toBe(1000);
+                expect(result?.executionsAmount).toBe(10000);
             });
 
-            it('should return CHECKOUT_COMPLETED without creditsAmount when credits metadata is 0', async () => {
+            it('should return CHECKOUT_COMPLETED without executionsAmount when executions metadata is 0', async () => {
                 mockConstructEvent.mockReturnValue(
                     makeCheckoutEvent({ mode: 'subscription' })
                 );
@@ -550,7 +578,7 @@ describe('StripeService', () => {
                 expect(result?.type).toBe(
                     BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
                 );
-                expect(result?.creditsAmount).toBeUndefined();
+                expect(result?.executionsAmount).toBeUndefined();
             });
         });
 
@@ -569,7 +597,7 @@ describe('StripeService', () => {
                             payment_status: 'paid',
                             metadata: {
                                 userId: 'user_async',
-                                credits: '10',
+                                executions: '10',
                                 planCode: 'max',
                             },
                             client_reference_id: 'user_async',
@@ -586,7 +614,7 @@ describe('StripeService', () => {
                     type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                     providerEventId: 'evt_async_paid',
                     userId: 'user_async',
-                    creditsAmount: 10,
+                    executionsAmount: 10,
                     packCode: 'max',
                 });
             });

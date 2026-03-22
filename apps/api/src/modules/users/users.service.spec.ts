@@ -9,7 +9,7 @@ const mockUserDoc = (overrides = {}) => ({
     email: 'test@gmail.com',
     provider: { name: 'google', id: 'google-123' },
     profile: { name: 'John Doe', avatar: 'https://photo.url' },
-    credits: { balance: 0, freeReportUsed: false },
+    executions: { balance: 0, freeReportUsed: false },
     preferredLang: 'uk',
     lastLoginAt: null as Date | null,
     save: jest.fn().mockReturnThis(),
@@ -219,15 +219,15 @@ describe('UsersService', () => {
         });
     });
 
-    describe('addCredits', () => {
-        it('should increment credits.balance by amount', async () => {
+    describe('addExecutions', () => {
+        it('should increment executions.balance by amount', async () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(mockUserDoc());
 
-            await service.addCredits('507f1f77bcf86cd799439011', 10);
+            await service.addExecutions('507f1f77bcf86cd799439011', 10);
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { $inc: { 'credits.balance': 10 } }
+                { $inc: { 'executions.balance': 10 } }
             );
         });
 
@@ -235,18 +235,18 @@ describe('UsersService', () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(null);
 
             await expect(
-                service.addCredits('nonexistent', 5)
+                service.addExecutions('nonexistent', 5)
             ).resolves.toBeUndefined();
         });
     });
 
-    describe('deductCredit', () => {
+    describe('deductExecution', () => {
         it('should deduct from balance atomically when balance > 0', async () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(
-                mockUserDoc({ credits: { balance: 2, freeReportUsed: false } })
+                mockUserDoc({ executions: { balance: 2, freeReportUsed: false } })
             );
 
-            const result = await service.deductCredit(
+            const result = await service.deductExecution(
                 '507f1f77bcf86cd799439011'
             );
 
@@ -254,22 +254,22 @@ describe('UsersService', () => {
             expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
                 {
                     _id: '507f1f77bcf86cd799439011',
-                    'credits.balance': { $gt: 0 },
+                    'executions.balance': { $gt: 0 },
                 },
-                { $inc: { 'credits.balance': -1 } },
+                { $inc: { 'executions.balance': -1 } },
                 { new: true }
             );
         });
 
         it('should use free report atomically when balance is 0 and free report unused', async () => {
-            // First call (paid credit) returns null — no balance
+            // First call (paid execution) returns null — no balance
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
             // Second call (free report) succeeds
             mockModel.findOneAndUpdate.mockResolvedValueOnce(
-                mockUserDoc({ credits: { balance: 0, freeReportUsed: true } })
+                mockUserDoc({ executions: { balance: 0, freeReportUsed: true } })
             );
 
-            const result = await service.deductCredit(
+            const result = await service.deductExecution(
                 '507f1f77bcf86cd799439011'
             );
 
@@ -278,18 +278,18 @@ describe('UsersService', () => {
             expect(mockModel.findOneAndUpdate).toHaveBeenLastCalledWith(
                 {
                     _id: '507f1f77bcf86cd799439011',
-                    'credits.freeReportUsed': false,
+                    'executions.freeReportUsed': false,
                 },
-                { $set: { 'credits.freeReportUsed': true } },
+                { $set: { 'executions.freeReportUsed': true } },
                 { new: true }
             );
         });
 
-        it('should return false when no credits and free report already used', async () => {
+        it('should return false when no executions and free report already used', async () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
 
-            const result = await service.deductCredit(
+            const result = await service.deductExecution(
                 '507f1f77bcf86cd799439011'
             );
 
@@ -300,48 +300,48 @@ describe('UsersService', () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
 
-            const result = await service.deductCredit('nonexistent');
+            const result = await service.deductExecution('nonexistent');
 
             expect(result).toBe(false);
         });
     });
 
-    describe('hasCredit', () => {
+    describe('hasExecution', () => {
         it('should return true when balance > 0', async () => {
             const user = mockUserDoc({
-                credits: { balance: 1, freeReportUsed: true },
+                executions: { balance: 1, freeReportUsed: true },
             });
             mockModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(user),
             });
 
-            expect(await service.hasCredit('507f1f77bcf86cd799439011')).toBe(
+            expect(await service.hasExecution('507f1f77bcf86cd799439011')).toBe(
                 true
             );
         });
 
         it('should return true when free report available', async () => {
             const user = mockUserDoc({
-                credits: { balance: 0, freeReportUsed: false },
+                executions: { balance: 0, freeReportUsed: false },
             });
             mockModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(user),
             });
 
-            expect(await service.hasCredit('507f1f77bcf86cd799439011')).toBe(
+            expect(await service.hasExecution('507f1f77bcf86cd799439011')).toBe(
                 true
             );
         });
 
-        it('should return false when no credits and free report used', async () => {
+        it('should return false when no executions and free report used', async () => {
             const user = mockUserDoc({
-                credits: { balance: 0, freeReportUsed: true },
+                executions: { balance: 0, freeReportUsed: true },
             });
             mockModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(user),
             });
 
-            expect(await service.hasCredit('507f1f77bcf86cd799439011')).toBe(
+            expect(await service.hasExecution('507f1f77bcf86cd799439011')).toBe(
                 false
             );
         });
@@ -351,7 +351,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            expect(await service.hasCredit('nonexistent')).toBe(false);
+            expect(await service.hasExecution('nonexistent')).toBe(false);
         });
     });
 

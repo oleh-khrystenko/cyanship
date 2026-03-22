@@ -7,6 +7,7 @@ export interface UiDropdownMenuItem {
     label: ReactNode;
     value: string;
     icon?: ReactNode;
+    badge?: ReactNode;
 }
 
 export interface UiDropdownMenuProps {
@@ -14,6 +15,7 @@ export interface UiDropdownMenuProps {
     onSelect: (value: string) => void;
     activeValue?: string;
     trigger: ReactNode;
+    header?: ReactNode;
     align?: UiDropdownMenuAlign;
     size?: UiDropdownMenuSize;
     className?: string;

@@ -13,7 +13,7 @@ export const UserProfileDataSchema = z.object({
     avatar: z.string().url().optional(),
 });
 
-export const UserCreditsSchema = z.object({
+export const UserExecutionsSchema = z.object({
     balance: z.number().int().min(0),
     freeReportUsed: z.boolean(),
 });
@@ -23,7 +23,7 @@ export const UserSchema = z.object({
     email: z.string().email(),
     provider: UserProviderSchema.optional(),
     profile: UserProfileDataSchema,
-    credits: UserCreditsSchema,
+    executions: UserExecutionsSchema,
     hasPassword: z.boolean(),
     deletedAt: z.coerce.date().nullable().optional(),
     accountDeletionRequestedAt: z.coerce.date().nullable().optional(),
@@ -39,7 +39,7 @@ export const UserProfileSchema = UserSchema.pick({
     id: true,
     email: true,
     profile: true,
-    credits: true,
+    executions: true,
     hasPassword: true,
     deletedAt: true,
     accountDeletionRequestedAt: true,

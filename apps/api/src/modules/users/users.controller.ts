@@ -46,7 +46,7 @@ export class UsersController {
                 id: user.id as string,
                 email: user.email,
                 profile: user.profile,
-                credits: user.credits,
+                executions: user.executions,
                 hasPassword: !!user.passwordHash,
                 deletedAt: user.deletedAt ?? null,
                 accountDeletionRequestedAt:
@@ -87,7 +87,7 @@ export class UsersController {
                 id: updated!._id,
                 email: updated!.email,
                 profile: updated!.profile,
-                credits: updated!.credits,
+                executions: updated!.executions,
                 hasPassword: !!updated!.passwordHash,
                 deletedAt: updated!.deletedAt ?? null,
                 accountDeletionRequestedAt:

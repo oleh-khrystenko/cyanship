@@ -19,7 +19,7 @@ import {
 import {
     ENV,
     STRIPE_SUBSCRIPTION_PLANS,
-    STRIPE_CREDIT_PACKS,
+    STRIPE_EXECUTION_PACKS,
     STRIPE_PRICE_TO_PLAN,
 } from '../../config/env';
 import {
@@ -116,7 +116,7 @@ export class PaymentsService {
                 paymentType,
                 planCode: planCode!,
                 priceId: planEntry.priceId,
-                credits: planEntry.credits,
+                executions: planEntry.executions,
                 successUrl,
                 cancelUrl,
             });
@@ -124,7 +124,7 @@ export class PaymentsService {
         }
 
         // One-off payment
-        const pack = packCode ? STRIPE_CREDIT_PACKS[packCode] : undefined;
+        const pack = packCode ? STRIPE_EXECUTION_PACKS[packCode] : undefined;
         if (!pack) {
             throw new BadRequestException('Invalid packCode');
         }
@@ -135,7 +135,7 @@ export class PaymentsService {
             paymentType,
             planCode: packCode!,
             priceId: pack.priceId,
-            credits: pack.credits,
+            executions: pack.executions,
             successUrl,
             cancelUrl,
         });
@@ -178,7 +178,7 @@ export class PaymentsService {
         await this.userModel.findByIdAndUpdate(userId, {
             $set: {
                 billing: null,
-                credits: { balance: 0, freeReportUsed: false },
+                executions: { balance: 0, freeReportUsed: false },
             },
         });
         await this.webhookEventModel.deleteMany({ userId });
@@ -318,9 +318,9 @@ export class PaymentsService {
                 }
             }
 
-            // Allocate credits on initial subscription checkout
+            // Allocate executions on initial subscription checkout
             if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
-                await this.applySubscriptionCredits(userId, event);
+                await this.applySubscriptionExecutions(userId, event);
             }
         }
 
@@ -433,20 +433,20 @@ export class PaymentsService {
         }
     }
 
-    private async applySubscriptionCredits(
+    private async applySubscriptionExecutions(
         userId: string,
         event: BillingWebhookEvent
     ): Promise<void> {
-        const credits = event.creditsAmount ?? 0;
-        if (!Number.isFinite(credits) || credits <= 0) {
+        const executionsAmount = event.executionsAmount ?? 0;
+        if (!Number.isFinite(executionsAmount) || executionsAmount <= 0) {
             this.logger.warn(
-                `CHECKOUT_COMPLETED event ${event.providerEventId} has no creditsAmount`
+                `CHECKOUT_COMPLETED event ${event.providerEventId} has no executionsAmount`
             );
             return;
         }
-        await this.usersService.addCredits(userId, credits);
+        await this.usersService.addExecutions(userId, executionsAmount);
         this.logger.log(
-            `Added ${credits} subscription credits to user ${userId} (event: ${event.providerEventId})`
+            `Added ${executionsAmount} subscription executions to user ${userId} (event: ${event.providerEventId})`
         );
     }
 
@@ -454,16 +454,16 @@ export class PaymentsService {
         userId: string,
         event: BillingWebhookEvent
     ): Promise<void> {
-        const credits = event.creditsAmount ?? 0;
-        if (!Number.isFinite(credits) || credits <= 0) {
+        const executionsAmount = event.executionsAmount ?? 0;
+        if (!Number.isFinite(executionsAmount) || executionsAmount <= 0) {
             this.logger.warn(
-                `ONE_OFF_PAYMENT_COMPLETED event ${event.providerEventId} has no creditsAmount`
+                `ONE_OFF_PAYMENT_COMPLETED event ${event.providerEventId} has no executionsAmount`
             );
             return;
         }
-        await this.usersService.addCredits(userId, credits);
+        await this.usersService.addExecutions(userId, executionsAmount);
         this.logger.log(
-            `Added ${credits} credits to user ${userId} (event: ${event.providerEventId})`
+            `Added ${executionsAmount} executions to user ${userId} (event: ${event.providerEventId})`
         );
     }
 

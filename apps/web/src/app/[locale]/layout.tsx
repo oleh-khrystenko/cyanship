@@ -43,13 +43,13 @@ export default async function LocaleLayout({
                 <meta name="color-scheme" content="light dark" />
                 <link
                     rel="icon"
-                    href="/logo-light-theme.svg"
+                    href="/logo/light-theme.svg"
                     type="image/svg+xml"
                     media="(prefers-color-scheme: light)"
                 />
                 <link
                     rel="icon"
-                    href="/logo-dark-theme.svg"
+                    href="/logo/dark-theme.svg"
                     type="image/svg+xml"
                     media="(prefers-color-scheme: dark)"
                 />

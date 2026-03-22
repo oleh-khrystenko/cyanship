@@ -59,9 +59,18 @@ const DangerZone = () => {
                 toast.success(tModal('magic_link_sent'));
             }
         } catch (error) {
-            const is429 =
-                error instanceof AxiosError && error.response?.status === 429;
-            toast.error(is429 ? tModal('rate_limit') : tModal('invalid_password'));
+            const code =
+                error instanceof AxiosError
+                    ? error.response?.data?.error?.code
+                    : undefined;
+
+            if (code === 'RATE_LIMIT_EXCEEDED') {
+                toast.error(tModal('rate_limit'));
+            } else if (code === 'EMAIL_SEND_FAILED') {
+                toast.error(tModal('error_generic'));
+            } else {
+                toast.error(tModal('invalid_password'));
+            }
         } finally {
             setLoading(false);
         }
