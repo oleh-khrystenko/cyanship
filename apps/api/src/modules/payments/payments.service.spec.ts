@@ -11,6 +11,7 @@ import {
 } from '@cyanship/types';
 
 import { PaymentsService } from './payments.service';
+import { CatalogService } from './catalog.service';
 import { PAYMENT_PROVIDER } from './interfaces/payment-provider.interface';
 import { User } from '../users/schemas/user.schema';
 import { ProcessedWebhookEvent } from './schemas/processed-webhook-event.schema';
@@ -23,30 +24,49 @@ jest.mock('../../config/env', () => ({
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
-    STRIPE_SUBSCRIPTION_PLANS: {
-        starter: { priceId: 'price_test_starter', executions: 10000 },
-        pro: { priceId: 'price_test_pro', executions: 50000 },
-    },
-    STRIPE_EXECUTION_PACKS: {
-        basic: { priceId: 'price_test_basic', executions: 5000 },
-        max: { priceId: 'price_test_max', executions: 20000 },
-    },
-    STRIPE_PRICE_TO_PLAN: {
-        price_test_starter: 'starter',
-        price_test_pro: 'pro',
-    },
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
 const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
-    STRIPE_SUBSCRIPTION_PLANS: Record<
-        string,
-        { priceId: string; executions: number }
-    >;
-    STRIPE_EXECUTION_PACKS: Record<string, { priceId: string; executions: number }>;
-    STRIPE_PRICE_TO_PLAN: Record<string, string>;
 };
+
+// ─── Test catalog data ───────────────────────────────────────────────────────
+
+const TEST_CATALOG = {
+    subscriptionPlans: [
+        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
+        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+    ],
+    executionPacks: [
+        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
+        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+    ],
+};
+
+const TEST_PRICE_TO_PLAN: Record<string, string> = {
+    price_test_starter: 'starter',
+    price_test_pro: 'pro',
+};
+
+const TEST_PRICE_TO_EXECUTIONS: Record<string, number> = {
+    price_test_starter: 10000,
+    price_test_pro: 50000,
+};
+
+const mockCatalogService = {
+    getSubscriptionPlan: jest.fn((code: string) =>
+        Promise.resolve(TEST_CATALOG.subscriptionPlans.find(p => p.code === code)),
+    ),
+    getExecutionPack: jest.fn((code: string) =>
+        Promise.resolve(TEST_CATALOG.executionPacks.find(p => p.code === code)),
+    ),
+    getPriceToPlanMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_PLAN),
+    getPriceToExecutionsMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_EXECUTIONS),
+    getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const MOCK_USER_ID = '507f1f77bcf86cd799439011';
 
@@ -117,6 +137,7 @@ describe('PaymentsService', () => {
                     useValue: mockOrphanModel,
                 },
                 { provide: UsersService, useValue: mockUsersService },
+                { provide: CatalogService, useValue: mockCatalogService },
             ],
         }).compile();
 
@@ -1149,12 +1170,37 @@ describe('PaymentsService', () => {
             });
         });
 
-        // ── Subscription executions ──────────────────────────────────
+        // ── Subscription executions (atomic pipeline) ────────────────
+
+        /**
+         * Extracts the execution adjustment amount embedded in a
+         * findOneAndUpdate aggregation pipeline call, or null if the
+         * update was a plain object (no execution adjustment).
+         */
+        const pipelineAdjustment = (callIndex = 0): number | null => {
+            const update =
+                mockUserModel.findOneAndUpdate.mock.calls[callIndex]?.[1];
+            if (!Array.isArray(update)) return null;
+            try {
+                const stage = update[0] as Record<
+                    string,
+                    Record<string, unknown>
+                >;
+                const balance = stage.$set['executions.balance'] as {
+                    $cond: {
+                        then: { $max: [number, { $add: [string, number] }] };
+                    };
+                };
+                return balance.$cond.then.$max[1].$add[1];
+            } catch {
+                return null;
+            }
+        };
 
         describe('subscription executions', () => {
             const occurredAt = new Date('2024-01-01T00:00:00Z');
 
-            it('should add executions on CHECKOUT_COMPLETED when executionsAmount is present', async () => {
+            it('should include execution adjustment in atomic pipeline on CHECKOUT_COMPLETED', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_sub_credits',
@@ -1178,17 +1224,15 @@ describe('PaymentsService', () => {
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUsersService.addExecutions.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
-                    MOCK_USER_ID,
-                    10000
-                );
+                // Execution adjustment is inside the atomic pipeline, NOT a separate call
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBe(10000);
             });
 
-            it('should NOT add executions on CHECKOUT_COMPLETED when executionsAmount is missing', async () => {
+            it('should use plain $set on CHECKOUT_COMPLETED when executionsAmount is missing', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_sub_no_credits',
@@ -1215,9 +1259,10 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
             });
 
-            it('should NOT add executions on SUBSCRIPTION_UPDATED', async () => {
+            it('should use plain $set on SUBSCRIPTION_UPDATED without plan change', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_sub_updated_no_credits',
@@ -1238,6 +1283,218 @@ describe('PaymentsService', () => {
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBeNull();
+            });
+        });
+
+        // ── Plan change proration (atomic pipeline) ──────────────────
+
+        describe('plan change proration', () => {
+            // Period: 30 days, event occurs at day 15 → remainingRatio = 0.5
+            const periodStart = new Date('2024-01-01T00:00:00Z');
+            const periodEnd = new Date('2024-01-31T00:00:00Z');
+            const midPeriod = new Date('2024-01-16T00:00:00Z');
+
+            it('should include prorated upgrade adjustment in atomic pipeline (starter → pro)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_upgrade',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_starter',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // delta = 50000 - 10000 = 40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
+                expect(pipelineAdjustment()).toBe(20000);
+            });
+
+            it('should include prorated downgrade adjustment in atomic pipeline (pro → starter)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_downgrade',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_pro',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_starter' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // delta = 10000 - 50000 = -40000, ratio ≈ 0.5, adjustment = -20000
+                expect(pipelineAdjustment()).toBe(-20000);
+            });
+
+            it('should use plain $set when previousPriceId is absent (no plan change)', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_no_change',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(pipelineAdjustment()).toBeNull();
+            });
+
+            it('should use plain $set when previousPriceId equals current priceId', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_same_price',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_pro',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(pipelineAdjustment()).toBeNull();
+            });
+
+            it('should use plain $set when price is unknown in catalog', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_unknown_plan',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_unknown_old',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                expect(pipelineAdjustment()).toBeNull();
+            });
+
+            it('should use full delta when period boundaries are missing', async () => {
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_no_period',
+                    occurredAt: midPeriod,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodEnd: null,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_starter',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // No period info → ratio = 1.0 → full delta = 40000
+                expect(pipelineAdjustment()).toBe(40000);
+            });
+
+            it('should floor the prorated adjustment', async () => {
+                // Period: 30 days, event at day 10 → remaining 20/30 ≈ 0.6667
+                const earlyEvent = new Date('2024-01-11T00:00:00Z');
+                const event: BillingWebhookEvent = {
+                    type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
+                    providerEventId: 'evt_floor',
+                    occurredAt: earlyEvent,
+                    userId: MOCK_USER_ID,
+                    subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
+                    currentPeriodStart: periodStart,
+                    currentPeriodEnd: periodEnd,
+                    cancelAtPeriodEnd: false,
+                    previousPriceId: 'price_test_starter',
+                    raw: {
+                        status: 'active',
+                        items: {
+                            data: [{ price: { id: 'price_test_pro' } }],
+                        },
+                    },
+                };
+
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockWebhookEventModel.create.mockResolvedValue({});
+                mockUserModel.findOneAndUpdate.mockResolvedValue({});
+
+                await service.handleWebhook('stripe', rawBody, signature);
+
+                // delta = 40000, remaining = 20 days out of 30 → ratio = 20/30
+                // adjustment = floor(40000 * 20/30) = floor(26666.67) = 26666
+                expect(pipelineAdjustment()).toBe(26666);
             });
         });
 

@@ -14,18 +14,13 @@ import {
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
     type CreateCheckoutSession,
-    type SubscriptionPlanCode,
 } from '@cyanship/types';
-import {
-    ENV,
-    STRIPE_SUBSCRIPTION_PLANS,
-    STRIPE_EXECUTION_PACKS,
-    STRIPE_PRICE_TO_PLAN,
-} from '../../config/env';
+import { ENV } from '../../config/env';
 import {
     PAYMENT_PROVIDER,
     IPaymentProvider,
 } from './interfaces/payment-provider.interface';
+import { CatalogService } from './catalog.service';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import {
     ProcessedWebhookEvent,
@@ -57,7 +52,9 @@ export class PaymentsService {
         @InjectModel(OrphanedProviderCustomer.name)
         private readonly orphanModel: Model<OrphanedProviderCustomerDocument>,
 
-        private readonly usersService: UsersService
+        private readonly usersService: UsersService,
+
+        private readonly catalogService: CatalogService,
     ) {}
 
     async createCheckoutSession(
@@ -103,8 +100,9 @@ export class PaymentsService {
                     message: 'Already subscribed',
                 });
             }
-            const planEntry =
-                STRIPE_SUBSCRIPTION_PLANS[planCode as SubscriptionPlanCode];
+            const planEntry = await this.catalogService.getSubscriptionPlan(
+                planCode!,
+            );
             if (!planEntry) {
                 throw new BadRequestException('Invalid planCode');
             }
@@ -124,7 +122,9 @@ export class PaymentsService {
         }
 
         // One-off payment
-        const pack = packCode ? STRIPE_EXECUTION_PACKS[packCode] : undefined;
+        const pack = packCode
+            ? await this.catalogService.getExecutionPack(packCode)
+            : undefined;
         if (!pack) {
             throw new BadRequestException('Invalid packCode');
         }
@@ -241,13 +241,24 @@ export class PaymentsService {
         // 4. Process event — rollback idempotency record on failure
         try {
             await this.processWebhookEvent(event, userId);
-            await this.markWebhookEventApplied(provider, event.providerEventId);
         } catch (error) {
             await this.rollbackPendingWebhookEvent(
                 provider,
                 event.providerEventId
             );
             throw error;
+        }
+
+        // 5. Mark as applied — non-fatal on failure (event was already processed;
+        //    returning 200 prevents Stripe from retrying and double-counting).
+        try {
+            await this.markWebhookEventApplied(provider, event.providerEventId);
+        } catch (error) {
+            this.logger.error(
+                `Failed to mark webhook event ${event.providerEventId} as applied ` +
+                    `(event was processed successfully)`,
+                error instanceof Error ? error.stack : String(error),
+            );
         }
     }
 
@@ -269,64 +280,100 @@ export class PaymentsService {
             }
             await this.applyOneOffPayment(userId, event);
         } else {
-            // Subscription: atomic out-of-order guard + update in one query.
-            // Prevents race condition where two concurrent webhooks read stale
-            // lastProviderEventAt and both pass the ordering check.
-            //
-            // Two-phase approach: MongoDB can't use dot-notation $set on a
-            // field that is explicitly null, so we handle billing=null
-            // (first-ever billing event) separately from billing={...}
-            // (subsequent events).
-            const billingFields = this.buildBillingUpdate(event);
-
-            // Phase 1: try dot-notation update for existing billing object
-            const dotNotation: Record<string, unknown> = {};
-            for (const [key, value] of Object.entries(billingFields)) {
-                dotNotation[`billing.${key}`] = value;
-            }
-
-            const updated = await this.userModel.findOneAndUpdate(
-                {
-                    _id: userId,
-                    billing: { $ne: null },
-                    $or: [
-                        { 'billing.lastProviderEventAt': null },
-                        {
-                            'billing.lastProviderEventAt': {
-                                $lte: event.occurredAt,
-                            },
-                        },
-                    ],
-                },
-                { $set: dotNotation },
-                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
-            );
-
-            if (!updated) {
-                // Phase 2: billing is null (first billing event) — set full subdocument
-                const initialized = await this.userModel.findOneAndUpdate(
-                    { _id: userId, billing: null },
-                    { $set: { billing: billingFields } },
-                    { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
-                );
-
-                if (!initialized) {
-                    this.logger.debug(
-                        `Skipping stale/orphan event ${event.providerEventId} for user ${userId}`
-                    );
-                    return;
-                }
-            }
-
-            // Allocate executions on initial subscription checkout
-            if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
-                await this.applySubscriptionExecutions(userId, event);
-            }
+            // Subscription: billing + execution adjustment in one atomic query
+            const applied = await this.processSubscriptionEvent(event, userId);
+            if (!applied) return;
         }
 
         this.logger.log(
             `Processed ${event.type} for user ${userId} (event: ${event.providerEventId})`
         );
+    }
+
+    /**
+     * Processes subscription events atomically: billing state and execution
+     * adjustment are combined in a single MongoDB aggregation pipeline update.
+     *
+     * The execution adjustment uses a $cond guard on lastProviderEventAt ($lt,
+     * not $lte) so that replayed events (same occurredAt) do NOT double-count.
+     * The billing $set itself is idempotent (same values re-applied on replay).
+     */
+    private async processSubscriptionEvent(
+        event: BillingWebhookEvent,
+        userId: string,
+    ): Promise<boolean> {
+        const priceToPlan = await this.catalogService.getPriceToPlanMap();
+        const billingFields = this.buildBillingUpdate(event, priceToPlan);
+        const executionAdjustment =
+            await this.resolveExecutionAdjustment(event);
+
+        // Phase 1: dot-notation update for existing billing object
+        const dotNotation: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(billingFields)) {
+            dotNotation[`billing.${key}`] = value;
+        }
+
+        const phase1Update = this.buildAtomicUpdatePipeline(
+            { $set: dotNotation },
+            executionAdjustment,
+            event.occurredAt,
+        );
+
+        const updated = await this.userModel.findOneAndUpdate(
+            {
+                _id: userId,
+                billing: { $ne: null },
+                $or: [
+                    { 'billing.lastProviderEventAt': null },
+                    {
+                        'billing.lastProviderEventAt': {
+                            $lte: event.occurredAt,
+                        },
+                    },
+                ],
+            },
+            phase1Update,
+            { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
+        );
+
+        if (!updated) {
+            // Phase 2: billing is null (first billing event) — set full subdocument.
+            // The { billing: null } filter guarantees exactly-once, so no $cond
+            // guard is needed — but buildAtomicUpdatePipeline still adds it for
+            // consistency (it evaluates to true when lastProviderEventAt is null).
+            const phase2Update = this.buildAtomicUpdatePipeline(
+                { $set: { billing: billingFields } },
+                executionAdjustment,
+                event.occurredAt,
+            );
+
+            const initialized = await this.userModel.findOneAndUpdate(
+                { _id: userId, billing: null },
+                phase2Update,
+                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
+            );
+
+            if (!initialized) {
+                this.logger.debug(
+                    `Skipping stale/orphan event ${event.providerEventId} for user ${userId}`
+                );
+                return false;
+            }
+        }
+
+        if (executionAdjustment !== 0) {
+            const action = executionAdjustment > 0 ? 'Added' : 'Deducted';
+            const reason =
+                event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
+                    ? 'subscription checkout'
+                    : 'plan change proration';
+            this.logger.log(
+                `${action} ${Math.abs(executionAdjustment)} executions for ${reason} ` +
+                    `(user: ${userId}, event: ${event.providerEventId})`,
+            );
+        }
+
+        return true;
     }
 
     private async resolveUserId(
@@ -433,23 +480,6 @@ export class PaymentsService {
         }
     }
 
-    private async applySubscriptionExecutions(
-        userId: string,
-        event: BillingWebhookEvent
-    ): Promise<void> {
-        const executionsAmount = event.executionsAmount ?? 0;
-        if (!Number.isFinite(executionsAmount) || executionsAmount <= 0) {
-            this.logger.warn(
-                `CHECKOUT_COMPLETED event ${event.providerEventId} has no executionsAmount`
-            );
-            return;
-        }
-        await this.usersService.addExecutions(userId, executionsAmount);
-        this.logger.log(
-            `Added ${executionsAmount} subscription executions to user ${userId} (event: ${event.providerEventId})`
-        );
-    }
-
     private async applyOneOffPayment(
         userId: string,
         event: BillingWebhookEvent
@@ -467,8 +497,155 @@ export class PaymentsService {
         );
     }
 
+    private async resolveExecutionAdjustment(
+        event: BillingWebhookEvent,
+    ): Promise<number> {
+        if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
+            const amount = event.executionsAmount ?? 0;
+            if (!Number.isFinite(amount) || amount <= 0) {
+                this.logger.warn(
+                    `CHECKOUT_COMPLETED event ${event.providerEventId} has no executionsAmount`,
+                );
+                return 0;
+            }
+            return amount;
+        }
+
+        if (event.type === BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED) {
+            return this.calculatePlanChangeAdjustment(event);
+        }
+
+        return 0;
+    }
+
+    private async calculatePlanChangeAdjustment(
+        event: BillingWebhookEvent,
+    ): Promise<number> {
+        if (!event.previousPriceId) return 0;
+
+        const items = event.raw.items as
+            | { data?: Array<{ price?: { id?: string } }> }
+            | undefined;
+        const currentPriceId =
+            typeof items?.data?.[0]?.price?.id === 'string'
+                ? items.data[0].price.id
+                : null;
+
+        if (!currentPriceId || currentPriceId === event.previousPriceId) return 0;
+
+        const priceToExecutions =
+            await this.catalogService.getPriceToExecutionsMap();
+        const oldExecutions = priceToExecutions[event.previousPriceId];
+        const newExecutions = priceToExecutions[currentPriceId];
+
+        if (oldExecutions == null || newExecutions == null) {
+            this.logger.warn(
+                `Cannot calculate prorated executions: ` +
+                    `old price ${event.previousPriceId} (${oldExecutions ?? 'unknown'}), ` +
+                    `new price ${currentPriceId} (${newExecutions ?? 'unknown'}) ` +
+                    `(event: ${event.providerEventId})`,
+            );
+            return 0;
+        }
+
+        const delta = newExecutions - oldExecutions;
+        if (delta === 0) return 0;
+
+        const remainingRatio = this.calculateRemainingPeriodRatio(event);
+        const adjustment = Math.floor(Math.abs(delta) * remainingRatio);
+        if (adjustment <= 0) return 0;
+
+        return delta > 0 ? adjustment : -adjustment;
+    }
+
+    /**
+     * Wraps a billing $set stage in an aggregation pipeline that atomically
+     * adjusts executions.balance. The adjustment is guarded by a $cond on
+     * lastProviderEventAt ($lt, strict) so replayed events (same occurredAt)
+     * do NOT double-count. When executionAdjustment is 0, returns the plain
+     * billingStage (no pipeline overhead).
+     */
+    private buildAtomicUpdatePipeline(
+        billingStage: Record<string, unknown>,
+        executionAdjustment: number,
+        occurredAt: Date,
+    ): Record<string, unknown>[] | Record<string, unknown> {
+        if (executionAdjustment === 0) {
+            return billingStage;
+        }
+
+        return [
+            // Stage 1: adjust executions BEFORE lastProviderEventAt is overwritten.
+            // Uses $lt (strict) so that replayed events (equal timestamp) are no-ops.
+            {
+                $set: {
+                    'executions.balance': {
+                        $cond: {
+                            if: {
+                                $or: [
+                                    {
+                                        $eq: [
+                                            '$billing.lastProviderEventAt',
+                                            null,
+                                        ],
+                                    },
+                                    {
+                                        $lt: [
+                                            '$billing.lastProviderEventAt',
+                                            occurredAt,
+                                        ],
+                                    },
+                                ],
+                            },
+                            then: {
+                                $max: [
+                                    0,
+                                    {
+                                        $add: [
+                                            '$executions.balance',
+                                            executionAdjustment,
+                                        ],
+                                    },
+                                ],
+                            },
+                            else: '$executions.balance',
+                        },
+                    },
+                },
+            },
+            // Stage 2: update billing fields (including lastProviderEventAt)
+            billingStage,
+        ];
+    }
+
+    private calculateRemainingPeriodRatio(
+        event: BillingWebhookEvent,
+    ): number {
+        const periodStart = event.currentPeriodStart;
+        const periodEnd = event.currentPeriodEnd;
+
+        if (!periodStart || !periodEnd) {
+            this.logger.warn(
+                `Missing period boundaries for proration (event: ${event.providerEventId}), ` +
+                    `defaulting to full period`
+            );
+            return 1;
+        }
+
+        const now = event.occurredAt.getTime();
+        const start = periodStart.getTime();
+        const end = periodEnd.getTime();
+        const totalPeriod = end - start;
+
+        if (totalPeriod <= 0) return 0;
+
+        const remaining = end - now;
+        return Math.max(0, Math.min(1, remaining / totalPeriod));
+    }
+
     private buildBillingUpdate(
-        event: BillingWebhookEvent
+        event: BillingWebhookEvent,
+        priceToPlan: Record<string, string>,
     ): Record<string, unknown> {
         const status = event.subscriptionStatus ?? SUBSCRIPTION_STATUS.UNKNOWN;
         const hasActive =
@@ -514,7 +691,7 @@ export class PaymentsService {
                     | undefined;
                 const priceId = str(items?.data?.[0]?.price?.id ?? null);
                 if (priceId) {
-                    const newPlanCode = STRIPE_PRICE_TO_PLAN[priceId];
+                    const newPlanCode = priceToPlan[priceId];
                     if (newPlanCode) {
                         fields['planCode'] = newPlanCode;
                     }

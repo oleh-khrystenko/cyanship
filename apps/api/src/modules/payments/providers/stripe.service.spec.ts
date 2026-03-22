@@ -4,10 +4,6 @@ jest.mock('../../../config/env', () => ({
         STRIPE_SECRET_KEY: 'sk_test_xxx',
         STRIPE_WEBHOOK_SECRET: 'whsec_test',
     },
-    STRIPE_PRICE_TO_PLAN: {
-        price_test_starter: 'starter',
-        price_test_pro: 'pro',
-    },
 }));
 
 import Stripe from 'stripe';
@@ -19,7 +15,22 @@ import {
 } from '@cyanship/types';
 
 import { StripeService } from './stripe.service';
+import { CatalogService } from '../catalog.service';
 import { CreateCheckoutInput } from '../interfaces/payment-provider.interface';
+
+// ─── Test catalog data ───────────────────────────────────────────────────────
+
+const TEST_PRICE_TO_PLAN: Record<string, string> = {
+    price_test_starter: 'starter',
+    price_test_pro: 'pro',
+};
+
+const mockCatalogService = {
+    getPriceToPlanMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_PLAN),
+    getSubscriptionPlan: jest.fn(),
+    getExecutionPack: jest.fn(),
+    getCatalog: jest.fn(),
+};
 
 // ─── Mock instances shared across tests ─────────────────────────────────────
 
@@ -103,7 +114,10 @@ describe('StripeService', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
-            providers: [StripeService],
+            providers: [
+                StripeService,
+                { provide: CatalogService, useValue: mockCatalogService },
+            ],
         }).compile();
 
         service = module.get<StripeService>(StripeService);

@@ -34,6 +34,7 @@ import {
 } from '../src/modules/payments/schemas/processed-webhook-event.schema';
 import { EmailService } from '../src/modules/email/email.service';
 import { PAYMENT_PROVIDER } from '../src/modules/payments/interfaces/payment-provider.interface';
+import { CatalogService } from '../src/modules/payments/catalog.service';
 
 // ─── Mock ENV ────────────────────────────────────────────────────────────────
 
@@ -64,14 +65,6 @@ jest.mock('../src/config/env', () => ({
         PAYMENTS_SUBSCRIPTION_ENABLED: true,
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
-    STRIPE_SUBSCRIPTION_PLANS: {
-        starter: { priceId: 'price_test_starter' },
-        pro: { priceId: 'price_test_pro' },
-    },
-    STRIPE_EXECUTION_PACKS: {
-        basic: { priceId: 'price_test_basic', executions: 5 },
-        max: { priceId: 'price_test_max', executions: 20 },
-    },
     parseLockoutThresholds: (raw: string) =>
         raw.split(',').map((entry: string) => {
             const [attempts, blockMin] = entry.split(':').map(Number);
@@ -82,6 +75,34 @@ jest.mock('../src/config/env', () => ({
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
 const envModule = require('../src/config/env') as {
     ENV: Record<string, unknown>;
+};
+
+// ─── Test catalog data ───────────────────────────────────────────────────────
+
+const TEST_CATALOG = {
+    subscriptionPlans: [
+        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
+        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+    ],
+    executionPacks: [
+        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
+        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+    ],
+};
+
+const mockCatalogService = {
+    onModuleInit: jest.fn().mockResolvedValue(undefined),
+    getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
+    getSubscriptionPlan: jest.fn((code: string) =>
+        Promise.resolve(TEST_CATALOG.subscriptionPlans.find(p => p.code === code)),
+    ),
+    getExecutionPack: jest.fn((code: string) =>
+        Promise.resolve(TEST_CATALOG.executionPacks.find(p => p.code === code)),
+    ),
+    getPriceToPlanMap: jest.fn().mockResolvedValue({
+        price_test_starter: 'starter',
+        price_test_pro: 'pro',
+    }),
 };
 
 // ─── Stateful Redis mock ──────────────────────────────────────────────────────
@@ -250,6 +271,8 @@ describe('Payments E2E', () => {
             .useValue(mockEmailService)
             .overrideProvider(PAYMENT_PROVIDER)
             .useValue(mockPaymentProvider)
+            .overrideProvider(CatalogService)
+            .useValue(mockCatalogService)
             .compile();
 
         app = moduleFixture.createNestApplication({ rawBody: true });
@@ -1060,6 +1083,62 @@ describe('Payments E2E', () => {
                 SUBSCRIPTION_STATUS.PAST_DUE
             );
             expect(updated?.billing?.hasActiveSubscription).toBe(false);
+        });
+    });
+
+    // ─── GET /api/payments/catalog ────────────────────────────────────
+
+    describe('GET /api/payments/catalog', () => {
+        it('should return 200 with catalog data', async () => {
+            await supertest(app.getHttpServer())
+                .get('/api/payments/catalog')
+                .expect(200)
+                .expect((res: supertest.Response) => {
+                    const body = res.body as {
+                        data: {
+                            subscriptionPlans: unknown[];
+                            executionPacks: unknown[];
+                        };
+                    };
+                    expect(body.data.subscriptionPlans).toHaveLength(2);
+                    expect(body.data.executionPacks).toHaveLength(2);
+                });
+        });
+
+        it('should return empty subscriptionPlans when subscription payments are disabled', async () => {
+            envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+
+            await supertest(app.getHttpServer())
+                .get('/api/payments/catalog')
+                .expect(200)
+                .expect((res: supertest.Response) => {
+                    const body = res.body as {
+                        data: {
+                            subscriptionPlans: unknown[];
+                            executionPacks: unknown[];
+                        };
+                    };
+                    expect(body.data.subscriptionPlans).toHaveLength(0);
+                    expect(body.data.executionPacks).toHaveLength(2);
+                });
+        });
+
+        it('should return empty executionPacks when one-off payments are disabled', async () => {
+            envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+
+            await supertest(app.getHttpServer())
+                .get('/api/payments/catalog')
+                .expect(200)
+                .expect((res: supertest.Response) => {
+                    const body = res.body as {
+                        data: {
+                            subscriptionPlans: unknown[];
+                            executionPacks: unknown[];
+                        };
+                    };
+                    expect(body.data.subscriptionPlans).toHaveLength(2);
+                    expect(body.data.executionPacks).toHaveLength(0);
+                });
         });
     });
 });
