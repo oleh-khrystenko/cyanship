@@ -22,6 +22,7 @@ import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/modules/auth/auth.module';
+import { EmailModule } from '../src/modules/email/email.module';
 import { UsersModule } from '../src/modules/users/users.module';
 import { ReportsModule } from '../src/modules/reports/reports.module';
 import { StorageModule } from '../src/modules/storage/storage.module';
@@ -31,7 +32,7 @@ import {
     ProcessedWebhookEvent,
     ProcessedWebhookEventDocument,
 } from '../src/modules/payments/schemas/processed-webhook-event.schema';
-import { EmailService } from '../src/modules/auth/services/email.service';
+import { EmailService } from '../src/modules/email/email.service';
 import { PAYMENT_PROVIDER } from '../src/modules/payments/interfaces/payment-provider.interface';
 
 // ─── Mock ENV ────────────────────────────────────────────────────────────────
@@ -67,9 +68,9 @@ jest.mock('../src/config/env', () => ({
         starter: { priceId: 'price_test_starter' },
         pro: { priceId: 'price_test_pro' },
     },
-    STRIPE_CREDIT_PACKS: {
-        basic: { priceId: 'price_test_basic', credits: 5 },
-        max: { priceId: 'price_test_max', credits: 20 },
+    STRIPE_EXECUTION_PACKS: {
+        basic: { priceId: 'price_test_basic', executions: 5 },
+        max: { priceId: 'price_test_max', executions: 20 },
     },
     parseLockoutThresholds: (raw: string) =>
         raw.split(',').map((entry: string) => {
@@ -231,6 +232,7 @@ describe('Payments E2E', () => {
                 }),
                 MongooseModule.forRoot(mongoServer.getUri()),
                 AuthModule,
+                EmailModule,
                 UsersModule,
                 ReportsModule,
                 StorageModule,
@@ -305,7 +307,7 @@ describe('Payments E2E', () => {
             email: email.toLowerCase(),
             passwordHash: hash,
             profile: { name: 'Test User' },
-            credits: { balance: 0, freeReportUsed: false },
+            executions: { balance: 0, freeReportUsed: false },
             billing: billingData ?? null,
         });
     }
@@ -582,8 +584,8 @@ describe('Payments E2E', () => {
                 .expect(400);
         });
 
-        it('should credit user on ONE_OFF_PAYMENT_COMPLETED webhook', async () => {
-            const user = await createUser('credits-webhook@example.com', null);
+        it('should add executions on ONE_OFF_PAYMENT_COMPLETED webhook', async () => {
+            const user = await createUser('executions-webhook@example.com', null);
             const userId = user._id.toString();
 
             const oneOffEvent: BillingWebhookEvent = {
@@ -591,7 +593,7 @@ describe('Payments E2E', () => {
                 providerEventId: 'evt_oneoff_e2e_001',
                 occurredAt: new Date(),
                 userId,
-                creditsAmount: 5,
+                executionsAmount: 5,
                 raw: {},
             };
 
@@ -608,9 +610,9 @@ describe('Payments E2E', () => {
                 .expect(201)
                 .expect({ received: true });
 
-            // Verify credits added
+            // Verify executions added
             const updatedUser = await userModel.findById(userId).lean();
-            expect(updatedUser?.credits?.balance).toBe(5);
+            expect(updatedUser?.executions?.balance).toBe(5);
 
             // Verify event marked as applied
             const storedEvent = await webhookEventModel
@@ -738,16 +740,16 @@ describe('Payments E2E', () => {
                 providerEventId: 'evt_rollback_test_001',
                 occurredAt: new Date(),
                 userId,
-                creditsAmount: 10,
+                executionsAmount: 10,
                 raw: {},
             };
 
-            // First attempt — addCredits will fail because provider throws
+            // First attempt — addExecutions will fail because provider throws
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
                 oneOffEvent
             );
 
-            // Temporarily break the user to cause addCredits to fail
+            // Temporarily break the user to cause addExecutions to fail
             // We do this by removing the user document before the webhook processes
             await userModel.deleteOne({ _id: userId });
 
@@ -763,19 +765,19 @@ describe('Payments E2E', () => {
             const user2 = await createUser('rollback2@example.com', null);
             const userId2 = user2._id.toString();
 
-            // Make handleWebhookPayload return event that will cause addCredits to throw
+            // Make handleWebhookPayload return event that will cause addExecutions to throw
             const failEvent: BillingWebhookEvent = {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                 providerEventId: 'evt_rollback_test_002',
                 occurredAt: new Date(),
                 userId: userId2,
-                creditsAmount: -999, // Invalid amount — addCredits will throw
+                executionsAmount: -999, // Invalid amount — addExecutions will throw
                 raw: {},
             };
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(failEvent);
 
             // This should not leave a "pending" record blocking retries
-            // (creditsAmount <= 0 is caught by applyOneOffPayment and skipped, not thrown)
+            // (executionsAmount <= 0 is caught by applyOneOffPayment and skipped, not thrown)
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
                 .set('stripe-signature', 'test-sig')
@@ -783,7 +785,7 @@ describe('Payments E2E', () => {
                 .send('{}')
                 .expect(201);
 
-            // Event should be marked as applied (invalid credits is a graceful skip)
+            // Event should be marked as applied (invalid executions is a graceful skip)
             const storedEvent2 = await webhookEventModel
                 .findOne({ providerEventId: 'evt_rollback_test_002' })
                 .lean();
@@ -968,7 +970,7 @@ describe('Payments E2E', () => {
     // ─── One-off idempotency ──────────────────────────────────────────
 
     describe('one-off idempotency', () => {
-        it('should not add credits twice for duplicate ONE_OFF_PAYMENT_COMPLETED event', async () => {
+        it('should not add executions twice for duplicate ONE_OFF_PAYMENT_COMPLETED event', async () => {
             const user = await createUser('oneoff-idemp@example.com', null);
             const userId = user._id.toString();
 
@@ -977,7 +979,7 @@ describe('Payments E2E', () => {
                 providerEventId: 'evt_oneoff_dup_001',
                 occurredAt: new Date(),
                 userId,
-                creditsAmount: 20,
+                executionsAmount: 20,
                 packCode: 'max',
                 raw: {},
             };
@@ -986,7 +988,7 @@ describe('Payments E2E', () => {
                 oneOffEvent
             );
 
-            // First call — should add 20 credits
+            // First call — should add 20 executions
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
                 .set('stripe-signature', 'test-sig')
@@ -995,9 +997,9 @@ describe('Payments E2E', () => {
                 .expect(201);
 
             const afterFirst = await userModel.findById(userId).lean();
-            expect(afterFirst?.credits?.balance).toBe(20);
+            expect(afterFirst?.executions?.balance).toBe(20);
 
-            // Second call with same providerEventId — idempotent, credits should stay at 20
+            // Second call with same providerEventId — idempotent, executions should stay at 20
             await supertest(app.getHttpServer())
                 .post('/api/payments/webhook/stripe')
                 .set('stripe-signature', 'test-sig')
@@ -1006,7 +1008,7 @@ describe('Payments E2E', () => {
                 .expect(201);
 
             const afterSecond = await userModel.findById(userId).lean();
-            expect(afterSecond?.credits?.balance).toBe(20);
+            expect(afterSecond?.executions?.balance).toBe(20);
         });
     });
 

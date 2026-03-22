@@ -36,6 +36,7 @@ export class StripeService implements IPaymentProvider {
 
         const session = await this.stripe.checkout.sessions.create({
             mode,
+            payment_method_types: ['card'],
             ...(input.providerCustomerId
                 ? { customer: input.providerCustomerId }
                 : { customer_email: input.userEmail }),
@@ -43,7 +44,7 @@ export class StripeService implements IPaymentProvider {
             metadata: {
                 userId: input.userId,
                 planCode: input.planCode,
-                credits: String(input.credits ?? 0),
+                executions: String(input.executions ?? 0),
             },
             client_reference_id: input.userId,
             success_url: input.successUrl,
@@ -102,22 +103,22 @@ export class StripeService implements IPaymentProvider {
         }
     }
 
-    private handleCheckoutCompleted(
+    private async handleCheckoutCompleted(
         event: Stripe.Event
-    ): BillingWebhookEvent | null {
+    ): Promise<BillingWebhookEvent | null> {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId =
             session.metadata?.userId || session.client_reference_id || '';
 
         // One-off payment (mode=payment, paid)
         if (session.mode === 'payment' && session.payment_status === 'paid') {
-            const credits = parseInt(session.metadata?.credits ?? '0', 10);
+            const executions = parseInt(session.metadata?.executions ?? '0', 10);
             return {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                 providerEventId: event.id,
                 occurredAt: new Date(event.created * 1000),
                 userId,
-                creditsAmount: credits,
+                executionsAmount: executions,
                 packCode: session.metadata?.planCode || undefined,
                 raw: this.toRaw(event.data.object),
             };
@@ -125,17 +126,19 @@ export class StripeService implements IPaymentProvider {
 
         // Subscription checkout (mode=subscription)
         if (session.mode === 'subscription') {
-            const credits = parseInt(session.metadata?.credits ?? '0', 10);
+            const executions = parseInt(session.metadata?.executions ?? '0', 10);
+            const currentPeriodEnd = await this.resolveSubscriptionPeriodEnd(session.subscription);
+
             return {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                 providerEventId: event.id,
                 occurredAt: new Date(event.created * 1000),
                 userId,
                 subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
-                currentPeriodEnd: null,
+                currentPeriodEnd,
                 cancelAtPeriodEnd: false,
                 raw: this.toRaw(event.data.object),
-                creditsAmount: credits || undefined,
+                executionsAmount: executions || undefined,
             };
         }
 
@@ -173,6 +176,33 @@ export class StripeService implements IPaymentProvider {
             scheduledChangeDate: schedule?.changeDate ?? null,
             raw: this.toRaw(event.data.object),
         };
+    }
+
+    private async resolveSubscriptionPeriodEnd(
+        subscriptionRef: string | Stripe.Subscription | null | undefined
+    ): Promise<Date | null> {
+        const subscriptionId =
+            typeof subscriptionRef === 'string'
+                ? subscriptionRef
+                : subscriptionRef?.id;
+
+        if (!subscriptionId) {
+            return null;
+        }
+
+        try {
+            const subscription =
+                await this.stripe.subscriptions.retrieve(subscriptionId);
+            const periodEnd =
+                subscription.items?.data?.[0]?.current_period_end ?? null;
+            return periodEnd ? new Date(periodEnd * 1000) : null;
+        } catch (error) {
+            this.logger.error(
+                `Failed to retrieve subscription ${subscriptionId} for period end`,
+                error instanceof Error ? error.stack : String(error)
+            );
+            return null;
+        }
     }
 
     private async resolveScheduledChange(

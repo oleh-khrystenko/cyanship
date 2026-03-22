@@ -23,7 +23,7 @@ class UserProfileData {
 }
 
 @Schema({ _id: false })
-class UserCredits {
+class UserExecutions {
     @Prop({ required: true, default: 0, min: 0 })
     balance!: number;
 
@@ -46,10 +46,10 @@ export class User {
     profile!: UserProfileData;
 
     @Prop({
-        type: UserCredits,
+        type: UserExecutions,
         default: () => ({ balance: 0, freeReportUsed: false }),
     })
-    credits!: UserCredits;
+    executions!: UserExecutions;
 
     @Prop({ type: String, default: null })
     passwordHash!: string | null;

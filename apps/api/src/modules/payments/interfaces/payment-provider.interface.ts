@@ -7,7 +7,7 @@ export interface CreateCheckoutInput {
     paymentType: PaymentType;
     planCode: string;
     priceId: string;
-    credits?: number;
+    executions?: number;
     successUrl: string;
     cancelUrl: string;
 }

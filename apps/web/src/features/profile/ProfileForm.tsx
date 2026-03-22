@@ -99,7 +99,16 @@ const ProfileForm = ({
                 {t('heading')}
             </h2>
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <dl className="mt-5">
+                <dt className="text-muted-foreground text-sm">
+                    {t('email_label')}
+                </dt>
+                <dd className="mt-1 text-foreground">
+                    {user.email}
+                </dd>
+            </dl>
+
+            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
                 <div>
                     <label className="text-muted-foreground mb-1.5 block text-sm">
                         {t('name_label')}

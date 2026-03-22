@@ -100,11 +100,14 @@ const Header = () => {
         window.location.assign(`/${locale}`);
     };
 
+    const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
+
     const allUserMenuItems: {
         value: string;
         label: string;
         icon: React.ReactNode;
         route?: string;
+        badge?: string;
     }[] = [
         {
             value: 'profile',
@@ -113,10 +116,11 @@ const Header = () => {
             route: `/${locale}/profile`,
         },
         {
-            value: 'credits',
-            label: `${user?.credits.balance ?? 0} ${t('credits')}`,
+            value: 'billing',
+            label: t('billing'),
             icon: <CreditCard />,
             route: `/${locale}/billing`,
+            badge: formattedExecutions,
         },
         {
             value: 'logout',
@@ -182,7 +186,7 @@ const Header = () => {
 
                 {/* Desktop nav */}
                 {hasNav && (
-                    <nav className="hidden items-center gap-8 md:flex">
+                    <nav className="hidden items-center gap-8 lg:flex">
                         {navItems.map(({ href, label }) => {
                             const isActive =
                                 activeSection === href.replace('#', '');
@@ -204,7 +208,7 @@ const Header = () => {
                 )}
 
                 {/* Desktop right side */}
-                <div className="hidden items-center gap-2 md:flex">
+                <div className="hidden items-center gap-2 lg:flex">
                     <ChangeLang />
                     <ChangeTheme />
 
@@ -215,6 +219,27 @@ const Header = () => {
                             items={userMenuItems}
                             onSelect={handleUserMenuSelect}
                             size="sm"
+                            header={
+                                <div className="flex items-center gap-2.5">
+                                    <UiAvatar size="sm">
+                                        <UiAvatarImage
+                                            src={user.profile.avatar ?? undefined}
+                                            alt={user.profile.name ?? ''}
+                                        />
+                                        <UiAvatarFallback size="sm">
+                                            {initials}
+                                        </UiAvatarFallback>
+                                    </UiAvatar>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">
+                                            {user.profile.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {user.email}
+                                        </span>
+                                    </div>
+                                </div>
+                            }
                             trigger={
                                 <button
                                     type="button"
@@ -264,7 +289,7 @@ const Header = () => {
                 </div>
 
                 {/* Mobile hamburger */}
-                <div className="md:hidden">
+                <div className="lg:hidden">
                     <UiSheet
                         open={isSheetOpen}
                         onOpenChange={setIsSheetOpen}
@@ -370,10 +395,15 @@ const Header = () => {
                                                     );
                                                 }}
                                             >
-                                                <span className="size-4">
+                                                <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
                                                     {item.icon}
                                                 </span>
                                                 <span>{item.label}</span>
+                                                {item.badge != null && (
+                                                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs leading-none text-muted-foreground">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
                                             </button>
                                         ))}
                                     </div>

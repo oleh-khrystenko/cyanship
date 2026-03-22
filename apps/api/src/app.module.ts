@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { OnboardingInterceptor } from './common/interceptors/onboarding.interceptor';
 import { ENV } from './config/env';
 import { AuthModule } from './modules/auth/auth.module';
+import { EmailModule } from './modules/email/email.module';
 import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { StorageModule } from './modules/storage/storage.module';
@@ -25,6 +26,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
         ScheduleModule.forRoot(),
         MongooseModule.forRoot(ENV.MONGODB_URI),
         AuthModule,
+        EmailModule,
         UsersModule,
         ReportsModule,
         StorageModule,

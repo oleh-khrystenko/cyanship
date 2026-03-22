@@ -7,7 +7,7 @@ import {
     RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
-    type CreditPackCode,
+    type ExecutionPackCode,
 } from '@cyanship/types';
 
 import { PaymentsService } from './payments.service';
@@ -24,12 +24,12 @@ jest.mock('../../config/env', () => ({
         PAYMENTS_ONE_OFF_ENABLED: true,
     },
     STRIPE_SUBSCRIPTION_PLANS: {
-        starter: { priceId: 'price_test_starter', credits: 1000 },
-        pro: { priceId: 'price_test_pro', credits: 10000 },
+        starter: { priceId: 'price_test_starter', executions: 10000 },
+        pro: { priceId: 'price_test_pro', executions: 50000 },
     },
-    STRIPE_CREDIT_PACKS: {
-        basic: { priceId: 'price_test_basic', credits: 5000 },
-        max: { priceId: 'price_test_max', credits: 25000 },
+    STRIPE_EXECUTION_PACKS: {
+        basic: { priceId: 'price_test_basic', executions: 5000 },
+        max: { priceId: 'price_test_max', executions: 20000 },
     },
     STRIPE_PRICE_TO_PLAN: {
         price_test_starter: 'starter',
@@ -42,9 +42,9 @@ const envModule = require('../../config/env') as {
     ENV: Record<string, unknown>;
     STRIPE_SUBSCRIPTION_PLANS: Record<
         string,
-        { priceId: string; credits: number }
+        { priceId: string; executions: number }
     >;
-    STRIPE_CREDIT_PACKS: Record<string, { priceId: string; credits: number }>;
+    STRIPE_EXECUTION_PACKS: Record<string, { priceId: string; executions: number }>;
     STRIPE_PRICE_TO_PLAN: Record<string, string>;
 };
 
@@ -93,7 +93,7 @@ const mockOrphanModel = {
 };
 
 const mockUsersService = {
-    addCredits: jest.fn(),
+    addExecutions: jest.fn(),
 };
 
 describe('PaymentsService', () => {
@@ -159,7 +159,7 @@ describe('PaymentsService', () => {
                     paymentType: PAYMENT_TYPE.SUBSCRIPTION,
                     planCode: 'pro',
                     priceId: 'price_test_pro',
-                    credits: 10000,
+                    executions: 50000,
                     successUrl: 'http://localhost:3000/en/billing/success',
                     cancelUrl: 'http://localhost:3000/en/billing/cancel',
                 })
@@ -270,7 +270,7 @@ describe('PaymentsService', () => {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
                     planCode: 'basic',
                     priceId: 'price_test_basic',
-                    credits: 5000,
+                    executions: 5000,
                 })
             );
         });
@@ -287,7 +287,7 @@ describe('PaymentsService', () => {
             await expect(
                 service.createCheckoutSession(MOCK_USER_ID, {
                     paymentType: PAYMENT_TYPE.ONE_OFF,
-                    packCode: 'invalid_pack' as CreditPackCode,
+                    packCode: 'invalid_pack' as ExecutionPackCode,
                 })
             ).rejects.toThrow(BadRequestException);
         });
@@ -661,7 +661,7 @@ describe('PaymentsService', () => {
                     providerEventId: 'evt_fail_apply',
                     occurredAt: new Date(),
                     userId: MOCK_USER_ID,
-                    creditsAmount: 10,
+                    executionsAmount: 10,
                     raw: {},
                 };
 
@@ -670,7 +670,7 @@ describe('PaymentsService', () => {
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
-                mockUsersService.addCredits.mockRejectedValue(
+                mockUsersService.addExecutions.mockRejectedValue(
                     new Error('DB connection lost')
                 );
                 mockWebhookEventModel.deleteOne.mockResolvedValue({});
@@ -695,7 +695,7 @@ describe('PaymentsService', () => {
                     providerEventId: 'evt_double_fail',
                     occurredAt: new Date(),
                     userId: MOCK_USER_ID,
-                    creditsAmount: 10,
+                    executionsAmount: 10,
                     raw: {},
                 };
 
@@ -704,7 +704,7 @@ describe('PaymentsService', () => {
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
-                mockUsersService.addCredits.mockRejectedValue(
+                mockUsersService.addExecutions.mockRejectedValue(
                     new Error('Original error')
                 );
                 mockWebhookEventModel.deleteOne.mockRejectedValue(
@@ -1149,12 +1149,12 @@ describe('PaymentsService', () => {
             });
         });
 
-        // ── Subscription credits ──────────────────────────────────────
+        // ── Subscription executions ──────────────────────────────────
 
-        describe('subscription credits', () => {
+        describe('subscription executions', () => {
             const occurredAt = new Date('2024-01-01T00:00:00Z');
 
-            it('should add credits on CHECKOUT_COMPLETED when creditsAmount is present', async () => {
+            it('should add executions on CHECKOUT_COMPLETED when executionsAmount is present', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_sub_credits',
@@ -1163,13 +1163,13 @@ describe('PaymentsService', () => {
                     subscriptionStatus: SUBSCRIPTION_STATUS.ACTIVE,
                     currentPeriodEnd: null,
                     cancelAtPeriodEnd: false,
-                    creditsAmount: 1000,
+                    executionsAmount: 10000,
                     raw: {
                         customer: 'cus_credits',
                         subscription: 'sub_credits',
                         currency: 'usd',
                         status: 'complete',
-                        metadata: { planCode: 'starter', credits: '1000' },
+                        metadata: { planCode: 'starter', executions: '10000' },
                     },
                 };
 
@@ -1178,17 +1178,17 @@ describe('PaymentsService', () => {
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUsersService.addCredits.mockResolvedValue(undefined);
+                mockUsersService.addExecutions.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).toHaveBeenCalledWith(
+                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    1000
+                    10000
                 );
             });
 
-            it('should NOT add credits on CHECKOUT_COMPLETED when creditsAmount is missing', async () => {
+            it('should NOT add executions on CHECKOUT_COMPLETED when executionsAmount is missing', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
                     providerEventId: 'evt_sub_no_credits',
@@ -1214,10 +1214,10 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
             });
 
-            it('should NOT add credits on SUBSCRIPTION_UPDATED', async () => {
+            it('should NOT add executions on SUBSCRIPTION_UPDATED', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.SUBSCRIPTION_UPDATED,
                     providerEventId: 'evt_sub_updated_no_credits',
@@ -1237,7 +1237,7 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
             });
         });
 
@@ -1249,21 +1249,21 @@ describe('PaymentsService', () => {
                 providerEventId: 'evt_oneoff_123',
                 occurredAt: new Date('2026-03-01'),
                 userId: MOCK_USER_ID,
-                creditsAmount: 5,
+                executionsAmount: 5,
                 raw: {},
             };
 
-            it('should add credits on ONE_OFF_PAYMENT_COMPLETED', async () => {
+            it('should add executions on ONE_OFF_PAYMENT_COMPLETED', async () => {
                 mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
                     oneOffEvent
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
-                mockUsersService.addCredits.mockResolvedValue(undefined);
+                mockUsersService.addExecutions.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).toHaveBeenCalledWith(
+                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     5
                 );
@@ -1282,53 +1282,53 @@ describe('PaymentsService', () => {
                 mockUserModel.findById.mockReturnValue(
                     chainQuery(mockUser({ billing: staleUserBilling }))
                 );
-                mockUsersService.addCredits.mockResolvedValue(undefined);
+                mockUsersService.addExecutions.mockResolvedValue(undefined);
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).toHaveBeenCalledWith(
+                expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     5
                 );
             });
 
-            it('should warn and skip if creditsAmount is 0', async () => {
+            it('should warn and skip if executionsAmount is 0', async () => {
                 mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
-                    creditsAmount: 0,
+                    executionsAmount: 0,
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
             });
 
-            it('should skip if creditsAmount is undefined', async () => {
+            it('should skip if executionsAmount is undefined', async () => {
                 mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
-                    creditsAmount: undefined,
+                    executionsAmount: undefined,
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
             });
 
-            it('should skip if creditsAmount is negative', async () => {
+            it('should skip if executionsAmount is negative', async () => {
                 mockPaymentProvider.handleWebhookPayload.mockResolvedValue({
                     ...oneOffEvent,
-                    creditsAmount: -5,
+                    executionsAmount: -5,
                 });
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(chainQuery(mockUser()));
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
             });
         });
 
@@ -1363,13 +1363,13 @@ describe('PaymentsService', () => {
                 );
             });
 
-            it('should skip one-off credits and mark applied when findById returns null', async () => {
+            it('should skip one-off executions and mark applied when findById returns null', async () => {
                 const event: BillingWebhookEvent = {
                     type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                     providerEventId: 'evt_ghost_oneoff',
                     occurredAt: new Date(),
                     userId: MOCK_USER_ID,
-                    creditsAmount: 5,
+                    executionsAmount: 5,
                     raw: {},
                 };
 
@@ -1381,7 +1381,7 @@ describe('PaymentsService', () => {
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
-                expect(mockUsersService.addCredits).not.toHaveBeenCalled();
+                expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
                 expect(mockWebhookEventModel.updateOne).toHaveBeenCalledWith(
                     { provider: 'stripe', providerEventId: 'evt_ghost_oneoff' },
                     { $set: { status: 'applied' } },

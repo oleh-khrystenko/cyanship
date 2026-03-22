@@ -17,12 +17,13 @@ import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/modules/auth/auth.module';
+import { EmailModule } from '../src/modules/email/email.module';
 import { UsersModule } from '../src/modules/users/users.module';
 import { ReportsModule } from '../src/modules/reports/reports.module';
 import { StorageModule } from '../src/modules/storage/storage.module';
 import { PaymentsModule } from '../src/modules/payments/payments.module';
 import { User, UserDocument } from '../src/modules/users/schemas/user.schema';
-import { EmailService } from '../src/modules/auth/services/email.service';
+import { EmailService } from '../src/modules/email/email.service';
 import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 
 // Mock ENV
@@ -216,6 +217,7 @@ describe('Auth E2E', () => {
                 }),
                 MongooseModule.forRoot(mongoServer.getUri()),
                 AuthModule,
+                EmailModule,
                 UsersModule,
                 ReportsModule,
                 StorageModule,

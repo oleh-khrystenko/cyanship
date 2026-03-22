@@ -38,6 +38,7 @@ const UiDropdownMenu = forwardRef<HTMLDivElement, UiDropdownMenuProps>(
             onSelect,
             activeValue,
             trigger,
+            header,
             align = 'end',
             size = 'md',
             className,
@@ -56,6 +57,11 @@ const UiDropdownMenu = forwardRef<HTMLDivElement, UiDropdownMenuProps>(
                         className
                     )}
                 >
+                    {header && (
+                        <div className="border-b border-border px-3 py-2">
+                            {header}
+                        </div>
+                    )}
                     <div className="p-1">
                         {items.map((item) => {
                             const isActive = activeValue === item.value;
@@ -79,6 +85,11 @@ const UiDropdownMenu = forwardRef<HTMLDivElement, UiDropdownMenuProps>(
                                         <span className="whitespace-nowrap">
                                             {item.label}
                                         </span>
+                                        {item.badge != null && (
+                                            <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-xs leading-none text-muted-foreground">
+                                                {item.badge}
+                                            </span>
+                                        )}
                                     </button>
                                 </MenuItem>
                             );
