@@ -47,9 +47,9 @@
             "label": "Proof",
             "heading": "You Are Looking at the Code Right Now",
             "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
-            "step_1": "Create an account to test the auth flow.",
-            "step_2": "Click the Stripe checkout to see the payment integration.",
-            "step_3": "Experience the load speed firsthand.",
+            "step_1": "Create an account to test the auth flow",
+            "step_2": "Click the Stripe checkout to see the payment integration",
+            "step_3": "Experience the load speed firsthand",
             "proof_shell": {
                 "sheet_title": "Try it yourself"
             }

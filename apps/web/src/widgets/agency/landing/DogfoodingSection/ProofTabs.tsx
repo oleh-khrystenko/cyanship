@@ -30,7 +30,7 @@ const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {
                         type="button"
                         onClick={() => onTabChange(key)}
                         className={composeClasses(
-                            'flex w-full items-start gap-4 rounded-lg border p-4 text-left transition-colors',
+                            'flex w-full cursor-pointer items-start gap-4 rounded-lg border p-4 text-left transition-colors',
                             isActive
                                 ? 'border-primary bg-primary/5'
                                 : 'border-border bg-card hover:bg-accent'
