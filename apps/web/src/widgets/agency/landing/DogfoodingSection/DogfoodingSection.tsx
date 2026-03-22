@@ -1,49 +1,10 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
-import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
-import { getCatalog } from '@/shared/api/payments';
-import UiButton from '@/shared/ui/UiButton';
-import { useAuthStore } from '@/stores/auth';
 
 const stepKeys = ['step_1', 'step_2', 'step_3'] as const;
 
 const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
-    const locale = useLocale();
-    const router = useRouter();
-    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-    const [catalog, setCatalog] = useState<PaymentsCatalog | null>(null);
-
-    useEffect(() => {
-        getCatalog().then(setCatalog).catch(() => {});
-    }, []);
-
-    const handleTryClick = () => {
-        if (isAuthenticated) {
-            router.push(`/${locale}/billing`);
-        } else {
-            router.push(`/${locale}/auth/signin?redirect=/${locale}/billing`);
-        }
-    };
-
-    const firstPlan = catalog?.subscriptionPlans[0];
-    const cheapestPack = catalog?.executionPacks.length
-        ? [...catalog.executionPacks].sort(
-              (a, b) => a.priceAmount - b.priceAmount,
-          )[0]
-        : null;
-
-    const subscriptionPrice = firstPlan
-        ? formatPrice(firstPlan.priceAmount, firstPlan.currency)
-        : '';
-    const executionsFromPrice = cheapestPack
-        ? formatPrice(cheapestPack.priceAmount, cheapestPack.currency)
-        : '';
 
     return (
         <section id="dogfooding" className="scroll-mt-28 border-t border-border py-24">
@@ -75,41 +36,6 @@ const DogfoodingSection = () => {
                         </li>
                     ))}
                 </ul>
-
-                {/* ── Pricing Preview ── */}
-                {catalog && (
-                    <div className="mt-10 flex max-w-xl flex-col gap-4 sm:flex-row">
-                        {subscriptionPrice && (
-                            <div className="flex flex-1 items-center justify-between rounded-lg border border-border bg-card p-4">
-                                <span className="text-sm font-medium text-foreground">
-                                    {t('preview_subscription', { price: subscriptionPrice })}
-                                </span>
-                                <UiButton
-                                    variant="filled"
-                                    size="sm"
-                                    onClick={handleTryClick}
-                                >
-                                    {t('try_cta')}
-                                </UiButton>
-                            </div>
-                        )}
-
-                        {executionsFromPrice && (
-                            <div className="flex flex-1 items-center justify-between rounded-lg border border-border bg-card p-4">
-                                <span className="text-sm font-medium text-foreground">
-                                    {t('preview_executions', { price: executionsFromPrice })}
-                                </span>
-                                <UiButton
-                                    variant="filled"
-                                    size="sm"
-                                    onClick={handleTryClick}
-                                >
-                                    {t('try_cta')}
-                                </UiButton>
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
         </section>
     );

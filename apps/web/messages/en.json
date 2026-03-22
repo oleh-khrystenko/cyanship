@@ -49,10 +49,7 @@
             "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow.",
             "step_2": "Click the Stripe checkout to see the payment integration.",
-            "step_3": "Experience the load speed firsthand.",
-            "try_cta": "Try it",
-            "preview_subscription": "Pro Plan — {price}/mo",
-            "preview_executions": "Execution Packs from {price}"
+            "step_3": "Experience the load speed firsthand."
         },
         "portfolio": {
             "label": "Portfolio",
