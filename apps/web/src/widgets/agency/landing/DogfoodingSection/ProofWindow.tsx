@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ProofAuth, ProofBilling, ProofLighthouse } from '@/features/agency/proof';
+import { ProofAuth, ProofBilling, ProofUsage } from '@/features/agency/proof';
 import type { ProofTabKey } from './types';
 
 type ProofWindowVariant = 'card' | 'embedded';
@@ -16,7 +16,7 @@ interface ProofWindowProps {
 const panels: Record<ProofTabKey, React.ComponentType<{ onRequestAuth?: () => void }>> = {
     auth: ProofAuth,
     billing: ProofBilling,
-    lighthouse: ProofLighthouse,
+    usage: ProofUsage,
 };
 
 const variantStyles: Record<ProofWindowVariant, string> = {

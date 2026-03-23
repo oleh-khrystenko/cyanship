@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 
+import { ExecutionTransaction } from './schemas/execution-transaction.schema';
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 
@@ -25,6 +26,12 @@ const mockModel = {
     create: jest.fn(),
 };
 
+const mockTransactionModel = {
+    create: jest.fn(),
+    find: jest.fn(),
+    deleteMany: jest.fn(),
+};
+
 describe('UsersService', () => {
     let service: UsersService;
 
@@ -33,6 +40,10 @@ describe('UsersService', () => {
             providers: [
                 UsersService,
                 { provide: getModelToken(User.name), useValue: mockModel },
+                {
+                    provide: getModelToken(ExecutionTransaction.name),
+                    useValue: mockTransactionModel,
+                },
             ],
         }).compile();
 
@@ -220,23 +231,45 @@ describe('UsersService', () => {
     });
 
     describe('addExecutions', () => {
-        it('should increment executions.balance by amount', async () => {
-            mockModel.findByIdAndUpdate.mockResolvedValue(mockUserDoc());
+        it('should increment balance and record transaction', async () => {
+            mockModel.findByIdAndUpdate.mockResolvedValue(
+                mockUserDoc({ executions: { balance: 10, freeReportUsed: false } }),
+            );
+            mockTransactionModel.create.mockResolvedValue({});
 
-            await service.addExecutions('507f1f77bcf86cd799439011', 10);
+            const result = await service.addExecutions(
+                '507f1f77bcf86cd799439011',
+                10,
+                'pack_purchase',
+            );
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { $inc: { 'executions.balance': 10 } }
+                { $inc: { 'executions.balance': 10 } },
+                { new: true },
             );
+            expect(mockTransactionModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'credit',
+                    action: 'pack_purchase',
+                    amount: 10,
+                    balanceAfter: 10,
+                }),
+            );
+            expect(result).toBe(10);
         });
 
-        it('should not throw when user not found', async () => {
+        it('should return 0 when user not found', async () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(null);
+            mockTransactionModel.create.mockResolvedValue({});
 
-            await expect(
-                service.addExecutions('nonexistent', 5)
-            ).resolves.toBeUndefined();
+            const result = await service.addExecutions(
+                '507f1f77bcf86cd799439012',
+                5,
+                'pack_purchase',
+            );
+
+            expect(result).toBe(0);
         });
     });
 

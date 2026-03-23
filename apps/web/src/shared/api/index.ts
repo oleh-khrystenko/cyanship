@@ -24,3 +24,4 @@ export {
     createOneOffCheckout,
     createPortalSession,
 } from './payments';
+export { spendExecutions, getExecutionTransactions } from './executions';

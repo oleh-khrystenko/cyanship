@@ -49,11 +49,11 @@
             "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow",
             "step_2": "Click the Stripe checkout to see the payment integration",
-            "step_3": "Experience the load speed firsthand",
+            "step_3": "Test the usage-based billing logic",
             "proof_shell": {
                 "sheet_title_auth": "One-Click Auth",
                 "sheet_title_billing": "Stripe-Powered Checkout",
-                "sheet_title_lighthouse": "Built for Speed",
+                "sheet_title_usage": "Usage Demo",
                 "try_it": "Try it"
             },
             "proof_auth": {
@@ -79,6 +79,29 @@
                 "subscribe_button": "Subscribe",
                 "buy_button": "Purchase",
                 "error": "Could not load pricing"
+            },
+            "proof_usage": {
+                "balance_label": "Your Balance",
+                "balance_executions": "{count} executions",
+                "generate_report": "Generate Report",
+                "run_analysis": "Run AI Analysis",
+                "cost_label": "-{cost} exec",
+                "insufficient_balance": "Not enough executions",
+                "transactions_title": "Recent Activity",
+                "no_transactions": "No activity yet. Purchase executions in the Billing tab to get started.",
+                "not_authenticated": "Sign in to test the usage-based billing",
+                "sign_in_button": "Sign in",
+                "actions": {
+                    "standard_report": "Report generated",
+                    "ai_analysis": "AI analysis completed",
+                    "subscription_activation": "Subscription activated",
+                    "pack_purchase": "Execution pack purchased",
+                    "plan_change": "Plan changed",
+                    "billing_reset": "Billing reset"
+                },
+                "time_just_now": "Just now",
+                "time_minutes_ago": "{count}m ago",
+                "time_hours_ago": "{count}h ago"
             }
         },
         "portfolio": {

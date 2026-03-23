@@ -79,6 +79,7 @@ export const CreateCheckoutSessionSchema = z
         paymentType: z.enum([PAYMENT_TYPE.SUBSCRIPTION, PAYMENT_TYPE.ONE_OFF]),
         planCode: z.string().min(1).optional(),
         packCode: z.string().min(1).optional(),
+        returnPath: z.string().startsWith('/').max(256).optional(),
     })
     .refine(
         (data) =>

@@ -49,11 +49,11 @@
             "description": "Я не просто продаю цю архітектуру — я веду свій бізнес на ній. Ця сторінка побудована на тому самому ядрі CyanShip, яке використовуватиме ваш продукт.",
             "step_1": "Створіть акаунт, щоб протестувати потік автентифікації",
             "step_2": "Натисніть на Stripe checkout, щоб побачити платіжну інтеграцію",
-            "step_3": "Відчуйте швидкість завантаження на власному досвіді",
+            "step_3": "Протестуйте логіку usage-based білінгу",
             "proof_shell": {
                 "sheet_title_auth": "Автентифікація в один клік",
                 "sheet_title_billing": "Checkout на Stripe",
-                "sheet_title_lighthouse": "Створено для швидкості",
+                "sheet_title_usage": "Демо використання",
                 "try_it": "Демо"
             },
             "proof_auth": {
@@ -79,6 +79,29 @@
                 "subscribe_button": "Підписатись",
                 "buy_button": "Придбати",
                 "error": "Не вдалося завантажити ціни"
+            },
+            "proof_usage": {
+                "balance_label": "Ваш баланс",
+                "balance_executions": "{count} виконань",
+                "generate_report": "Згенерувати звіт",
+                "run_analysis": "Запустити AI аналіз",
+                "cost_label": "-{cost} вик.",
+                "insufficient_balance": "Недостатньо виконань",
+                "transactions_title": "Остання активність",
+                "no_transactions": "Активності ще немає. Придбайте виконання у вкладці Billing щоб почати.",
+                "not_authenticated": "Увійдіть щоб протестувати usage-based білінг",
+                "sign_in_button": "Увійти",
+                "actions": {
+                    "standard_report": "Звіт згенеровано",
+                    "ai_analysis": "AI аналіз завершено",
+                    "subscription_activation": "Підписку активовано",
+                    "pack_purchase": "Пакет виконань придбано",
+                    "plan_change": "План змінено",
+                    "billing_reset": "Білінг скинуто"
+                },
+                "time_just_now": "Щойно",
+                "time_minutes_ago": "{count} хв тому",
+                "time_hours_ago": "{count} год тому"
             }
         },
         "portfolio": {

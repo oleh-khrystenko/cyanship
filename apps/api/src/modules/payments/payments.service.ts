@@ -9,6 +9,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
     BILLING_EVENT_TYPE,
+    EXECUTION_ACTION,
+    EXECUTION_TRANSACTION_TYPE,
     PAYMENT_TYPE,
     RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
@@ -61,7 +63,7 @@ export class PaymentsService {
         userId: string,
         dto: CreateCheckoutSession
     ): Promise<{ checkoutUrl: string }> {
-        const { paymentType, planCode, packCode } = dto;
+        const { paymentType, planCode, packCode, returnPath } = dto;
 
         // Feature flag check
         if (
@@ -89,8 +91,11 @@ export class PaymentsService {
         }
 
         const locale = user.preferredLang;
-        const successUrl = `${ENV.WEB_URL}/${locale}/billing/success`;
-        const cancelUrl = `${ENV.WEB_URL}/${locale}/billing/cancel`;
+        const returnQuery = returnPath
+            ? `?returnPath=${encodeURIComponent(returnPath)}`
+            : '';
+        const successUrl = `${ENV.WEB_URL}/${locale}/billing/success${returnQuery}`;
+        const cancelUrl = `${ENV.WEB_URL}/${locale}/billing/cancel${returnQuery}`;
 
         // Subscription-specific validation
         if (paymentType === PAYMENT_TYPE.SUBSCRIPTION) {
@@ -171,8 +176,20 @@ export class PaymentsService {
         }
 
         const providerCustomerId = user.billing?.providerCustomerId;
+        const previousBalance = user.executions.balance;
 
-        // 1. Reset DB first — this prevents in-flight webhooks from
+        // 1. Record reset transaction before clearing (if user had balance)
+        if (previousBalance > 0) {
+            await this.usersService.recordTransaction({
+                userId,
+                type: EXECUTION_TRANSACTION_TYPE.DEBIT,
+                action: EXECUTION_ACTION.BILLING_RESET,
+                amount: previousBalance,
+                balanceAfter: 0,
+            });
+        }
+
+        // 2. Reset DB — this prevents in-flight webhooks from
         //    re-creating billing (they'll hit billing=null and the
         //    out-of-order guard will skip them as orphan events).
         await this.userModel.findByIdAndUpdate(userId, {
@@ -182,8 +199,9 @@ export class PaymentsService {
             },
         });
         await this.webhookEventModel.deleteMany({ userId });
+        await this.usersService.clearTransactions(userId);
 
-        // 2. Clean up Stripe — on failure, persist for retry by cron.
+        // 3. Clean up Stripe — on failure, persist for retry by cron.
         if (providerCustomerId) {
             try {
                 await this.paymentProvider.deleteCustomerData(
@@ -362,13 +380,38 @@ export class PaymentsService {
         }
 
         if (executionAdjustment !== 0) {
-            const action = executionAdjustment > 0 ? 'Added' : 'Deducted';
+            const txAction =
+                event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
+                    ? EXECUTION_ACTION.SUBSCRIPTION_ACTIVATION
+                    : EXECUTION_ACTION.PLAN_CHANGE;
+            const txType =
+                executionAdjustment > 0
+                    ? EXECUTION_TRANSACTION_TYPE.CREDIT
+                    : EXECUTION_TRANSACTION_TYPE.DEBIT;
+
+            // Read fresh balance after atomic pipeline update
+            const updatedUser = await this.userModel
+                .findById(userId)
+                .maxTimeMS(WEBHOOK_MONGO_TIMEOUT_MS)
+                .lean();
+
+            if (updatedUser) {
+                await this.usersService.recordTransaction({
+                    userId,
+                    type: txType,
+                    action: txAction,
+                    amount: Math.abs(executionAdjustment),
+                    balanceAfter: updatedUser.executions.balance,
+                });
+            }
+
+            const direction = executionAdjustment > 0 ? 'Added' : 'Deducted';
             const reason =
                 event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED
                     ? 'subscription checkout'
                     : 'plan change proration';
             this.logger.log(
-                `${action} ${Math.abs(executionAdjustment)} executions for ${reason} ` +
+                `${direction} ${Math.abs(executionAdjustment)} executions for ${reason} ` +
                     `(user: ${userId}, event: ${event.providerEventId})`,
             );
         }
@@ -491,7 +534,11 @@ export class PaymentsService {
             );
             return;
         }
-        await this.usersService.addExecutions(userId, executionsAmount);
+        await this.usersService.addExecutions(
+            userId,
+            executionsAmount,
+            EXECUTION_ACTION.PACK_PURCHASE,
+        );
         this.logger.log(
             `Added ${executionsAmount} executions to user ${userId} (event: ${event.providerEventId})`
         );

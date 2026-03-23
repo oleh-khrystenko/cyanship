@@ -1,1 +1,1 @@
-export type ProofTabKey = 'auth' | 'billing' | 'lighthouse';
+export type ProofTabKey = 'auth' | 'billing' | 'usage';
