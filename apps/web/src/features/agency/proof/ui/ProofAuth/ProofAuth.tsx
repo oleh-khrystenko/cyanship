@@ -208,7 +208,7 @@ const ProofAuth = () => {
     // Magic link sent
     if (state === 'magic-link-sent') {
         return (
-            <div className="w-full max-w-sm space-y-5">
+            <div className="w-full space-y-5">
                 <div className="rounded-lg border border-success/30 bg-success/10 p-5 text-center">
                     <Mail className="mx-auto mb-2 h-8 w-8 text-success" />
                     <h3 className="text-base font-semibold text-foreground">
@@ -267,7 +267,7 @@ const ProofAuth = () => {
 
     // Default: idle — auth form
     return (
-        <div className="w-full max-w-sm space-y-4">
+        <div className="w-full space-y-4">
             <UiCheckbox
                 checked={agreedToTerms}
                 onChange={handleTermsChange}
