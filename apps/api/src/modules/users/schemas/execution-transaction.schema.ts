@@ -4,6 +4,10 @@ import { HydratedDocument, Types } from 'mongoose';
 export type ExecutionTransactionDocument =
     HydratedDocument<ExecutionTransaction>;
 
+export type ExecutionTransactionLean = ExecutionTransaction & {
+    _id: Types.ObjectId;
+};
+
 @Schema({ timestamps: true })
 export class ExecutionTransaction {
     @Prop({ required: true, type: Types.ObjectId })
@@ -20,6 +24,9 @@ export class ExecutionTransaction {
 
     @Prop({ required: true, min: 0 })
     balanceAfter!: number;
+
+    // Declared for TypeScript visibility; managed by Mongoose timestamps: true.
+    createdAt!: Date;
 }
 
 export const ExecutionTransactionSchema =

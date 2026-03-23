@@ -32,6 +32,10 @@ import { AcceptTermsDto } from './dto/accept-terms.dto';
 import { SpendExecutionsDto } from './dto/spend-executions.dto';
 import { UpdateLangDto } from './dto/update-lang.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import type {
+    ExecutionTransactionDocument,
+    ExecutionTransactionLean,
+} from './schemas/execution-transaction.schema';
 import { UserDocument } from './schemas/user.schema';
 import { UsersService } from './users.service';
 
@@ -165,14 +169,7 @@ export class UsersController {
         return {
             data: {
                 balance: result.balanceAfter,
-                transaction: {
-                    id: result.transaction._id.toString(),
-                    type: result.transaction.type as 'credit' | 'debit',
-                    action: result.transaction.action,
-                    amount: result.transaction.amount,
-                    balanceAfter: result.transaction.balanceAfter,
-                    createdAt: (result.transaction as unknown as { createdAt: Date }).createdAt,
-                },
+                transaction: this.mapTransaction(result.transaction),
             },
         };
     }
@@ -190,24 +187,20 @@ export class UsersController {
         );
 
         return {
-            data: transactions.map((t) => {
-                const doc = t as unknown as {
-                    _id: { toString(): string };
-                    type: string;
-                    action: string;
-                    amount: number;
-                    balanceAfter: number;
-                    createdAt: Date;
-                };
-                return {
-                    id: doc._id.toString(),
-                    type: doc.type as 'credit' | 'debit',
-                    action: doc.action,
-                    amount: doc.amount,
-                    balanceAfter: doc.balanceAfter,
-                    createdAt: doc.createdAt,
-                };
-            }),
+            data: transactions.map((t) => this.mapTransaction(t)),
+        };
+    }
+
+    private mapTransaction(
+        t: ExecutionTransactionLean | ExecutionTransactionDocument,
+    ): ExecutionTransactionItem {
+        return {
+            id: t._id.toString(),
+            type: t.type as 'credit' | 'debit',
+            action: t.action,
+            amount: t.amount,
+            balanceAfter: t.balanceAfter,
+            createdAt: t.createdAt,
         };
     }
 

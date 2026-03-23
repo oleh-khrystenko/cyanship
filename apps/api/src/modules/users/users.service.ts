@@ -6,6 +6,7 @@ import { EXECUTION_TRANSACTION_TYPE } from '@cyanship/types';
 import {
     ExecutionTransaction,
     ExecutionTransactionDocument,
+    ExecutionTransactionLean,
 } from './schemas/execution-transaction.schema';
 import { User, UserDocument } from './schemas/user.schema';
 
@@ -163,7 +164,7 @@ export class UsersService {
     async getRecentTransactions(
         userId: string,
         limit: number = 10,
-    ): Promise<ExecutionTransaction[]> {
+    ): Promise<ExecutionTransactionLean[]> {
         return this.executionTransactionModel
             .find({ userId: new Types.ObjectId(userId) })
             .sort({ createdAt: -1 })
