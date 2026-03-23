@@ -55,6 +55,23 @@
                 "sheet_title_billing": "Stripe-Powered Checkout",
                 "sheet_title_lighthouse": "Built for Speed",
                 "try_it": "Try it"
+            },
+            "proof_auth": {
+                "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+                "terms_required": "Please accept the Terms to continue",
+                "google_button": "Sign in with Google",
+                "or_divider": "or",
+                "email_placeholder": "your@email.com",
+                "continue_button": "Continue",
+                "magic_link_sent_title": "Check your email",
+                "magic_link_sent_description": "We sent a link to <bold>{email}</bold>.",
+                "resend_button": "Resend",
+                "resend_countdown": "Resend in {seconds}s",
+                "other_email": "Use different email",
+                "authenticated_greeting": "Signed in as",
+                "logout_button": "Sign out",
+                "error_generic": "Something went wrong. Please try again",
+                "error_rate_limit": "Too many attempts. Please try again later"
             }
         },
         "portfolio": {
