@@ -63,7 +63,7 @@ export class PaymentsService {
         userId: string,
         dto: CreateCheckoutSession
     ): Promise<{ checkoutUrl: string }> {
-        const { paymentType, planCode, packCode } = dto;
+        const { paymentType, planCode, packCode, returnPath } = dto;
 
         // Feature flag check
         if (
@@ -91,8 +91,11 @@ export class PaymentsService {
         }
 
         const locale = user.preferredLang;
-        const successUrl = `${ENV.WEB_URL}/${locale}/billing/success`;
-        const cancelUrl = `${ENV.WEB_URL}/${locale}/billing/cancel`;
+        const returnQuery = returnPath
+            ? `?returnPath=${encodeURIComponent(returnPath)}`
+            : '';
+        const successUrl = `${ENV.WEB_URL}/${locale}/billing/success${returnQuery}`;
+        const cancelUrl = `${ENV.WEB_URL}/${locale}/billing/cancel${returnQuery}`;
 
         // Subscription-specific validation
         if (paymentType === PAYMENT_TYPE.SUBSCRIPTION) {

@@ -27,8 +27,6 @@ interface ProofBillingProps {
     onRequestAuth?: () => void;
 }
 
-const BILLING_RETURN_KEY = 'billing_return_path';
-
 const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
     const t = useTranslations('landing_page.dogfooding.proof_billing');
     const tBilling = useTranslations('billing_page');
@@ -86,12 +84,11 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         setLoadingAction(actionKey);
 
         try {
-            sessionStorage.setItem(BILLING_RETURN_KEY, `/${locale}#dogfooding`);
-
+            const returnPath = `/${locale}#dogfooding`;
             const { checkoutUrl } =
                 type === 'subscription'
-                    ? await createSubscriptionCheckout(code)
-                    : await createOneOffCheckout(code);
+                    ? await createSubscriptionCheckout(code, returnPath)
+                    : await createOneOffCheckout(code, returnPath);
 
             window.location.assign(checkoutUrl);
         } catch {
