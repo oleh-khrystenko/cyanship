@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Mail, Check } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 
 import UiButton from '@/shared/ui/UiButton';
@@ -173,20 +173,15 @@ const ProofAuth = () => {
 
         return (
             <div className="flex w-full flex-col items-center gap-8 py-6">
-                <div className="relative">
-                    <UiAvatar size="xl">
-                        {user.profile.avatar && (
-                            <UiAvatarImage
-                                src={user.profile.avatar}
-                                alt={user.profile.name || user.email}
-                            />
-                        )}
-                        <UiAvatarFallback size="xl">{initials}</UiAvatarFallback>
-                    </UiAvatar>
-                    <div className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-success text-white">
-                        <Check className="size-4" strokeWidth={3} />
-                    </div>
-                </div>
+                <UiAvatar size="2xl">
+                    {user.profile.avatar && (
+                        <UiAvatarImage
+                            src={user.profile.avatar}
+                            alt={user.profile.name || user.email}
+                        />
+                    )}
+                    <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
+                </UiAvatar>
 
                 <div className="space-y-1 text-center">
                     {user.profile.name && (
@@ -199,9 +194,6 @@ const ProofAuth = () => {
 
                 <div className="flex w-full flex-col items-center gap-3">
                     <div className="h-px w-full bg-border" />
-                    <p className="text-sm text-muted-foreground">
-                        {t('authenticated_greeting')}
-                    </p>
                     <UiButton
                         variant="outline"
                         size="md"
