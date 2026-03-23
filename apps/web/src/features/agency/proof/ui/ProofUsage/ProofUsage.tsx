@@ -4,17 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { AxiosError } from 'axios';
 
 import {
     EXECUTION_ACTION,
     EXECUTION_ACTION_COST,
-    SPENDABLE_ACTIONS,
     type ExecutionTransactionItem,
     type SpendableAction,
 } from '@cyanship/types';
 import { spendExecutions, getExecutionTransactions, getMe } from '@/shared/api';
-import { getApiMessageKey } from '@/shared/api/mapApiCode';
 import { useAuthStore } from '@/stores/auth';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -84,13 +81,8 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
 
             // Prepend new transaction
             setTransactions((prev) => [result.transaction, ...prev].slice(0, 10));
-        } catch (error) {
-            if (error instanceof AxiosError && error.response?.data?.code) {
-                const key = getApiMessageKey(error.response.data.code, 'executions');
-                toast.error(t.has(key) ? t(key) : t('insufficient_balance'));
-            } else {
-                toast.error(t('insufficient_balance'));
-            }
+        } catch {
+            toast.error(t('insufficient_balance'));
         } finally {
             setSpendingAction(null);
         }
