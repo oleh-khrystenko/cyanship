@@ -184,9 +184,9 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
 
                                 <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
                                     {formatPrice(plan.priceAmount, plan.currency)}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {tBilling(`subscribe.interval_${plan.interval}`)}
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        {' '}{tBilling(`subscribe.interval_${plan.interval}`)}
+                                    </span>
                                 </p>
 
                                 <UiButton
@@ -238,11 +238,12 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
 
                                 <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
                                     {formatPrice(pack.priceAmount, pack.currency)}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {tBilling('packs.executions_count', {
-                                        count: pack.executions.toLocaleString('en-US'),
-                                    })}
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        {' · '}
+                                        {tBilling('packs.executions_count', {
+                                            count: pack.executions.toLocaleString('en-US'),
+                                        })}
+                                    </span>
                                 </p>
 
                                 <UiButton
