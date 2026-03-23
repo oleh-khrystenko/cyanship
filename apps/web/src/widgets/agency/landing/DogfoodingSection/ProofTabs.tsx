@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { UserPlus, CreditCard, Gauge, type LucideIcon } from 'lucide-react';
+import { UserPlus, CreditCard, Play, type LucideIcon } from 'lucide-react';
 import { composeClasses } from '@/shared/lib';
 import type { ProofTabKey } from './types';
 
@@ -13,7 +13,7 @@ interface ProofTabsProps {
 const tabs: { key: ProofTabKey; icon: LucideIcon; labelKey: string }[] = [
     { key: 'auth', icon: UserPlus, labelKey: 'step_1' },
     { key: 'billing', icon: CreditCard, labelKey: 'step_2' },
-    { key: 'lighthouse', icon: Gauge, labelKey: 'step_3' },
+    { key: 'usage', icon: Play, labelKey: 'step_3' },
 ];
 
 const ProofTabs = ({ activeTab, onTabChange }: ProofTabsProps) => {

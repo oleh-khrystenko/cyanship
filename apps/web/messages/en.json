@@ -49,11 +49,11 @@
             "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow",
             "step_2": "Click the Stripe checkout to see the payment integration",
-            "step_3": "Experience the load speed firsthand",
+            "step_3": "Test the usage-based billing logic",
             "proof_shell": {
                 "sheet_title_auth": "One-Click Auth",
                 "sheet_title_billing": "Stripe-Powered Checkout",
-                "sheet_title_lighthouse": "Built for Speed",
+                "sheet_title_usage": "Usage Demo",
                 "try_it": "Try it"
             },
             "proof_auth": {
@@ -80,11 +80,7 @@
                 "buy_button": "Purchase",
                 "error": "Could not load pricing"
             },
-            "proof_lighthouse": {
-                "performance": "Performance",
-                "accessibility": "Accessibility",
-                "best_practices": "Best Practices",
-                "seo": "SEO"
+            "proof_usage": {
             }
         },
         "portfolio": {
