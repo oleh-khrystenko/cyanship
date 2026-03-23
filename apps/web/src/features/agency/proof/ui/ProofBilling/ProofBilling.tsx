@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { ExternalLink } from 'lucide-react';
 
 import {
     PAYMENTS_SUBSCRIPTION_ENABLED,
@@ -12,6 +13,7 @@ import {
     getCatalog,
     createSubscriptionCheckout,
     createOneOffCheckout,
+    createPortalSession,
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
@@ -32,12 +34,16 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
     const tBilling = useTranslations('billing_page');
     const locale = useLocale();
 
+    const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
     const [catalog, setCatalog] = useState<PaymentsCatalog | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
     const [hasError, setHasError] = useState(false);
+
+    const billing = user?.billing;
+    const hasActiveSubscription = billing?.hasActiveSubscription === true;
 
     const showBothTabs = PAYMENTS_SUBSCRIPTION_ENABLED && PAYMENTS_ONE_OFF_ENABLED;
     const [activeSubTab, setActiveSubTab] = useState<SubTab>(
@@ -63,6 +69,11 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
             catalog?.executionPacks
                 .toSorted((a, b) => a.displayOrder - b.displayOrder) ?? [],
         [catalog],
+    );
+
+    const activePlan = useMemo(
+        () => plans.find((p) => p.code === billing?.planCode),
+        [plans, billing?.planCode],
     );
 
     const handleCheckout = async (type: 'subscription' | 'oneoff', code: string) => {
@@ -93,6 +104,25 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         }
     };
 
+    const handlePortal = async () => {
+        setLoadingAction('portal');
+        try {
+            const { portalUrl } = await createPortalSession();
+            window.location.assign(portalUrl);
+        } catch {
+            toast.error(tBilling('active.manage_error'));
+            setLoadingAction(null);
+        }
+    };
+
+    const formatDate = (date: Date | string | null) => {
+        if (!date) return '';
+        return new Intl.DateTimeFormat(
+            locale === 'uk' ? 'uk-UA' : 'en-US',
+            { year: 'numeric', month: 'long', day: 'numeric' },
+        ).format(date instanceof Date ? date : new Date(date));
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -121,7 +151,8 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         );
     }
 
-    const isCheckoutInProgress = loadingAction !== null;
+    const isActionInProgress = loadingAction !== null;
+    const isPortalLoading = loadingAction === 'portal';
 
     return (
         <div className="w-full space-y-4">
@@ -159,56 +190,109 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
             )}
 
             {activeSubTab === 'plans' && PAYMENTS_SUBSCRIPTION_ENABLED && (
-                <div role="tabpanel" className="grid grid-cols-2 gap-4">
-                    {plans.map((plan) => {
-                        const actionKey = `subscribe_${plan.code}`;
-                        const isBusy = loadingAction === actionKey;
+                <div role="tabpanel">
+                    {hasActiveSubscription ? (
+                        <div className="rounded-xl border border-border p-5">
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-foreground">
+                                    {tBilling('active.plan_name', {
+                                        plan: billing?.planCode
+                                            ? tBilling(`plans.${billing.planCode}.name`, {
+                                                  defaultValue: billing.planCode,
+                                              })
+                                            : '',
+                                    })}
+                                </p>
+                                <span className="rounded-full bg-success/15 px-2.5 py-0.5 text-[10px] font-medium text-success">
+                                    {billing?.cancelAtPeriodEnd
+                                        ? tBilling('active.status_canceling', {
+                                              date: formatDate(billing.currentPeriodEnd),
+                                          })
+                                        : tBilling('active.status_active')}
+                                </span>
+                            </div>
 
-                        return (
-                            <div
-                                key={plan.code}
-                                className="flex flex-col rounded-xl border border-border p-5"
-                            >
-                                <div className="flex items-center justify-between gap-2">
-                                    <p className="text-sm font-semibold text-foreground">
-                                        {tBilling(`plans.${plan.code}.name`, {
-                                            defaultValue: plan.code,
-                                        })}
-                                    </p>
-                                    {plan.featured && (
-                                        <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                            {tBilling(`plans.${plan.code}.badge`)}
-                                        </span>
-                                    )}
-                                </div>
-
+                            {activePlan && (
                                 <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
-                                    {formatPrice(plan.priceAmount, plan.currency)}
+                                    {formatPrice(activePlan.priceAmount, activePlan.currency)}
                                     <span className="text-sm font-normal text-muted-foreground">
-                                        {' '}{tBilling(`subscribe.interval_${plan.interval}`)}
+                                        {' '}{tBilling(`subscribe.interval_${activePlan.interval}`)}
                                     </span>
                                 </p>
+                            )}
 
-                                <UiButton
-                                    variant={plan.featured ? 'filled' : 'outline'}
-                                    size="sm"
-                                    className={`relative mt-4 w-full justify-center ${!plan.featured ? 'border-primary text-primary hover:border-primary hover:bg-primary/10 hover:text-primary' : ''}`}
-                                    onClick={() => handleCheckout('subscription', plan.code)}
-                                    disabled={isCheckoutInProgress}
-                                >
-                                    <span className={isBusy ? 'invisible' : ''}>
-                                        {t('subscribe_button')}
-                                    </span>
-                                    {isBusy && (
-                                        <UiSpinner
+                            <UiButton
+                                variant="outline"
+                                size="sm"
+                                IconRight={!isPortalLoading ? <ExternalLink /> : undefined}
+                                className="relative mt-4 w-full justify-center"
+                                onClick={handlePortal}
+                                disabled={isActionInProgress}
+                            >
+                                <span className={isPortalLoading ? 'invisible' : ''}>
+                                    {tBilling('active.manage_button')}
+                                </span>
+                                {isPortalLoading && (
+                                    <UiSpinner
+                                        size="sm"
+                                        className="absolute inset-0 m-auto"
+                                    />
+                                )}
+                            </UiButton>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                            {plans.map((plan) => {
+                                const actionKey = `subscribe_${plan.code}`;
+                                const isBusy = loadingAction === actionKey;
+
+                                return (
+                                    <div
+                                        key={plan.code}
+                                        className="flex flex-col rounded-xl border border-border p-5"
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-sm font-semibold text-foreground">
+                                                {tBilling(`plans.${plan.code}.name`, {
+                                                    defaultValue: plan.code,
+                                                })}
+                                            </p>
+                                            {plan.featured && (
+                                                <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                    {tBilling(`plans.${plan.code}.badge`)}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                                            {formatPrice(plan.priceAmount, plan.currency)}
+                                            <span className="text-sm font-normal text-muted-foreground">
+                                                {' '}{tBilling(`subscribe.interval_${plan.interval}`)}
+                                            </span>
+                                        </p>
+
+                                        <UiButton
+                                            variant={plan.featured ? 'filled' : 'outline'}
                                             size="sm"
-                                            className="absolute inset-0 m-auto"
-                                        />
-                                    )}
-                                </UiButton>
-                            </div>
-                        );
-                    })}
+                                            className={`relative mt-4 w-full justify-center ${!plan.featured ? 'border-primary text-primary hover:border-primary hover:bg-primary/10 hover:text-primary' : ''}`}
+                                            onClick={() => handleCheckout('subscription', plan.code)}
+                                            disabled={isActionInProgress}
+                                        >
+                                            <span className={isBusy ? 'invisible' : ''}>
+                                                {t('subscribe_button')}
+                                            </span>
+                                            {isBusy && (
+                                                <UiSpinner
+                                                    size="sm"
+                                                    className="absolute inset-0 m-auto"
+                                                />
+                                            )}
+                                        </UiButton>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -251,7 +335,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                     size="sm"
                                     className={`relative mt-4 w-full justify-center ${!pack.featured ? 'border-primary text-primary hover:border-primary hover:bg-primary/10 hover:text-primary' : ''}`}
                                     onClick={() => handleCheckout('oneoff', pack.code)}
-                                    disabled={isCheckoutInProgress}
+                                    disabled={isActionInProgress}
                                 >
                                     <span className={isBusy ? 'invisible' : ''}>
                                         {t('buy_button')}
