@@ -107,16 +107,17 @@ const DogfoodingSection = () => {
                         onInteractOutside={handleInteractOutside}
                     >
                         <UiSheetHeader>
-                            <UiSheetTitle>
+                            <UiSheetTitle className="text-xl">
                                 {activeTab && t(`proof_shell.sheet_title_${activeTab}`)}
                             </UiSheetTitle>
                         </UiSheetHeader>
-                        <div className="h-[60vh] overflow-y-auto p-4 pt-0">
+                        <div className="flex h-[60vh] flex-col items-center justify-center overflow-y-auto p-4 pt-0">
                             {activeTab && (
                                 <ProofWindow
                                     activeTab={activeTab}
                                     title={t(`proof_shell.sheet_title_${activeTab}`)}
                                     onRequestAuth={handleRequestAuth}
+                                    hideTitle
                                 />
                             )}
                         </div>
