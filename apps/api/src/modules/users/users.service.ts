@@ -223,6 +223,7 @@ export class UsersService {
         await this.userModel.findByIdAndUpdate(userId, {
             deletedAt: null,
             accountDeletionRequestedAt: null,
+            deletionReminderSentAt: null,
         });
     }
 

@@ -1,26 +1,22 @@
 import { Button, Text } from '@react-email/components';
 import { EMAIL_COLORS } from '@cyanship/types';
 
+import type { DeletionReminderTranslations } from '../i18n/types';
 import { BaseLayout } from './layouts/base';
 
-interface DeletionConfirmationEmailProps {
+interface DeletionReminderEmailProps {
     signInUrl: string;
-    translations: {
-        body: (formattedDate: string) => string;
-        instruction: string;
-        cta: string;
-        footer: string;
-    };
+    translations: DeletionReminderTranslations;
     formattedDate: string;
     lang: string;
 }
 
-export function DeletionConfirmationEmail({
+export function DeletionReminderEmail({
     signInUrl,
     translations: t,
     formattedDate,
     lang,
-}: DeletionConfirmationEmailProps) {
+}: DeletionReminderEmailProps) {
     return (
         <BaseLayout lang={lang}>
             <Text style={bodyText}>{t.body(formattedDate)}</Text>

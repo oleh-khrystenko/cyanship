@@ -15,6 +15,7 @@ import { ENV } from '../../config/env';
 import { resolveTranslations } from './i18n/resolve';
 import { MagicLinkEmail } from './templates/magic-link';
 import { DeletionConfirmationEmail } from './templates/deletion-confirmation';
+import { DeletionReminderEmail } from './templates/deletion-reminder';
 
 const DATE_LOCALE: Record<string, string> = {
     [LANG.UK]: 'uk-UA',
@@ -58,23 +59,56 @@ export class EmailService {
         const { email, deletionDate, lang } = params;
         const t = resolveTranslations(lang);
 
-        const formattedDate = deletionDate.toLocaleDateString(
-            DATE_LOCALE[lang] ?? DATE_LOCALE[LANG.EN],
-            { year: 'numeric', month: 'long', day: 'numeric' }
-        );
+        const formattedDate = this.formatDate(deletionDate, lang);
 
         await this.send({
             to: email,
             subject: t.deletionConfirmation.subject,
             react: DeletionConfirmationEmail({
                 signInUrl: `${ENV.WEB_URL}/auth/signin`,
-                translations: t.deletionConfirmation,
+                translations: {
+                    ...t.deletionConfirmation,
+                    instruction: t.deletionConfirmation.instruction(
+                        ENV.ACCOUNT_DELETION_GRACE_DAYS
+                    ),
+                },
                 formattedDate,
                 lang,
             }),
         });
 
         this.logger.log(`Deletion confirmation sent to ${email}`);
+    }
+
+    async sendDeletionReminder(params: {
+        email: string;
+        deletionDate: Date;
+        lang: string;
+    }): Promise<void> {
+        const { email, deletionDate, lang } = params;
+        const t = resolveTranslations(lang);
+
+        const formattedDate = this.formatDate(deletionDate, lang);
+
+        await this.send({
+            to: email,
+            subject: t.deletionReminder.subject,
+            react: DeletionReminderEmail({
+                signInUrl: `${ENV.WEB_URL}/auth/signin`,
+                translations: t.deletionReminder,
+                formattedDate,
+                lang,
+            }),
+        });
+
+        this.logger.log(`Deletion reminder sent to ${email}`);
+    }
+
+    private formatDate(date: Date, lang: string): string {
+        return date.toLocaleDateString(
+            DATE_LOCALE[lang] ?? DATE_LOCALE[LANG.EN],
+            { year: 'numeric', month: 'long', day: 'numeric' }
+        );
     }
 
     private async send(options: {

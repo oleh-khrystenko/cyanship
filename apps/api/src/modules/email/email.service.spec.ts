@@ -115,7 +115,6 @@ describe('EmailService', () => {
 
             const html = getRenderedHtml();
             expect(html).toContain('Підтвердити видалення');
-            expect(html).toContain('30 днів');
         });
 
         it('should send login email with EN translations', async () => {

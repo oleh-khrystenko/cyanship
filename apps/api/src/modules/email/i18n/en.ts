@@ -24,7 +24,7 @@ export const en = {
         },
         [MAGIC_LINK_PURPOSE.DELETE_ACCOUNT]: {
             subject: 'Confirm Account Deletion',
-            body: 'Click the button below to confirm account deletion. After confirmation, you will have 30 days to recover your account — just sign in during that time.',
+            body: 'Click the button below to confirm account deletion.',
             cta: 'Confirm Deletion',
             footer: "This link expires in 15 minutes. If you didn't request deletion — ignore this email.",
         },
@@ -33,7 +33,17 @@ export const en = {
         subject: 'Your account has been deactivated',
         body: (formattedDate: string) =>
             `Your CyanShip account has been deactivated. All data will be permanently deleted on ${formattedDate}.`,
-        instruction: 'To restore your account, simply sign in within 30 days.',
+        instruction: (graceDays: number) =>
+            `To restore your account, simply sign in within ${graceDays} ${graceDays === 1 ? 'day' : 'days'}.`,
+        cta: 'Sign In',
+        footer: "If you didn't request deletion — sign in to your account as soon as possible.",
+    },
+    deletionReminder: {
+        subject: 'Your account will be deleted tomorrow',
+        body: (formattedDate: string) =>
+            `Your CyanShip account is scheduled for permanent deletion on ${formattedDate}.`,
+        instruction:
+            'To keep your account, simply sign in before the deletion date.',
         cta: 'Sign In',
         footer: "If you didn't request deletion — sign in to your account as soon as possible.",
     },
