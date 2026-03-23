@@ -79,6 +79,12 @@
                 "subscribe_button": "Subscribe",
                 "buy_button": "Purchase",
                 "error": "Could not load pricing"
+            },
+            "proof_lighthouse": {
+                "performance": "Performance",
+                "accessibility": "Accessibility",
+                "best_practices": "Best Practices",
+                "seo": "SEO"
             }
         },
         "portfolio": {

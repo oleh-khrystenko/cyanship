@@ -79,6 +79,12 @@
                 "subscribe_button": "Підписатись",
                 "buy_button": "Придбати",
                 "error": "Не вдалося завантажити ціни"
+            },
+            "proof_lighthouse": {
+                "performance": "Продуктивність",
+                "accessibility": "Доступність",
+                "best_practices": "Найкращі практики",
+                "seo": "SEO"
             }
         },
         "portfolio": {
