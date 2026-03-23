@@ -37,9 +37,9 @@ const ProofWindow = ({ activeTab, title, onRequestAuth }: ProofWindowProps) => {
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-card p-6">
-            <h3 className="mb-4 font-semibold text-foreground">{title}</h3>
+            <h3 className="mb-6 text-center text-xl font-semibold text-foreground">{title}</h3>
             <div
-                className="transition-opacity duration-150"
+                className="flex flex-1 flex-col items-center transition-opacity duration-150"
                 style={{ opacity: visible ? 1 : 0 }}
             >
                 <Panel onRequestAuth={onRequestAuth} />
