@@ -325,6 +325,7 @@ const ProofAuth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    size="lg"
                     IconLeft={<Mail />}
                     error={errorMessage || undefined}
                 />
@@ -332,7 +333,7 @@ const ProofAuth = () => {
                 <UiButton
                     type="submit"
                     variant="filled"
-                    size="md"
+                    size="lg"
                     className="w-full justify-center"
                     disabled={!email}
                 >
