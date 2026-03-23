@@ -63,8 +63,8 @@ const PricingSection = () => {
                                 as="a"
                                 href="#footer-cta"
                                 variant="filled"
-                                size="md"
-                                className="mt-8 w-full justify-center sm:text-base"
+                                size="lg"
+                                className="mt-8 w-full justify-center"
                             >
                                 {t('cta')}
                             </UiButton>

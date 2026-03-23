@@ -41,8 +41,8 @@ const FooterCtaSection = () => {
                             as="a"
                             href="#"
                             variant="filled"
-                            size="md"
-                            className="mt-8 w-full font-semibold sm:h-12 sm:w-auto sm:px-8 sm:text-base"
+                            size="lg"
+                            className="mt-8 w-full font-semibold sm:w-auto"
                             IconRight={<ArrowRight />}
                         >
                             {t('cta')}

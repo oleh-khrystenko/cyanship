@@ -33,8 +33,8 @@ const HeroSection = () => {
                             as="a"
                             href="#pricing"
                             variant="filled"
-                            size="md"
-                            className="w-full font-semibold sm:h-12 sm:w-auto sm:px-8 sm:text-base"
+                            size="lg"
+                            className="w-full font-semibold sm:w-auto"
                             IconRight={<ArrowRight />}
                         >
                             {t('cta_primary')}
@@ -43,8 +43,8 @@ const HeroSection = () => {
                             as="link"
                             href="/auth/signin"
                             variant="outline"
-                            size="md"
-                            className="w-full sm:h-12 sm:w-auto sm:px-8 sm:text-base"
+                            size="lg"
+                            className="w-full sm:w-auto"
                         >
                             {t('cta_secondary')}
                         </UiButton>

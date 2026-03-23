@@ -413,7 +413,7 @@ const Header = () => {
                                             as="link"
                                             href={`/${locale}/auth/signin`}
                                             variant="text"
-                                            size="sm"
+                                            size="md"
                                             className="justify-start"
                                             onClick={() =>
                                                 setIsSheetOpen(false)
