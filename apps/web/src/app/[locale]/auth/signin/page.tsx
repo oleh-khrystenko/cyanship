@@ -425,13 +425,16 @@ function SigninContent() {
                 type="submit"
                 variant="filled"
                 size="lg"
-                className="w-full justify-center"
+                className="relative w-full justify-center"
                 disabled={submitting || !password}
             >
-                {submitting ? (
-                    <UiSpinner size="sm" />
-                ) : (
-                    t('signin_button')
+                <span className={submitting ? 'invisible' : ''}>
+                    {t('signin_button')}
+                </span>
+                {submitting && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                        <UiSpinner size="sm" />
+                    </span>
                 )}
             </UiButton>
 
