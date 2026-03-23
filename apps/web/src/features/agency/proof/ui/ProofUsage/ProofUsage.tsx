@@ -157,9 +157,9 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
                             disabled={isActionInProgress || !canAfford}
                             onClick={() => handleSpend(action)}
                         >
-                            <span className={isBusy ? 'invisible' : ''}>
-                                {t(labelKey)}
-                                <span className="ml-1 opacity-70">
+                            <span className={`flex flex-wrap items-center justify-center gap-x-1 ${isBusy ? 'invisible' : ''}`}>
+                                <span>{t(labelKey)}</span>
+                                <span className="opacity-70">
                                     ({t('cost_label', { cost: cost.toLocaleString('en-US') })})
                                 </span>
                             </span>
