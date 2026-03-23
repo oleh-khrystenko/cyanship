@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { ProofAuth, ProofBilling, ProofLighthouse } from '@/features/agency/proof';
 import type { ProofTabKey } from './types';
 
+type ProofWindowVariant = 'card' | 'embedded';
+
 interface ProofWindowProps {
     activeTab: ProofTabKey;
-    title: string;
+    title?: string;
     onRequestAuth: () => void;
-    hideTitle?: boolean;
+    variant?: ProofWindowVariant;
 }
 
 const panels: Record<ProofTabKey, React.ComponentType<{ onRequestAuth?: () => void }>> = {
@@ -17,7 +19,12 @@ const panels: Record<ProofTabKey, React.ComponentType<{ onRequestAuth?: () => vo
     lighthouse: ProofLighthouse,
 };
 
-const ProofWindow = ({ activeTab, title, onRequestAuth, hideTitle }: ProofWindowProps) => {
+const variantStyles: Record<ProofWindowVariant, string> = {
+    card: 'flex-1 overflow-y-auto rounded-xl border border-border bg-card p-6',
+    embedded: 'flex-1',
+};
+
+const ProofWindow = ({ activeTab, title, onRequestAuth, variant = 'card' }: ProofWindowProps) => {
     const [displayedTab, setDisplayedTab] = useState(activeTab);
     const [visible, setVisible] = useState(true);
 
@@ -37,8 +44,8 @@ const ProofWindow = ({ activeTab, title, onRequestAuth, hideTitle }: ProofWindow
     const Panel = panels[displayedTab];
 
     return (
-        <div className="flex flex-1 flex-col overflow-y-auto rounded-xl border border-border bg-card p-6">
-            {!hideTitle && <h3 className="mb-6 text-center text-2xl font-semibold text-foreground">{title}</h3>}
+        <div className={`flex flex-col ${variantStyles[variant]}`}>
+            {title && <h3 className="mb-6 text-center text-2xl font-semibold text-foreground">{title}</h3>}
             <div
                 className="flex flex-1 flex-col items-center justify-center transition-opacity duration-150"
                 style={{ opacity: visible ? 1 : 0 }}
