@@ -19,9 +19,7 @@ export class CatalogService implements OnModuleInit {
     private readonly stripe: Stripe;
     private readonly logger = new Logger(CatalogService.name);
 
-    constructor(
-        @Inject(REDIS_CLIENT) private readonly redis: Redis,
-    ) {
+    constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {
         this.stripe = new Stripe(ENV.STRIPE_SECRET_KEY, {
             apiVersion: '2026-02-25.clover',
         });
@@ -50,7 +48,7 @@ export class CatalogService implements OnModuleInit {
         } catch (error) {
             this.logger.warn(
                 'Failed to read catalog from Redis, falling back to Stripe',
-                error instanceof Error ? error.message : String(error),
+                error instanceof Error ? error.message : String(error)
             );
         }
 
@@ -66,12 +64,12 @@ export class CatalogService implements OnModuleInit {
                 CACHE_KEY,
                 JSON.stringify(catalog),
                 'EX',
-                CACHE_TTL_SEC,
+                CACHE_TTL_SEC
             );
         } catch (error) {
             this.logger.warn(
                 'Failed to write catalog to Redis cache',
-                error instanceof Error ? error.message : String(error),
+                error instanceof Error ? error.message : String(error)
             );
         }
 
@@ -80,7 +78,7 @@ export class CatalogService implements OnModuleInit {
 
     /** Returns a subscription plan by code, or undefined if not found. */
     async getSubscriptionPlan(
-        code: string,
+        code: string
     ): Promise<SubscriptionPlanItem | undefined> {
         const catalog = await this.getCatalog();
         return catalog.subscriptionPlans.find((p) => p.code === code);
@@ -88,7 +86,7 @@ export class CatalogService implements OnModuleInit {
 
     /** Returns an execution pack by code, or undefined if not found. */
     async getExecutionPack(
-        code: string,
+        code: string
     ): Promise<ExecutionPackItem | undefined> {
         const catalog = await this.getCatalog();
         return catalog.executionPacks.find((p) => p.code === code);
@@ -133,19 +131,19 @@ export class CatalogService implements OnModuleInit {
         if (missing.length > 0) {
             throw new Error(
                 `❌ Stripe catalog validation failed. Missing products: ${missing.join(', ')}. ` +
-                    'Check that each Stripe Product has metadata.code and metadata.purchase_type set correctly.',
+                    'Check that each Stripe Product has metadata.code and metadata.purchase_type set correctly.'
             );
         }
 
         // Check for duplicate codes
         if (planCodes.size !== catalog.subscriptionPlans.length) {
             throw new Error(
-                '❌ Stripe catalog has duplicate subscription plan codes. Each metadata.code must be unique.',
+                '❌ Stripe catalog has duplicate subscription plan codes. Each metadata.code must be unique.'
             );
         }
         if (packCodes.size !== catalog.executionPacks.length) {
             throw new Error(
-                '❌ Stripe catalog has duplicate execution pack codes. Each metadata.code must be unique.',
+                '❌ Stripe catalog has duplicate execution pack codes. Each metadata.code must be unique.'
             );
         }
     }
@@ -170,7 +168,7 @@ export class CatalogService implements OnModuleInit {
             const price = product.default_price as Stripe.Price | null;
             if (!price || !price.unit_amount) {
                 this.logger.warn(
-                    `Stripe product "${product.name}" (${product.id}) has code="${code}" but no default_price with unit_amount — skipped`,
+                    `Stripe product "${product.name}" (${product.id}) has code="${code}" but no default_price with unit_amount — skipped`
                 );
                 continue;
             }
@@ -202,7 +200,7 @@ export class CatalogService implements OnModuleInit {
                 });
             } else {
                 this.logger.warn(
-                    `Stripe product "${product.name}" (${product.id}) has unknown purchase_type="${purchaseType}" — skipped`,
+                    `Stripe product "${product.name}" (${product.id}) has unknown purchase_type="${purchaseType}" — skipped`
                 );
             }
         }

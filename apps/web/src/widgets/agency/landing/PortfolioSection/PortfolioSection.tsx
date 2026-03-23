@@ -5,7 +5,7 @@ const PortfolioSection = () => {
     const t = useTranslations('landing_page.portfolio');
 
     return (
-        <section id="portfolio" className="scroll-mt-28 border-t border-border py-24">
+        <section id="portfolio" className="scroll-mt-16 border-t border-border py-24">
             <div className="container px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     {/* Text */}

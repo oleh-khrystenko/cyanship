@@ -41,11 +41,15 @@ function SigninContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get('redirect');
+    const initialEmail = searchParams.get('email');
+    const initialStep = searchParams.get('step');
+    const startWithPassword = !!(initialEmail && initialStep === 'password');
+
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const setUser = useAuthStore((s) => s.setUser);
 
-    const [state, setState] = useState<SigninState>('email');
-    const [email, setEmail] = useState('');
+    const [state, setState] = useState<SigninState>(startWithPassword ? 'password' : 'email');
+    const [email, setEmail] = useState(startWithPassword ? initialEmail : '');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -55,7 +59,7 @@ function SigninContent() {
     const [deletedDaysLeft, setDeletedDaysLeft] = useState(0);
     const [resendCountdown, setResendCountdown] = useState(0);
     const [resending, setResending] = useState(false);
-    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(startWithPassword);
     const [termsError, setTermsError] = useState('');
     const lastPurposeRef = useRef<MagicLinkPurpose>('login');
     const timerRef = useRef<ReturnType<typeof setInterval>>(null);
@@ -421,13 +425,16 @@ function SigninContent() {
                 type="submit"
                 variant="filled"
                 size="lg"
-                className="w-full justify-center"
+                className="relative w-full justify-center"
                 disabled={submitting || !password}
             >
-                {submitting ? (
-                    <UiSpinner size="sm" />
-                ) : (
-                    t('signin_button')
+                <span className={submitting ? 'invisible' : ''}>
+                    {t('signin_button')}
+                </span>
+                {submitting && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                        <UiSpinner size="sm" />
+                    </span>
                 )}
             </UiButton>
 

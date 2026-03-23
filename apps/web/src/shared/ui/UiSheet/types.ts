@@ -18,6 +18,7 @@ export type UiSheetCloseProps = ComponentPropsWithoutRef<
 export interface UiSheetContentProps
     extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
     side?: UiSheetSide;
+    hideOverlay?: boolean;
 }
 
 export type UiSheetHeaderProps = ComponentPropsWithoutRef<'div'>;

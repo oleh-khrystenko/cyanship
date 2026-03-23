@@ -47,12 +47,62 @@
             "label": "Доказ",
             "heading": "Ви дивитесь на цей код прямо зараз",
             "description": "Я не просто продаю цю архітектуру — я веду свій бізнес на ній. Ця сторінка побудована на тому самому ядрі CyanShip, яке використовуватиме ваш продукт.",
-            "step_1": "Створіть акаунт, щоб протестувати потік автентифікації.",
-            "step_2": "Натисніть на Stripe checkout, щоб побачити платіжну інтеграцію.",
-            "step_3": "Відчуйте швидкість завантаження на власному досвіді.",
-            "try_cta": "Спробувати",
-            "preview_subscription": "Pro Plan — {price}/міс",
-            "preview_executions": "Пакети виконань від {price}"
+            "step_1": "Створіть акаунт, щоб протестувати потік автентифікації",
+            "step_2": "Натисніть на Stripe checkout, щоб побачити платіжну інтеграцію",
+            "step_3": "Протестуйте логіку usage-based білінгу",
+            "proof_shell": {
+                "sheet_title_auth": "Автентифікація в один клік",
+                "sheet_title_billing": "Checkout на Stripe",
+                "sheet_title_usage": "Демо використання",
+                "try_it": "Демо"
+            },
+            "proof_auth": {
+                "terms_agree": "Я погоджуюсь з <terms>Умовами використання</terms> та <privacy>Політикою конфіденційності</privacy>",
+                "terms_required": "Прийміть Умови, щоб продовжити",
+                "google_button": "Увійти через Google",
+                "or_divider": "або",
+                "email_placeholder": "ваш@email.com",
+                "continue_button": "Продовжити",
+                "magic_link_sent_title": "Перевірте пошту",
+                "magic_link_sent_description": "Ми надіслали посилання на <bold>{email}</bold>.",
+                "resend_button": "Надіслати повторно",
+                "resend_countdown": "Повторно через {seconds}с",
+                "other_email": "Інший email",
+                "authenticated_greeting": "Ви увійшли як",
+                "logout_button": "Вийти",
+                "error_generic": "Щось пішло не так. Спробуйте ще раз",
+                "error_rate_limit": "Забагато спроб. Спробуйте пізніше"
+            },
+            "proof_billing": {
+                "plans_tab": "Плани",
+                "packs_tab": "Пакети",
+                "subscribe_button": "Підписатись",
+                "buy_button": "Придбати",
+                "error": "Не вдалося завантажити ціни"
+            },
+            "proof_usage": {
+                "balance_label": "Ваш баланс",
+                "balance_executions": "{count} виконань",
+                "generate_report": "Згенерувати звіт",
+                "run_analysis": "Запустити AI аналіз",
+                "cost_label": "-{cost} вик.",
+                "insufficient_balance": "Недостатньо виконань",
+                "transactions_title": "Остання активність",
+                "no_transactions": "Активності ще немає. Придбайте виконання у вкладці Billing щоб почати.",
+                "not_authenticated": "Увійдіть щоб протестувати usage-based білінг",
+                "sign_in_button": "Увійти",
+                "actions": {
+                    "standard_report": "Звіт згенеровано",
+                    "ai_analysis": "AI аналіз завершено",
+                    "subscription_activation": "Підписку активовано",
+                    "pack_purchase": "Пакет виконань придбано",
+                    "plan_change": "План змінено",
+                    "billing_reset": "Білінг скинуто"
+                },
+                "time_just_now": "Щойно",
+                "time_minutes_ago": "{count} хв тому",
+                "time_hours_ago": "{count} год тому"
+            }
         },
         "portfolio": {
             "label": "Портфоліо",

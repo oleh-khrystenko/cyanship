@@ -35,12 +35,46 @@ const envModule = require('../../config/env') as {
 
 const TEST_CATALOG = {
     subscriptionPlans: [
-        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
-        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+        {
+            code: 'starter',
+            priceId: 'price_test_starter',
+            priceAmount: 4900,
+            currency: 'usd',
+            interval: 'month',
+            executions: 10000,
+            displayOrder: 1,
+            featured: false,
+        },
+        {
+            code: 'pro',
+            priceId: 'price_test_pro',
+            priceAmount: 14900,
+            currency: 'usd',
+            interval: 'month',
+            executions: 50000,
+            displayOrder: 2,
+            featured: true,
+        },
     ],
     executionPacks: [
-        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
-        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+        {
+            code: 'basic',
+            priceId: 'price_test_basic',
+            priceAmount: 2900,
+            currency: 'usd',
+            executions: 5000,
+            displayOrder: 1,
+            featured: false,
+        },
+        {
+            code: 'max',
+            priceId: 'price_test_max',
+            priceAmount: 9900,
+            currency: 'usd',
+            executions: 25000,
+            displayOrder: 2,
+            featured: true,
+        },
     ],
 };
 
@@ -56,13 +90,19 @@ const TEST_PRICE_TO_EXECUTIONS: Record<string, number> = {
 
 const mockCatalogService = {
     getSubscriptionPlan: jest.fn((code: string) =>
-        Promise.resolve(TEST_CATALOG.subscriptionPlans.find(p => p.code === code)),
+        Promise.resolve(
+            TEST_CATALOG.subscriptionPlans.find((p) => p.code === code)
+        )
     ),
     getExecutionPack: jest.fn((code: string) =>
-        Promise.resolve(TEST_CATALOG.executionPacks.find(p => p.code === code)),
+        Promise.resolve(
+            TEST_CATALOG.executionPacks.find((p) => p.code === code)
+        )
     ),
     getPriceToPlanMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_PLAN),
-    getPriceToExecutionsMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_EXECUTIONS),
+    getPriceToExecutionsMap: jest
+        .fn()
+        .mockResolvedValue(TEST_PRICE_TO_EXECUTIONS),
     getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
 };
 
@@ -114,6 +154,8 @@ const mockOrphanModel = {
 
 const mockUsersService = {
     addExecutions: jest.fn(),
+    recordTransaction: jest.fn(),
+    clearTransactions: jest.fn(),
 };
 
 describe('PaymentsService', () => {
@@ -1224,12 +1266,24 @@ describe('PaymentsService', () => {
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(
+                    chainQuery(mockUser({ executions: { balance: 10000 } }))
+                );
+                mockUsersService.recordTransaction.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // Execution adjustment is inside the atomic pipeline, NOT a separate call
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
                 expect(pipelineAdjustment()).toBe(10000);
+                expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        userId: MOCK_USER_ID,
+                        type: 'credit',
+                        action: 'subscription_activation',
+                        amount: 10000,
+                    })
+                );
             });
 
             it('should use plain $set on CHECKOUT_COMPLETED when executionsAmount is missing', async () => {
@@ -1314,15 +1368,28 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(
+                    chainQuery(mockUser({ executions: { balance: 30000 } }))
+                );
+                mockUsersService.recordTransaction.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // delta = 50000 - 10000 = 40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
                 expect(pipelineAdjustment()).toBe(20000);
+                expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'credit',
+                        action: 'plan_change',
+                        amount: 20000,
+                    })
+                );
             });
 
             it('should include prorated downgrade adjustment in atomic pipeline (pro → starter)', async () => {
@@ -1344,14 +1411,27 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(
+                    chainQuery(mockUser({ executions: { balance: 30000 } }))
+                );
+                mockUsersService.recordTransaction.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // delta = 10000 - 50000 = -40000, ratio ≈ 0.5, adjustment = -20000
                 expect(pipelineAdjustment()).toBe(-20000);
+                expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'debit',
+                        action: 'plan_change',
+                        amount: 20000,
+                    })
+                );
             });
 
             it('should use plain $set when previousPriceId is absent (no plan change)', async () => {
@@ -1372,7 +1452,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1400,7 +1482,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1428,7 +1512,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1455,14 +1541,27 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(
+                    chainQuery(mockUser({ executions: { balance: 50000 } }))
+                );
+                mockUsersService.recordTransaction.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // No period info → ratio = 1.0 → full delta = 40000
                 expect(pipelineAdjustment()).toBe(40000);
+                expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'credit',
+                        action: 'plan_change',
+                        amount: 40000,
+                    })
+                );
             });
 
             it('should floor the prorated adjustment', async () => {
@@ -1486,15 +1585,28 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
+                mockUserModel.findById.mockReturnValue(
+                    chainQuery(mockUser({ executions: { balance: 36666 } }))
+                );
+                mockUsersService.recordTransaction.mockResolvedValue({});
 
                 await service.handleWebhook('stripe', rawBody, signature);
 
                 // delta = 40000, remaining = 20 days out of 30 → ratio = 20/30
                 // adjustment = floor(40000 * 20/30) = floor(26666.67) = 26666
                 expect(pipelineAdjustment()).toBe(26666);
+                expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'credit',
+                        action: 'plan_change',
+                        amount: 26666,
+                    })
+                );
             });
         });
 
@@ -1522,7 +1634,8 @@ describe('PaymentsService', () => {
 
                 expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    5
+                    5,
+                    'pack_purchase'
                 );
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
             });
@@ -1545,7 +1658,8 @@ describe('PaymentsService', () => {
 
                 expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    5
+                    5,
+                    'pack_purchase'
                 );
             });
 

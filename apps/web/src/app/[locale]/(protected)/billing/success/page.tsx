@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
@@ -12,8 +12,13 @@ export default function BillingSuccessPage() {
     const t = useTranslations('billing_page.callback');
     const router = useRouter();
     const { locale } = useParams<{ locale: string }>();
+    const searchParams = useSearchParams();
+    const handledRef = useRef(false);
 
     useEffect(() => {
+        if (handledRef.current) return;
+        handledRef.current = true;
+
         const handle = async () => {
             try {
                 const user = await getMe();
@@ -22,11 +27,15 @@ export default function BillingSuccessPage() {
             } catch {
                 toast.error(t('refresh_error'));
             }
-            router.replace(`/${locale}/billing`);
+            const returnPath = searchParams.get('returnPath');
+            const safeReturn = returnPath?.startsWith('/') && !returnPath.startsWith('//')
+                ? returnPath
+                : null;
+            router.replace(safeReturn || `/${locale}/billing`);
         };
 
         void handle();
-    }, [router, locale, t]);
+    }, [router, locale, t, searchParams]);
 
     return <UiFullPageLoader message={t('loading')} />;
 }

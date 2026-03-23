@@ -113,7 +113,10 @@ export class StripeService implements IPaymentProvider {
 
         // One-off payment (mode=payment, paid)
         if (session.mode === 'payment' && session.payment_status === 'paid') {
-            const executions = parseInt(session.metadata?.executions ?? '0', 10);
+            const executions = parseInt(
+                session.metadata?.executions ?? '0',
+                10
+            );
             return {
                 type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
                 providerEventId: event.id,
@@ -127,8 +130,13 @@ export class StripeService implements IPaymentProvider {
 
         // Subscription checkout (mode=subscription)
         if (session.mode === 'subscription') {
-            const executions = parseInt(session.metadata?.executions ?? '0', 10);
-            const currentPeriodEnd = await this.resolveSubscriptionPeriodEnd(session.subscription);
+            const executions = parseInt(
+                session.metadata?.executions ?? '0',
+                10
+            );
+            const currentPeriodEnd = await this.resolveSubscriptionPeriodEnd(
+                session.subscription
+            );
 
             return {
                 type: BILLING_EVENT_TYPE.CHECKOUT_COMPLETED,
@@ -166,7 +174,7 @@ export class StripeService implements IPaymentProvider {
         const previousPriceId = this.extractPreviousPriceId(
             event.data.previous_attributes as
                 | Record<string, unknown>
-                | undefined,
+                | undefined
         );
 
         // Resolve scheduled plan change (downgrade deferred to period end)
@@ -193,7 +201,7 @@ export class StripeService implements IPaymentProvider {
     }
 
     private extractPreviousPriceId(
-        previousAttributes: Record<string, unknown> | undefined,
+        previousAttributes: Record<string, unknown> | undefined
     ): string | null {
         if (!previousAttributes) return null;
 

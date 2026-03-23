@@ -28,7 +28,7 @@ import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 export class PaymentsController {
     constructor(
         private readonly paymentsService: PaymentsService,
-        private readonly catalogService: CatalogService,
+        private readonly catalogService: CatalogService
     ) {}
 
     @SkipThrottle()
