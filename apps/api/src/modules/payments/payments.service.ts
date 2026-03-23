@@ -56,7 +56,7 @@ export class PaymentsService {
 
         private readonly usersService: UsersService,
 
-        private readonly catalogService: CatalogService,
+        private readonly catalogService: CatalogService
     ) {}
 
     async createCheckoutSession(
@@ -106,7 +106,7 @@ export class PaymentsService {
                 });
             }
             const planEntry = await this.catalogService.getSubscriptionPlan(
-                planCode!,
+                planCode!
             );
             if (!planEntry) {
                 throw new BadRequestException('Invalid planCode');
@@ -275,7 +275,7 @@ export class PaymentsService {
             this.logger.error(
                 `Failed to mark webhook event ${event.providerEventId} as applied ` +
                     `(event was processed successfully)`,
-                error instanceof Error ? error.stack : String(error),
+                error instanceof Error ? error.stack : String(error)
             );
         }
     }
@@ -318,7 +318,7 @@ export class PaymentsService {
      */
     private async processSubscriptionEvent(
         event: BillingWebhookEvent,
-        userId: string,
+        userId: string
     ): Promise<boolean> {
         const priceToPlan = await this.catalogService.getPriceToPlanMap();
         const billingFields = this.buildBillingUpdate(event, priceToPlan);
@@ -334,7 +334,7 @@ export class PaymentsService {
         const phase1Update = this.buildAtomicUpdatePipeline(
             { $set: dotNotation },
             executionAdjustment,
-            event.occurredAt,
+            event.occurredAt
         );
 
         const updated = await this.userModel.findOneAndUpdate(
@@ -362,7 +362,7 @@ export class PaymentsService {
             const phase2Update = this.buildAtomicUpdatePipeline(
                 { $set: { billing: billingFields } },
                 executionAdjustment,
-                event.occurredAt,
+                event.occurredAt
             );
 
             const initialized = await this.userModel.findOneAndUpdate(
@@ -412,7 +412,7 @@ export class PaymentsService {
                     : 'plan change proration';
             this.logger.log(
                 `${direction} ${Math.abs(executionAdjustment)} executions for ${reason} ` +
-                    `(user: ${userId}, event: ${event.providerEventId})`,
+                    `(user: ${userId}, event: ${event.providerEventId})`
             );
         }
 
@@ -537,7 +537,7 @@ export class PaymentsService {
         await this.usersService.addExecutions(
             userId,
             executionsAmount,
-            EXECUTION_ACTION.PACK_PURCHASE,
+            EXECUTION_ACTION.PACK_PURCHASE
         );
         this.logger.log(
             `Added ${executionsAmount} executions to user ${userId} (event: ${event.providerEventId})`
@@ -545,13 +545,13 @@ export class PaymentsService {
     }
 
     private async resolveExecutionAdjustment(
-        event: BillingWebhookEvent,
+        event: BillingWebhookEvent
     ): Promise<number> {
         if (event.type === BILLING_EVENT_TYPE.CHECKOUT_COMPLETED) {
             const amount = event.executionsAmount ?? 0;
             if (!Number.isFinite(amount) || amount <= 0) {
                 this.logger.warn(
-                    `CHECKOUT_COMPLETED event ${event.providerEventId} has no executionsAmount`,
+                    `CHECKOUT_COMPLETED event ${event.providerEventId} has no executionsAmount`
                 );
                 return 0;
             }
@@ -566,7 +566,7 @@ export class PaymentsService {
     }
 
     private async calculatePlanChangeAdjustment(
-        event: BillingWebhookEvent,
+        event: BillingWebhookEvent
     ): Promise<number> {
         if (!event.previousPriceId) return 0;
 
@@ -578,7 +578,8 @@ export class PaymentsService {
                 ? items.data[0].price.id
                 : null;
 
-        if (!currentPriceId || currentPriceId === event.previousPriceId) return 0;
+        if (!currentPriceId || currentPriceId === event.previousPriceId)
+            return 0;
 
         const priceToExecutions =
             await this.catalogService.getPriceToExecutionsMap();
@@ -590,7 +591,7 @@ export class PaymentsService {
                 `Cannot calculate prorated executions: ` +
                     `old price ${event.previousPriceId} (${oldExecutions ?? 'unknown'}), ` +
                     `new price ${currentPriceId} (${newExecutions ?? 'unknown'}) ` +
-                    `(event: ${event.providerEventId})`,
+                    `(event: ${event.providerEventId})`
             );
             return 0;
         }
@@ -615,7 +616,7 @@ export class PaymentsService {
     private buildAtomicUpdatePipeline(
         billingStage: Record<string, unknown>,
         executionAdjustment: number,
-        occurredAt: Date,
+        occurredAt: Date
     ): Record<string, unknown>[] | Record<string, unknown> {
         if (executionAdjustment === 0) {
             return billingStage;
@@ -665,9 +666,7 @@ export class PaymentsService {
         ];
     }
 
-    private calculateRemainingPeriodRatio(
-        event: BillingWebhookEvent,
-    ): number {
+    private calculateRemainingPeriodRatio(event: BillingWebhookEvent): number {
         const periodStart = event.currentPeriodStart;
         const periodEnd = event.currentPeriodEnd;
 
@@ -692,7 +691,7 @@ export class PaymentsService {
 
     private buildBillingUpdate(
         event: BillingWebhookEvent,
-        priceToPlan: Record<string, string>,
+        priceToPlan: Record<string, string>
     ): Record<string, unknown> {
         const status = event.subscriptionStatus ?? SUBSCRIPTION_STATUS.UNKNOWN;
         const hasActive =

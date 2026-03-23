@@ -35,12 +35,46 @@ const envModule = require('../../config/env') as {
 
 const TEST_CATALOG = {
     subscriptionPlans: [
-        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
-        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+        {
+            code: 'starter',
+            priceId: 'price_test_starter',
+            priceAmount: 4900,
+            currency: 'usd',
+            interval: 'month',
+            executions: 10000,
+            displayOrder: 1,
+            featured: false,
+        },
+        {
+            code: 'pro',
+            priceId: 'price_test_pro',
+            priceAmount: 14900,
+            currency: 'usd',
+            interval: 'month',
+            executions: 50000,
+            displayOrder: 2,
+            featured: true,
+        },
     ],
     executionPacks: [
-        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
-        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+        {
+            code: 'basic',
+            priceId: 'price_test_basic',
+            priceAmount: 2900,
+            currency: 'usd',
+            executions: 5000,
+            displayOrder: 1,
+            featured: false,
+        },
+        {
+            code: 'max',
+            priceId: 'price_test_max',
+            priceAmount: 9900,
+            currency: 'usd',
+            executions: 25000,
+            displayOrder: 2,
+            featured: true,
+        },
     ],
 };
 
@@ -56,13 +90,19 @@ const TEST_PRICE_TO_EXECUTIONS: Record<string, number> = {
 
 const mockCatalogService = {
     getSubscriptionPlan: jest.fn((code: string) =>
-        Promise.resolve(TEST_CATALOG.subscriptionPlans.find(p => p.code === code)),
+        Promise.resolve(
+            TEST_CATALOG.subscriptionPlans.find((p) => p.code === code)
+        )
     ),
     getExecutionPack: jest.fn((code: string) =>
-        Promise.resolve(TEST_CATALOG.executionPacks.find(p => p.code === code)),
+        Promise.resolve(
+            TEST_CATALOG.executionPacks.find((p) => p.code === code)
+        )
     ),
     getPriceToPlanMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_PLAN),
-    getPriceToExecutionsMap: jest.fn().mockResolvedValue(TEST_PRICE_TO_EXECUTIONS),
+    getPriceToExecutionsMap: jest
+        .fn()
+        .mockResolvedValue(TEST_PRICE_TO_EXECUTIONS),
     getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
 };
 
@@ -1242,7 +1282,7 @@ describe('PaymentsService', () => {
                         type: 'credit',
                         action: 'subscription_activation',
                         amount: 10000,
-                    }),
+                    })
                 );
             });
 
@@ -1328,7 +1368,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(
@@ -1346,7 +1388,7 @@ describe('PaymentsService', () => {
                         type: 'credit',
                         action: 'plan_change',
                         amount: 20000,
-                    }),
+                    })
                 );
             });
 
@@ -1369,7 +1411,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(
@@ -1386,7 +1430,7 @@ describe('PaymentsService', () => {
                         type: 'debit',
                         action: 'plan_change',
                         amount: 20000,
-                    }),
+                    })
                 );
             });
 
@@ -1408,7 +1452,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1436,7 +1482,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1464,7 +1512,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
 
@@ -1491,7 +1541,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(
@@ -1508,7 +1560,7 @@ describe('PaymentsService', () => {
                         type: 'credit',
                         action: 'plan_change',
                         amount: 40000,
-                    }),
+                    })
                 );
             });
 
@@ -1533,7 +1585,9 @@ describe('PaymentsService', () => {
                     },
                 };
 
-                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(event);
+                mockPaymentProvider.handleWebhookPayload.mockResolvedValue(
+                    event
+                );
                 mockWebhookEventModel.create.mockResolvedValue({});
                 mockUserModel.findOneAndUpdate.mockResolvedValue({});
                 mockUserModel.findById.mockReturnValue(
@@ -1551,7 +1605,7 @@ describe('PaymentsService', () => {
                         type: 'credit',
                         action: 'plan_change',
                         amount: 26666,
-                    }),
+                    })
                 );
             });
         });
@@ -1581,7 +1635,7 @@ describe('PaymentsService', () => {
                 expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     5,
-                    'pack_purchase',
+                    'pack_purchase'
                 );
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
             });
@@ -1605,7 +1659,7 @@ describe('PaymentsService', () => {
                 expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
                     5,
-                    'pack_purchase',
+                    'pack_purchase'
                 );
             });
 

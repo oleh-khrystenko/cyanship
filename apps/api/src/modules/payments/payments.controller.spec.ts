@@ -17,12 +17,46 @@ jest.mock('../../config/env', () => ({
 
 const TEST_CATALOG = {
     subscriptionPlans: [
-        { code: 'starter', priceId: 'price_test_starter', priceAmount: 4900, currency: 'usd', interval: 'month', executions: 10000, displayOrder: 1, featured: false },
-        { code: 'pro', priceId: 'price_test_pro', priceAmount: 14900, currency: 'usd', interval: 'month', executions: 50000, displayOrder: 2, featured: true },
+        {
+            code: 'starter',
+            priceId: 'price_test_starter',
+            priceAmount: 4900,
+            currency: 'usd',
+            interval: 'month',
+            executions: 10000,
+            displayOrder: 1,
+            featured: false,
+        },
+        {
+            code: 'pro',
+            priceId: 'price_test_pro',
+            priceAmount: 14900,
+            currency: 'usd',
+            interval: 'month',
+            executions: 50000,
+            displayOrder: 2,
+            featured: true,
+        },
     ],
     executionPacks: [
-        { code: 'basic', priceId: 'price_test_basic', priceAmount: 2900, currency: 'usd', executions: 5000, displayOrder: 1, featured: false },
-        { code: 'max', priceId: 'price_test_max', priceAmount: 9900, currency: 'usd', executions: 25000, displayOrder: 2, featured: true },
+        {
+            code: 'basic',
+            priceId: 'price_test_basic',
+            priceAmount: 2900,
+            currency: 'usd',
+            executions: 5000,
+            displayOrder: 1,
+            featured: false,
+        },
+        {
+            code: 'max',
+            priceId: 'price_test_max',
+            priceAmount: 9900,
+            currency: 'usd',
+            executions: 25000,
+            displayOrder: 2,
+            featured: true,
+        },
     ],
 };
 

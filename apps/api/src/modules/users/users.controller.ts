@@ -18,7 +18,6 @@ import {
     RESPONSE_CODE,
     type ExecutionTransactionItem,
     type ApiMessageResponse,
-    type SpendableAction,
 } from '@cyanship/types';
 import { Response } from 'express';
 
@@ -148,15 +147,15 @@ export class UsersController {
     @HttpCode(HttpStatus.OK)
     async spendExecutions(
         @CurrentUser() user: UserDocument,
-        @Body() dto: SpendExecutionsDto,
+        @Body() dto: SpendExecutionsDto
     ): Promise<{
         data: { balance: number; transaction: ExecutionTransactionItem };
     }> {
-        const cost = EXECUTION_ACTION_COST[dto.action as SpendableAction];
+        const cost = EXECUTION_ACTION_COST[dto.action];
         const result = await this.usersService.spendExecutions(
             user._id.toString(),
             cost,
-            dto.action,
+            dto.action
         );
 
         if (!result) {
@@ -178,12 +177,15 @@ export class UsersController {
     @UseGuards(JwtActiveGuard)
     async getExecutionTransactions(
         @CurrentUser() user: UserDocument,
-        @Query('limit') limitParam?: string,
+        @Query('limit') limitParam?: string
     ): Promise<{ data: ExecutionTransactionItem[] }> {
-        const limit = Math.min(Math.max(parseInt(limitParam || '10', 10) || 10, 1), 50);
+        const limit = Math.min(
+            Math.max(parseInt(limitParam || '10', 10) || 10, 1),
+            50
+        );
         const transactions = await this.usersService.getRecentTransactions(
             user._id.toString(),
-            limit,
+            limit
         );
 
         return {
@@ -192,7 +194,7 @@ export class UsersController {
     }
 
     private mapTransaction(
-        t: ExecutionTransactionLean | ExecutionTransactionDocument,
+        t: ExecutionTransactionLean | ExecutionTransactionDocument
     ): ExecutionTransactionItem {
         return {
             id: t._id.toString(),

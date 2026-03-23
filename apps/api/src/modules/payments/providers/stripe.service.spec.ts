@@ -275,7 +275,9 @@ describe('StripeService', () => {
 
         beforeEach(() => {
             mockSubscriptionRetrieve.mockResolvedValue({
-                items: { data: [{ current_period_end: subscriptionPeriodEnd }] },
+                items: {
+                    data: [{ current_period_end: subscriptionPeriodEnd }],
+                },
             });
         });
 
@@ -294,7 +296,9 @@ describe('StripeService', () => {
                 cancelAtPeriodEnd: false,
                 currentPeriodEnd: new Date(subscriptionPeriodEnd * 1000),
             });
-            expect(mockSubscriptionRetrieve).toHaveBeenCalledWith('sub_test_xxx');
+            expect(mockSubscriptionRetrieve).toHaveBeenCalledWith(
+                'sub_test_xxx'
+            );
         });
 
         it('should fall back to client_reference_id when metadata.userId is absent', async () => {

@@ -233,20 +233,22 @@ describe('UsersService', () => {
     describe('addExecutions', () => {
         it('should increment balance and record transaction', async () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(
-                mockUserDoc({ executions: { balance: 10, freeReportUsed: false } }),
+                mockUserDoc({
+                    executions: { balance: 10, freeReportUsed: false },
+                })
             );
             mockTransactionModel.create.mockResolvedValue({});
 
             const result = await service.addExecutions(
                 '507f1f77bcf86cd799439011',
                 10,
-                'pack_purchase',
+                'pack_purchase'
             );
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
                 { $inc: { 'executions.balance': 10 } },
-                { new: true },
+                { new: true }
             );
             expect(mockTransactionModel.create).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -254,7 +256,7 @@ describe('UsersService', () => {
                     action: 'pack_purchase',
                     amount: 10,
                     balanceAfter: 10,
-                }),
+                })
             );
             expect(result).toBe(10);
         });
@@ -266,7 +268,7 @@ describe('UsersService', () => {
             const result = await service.addExecutions(
                 '507f1f77bcf86cd799439012',
                 5,
-                'pack_purchase',
+                'pack_purchase'
             );
 
             expect(result).toBe(0);
@@ -276,7 +278,9 @@ describe('UsersService', () => {
     describe('deductExecution', () => {
         it('should deduct from balance atomically when balance > 0', async () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(
-                mockUserDoc({ executions: { balance: 2, freeReportUsed: false } })
+                mockUserDoc({
+                    executions: { balance: 2, freeReportUsed: false },
+                })
             );
 
             const result = await service.deductExecution(
@@ -299,7 +303,9 @@ describe('UsersService', () => {
             mockModel.findOneAndUpdate.mockResolvedValueOnce(null);
             // Second call (free report) succeeds
             mockModel.findOneAndUpdate.mockResolvedValueOnce(
-                mockUserDoc({ executions: { balance: 0, freeReportUsed: true } })
+                mockUserDoc({
+                    executions: { balance: 0, freeReportUsed: true },
+                })
             );
 
             const result = await service.deductExecution(

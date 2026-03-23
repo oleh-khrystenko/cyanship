@@ -24,7 +24,7 @@ export class UsersService {
         private readonly userModel: Model<UserDocument>,
 
         @InjectModel(ExecutionTransaction.name)
-        private readonly executionTransactionModel: Model<ExecutionTransactionDocument>,
+        private readonly executionTransactionModel: Model<ExecutionTransactionDocument>
     ) {}
 
     async findByEmail(email: string): Promise<UserDocument | null> {
@@ -98,12 +98,12 @@ export class UsersService {
     async addExecutions(
         userId: string,
         amount: number,
-        action: string,
+        action: string
     ): Promise<number> {
         const user = await this.userModel.findByIdAndUpdate(
             userId,
             { $inc: { 'executions.balance': amount } },
-            { new: true },
+            { new: true }
         );
         const balanceAfter = user?.executions.balance ?? 0;
 
@@ -121,7 +121,7 @@ export class UsersService {
     async spendExecutions(
         userId: string,
         amount: number,
-        action: string,
+        action: string
     ): Promise<{
         balanceAfter: number;
         transaction: ExecutionTransactionDocument;
@@ -129,7 +129,7 @@ export class UsersService {
         const user = await this.userModel.findOneAndUpdate(
             { _id: userId, 'executions.balance': { $gte: amount } },
             { $inc: { 'executions.balance': -amount } },
-            { new: true },
+            { new: true }
         );
         if (!user) return null;
 
@@ -163,7 +163,7 @@ export class UsersService {
 
     async getRecentTransactions(
         userId: string,
-        limit: number = 10,
+        limit: number = 10
     ): Promise<ExecutionTransactionLean[]> {
         return this.executionTransactionModel
             .find({ userId: new Types.ObjectId(userId) })
