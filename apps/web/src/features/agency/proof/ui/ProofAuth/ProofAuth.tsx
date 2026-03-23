@@ -93,7 +93,9 @@ const ProofAuth = () => {
             const { hasPassword, isNewUser } = await checkEmail(email);
 
             if (hasPassword) {
-                router.push(`/${locale}/auth/signin?redirect=${encodeURIComponent(redirectPath)}`);
+                router.push(
+                    `/${locale}/auth/signin?redirect=${encodeURIComponent(redirectPath)}&email=${encodeURIComponent(email)}&step=password`,
+                );
                 return;
             }
 
