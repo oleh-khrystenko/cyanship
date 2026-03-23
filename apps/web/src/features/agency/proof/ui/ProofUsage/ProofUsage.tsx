@@ -137,9 +137,6 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
                     {t('balance_label')}
                 </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-                    {balance.toLocaleString('en-US')}
-                </p>
-                <p className="text-xs text-muted-foreground">
                     {t('balance_executions', { count: balance.toLocaleString('en-US') })}
                 </p>
             </div>
@@ -192,7 +189,7 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
                         {t('no_transactions')}
                     </p>
                 ) : (
-                    <ul className="space-y-1">
+                    <ul className="max-h-[192px] space-y-1 overflow-y-auto">
                         {transactions.map((tx) => {
                             const isCredit = tx.type === 'credit';
 
