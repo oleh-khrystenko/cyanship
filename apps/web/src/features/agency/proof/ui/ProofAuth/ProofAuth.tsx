@@ -172,28 +172,29 @@ const ProofAuth = () => {
             : user.email[0].toUpperCase();
 
         return (
-            <div className="flex w-full flex-col items-center gap-8 py-6">
-                <UiAvatar size="2xl">
-                    {user.profile.avatar && (
-                        <UiAvatarImage
-                            src={user.profile.avatar}
-                            alt={user.profile.name || user.email}
-                        />
-                    )}
-                    <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
-                </UiAvatar>
+            <div className="w-full rounded-lg border border-border bg-card p-6">
+                <div className="flex flex-col items-center gap-6">
+                    <UiAvatar size="2xl">
+                        {user.profile.avatar && (
+                            <UiAvatarImage
+                                src={user.profile.avatar}
+                                alt={user.profile.name || user.email}
+                            />
+                        )}
+                        <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
+                    </UiAvatar>
 
-                <div className="space-y-1 text-center">
-                    {user.profile.name && (
-                        <p className="text-xl font-semibold text-foreground">
-                            {user.profile.name}
-                        </p>
-                    )}
-                    <p className="text-base text-muted-foreground">{user.email}</p>
+                    <div className="space-y-1 text-center">
+                        {user.profile.name && (
+                            <p className="text-xl font-semibold text-foreground">
+                                {user.profile.name}
+                            </p>
+                        )}
+                        <p className="text-base text-muted-foreground">{user.email}</p>
+                    </div>
                 </div>
 
-                <div className="flex w-full flex-col items-center gap-3">
-                    <div className="h-px w-full bg-border" />
+                <div className="mt-6 border-t border-border pt-4 text-center">
                     <UiButton
                         variant="outline"
                         size="md"
