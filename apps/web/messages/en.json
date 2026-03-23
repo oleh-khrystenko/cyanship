@@ -81,6 +81,27 @@
                 "error": "Could not load pricing"
             },
             "proof_usage": {
+                "balance_label": "Your Balance",
+                "balance_executions": "{count} executions",
+                "generate_report": "Generate Report",
+                "run_analysis": "Run AI Analysis",
+                "cost_label": "-{cost} exec",
+                "insufficient_balance": "Not enough executions",
+                "transactions_title": "Recent Activity",
+                "no_transactions": "No activity yet. Purchase executions in the Billing tab to get started.",
+                "not_authenticated": "Sign in to test the usage-based billing",
+                "sign_in_button": "Sign in",
+                "actions": {
+                    "standard_report": "Report generated",
+                    "ai_analysis": "AI analysis completed",
+                    "subscription_activation": "Subscription activated",
+                    "pack_purchase": "Execution pack purchased",
+                    "plan_change": "Plan changed",
+                    "billing_reset": "Billing reset"
+                },
+                "time_just_now": "Just now",
+                "time_minutes_ago": "{count}m ago",
+                "time_hours_ago": "{count}h ago"
             }
         },
         "portfolio": {

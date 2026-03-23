@@ -81,6 +81,27 @@
                 "error": "Не вдалося завантажити ціни"
             },
             "proof_usage": {
+                "balance_label": "Ваш баланс",
+                "balance_executions": "{count} виконань",
+                "generate_report": "Згенерувати звіт",
+                "run_analysis": "Запустити AI аналіз",
+                "cost_label": "-{cost} вик.",
+                "insufficient_balance": "Недостатньо виконань",
+                "transactions_title": "Остання активність",
+                "no_transactions": "Активності ще немає. Придбайте виконання у вкладці Billing щоб почати.",
+                "not_authenticated": "Увійдіть щоб протестувати usage-based білінг",
+                "sign_in_button": "Увійти",
+                "actions": {
+                    "standard_report": "Звіт згенеровано",
+                    "ai_analysis": "AI аналіз завершено",
+                    "subscription_activation": "Підписку активовано",
+                    "pack_purchase": "Пакет виконань придбано",
+                    "plan_change": "План змінено",
+                    "billing_reset": "Білінг скинуто"
+                },
+                "time_just_now": "Щойно",
+                "time_minutes_ago": "{count} хв тому",
+                "time_hours_ago": "{count} год тому"
             }
         },
         "portfolio": {
