@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
+import { EXECUTION_TRANSACTION_TYPE } from '@cyanship/types';
+import {
+    ExecutionTransaction,
+    ExecutionTransactionDocument,
+} from './schemas/execution-transaction.schema';
 import { User, UserDocument } from './schemas/user.schema';
 
 interface GoogleProfile {
@@ -14,7 +19,11 @@ interface GoogleProfile {
 @Injectable()
 export class UsersService {
     constructor(
-        @InjectModel(User.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name)
+        private readonly userModel: Model<UserDocument>,
+
+        @InjectModel(ExecutionTransaction.name)
+        private readonly executionTransactionModel: Model<ExecutionTransactionDocument>,
     ) {}
 
     async findByEmail(email: string): Promise<UserDocument | null> {
@@ -85,9 +94,86 @@ export class UsersService {
         });
     }
 
-    async addExecutions(userId: string, amount: number): Promise<void> {
-        await this.userModel.findByIdAndUpdate(userId, {
-            $inc: { 'executions.balance': amount },
+    async addExecutions(
+        userId: string,
+        amount: number,
+        action: string,
+    ): Promise<number> {
+        const user = await this.userModel.findByIdAndUpdate(
+            userId,
+            { $inc: { 'executions.balance': amount } },
+            { new: true },
+        );
+        const balanceAfter = user?.executions.balance ?? 0;
+
+        await this.recordTransaction({
+            userId,
+            type: EXECUTION_TRANSACTION_TYPE.CREDIT,
+            action,
+            amount,
+            balanceAfter,
+        });
+
+        return balanceAfter;
+    }
+
+    async spendExecutions(
+        userId: string,
+        amount: number,
+        action: string,
+    ): Promise<{
+        balanceAfter: number;
+        transaction: ExecutionTransactionDocument;
+    } | null> {
+        const user = await this.userModel.findOneAndUpdate(
+            { _id: userId, 'executions.balance': { $gte: amount } },
+            { $inc: { 'executions.balance': -amount } },
+            { new: true },
+        );
+        if (!user) return null;
+
+        const balanceAfter = user.executions.balance;
+        const transaction = await this.recordTransaction({
+            userId,
+            type: EXECUTION_TRANSACTION_TYPE.DEBIT,
+            action,
+            amount,
+            balanceAfter,
+        });
+
+        return { balanceAfter, transaction };
+    }
+
+    async recordTransaction(data: {
+        userId: string;
+        type: string;
+        action: string;
+        amount: number;
+        balanceAfter: number;
+    }): Promise<ExecutionTransactionDocument> {
+        return this.executionTransactionModel.create({
+            userId: new Types.ObjectId(data.userId),
+            type: data.type,
+            action: data.action,
+            amount: data.amount,
+            balanceAfter: data.balanceAfter,
+        });
+    }
+
+    async getRecentTransactions(
+        userId: string,
+        limit: number = 10,
+    ): Promise<ExecutionTransaction[]> {
+        return this.executionTransactionModel
+            .find({ userId: new Types.ObjectId(userId) })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .lean();
+    }
+
+    async clearTransactions(userId: string): Promise<void> {
+        await this.executionTransactionModel.deleteMany({
+            userId: new Types.ObjectId(userId),
         });
     }
 

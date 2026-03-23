@@ -1522,7 +1522,8 @@ describe('PaymentsService', () => {
 
                 expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    5
+                    5,
+                    'pack_purchase',
                 );
                 expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
             });
@@ -1545,7 +1546,8 @@ describe('PaymentsService', () => {
 
                 expect(mockUsersService.addExecutions).toHaveBeenCalledWith(
                     MOCK_USER_ID,
-                    5
+                    5,
+                    'pack_purchase',
                 );
             });
 

@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
     BILLING_EVENT_TYPE,
+    EXECUTION_ACTION,
     PAYMENT_TYPE,
     RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
@@ -491,7 +492,11 @@ export class PaymentsService {
             );
             return;
         }
-        await this.usersService.addExecutions(userId, executionsAmount);
+        await this.usersService.addExecutions(
+            userId,
+            executionsAmount,
+            EXECUTION_ACTION.PACK_PURCHASE,
+        );
         this.logger.log(
             `Added ${executionsAmount} executions to user ${userId} (event: ${event.providerEventId})`
         );
