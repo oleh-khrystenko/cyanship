@@ -15,7 +15,10 @@ export default function BillingCancelPage() {
         toast.info(t('canceled'));
         const returnPath = sessionStorage.getItem('billing_return_path');
         sessionStorage.removeItem('billing_return_path');
-        router.replace(returnPath || `/${locale}/billing`);
+        const safeReturn = returnPath?.startsWith('/') && !returnPath.startsWith('//')
+            ? returnPath
+            : null;
+        router.replace(safeReturn || `/${locale}/billing`);
     }, [router, locale, t]);
 
     return <UiFullPageLoader message={t('loading')} />;

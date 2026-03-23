@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ const BILLING_RETURN_KEY = 'billing_return_path';
 
 const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
     const t = useTranslations('landing_page.dogfooding.proof_billing');
-    const tb = useTranslations('billing_page');
+    const tBilling = useTranslations('billing_page');
     const locale = useLocale();
 
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -51,6 +51,20 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
             .finally(() => setIsLoading(false));
     }, []);
 
+    const plans = useMemo(
+        () =>
+            catalog?.subscriptionPlans
+                .toSorted((a, b) => a.displayOrder - b.displayOrder) ?? [],
+        [catalog],
+    );
+
+    const packs = useMemo(
+        () =>
+            catalog?.executionPacks
+                .toSorted((a, b) => a.displayOrder - b.displayOrder) ?? [],
+        [catalog],
+    );
+
     const handleCheckout = async (type: 'subscription' | 'oneoff', code: string) => {
         if (!isAuthenticated) {
             onRequestAuth?.();
@@ -71,7 +85,9 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
             window.location.assign(checkoutUrl);
         } catch {
             toast.error(
-                type === 'subscription' ? tb('subscribe.error') : tb('executions.error'),
+                type === 'subscription'
+                    ? tBilling('subscribe.error')
+                    : tBilling('executions.error'),
             );
             setLoadingAction(null);
         }
@@ -93,13 +109,6 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         );
     }
 
-    const plans = [...catalog.subscriptionPlans].sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-    );
-    const packs = [...catalog.executionPacks].sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-    );
-
     const isEmpty =
         (!PAYMENTS_SUBSCRIPTION_ENABLED || plans.length === 0) &&
         (!PAYMENTS_ONE_OFF_ENABLED || packs.length === 0);
@@ -112,14 +121,18 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         );
     }
 
+    const isCheckoutInProgress = loadingAction !== null;
+
     return (
         <div className="w-full space-y-5">
             <DemoBanner />
 
             {showBothTabs && (
-                <div className="flex gap-1 rounded-lg bg-muted p-1">
+                <div role="tablist" className="flex gap-1 rounded-lg bg-muted p-1">
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={activeSubTab === 'plans'}
                         className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                             activeSubTab === 'plans'
                                 ? 'bg-card text-foreground shadow-sm'
@@ -131,6 +144,8 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                     </button>
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={activeSubTab === 'packs'}
                         className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                             activeSubTab === 'packs'
                                 ? 'bg-card text-foreground shadow-sm'
@@ -143,8 +158,8 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                 </div>
             )}
 
-            {(activeSubTab === 'plans' && PAYMENTS_SUBSCRIPTION_ENABLED) && (
-                <div className="space-y-3">
+            {activeSubTab === 'plans' && PAYMENTS_SUBSCRIPTION_ENABLED && (
+                <div role="tabpanel" className="space-y-3">
                     {plans.map((plan) => {
                         const actionKey = `subscribe_${plan.code}`;
                         const isBusy = loadingAction === actionKey;
@@ -156,13 +171,13 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                             >
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-foreground">
-                                        {tb(`plans.${plan.code}.name`, {
+                                        {tBilling(`plans.${plan.code}.name`, {
                                             defaultValue: plan.code,
                                         })}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {formatPrice(plan.priceAmount, plan.currency)}
-                                        {tb(`subscribe.interval_${plan.interval}`)}
+                                        {tBilling(`subscribe.interval_${plan.interval}`)}
                                     </p>
                                 </div>
                                 <UiButton
@@ -170,7 +185,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                     size="sm"
                                     className={`relative shrink-0 ${!plan.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
                                     onClick={() => handleCheckout('subscription', plan.code)}
-                                    disabled={isBusy}
+                                    disabled={isCheckoutInProgress}
                                 >
                                     <span className={isBusy ? 'invisible' : ''}>
                                         {t('subscribe_button')}
@@ -188,8 +203,8 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                 </div>
             )}
 
-            {(activeSubTab === 'packs' && PAYMENTS_ONE_OFF_ENABLED) && (
-                <div className="space-y-3">
+            {activeSubTab === 'packs' && PAYMENTS_ONE_OFF_ENABLED && (
+                <div role="tabpanel" className="space-y-3">
                     {packs.map((pack) => {
                         const actionKey = `oneoff_${pack.code}`;
                         const isBusy = loadingAction === actionKey;
@@ -201,14 +216,14 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                             >
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-foreground">
-                                        {tb(`packs.${pack.code}.name`, {
+                                        {tBilling(`packs.${pack.code}.name`, {
                                             defaultValue: pack.code,
                                         })}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {formatPrice(pack.priceAmount, pack.currency)}
                                         {' · '}
-                                        {tb('packs.executions_count', {
+                                        {tBilling('packs.executions_count', {
                                             count: pack.executions.toLocaleString('en-US'),
                                         })}
                                     </p>
@@ -218,7 +233,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                     size="sm"
                                     className={`relative shrink-0 ${!pack.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
                                     onClick={() => handleCheckout('oneoff', pack.code)}
-                                    disabled={isBusy}
+                                    disabled={isCheckoutInProgress}
                                 >
                                     <span className={isBusy ? 'invisible' : ''}>
                                         {t('buy_button')}

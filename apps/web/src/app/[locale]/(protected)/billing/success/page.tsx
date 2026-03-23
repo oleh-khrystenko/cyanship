@@ -24,7 +24,10 @@ export default function BillingSuccessPage() {
             }
             const returnPath = sessionStorage.getItem('billing_return_path');
             sessionStorage.removeItem('billing_return_path');
-            router.replace(returnPath || `/${locale}/billing`);
+            const safeReturn = returnPath?.startsWith('/') && !returnPath.startsWith('//')
+                ? returnPath
+                : null;
+            router.replace(safeReturn || `/${locale}/billing`);
         };
 
         void handle();
