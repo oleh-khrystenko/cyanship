@@ -22,7 +22,7 @@ const FooterCtaSection = () => {
     return (
         <section
             id="footer-cta"
-            className="scroll-mt-28 border-t border-border py-24"
+            className="scroll-mt-16 border-t border-border py-24"
         >
             <div className="container px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
@@ -41,8 +41,8 @@ const FooterCtaSection = () => {
                             as="a"
                             href="#"
                             variant="filled"
-                            size="md"
-                            className="mt-8 w-full font-semibold sm:h-12 sm:w-auto sm:px-8 sm:text-base"
+                            size="lg"
+                            className="mt-8 w-full font-semibold sm:w-auto"
                             IconRight={<ArrowRight />}
                         >
                             {t('cta')}
