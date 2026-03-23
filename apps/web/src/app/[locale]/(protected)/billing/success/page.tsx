@@ -22,7 +22,9 @@ export default function BillingSuccessPage() {
             } catch {
                 toast.error(t('refresh_error'));
             }
-            router.replace(`/${locale}/billing`);
+            const returnPath = sessionStorage.getItem('billing_return_path');
+            sessionStorage.removeItem('billing_return_path');
+            router.replace(returnPath || `/${locale}/billing`);
         };
 
         void handle();

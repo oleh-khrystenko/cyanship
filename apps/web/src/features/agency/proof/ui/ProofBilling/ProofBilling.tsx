@@ -1,5 +1,242 @@
-const ProofBilling = () => {
-    return <div>ProofBilling</div>;
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+
+import {
+    PAYMENTS_SUBSCRIPTION_ENABLED,
+    PAYMENTS_ONE_OFF_ENABLED,
+} from '@/shared/config/env';
+import {
+    getCatalog,
+    createSubscriptionCheckout,
+    createOneOffCheckout,
+} from '@/shared/api/payments';
+import { useAuthStore } from '@/stores/auth';
+import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
+import UiButton from '@/shared/ui/UiButton';
+import UiSpinner from '@/shared/ui/UiSpinner';
+import { DemoBanner } from '@/features/billing';
+
+type SubTab = 'plans' | 'packs';
+
+interface ProofBillingProps {
+    onRequestAuth?: () => void;
+}
+
+const BILLING_RETURN_KEY = 'billing_return_path';
+
+const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
+    const t = useTranslations('landing_page.dogfooding.proof_billing');
+    const tb = useTranslations('billing_page');
+    const locale = useLocale();
+
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+    const [catalog, setCatalog] = useState<PaymentsCatalog | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadingAction, setLoadingAction] = useState<string | null>(null);
+    const [hasError, setHasError] = useState(false);
+
+    const showBothTabs = PAYMENTS_SUBSCRIPTION_ENABLED && PAYMENTS_ONE_OFF_ENABLED;
+    const [activeSubTab, setActiveSubTab] = useState<SubTab>(
+        PAYMENTS_SUBSCRIPTION_ENABLED ? 'plans' : 'packs',
+    );
+
+    useEffect(() => {
+        getCatalog()
+            .then(setCatalog)
+            .catch(() => setHasError(true))
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    const handleCheckout = async (type: 'subscription' | 'oneoff', code: string) => {
+        if (!isAuthenticated) {
+            onRequestAuth?.();
+            return;
+        }
+
+        const actionKey = type === 'subscription' ? `subscribe_${code}` : `oneoff_${code}`;
+        setLoadingAction(actionKey);
+
+        try {
+            sessionStorage.setItem(BILLING_RETURN_KEY, `/${locale}#dogfooding`);
+
+            const { checkoutUrl } =
+                type === 'subscription'
+                    ? await createSubscriptionCheckout(code)
+                    : await createOneOffCheckout(code);
+
+            window.location.assign(checkoutUrl);
+        } catch {
+            toast.error(
+                type === 'subscription' ? tb('subscribe.error') : tb('executions.error'),
+            );
+            setLoadingAction(null);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <UiSpinner size="md" />
+            </div>
+        );
+    }
+
+    if (hasError || !catalog) {
+        return (
+            <div className="py-12 text-center">
+                <p className="text-muted-foreground text-sm">{t('error')}</p>
+            </div>
+        );
+    }
+
+    const plans = [...catalog.subscriptionPlans].sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+    );
+    const packs = [...catalog.executionPacks].sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+    );
+
+    const isEmpty =
+        (!PAYMENTS_SUBSCRIPTION_ENABLED || plans.length === 0) &&
+        (!PAYMENTS_ONE_OFF_ENABLED || packs.length === 0);
+
+    if (isEmpty) {
+        return (
+            <div className="py-12 text-center">
+                <p className="text-muted-foreground text-sm">{t('error')}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full space-y-5">
+            <DemoBanner />
+
+            {showBothTabs && (
+                <div className="flex gap-1 rounded-lg bg-muted p-1">
+                    <button
+                        type="button"
+                        className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                            activeSubTab === 'plans'
+                                ? 'bg-card text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => setActiveSubTab('plans')}
+                    >
+                        {t('plans_tab')}
+                    </button>
+                    <button
+                        type="button"
+                        className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                            activeSubTab === 'packs'
+                                ? 'bg-card text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => setActiveSubTab('packs')}
+                    >
+                        {t('packs_tab')}
+                    </button>
+                </div>
+            )}
+
+            {(activeSubTab === 'plans' && PAYMENTS_SUBSCRIPTION_ENABLED) && (
+                <div className="space-y-3">
+                    {plans.map((plan) => {
+                        const actionKey = `subscribe_${plan.code}`;
+                        const isBusy = loadingAction === actionKey;
+
+                        return (
+                            <div
+                                key={plan.code}
+                                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3"
+                            >
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-foreground">
+                                        {tb(`plans.${plan.code}.name`, {
+                                            defaultValue: plan.code,
+                                        })}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {formatPrice(plan.priceAmount, plan.currency)}
+                                        {tb(`subscribe.interval_${plan.interval}`)}
+                                    </p>
+                                </div>
+                                <UiButton
+                                    variant={plan.featured ? 'filled' : 'outline'}
+                                    size="sm"
+                                    className={`relative shrink-0 ${!plan.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                    onClick={() => handleCheckout('subscription', plan.code)}
+                                    disabled={isBusy}
+                                >
+                                    <span className={isBusy ? 'invisible' : ''}>
+                                        {t('subscribe_button')}
+                                    </span>
+                                    {isBusy && (
+                                        <UiSpinner
+                                            size="sm"
+                                            className="absolute inset-0 m-auto"
+                                        />
+                                    )}
+                                </UiButton>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {(activeSubTab === 'packs' && PAYMENTS_ONE_OFF_ENABLED) && (
+                <div className="space-y-3">
+                    {packs.map((pack) => {
+                        const actionKey = `oneoff_${pack.code}`;
+                        const isBusy = loadingAction === actionKey;
+
+                        return (
+                            <div
+                                key={pack.code}
+                                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3"
+                            >
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-foreground">
+                                        {tb(`packs.${pack.code}.name`, {
+                                            defaultValue: pack.code,
+                                        })}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {formatPrice(pack.priceAmount, pack.currency)}
+                                        {' · '}
+                                        {tb('packs.executions_count', {
+                                            count: pack.executions.toLocaleString('en-US'),
+                                        })}
+                                    </p>
+                                </div>
+                                <UiButton
+                                    variant={pack.featured ? 'filled' : 'outline'}
+                                    size="sm"
+                                    className={`relative shrink-0 ${!pack.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                    onClick={() => handleCheckout('oneoff', pack.code)}
+                                    disabled={isBusy}
+                                >
+                                    <span className={isBusy ? 'invisible' : ''}>
+                                        {t('buy_button')}
+                                    </span>
+                                    {isBusy && (
+                                        <UiSpinner
+                                            size="sm"
+                                            className="absolute inset-0 m-auto"
+                                        />
+                                    )}
+                                </UiButton>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default ProofBilling;

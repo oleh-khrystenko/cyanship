@@ -72,6 +72,13 @@
                 "logout_button": "Log out",
                 "error_generic": "Something went wrong. Please try again",
                 "error_rate_limit": "Too many attempts. Please try again later"
+            },
+            "proof_billing": {
+                "plans_tab": "Plans",
+                "packs_tab": "Packs",
+                "subscribe_button": "Subscribe",
+                "buy_button": "Buy",
+                "error": "Could not load pricing"
             }
         },
         "portfolio": {

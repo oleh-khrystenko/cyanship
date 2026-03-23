@@ -13,7 +13,9 @@ export default function BillingCancelPage() {
 
     useEffect(() => {
         toast.info(t('canceled'));
-        router.replace(`/${locale}/billing`);
+        const returnPath = sessionStorage.getItem('billing_return_path');
+        sessionStorage.removeItem('billing_return_path');
+        router.replace(returnPath || `/${locale}/billing`);
     }, [router, locale, t]);
 
     return <UiFullPageLoader message={t('loading')} />;

@@ -72,6 +72,13 @@
                 "logout_button": "Вийти",
                 "error_generic": "Щось пішло не так. Спробуйте ще раз",
                 "error_rate_limit": "Забагато спроб. Спробуйте пізніше"
+            },
+            "proof_billing": {
+                "plans_tab": "Плани",
+                "packs_tab": "Пакети",
+                "subscribe_button": "Підписатись",
+                "buy_button": "Купити",
+                "error": "Не вдалося завантажити ціни"
             }
         },
         "portfolio": {
