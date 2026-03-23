@@ -258,7 +258,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                                 })}
                                             </p>
                                             {plan.featured && (
-                                                <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                <span className="hidden rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground min-[412px]:inline">
                                                     {tBilling(`plans.${plan.code}.badge`)}
                                                 </span>
                                             )}
@@ -314,7 +314,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                         })}
                                     </p>
                                     {pack.featured && (
-                                        <span className="hidden rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
+                                        <span className="hidden rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground min-[412px]:inline">
                                             {tBilling(`packs.${pack.code}.badge`)}
                                         </span>
                                     )}
@@ -322,7 +322,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
 
                                 <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
                                     {formatPrice(pack.priceAmount, pack.currency)}
-                                    <span className="hidden text-sm font-normal text-muted-foreground sm:inline">
+                                    <span className="hidden text-sm font-normal text-muted-foreground min-[412px]:inline">
                                         {' · '}
                                         {tBilling('packs.executions_count', {
                                             count: pack.executions.toLocaleString('en-US'),
