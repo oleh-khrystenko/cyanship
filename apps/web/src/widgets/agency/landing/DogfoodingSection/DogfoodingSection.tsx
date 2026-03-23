@@ -26,6 +26,7 @@ const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
     const [activeTab, setActiveTab] = useState<ProofTabKey | null>(null);
     const [isDesktop, setIsDesktop] = useState(false);
+    const sectionRef = useRef<HTMLElement>(null);
     const tabsRef = useRef<HTMLDivElement>(null);
 
     const sheetOpen = !isDesktop && activeTab !== null;
@@ -37,6 +38,7 @@ const DogfoodingSection = () => {
             const tab = parseTabFromHash(window.location.hash);
             if (tab) {
                 setActiveTab(tab);
+                sectionRef.current?.scrollIntoView({ behavior: 'smooth' });
                 // Clean up hash to plain #dogfooding so refresh doesn't re-trigger
                 history.replaceState(null, '', '#dogfooding');
             }
@@ -90,7 +92,7 @@ const DogfoodingSection = () => {
     };
 
     return (
-        <section id="dogfooding" className="scroll-mt-16 border-t border-border py-24">
+        <section ref={sectionRef} id="dogfooding" className="scroll-mt-16 border-t border-border py-24">
             <div className="container px-6">
                 <div className="grid items-stretch gap-8 lg:grid-cols-2 lg:gap-12">
                     <div>
