@@ -133,7 +133,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                         type="button"
                         role="tab"
                         aria-selected={activeSubTab === 'plans'}
-                        className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                             activeSubTab === 'plans'
                                 ? 'bg-card text-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
@@ -146,7 +146,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                         type="button"
                         role="tab"
                         aria-selected={activeSubTab === 'packs'}
-                        className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                             activeSubTab === 'packs'
                                 ? 'bg-card text-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
