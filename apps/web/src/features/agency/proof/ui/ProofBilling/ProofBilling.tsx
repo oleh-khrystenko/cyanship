@@ -322,7 +322,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
 
                                 <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
                                     {formatPrice(pack.priceAmount, pack.currency)}
-                                    <span className="text-sm font-normal text-muted-foreground">
+                                    <span className="hidden text-sm font-normal text-muted-foreground sm:inline">
                                         {' · '}
                                         {tBilling('packs.executions_count', {
                                             count: pack.executions.toLocaleString('en-US'),
