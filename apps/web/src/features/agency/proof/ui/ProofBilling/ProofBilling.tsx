@@ -84,7 +84,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         setLoadingAction(actionKey);
 
         try {
-            const returnPath = `/${locale}#dogfooding`;
+            const returnPath = `/${locale}#dogfooding-usage`;
             const { checkoutUrl } =
                 type === 'subscription'
                     ? await createSubscriptionCheckout(code, returnPath)

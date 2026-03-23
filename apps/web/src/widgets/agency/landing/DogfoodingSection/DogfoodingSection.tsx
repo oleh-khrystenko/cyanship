@@ -13,6 +13,14 @@ import ProofWindow from './ProofWindow';
 import type { ProofTabKey } from './types';
 
 const DESKTOP_MQ = '(min-width: 1024px)';
+const VALID_TABS = new Set<ProofTabKey>(['auth', 'billing', 'usage']);
+
+function parseTabFromHash(hash: string): ProofTabKey | null {
+    // #dogfooding-usage → usage, #dogfooding-billing → billing
+    const match = hash.match(/^#dogfooding-(\w+)$/);
+    const tab = match?.[1] as ProofTabKey | undefined;
+    return tab && VALID_TABS.has(tab) ? tab : null;
+}
 
 const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
@@ -25,6 +33,15 @@ const DogfoodingSection = () => {
     useEffect(() => {
         const mql = window.matchMedia(DESKTOP_MQ);
 
+        const applyDeepLink = () => {
+            const tab = parseTabFromHash(window.location.hash);
+            if (tab) {
+                setActiveTab(tab);
+                // Clean up hash to plain #dogfooding so refresh doesn't re-trigger
+                history.replaceState(null, '', '#dogfooding');
+            }
+        };
+
         const update = (matches: boolean) => {
             setIsDesktop(matches);
 
@@ -36,10 +53,16 @@ const DogfoodingSection = () => {
         };
 
         update(mql.matches);
+        applyDeepLink();
 
+        // Listen for hash changes (e.g. client-side navigation from success page)
+        window.addEventListener('hashchange', applyDeepLink);
         const handler = (e: MediaQueryListEvent) => update(e.matches);
         mql.addEventListener('change', handler);
-        return () => mql.removeEventListener('change', handler);
+        return () => {
+            window.removeEventListener('hashchange', applyDeepLink);
+            mql.removeEventListener('change', handler);
+        };
     }, []);
 
     const handleTabChange = (tab: ProofTabKey) => {
