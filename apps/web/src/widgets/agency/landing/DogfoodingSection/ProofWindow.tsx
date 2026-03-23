@@ -20,7 +20,7 @@ const panels: Record<ProofTabKey, React.ComponentType<{ onRequestAuth?: () => vo
 };
 
 const variantStyles: Record<ProofWindowVariant, string> = {
-    card: 'flex-1 overflow-y-auto rounded-xl border border-border bg-card p-6',
+    card: 'flex-1 overflow-y-auto rounded-xl border border-border bg-card p-8',
     embedded: 'flex-1',
 };
 

@@ -13,12 +13,14 @@ const rootSizeStyles: Record<UiAvatarSize, string> = {
     sm: 'size-8',
     md: 'size-10',
     lg: 'size-12',
+    xl: 'size-20',
 };
 
 const fallbackTextStyles: Record<UiAvatarSize, string> = {
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-base',
+    xl: 'text-2xl',
 };
 
 function UiAvatar({ className, size = 'sm', ...props }: UiAvatarProps) {

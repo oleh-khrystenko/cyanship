@@ -1,7 +1,7 @@
 import { ComponentPropsWithoutRef } from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 
-export type UiAvatarSize = 'sm' | 'md' | 'lg';
+export type UiAvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface UiAvatarProps
     extends ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> {

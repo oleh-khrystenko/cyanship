@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Mail } from 'lucide-react';
+import { Mail, Check } from 'lucide-react';
 import { AxiosError } from 'axios';
 
 import UiButton from '@/shared/ui/UiButton';
@@ -172,37 +172,45 @@ const ProofAuth = () => {
             : user.email[0].toUpperCase();
 
         return (
-            <div className="flex flex-col items-center gap-5 py-4">
-                <UiAvatar size="lg">
-                    {user.profile.avatar && (
-                        <UiAvatarImage
-                            src={user.profile.avatar}
-                            alt={user.profile.name || user.email}
-                        />
-                    )}
-                    <UiAvatarFallback size="lg">{initials}</UiAvatarFallback>
-                </UiAvatar>
+            <div className="flex w-full flex-col items-center gap-8 py-6">
+                <div className="relative">
+                    <UiAvatar size="xl">
+                        {user.profile.avatar && (
+                            <UiAvatarImage
+                                src={user.profile.avatar}
+                                alt={user.profile.name || user.email}
+                            />
+                        )}
+                        <UiAvatarFallback size="xl">{initials}</UiAvatarFallback>
+                    </UiAvatar>
+                    <div className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-success text-white">
+                        <Check className="size-4" strokeWidth={3} />
+                    </div>
+                </div>
 
-                <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                        {t('authenticated_greeting')}
-                    </p>
+                <div className="space-y-1 text-center">
                     {user.profile.name && (
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className="text-xl font-semibold text-foreground">
                             {user.profile.name}
                         </p>
                     )}
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-base text-muted-foreground">{user.email}</p>
                 </div>
 
-                <UiButton
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
-                >
-                    {loggingOut ? <UiSpinner size="sm" /> : t('logout_button')}
-                </UiButton>
+                <div className="flex w-full flex-col items-center gap-3">
+                    <div className="h-px w-full bg-border" />
+                    <p className="text-sm text-muted-foreground">
+                        {t('authenticated_greeting')}
+                    </p>
+                    <UiButton
+                        variant="outline"
+                        size="md"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                    >
+                        {loggingOut ? <UiSpinner size="sm" /> : t('logout_button')}
+                    </UiButton>
+                </div>
             </div>
         );
     }
@@ -210,13 +218,13 @@ const ProofAuth = () => {
     // Magic link sent
     if (state === 'magic-link-sent') {
         return (
-            <div className="w-full space-y-5">
-                <div className="rounded-lg border border-success/30 bg-success/10 p-5 text-center">
-                    <Mail className="mx-auto mb-2 h-8 w-8 text-success" />
-                    <h3 className="text-base font-semibold text-foreground">
+            <div className="w-full space-y-6">
+                <div className="rounded-xl border border-success/30 bg-success/10 p-6 text-center">
+                    <Mail className="mx-auto mb-3 h-10 w-10 text-success" />
+                    <h3 className="text-lg font-semibold text-foreground">
                         {t('magic_link_sent_title')}
                     </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-2 text-base text-muted-foreground">
                         {t.rich('magic_link_sent_description', {
                             email,
                             bold: (chunks) => (
@@ -228,13 +236,13 @@ const ProofAuth = () => {
                     </p>
                 </div>
 
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-3">
                     <UiButton
                         variant="text"
-                        size="sm"
+                        size="md"
                         onClick={handleResend}
                         disabled={resendCountdown > 0 || resending}
-                        className="text-sm font-medium text-primary hover:underline"
+                        className="font-medium text-primary hover:underline"
                     >
                         {resending ? (
                             <UiSpinner size="sm" />
@@ -247,9 +255,9 @@ const ProofAuth = () => {
 
                     <UiButton
                         variant="text"
-                        size="sm"
+                        size="md"
                         onClick={goBackToIdle}
-                        className="text-sm text-muted-foreground hover:underline"
+                        className="text-muted-foreground hover:underline"
                     >
                         &larr; {t('other_email')}
                     </UiButton>
@@ -269,7 +277,7 @@ const ProofAuth = () => {
 
     // Default: idle — auth form
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-5">
             <UiCheckbox
                 checked={agreedToTerms}
                 onChange={handleTermsChange}
@@ -320,7 +328,7 @@ const ProofAuth = () => {
                 <div className="h-px flex-1 bg-border" />
             </div>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-3">
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <UiInput
                     type="email"
                     placeholder={t('email_placeholder')}
