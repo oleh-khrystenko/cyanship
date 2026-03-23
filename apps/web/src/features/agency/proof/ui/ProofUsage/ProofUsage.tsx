@@ -11,7 +11,7 @@ import {
     type ExecutionTransactionItem,
     type SpendableAction,
 } from '@cyanship/types';
-import { spendExecutions, getExecutionTransactions, getMe } from '@/shared/api';
+import { spendExecutions, getExecutionTransactions } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -51,15 +51,11 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
         }
     }, []);
 
-    // Fetch transactions + refresh user balance when authenticated
+    // Fetch transactions when authenticated
     useEffect(() => {
         if (!isAuthenticated) return;
-
         void fetchTransactions();
-
-        // Refresh user to get latest balance (e.g. after Stripe webhook)
-        void getMe().then(setUser).catch(() => {});
-    }, [isAuthenticated, fetchTransactions, setUser]);
+    }, [isAuthenticated, fetchTransactions]);
 
     const handleSpend = async (action: SpendableAction) => {
         if (!isAuthenticated) {
