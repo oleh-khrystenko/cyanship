@@ -17,7 +17,7 @@ const slideStyles: Record<UiSheetSide, string> = {
     right: 'inset-y-0 right-0 h-full w-3/4 border-l shadow-lg data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm',
     left: 'inset-y-0 left-0 h-full w-3/4 border-r shadow-lg data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm',
     top: 'inset-x-0 top-0 h-auto border-b shadow-lg data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top',
-    bottom: 'inset-x-0 bottom-0 h-auto rounded-t-2xl border-t shadow-2xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+    bottom: 'inset-x-0 bottom-0 h-auto rounded-t-2xl border-t shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.15)] data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
 };
 
 function UiSheet({ ...props }: UiSheetProps) {
