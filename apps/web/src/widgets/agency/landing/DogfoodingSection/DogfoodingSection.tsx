@@ -111,7 +111,7 @@ const DogfoodingSection = () => {
                                 {activeTab && t(`proof_shell.sheet_title_${activeTab}`)}
                             </UiSheetTitle>
                         </UiSheetHeader>
-                        <div className="flex h-[60vh] flex-col overflow-y-auto p-4 pt-0">
+                        <div className="flex h-[40vh] flex-col overflow-y-auto p-4 pt-0">
                             {activeTab && (
                                 <ProofWindow
                                     activeTab={activeTab}
