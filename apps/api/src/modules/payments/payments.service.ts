@@ -198,7 +198,7 @@ export class PaymentsService {
         await this.webhookEventModel.deleteMany({ userId });
         await this.usersService.clearTransactions(userId);
 
-        // 2. Clean up Stripe — on failure, persist for retry by cron.
+        // 3. Clean up Stripe — on failure, persist for retry by cron.
         if (providerCustomerId) {
             try {
                 await this.paymentProvider.deleteCustomerData(
