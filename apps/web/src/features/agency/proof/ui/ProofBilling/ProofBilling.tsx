@@ -124,7 +124,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
     const isCheckoutInProgress = loadingAction !== null;
 
     return (
-        <div className="w-full space-y-5">
+        <div className="w-full space-y-4">
             <DemoBanner />
 
             {showBothTabs && (
@@ -159,7 +159,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
             )}
 
             {activeSubTab === 'plans' && PAYMENTS_SUBSCRIPTION_ENABLED && (
-                <div role="tabpanel" className="space-y-3">
+                <div role="tabpanel" className="grid grid-cols-2 gap-4">
                     {plans.map((plan) => {
                         const actionKey = `subscribe_${plan.code}`;
                         const isBusy = loadingAction === actionKey;
@@ -167,23 +167,32 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                         return (
                             <div
                                 key={plan.code}
-                                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3"
+                                className="flex flex-col rounded-xl border border-border p-5"
                             >
-                                <div className="min-w-0">
+                                <div className="flex items-center justify-between gap-2">
                                     <p className="text-sm font-semibold text-foreground">
                                         {tBilling(`plans.${plan.code}.name`, {
                                             defaultValue: plan.code,
                                         })}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {formatPrice(plan.priceAmount, plan.currency)}
-                                        {tBilling(`subscribe.interval_${plan.interval}`)}
-                                    </p>
+                                    {plan.featured && (
+                                        <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                            {tBilling(`plans.${plan.code}.badge`)}
+                                        </span>
+                                    )}
                                 </div>
+
+                                <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                                    {formatPrice(plan.priceAmount, plan.currency)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {tBilling(`subscribe.interval_${plan.interval}`)}
+                                </p>
+
                                 <UiButton
                                     variant={plan.featured ? 'filled' : 'outline'}
                                     size="sm"
-                                    className={`relative shrink-0 ${!plan.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                    className={`relative mt-4 w-full justify-center ${!plan.featured ? 'border-primary text-primary hover:border-primary hover:bg-primary/10 hover:text-primary' : ''}`}
                                     onClick={() => handleCheckout('subscription', plan.code)}
                                     disabled={isCheckoutInProgress}
                                 >
@@ -204,7 +213,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
             )}
 
             {activeSubTab === 'packs' && PAYMENTS_ONE_OFF_ENABLED && (
-                <div role="tabpanel" className="space-y-3">
+                <div role="tabpanel" className="grid grid-cols-2 gap-4">
                     {packs.map((pack) => {
                         const actionKey = `oneoff_${pack.code}`;
                         const isBusy = loadingAction === actionKey;
@@ -212,26 +221,34 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                         return (
                             <div
                                 key={pack.code}
-                                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3"
+                                className="flex flex-col rounded-xl border border-border p-5"
                             >
-                                <div className="min-w-0">
+                                <div className="flex items-center justify-between gap-2">
                                     <p className="text-sm font-semibold text-foreground">
                                         {tBilling(`packs.${pack.code}.name`, {
                                             defaultValue: pack.code,
                                         })}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {formatPrice(pack.priceAmount, pack.currency)}
-                                        {' · '}
-                                        {tBilling('packs.executions_count', {
-                                            count: pack.executions.toLocaleString('en-US'),
-                                        })}
-                                    </p>
+                                    {pack.featured && (
+                                        <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                            {tBilling(`packs.${pack.code}.badge`)}
+                                        </span>
+                                    )}
                                 </div>
+
+                                <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                                    {formatPrice(pack.priceAmount, pack.currency)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {tBilling('packs.executions_count', {
+                                        count: pack.executions.toLocaleString('en-US'),
+                                    })}
+                                </p>
+
                                 <UiButton
                                     variant={pack.featured ? 'filled' : 'outline'}
                                     size="sm"
-                                    className={`relative shrink-0 ${!pack.featured ? 'border-primary text-primary hover:bg-primary/10 hover:text-primary hover:border-primary' : ''}`}
+                                    className={`relative mt-4 w-full justify-center ${!pack.featured ? 'border-primary text-primary hover:border-primary hover:bg-primary/10 hover:text-primary' : ''}`}
                                     onClick={() => handleCheckout('oneoff', pack.code)}
                                     disabled={isCheckoutInProgress}
                                 >
