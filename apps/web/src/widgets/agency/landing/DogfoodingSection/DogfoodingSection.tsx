@@ -93,7 +93,6 @@ const DogfoodingSection = () => {
                         {activeTab && (
                             <ProofWindow
                                 activeTab={activeTab}
-                                title={t(`proof_shell.sheet_title_${activeTab}`)}
                                 onRequestAuth={handleRequestAuth}
                             />
                         )}
