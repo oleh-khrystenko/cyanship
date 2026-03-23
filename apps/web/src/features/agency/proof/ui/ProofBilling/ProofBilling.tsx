@@ -314,7 +314,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                         })}
                                     </p>
                                     {pack.featured && (
-                                        <span className="rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                        <span className="hidden rounded-full border border-muted-foreground/25 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
                                             {tBilling(`packs.${pack.code}.badge`)}
                                         </span>
                                     )}
