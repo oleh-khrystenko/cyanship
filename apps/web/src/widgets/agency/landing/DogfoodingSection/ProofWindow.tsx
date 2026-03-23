@@ -28,10 +28,14 @@ const ProofWindow = ({ activeTab, title, onRequestAuth, variant = 'card' }: Proo
     const [displayedTab, setDisplayedTab] = useState(activeTab);
     const [visible, setVisible] = useState(true);
 
-    useEffect(() => {
-        if (activeTab === displayedTab) return;
-
+    // Trigger fade-out immediately when activeTab changes (state-during-render pattern)
+    if (activeTab !== displayedTab && visible) {
         setVisible(false);
+    }
+
+    // After fade-out completes, swap panel and fade back in
+    useEffect(() => {
+        if (visible) return;
 
         const timeout = setTimeout(() => {
             setDisplayedTab(activeTab);
@@ -39,7 +43,7 @@ const ProofWindow = ({ activeTab, title, onRequestAuth, variant = 'card' }: Proo
         }, 150);
 
         return () => clearTimeout(timeout);
-    }, [activeTab, displayedTab]);
+    }, [visible, activeTab]);
 
     const Panel = panels[displayedTab];
 
