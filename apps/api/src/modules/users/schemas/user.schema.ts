@@ -63,6 +63,9 @@ export class User {
     @Prop({ type: Date, default: null })
     deletionReminderSentAt!: Date | null;
 
+    @Prop({ type: String, default: null })
+    timezone!: string | null;
+
     @Prop({ required: true, default: LANG.EN })
     preferredLang!: string;
 

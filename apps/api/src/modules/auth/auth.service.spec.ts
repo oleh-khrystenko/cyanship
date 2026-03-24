@@ -103,6 +103,7 @@ describe('AuthService', () => {
                         findOrCreateByEmail: jest.fn(),
                         setPasswordHash: jest.fn().mockResolvedValue(undefined),
                         softDelete: jest.fn().mockResolvedValue(undefined),
+                        updateTimezone: jest.fn().mockResolvedValue(undefined),
                     },
                 },
                 {

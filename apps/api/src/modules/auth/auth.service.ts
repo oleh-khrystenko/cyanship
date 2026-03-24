@@ -7,6 +7,7 @@ import {
     HttpStatus,
     Inject,
     Injectable,
+    Logger,
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -41,6 +42,8 @@ const ROTATION_GRACE_PERIOD = 10; // 10 seconds for concurrent tab requests
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         private readonly jwtService: JwtService,
         private readonly usersService: UsersService,
@@ -69,7 +72,10 @@ export class AuthService {
         return { accessToken, refreshToken };
     }
 
-    async rotateRefreshToken(token: string): Promise<TokenPair> {
+    async rotateRefreshToken(
+        token: string,
+        timezone?: string
+    ): Promise<TokenPair> {
         let payload: JwtPayload;
 
         try {
@@ -112,6 +118,14 @@ export class AuthService {
             ROTATION_GRACE_PERIOD
         );
         await this.redis.srem(`refresh_family:${userId}`, jti);
+
+        if (timezone) {
+            this.usersService.updateTimezone(userId, timezone).catch((error) => {
+                this.logger.warn(
+                    `Failed to update timezone for user ${userId}: ${(error as Error).message}`
+                );
+            });
+        }
 
         return this.generateTokens(userId, email);
     }
