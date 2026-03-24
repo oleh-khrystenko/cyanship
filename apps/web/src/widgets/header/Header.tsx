@@ -167,7 +167,7 @@ const Header = () => {
     return (
         <header className="sticky top-0 z-50">
                 <div
-                    className={`pointer-events-none absolute inset-0 liquid-glass border-b border-b-liquid-glass-border transition-opacity duration-300 ease-out ${
+                    className={`pointer-events-none absolute inset-0 liquid-glass border-b border-b-liquid-glass-border transition-opacity duration-700 ease-out ${
                         showGlass ? 'opacity-100' : 'opacity-0'
                     }`}
                     aria-hidden="true"
