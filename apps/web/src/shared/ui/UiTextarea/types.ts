@@ -7,5 +7,6 @@ export interface UiTextareaProps
     extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
     variant?: UiTextareaVariant;
     size?: UiTextareaSize;
+    label?: string;
     error?: string;
 }

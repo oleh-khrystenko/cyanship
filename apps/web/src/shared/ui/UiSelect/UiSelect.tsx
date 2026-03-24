@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import {
     Listbox,
     ListboxButton,
@@ -46,6 +46,7 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
         label,
     } = props;
 
+    const generatedId = useId();
     const selected = options.find((o) => o.value === value);
 
     const buttonClasses = composeClasses(
@@ -67,9 +68,17 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
     return (
         <Listbox value={value} onChange={onChange} disabled={disabled}>
             <div className="relative">
+                {label && (
+                    <label
+                        id={generatedId}
+                        className="mb-1 block text-sm font-medium text-foreground"
+                    >
+                        {label}
+                    </label>
+                )}
                 <ListboxButton
                     ref={ref}
-                    aria-label={label}
+                    aria-labelledby={label ? generatedId : undefined}
                     className={buttonClasses}
                     data-variant={variant}
                     data-size={size}

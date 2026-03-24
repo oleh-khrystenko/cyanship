@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import { composeClasses } from '@/shared/lib';
 import type {
     UiTextareaProps,
@@ -28,11 +28,16 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
         const {
             variant = 'outlined',
             size = 'md',
+            label,
             error,
             className,
             disabled,
+            id: externalId,
             ...textareaProps
         } = props;
+
+        const generatedId = useId();
+        const textareaId = externalId ?? generatedId;
 
         const wrapperClasses = composeClasses(
             'rounded-md transition-colors',
@@ -45,6 +50,14 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
 
         return (
             <div>
+                {label && (
+                    <label
+                        htmlFor={textareaId}
+                        className="mb-1 block text-sm font-medium text-foreground"
+                    >
+                        {label}
+                    </label>
+                )}
                 <div
                     className={wrapperClasses}
                     data-variant={variant}
@@ -52,6 +65,7 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
                 >
                     <textarea
                         {...textareaProps}
+                        id={textareaId}
                         ref={ref}
                         disabled={disabled}
                         className="w-full resize-y bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"

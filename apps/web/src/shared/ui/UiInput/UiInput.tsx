@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import { composeClasses } from '@/shared/lib';
 import type { UiInputProps, UiInputSize, UiInputVariant } from './types';
 
@@ -28,13 +28,18 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
     const {
         variant = 'outlined',
         size = 'md',
+        label,
         error,
         IconLeft,
         IconRight,
         className,
         disabled,
+        id: externalId,
         ...inputProps
     } = props;
+
+    const generatedId = useId();
+    const inputId = externalId ?? generatedId;
 
     const iconClass = composeClasses(
         'shrink-0 text-muted-foreground',
@@ -53,7 +58,15 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
 
     return (
         <div>
-            <label
+            {label && (
+                <label
+                    htmlFor={inputId}
+                    className="mb-1 block text-sm font-medium text-foreground"
+                >
+                    {label}
+                </label>
+            )}
+            <div
                 className={wrapperClasses}
                 data-variant={variant}
                 data-size={size}
@@ -65,6 +78,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                 )}
                 <input
                     {...inputProps}
+                    id={inputId}
                     ref={ref}
                     disabled={disabled}
                     className="w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
@@ -74,7 +88,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                         {IconRight}
                     </span>
                 )}
-            </label>
+            </div>
             {error && (
                 <p className="mt-1 text-sm text-destructive">
                     {error}

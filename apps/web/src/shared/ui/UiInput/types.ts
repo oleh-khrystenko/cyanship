@@ -9,6 +9,7 @@ export interface UiInputProps extends Omit<
 > {
     variant?: UiInputVariant;
     size?: UiInputSize;
+    label?: string;
     error?: string;
     IconLeft?: ReactNode;
     IconRight?: ReactNode;
