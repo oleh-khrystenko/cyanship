@@ -41,7 +41,7 @@ export const en = {
     deletionReminder: {
         subject: 'Reminder: your account will be deleted tomorrow',
         body: (formattedDate: string) =>
-            `This is a friendly reminder that your CyanShip account is scheduled for permanent deletion on ${formattedDate}.`,
+            `We wanted to remind you that your CyanShip account is scheduled for permanent deletion on ${formattedDate}.`,
         instruction:
             "If you'd like to keep your account, simply sign in before then.",
         cta: 'Sign In',
