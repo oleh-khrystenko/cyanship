@@ -1,5 +1,5 @@
-import { resolveTranslations } from '../../i18n/resolve';
-import { DeletionReminderEmail } from '../deletion-reminder';
+import { resolveTranslations } from '../src/modules/email/i18n/resolve';
+import { DeletionReminderEmail } from '../src/modules/email/templates/deletion-reminder';
 
 const t = resolveTranslations('uk');
 

@@ -1,7 +1,7 @@
 import { MAGIC_LINK_PURPOSE } from '@cyanship/types';
 
-import { resolveTranslations } from '../../i18n/resolve';
-import { MagicLinkEmail } from '../magic-link';
+import { resolveTranslations } from '../src/modules/email/i18n/resolve';
+import { MagicLinkEmail } from '../src/modules/email/templates/magic-link';
 
 const t = resolveTranslations('uk');
 
@@ -9,7 +9,7 @@ export default function Preview() {
     return (
         <MagicLinkEmail
             link="http://localhost:3000/auth/verify?token=preview"
-            translations={t.magicLink[MAGIC_LINK_PURPOSE.DELETE_ACCOUNT]}
+            translations={t.magicLink[MAGIC_LINK_PURPOSE.LOGIN]}
             lang="uk"
         />
     );

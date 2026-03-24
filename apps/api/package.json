@@ -14,7 +14,7 @@
         "start:prod": "node dist/main",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-        "email:dev": "email dev -d src/modules/email/templates/previews -p 3100",
+        "email:dev": "email dev -d email-previews -p 3100",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:cov": "jest --coverage",
