@@ -8,6 +8,9 @@ import { AuthService } from '../auth/auth.service';
 import { EmailService } from '../email/email.service';
 import { User, UserDocument } from './schemas/user.schema';
 
+const DELIVERY_WINDOW_START = 8; // 8:00 AM local time
+const DELIVERY_WINDOW_END = 20; // 8:00 PM local time
+
 @Injectable()
 export class CleanupService {
     private readonly logger = new Logger(CleanupService.name);
@@ -18,7 +21,7 @@ export class CleanupService {
         private readonly emailService: EmailService
     ) {}
 
-    @Cron(CronExpression.EVERY_DAY_AT_3AM)
+    @Cron(CronExpression.EVERY_6_HOURS)
     async handleExpiredAccounts(): Promise<void> {
         await this.sendDeletionReminders();
         await this.hardDeleteExpiredAccounts();
@@ -39,15 +42,21 @@ export class CleanupService {
                 deletedAt: { $lte: reminderCutoff, $gt: hardDeleteCutoff },
                 deletionReminderSentAt: null,
             })
-            .select('_id email preferredLang deletedAt')
+            .select('_id email preferredLang deletedAt timezone')
             .lean()
             .exec();
 
         if (usersToRemind.length === 0) return;
 
         let sent = 0;
+        let deferred = 0;
 
         for (const user of usersToRemind) {
+            if (!this.isInDeliveryWindow(user.timezone)) {
+                deferred++;
+                continue;
+            }
+
             const userId = user._id.toString();
             try {
                 const deletionDate = new Date(
@@ -73,7 +82,7 @@ export class CleanupService {
         }
 
         this.logger.log(
-            `Sent ${sent}/${usersToRemind.length} deletion reminder(s)`
+            `Deletion reminders: ${sent} sent, ${deferred} deferred (outside delivery window)`
         );
     }
 
@@ -111,5 +120,22 @@ export class CleanupService {
         this.logger.log(
             `Hard-deleted ${deleted}/${expiredUsers.length} expired account(s)`
         );
+    }
+
+    private isInDeliveryWindow(timezone: string | null): boolean {
+        if (!timezone) return true;
+
+        try {
+            const localHour = new Date().toLocaleString('en-US', {
+                hour: 'numeric',
+                hour12: false,
+                timeZone: timezone,
+            });
+
+            const hour = parseInt(localHour, 10);
+            return hour >= DELIVERY_WINDOW_START && hour < DELIVERY_WINDOW_END;
+        } catch {
+            return true;
+        }
     }
 }

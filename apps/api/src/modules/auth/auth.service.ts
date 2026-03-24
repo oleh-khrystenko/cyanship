@@ -120,11 +120,13 @@ export class AuthService {
         await this.redis.srem(`refresh_family:${userId}`, jti);
 
         if (timezone) {
-            this.usersService.updateTimezone(userId, timezone).catch((error) => {
-                this.logger.warn(
-                    `Failed to update timezone for user ${userId}: ${(error as Error).message}`
-                );
-            });
+            this.usersService
+                .updateTimezone(userId, timezone)
+                .catch((error) => {
+                    this.logger.warn(
+                        `Failed to update timezone for user ${userId}: ${(error as Error).message}`
+                    );
+                });
         }
 
         return this.generateTokens(userId, email);

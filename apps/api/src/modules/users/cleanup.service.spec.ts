@@ -36,6 +36,20 @@ function mockFindChain(result: unknown[]) {
     };
 }
 
+/** Returns an IANA timezone where the current local hour matches `targetHour`. */
+function timezoneWithLocalHour(targetHour: number): string {
+    const now = new Date();
+    const utcHour = now.getUTCHours();
+    // offset = targetHour - utcHour (mod 24), mapped to [-12, +14]
+    let offset = targetHour - utcHour;
+    if (offset < -12) offset += 24;
+    if (offset > 14) offset -= 24;
+    // Etc/GMT sign is inverted: Etc/GMT-5 = UTC+5
+    const etcOffset = -offset;
+    const sign = etcOffset >= 0 ? '+' : '';
+    return `Etc/GMT${sign}${etcOffset}`;
+}
+
 describe('CleanupService', () => {
     let service: CleanupService;
 
@@ -60,8 +74,6 @@ describe('CleanupService', () => {
                 { _id: { toString: () => 'user-2' }, email: 'b@test.com' },
             ];
 
-            // First call: reminders query (returns empty)
-            // Second call: hard-delete query
             mockModel.find
                 .mockReturnValueOnce(mockFindChain([]))
                 .mockReturnValueOnce(mockFindChain(expiredUsers));
@@ -103,7 +115,6 @@ describe('CleanupService', () => {
             await service.handleExpiredAccounts();
             const after = new Date(Date.now() - 2 * 86_400_000);
 
-            // Second find call is the hard-delete query
             const cutoffArg = mockModel.find.mock.calls[1][0].deletedAt.$lte;
             expect(cutoffArg.getTime()).toBeGreaterThanOrEqual(
                 before.getTime()
@@ -178,6 +189,7 @@ describe('CleanupService', () => {
                     email: 'remind@test.com',
                     preferredLang: 'en',
                     deletedAt,
+                    timezone: null,
                 },
             ];
 
@@ -220,12 +232,14 @@ describe('CleanupService', () => {
                     email: 'fail@test.com',
                     preferredLang: 'en',
                     deletedAt,
+                    timezone: null,
                 },
                 {
                     _id: { toString: () => 'user-r2' },
                     email: 'ok@test.com',
                     preferredLang: 'uk',
                     deletedAt,
+                    timezone: null,
                 },
             ];
 
@@ -244,7 +258,6 @@ describe('CleanupService', () => {
             expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledTimes(
                 2
             );
-            // Only second user gets marked
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 'user-r2',
@@ -260,6 +273,7 @@ describe('CleanupService', () => {
                     email: 'date@test.com',
                     preferredLang: 'en',
                     deletedAt,
+                    timezone: null,
                 },
             ];
 
@@ -292,7 +306,6 @@ describe('CleanupService', () => {
             const afterReminder = new Date(Date.now() - 1 * 86_400_000);
             const afterHardDelete = new Date(Date.now() - 2 * 86_400_000);
 
-            // First find call is the reminder query
             const reminderQuery = mockModel.find.mock.calls[0][0];
             expect(reminderQuery.deletionReminderSentAt).toBeNull();
 
@@ -310,6 +323,156 @@ describe('CleanupService', () => {
             );
             expect(reminderGt.getTime()).toBeLessThanOrEqual(
                 afterHardDelete.getTime()
+            );
+        });
+    });
+
+    describe('handleExpiredAccounts — timezone delivery window', () => {
+        it('should send reminder when user has no timezone (fallback)', async () => {
+            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+
+            mockModel.find
+                .mockReturnValueOnce(
+                    mockFindChain([
+                        {
+                            _id: { toString: () => 'user-1' },
+                            email: 'no-tz@test.com',
+                            preferredLang: 'en',
+                            deletedAt,
+                            timezone: null,
+                        },
+                    ])
+                )
+                .mockReturnValueOnce(mockFindChain([]));
+
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.handleExpiredAccounts();
+
+            expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledTimes(
+                1
+            );
+        });
+
+        it('should send reminder when user timezone is in daytime window', async () => {
+            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const daytimeTimezone = timezoneWithLocalHour(12);
+
+            mockModel.find
+                .mockReturnValueOnce(
+                    mockFindChain([
+                        {
+                            _id: { toString: () => 'user-1' },
+                            email: 'day@test.com',
+                            preferredLang: 'en',
+                            deletedAt,
+                            timezone: daytimeTimezone,
+                        },
+                    ])
+                )
+                .mockReturnValueOnce(mockFindChain([]));
+
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.handleExpiredAccounts();
+
+            expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledTimes(
+                1
+            );
+        });
+
+        it('should defer reminder when user timezone is in nighttime', async () => {
+            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const nighttimeTimezone = timezoneWithLocalHour(3);
+
+            mockModel.find
+                .mockReturnValueOnce(
+                    mockFindChain([
+                        {
+                            _id: { toString: () => 'user-1' },
+                            email: 'night@test.com',
+                            preferredLang: 'en',
+                            deletedAt,
+                            timezone: nighttimeTimezone,
+                        },
+                    ])
+                )
+                .mockReturnValueOnce(mockFindChain([]));
+
+            await service.handleExpiredAccounts();
+
+            expect(
+                mockEmailService.sendDeletionReminder
+            ).not.toHaveBeenCalled();
+            expect(mockModel.findByIdAndUpdate).not.toHaveBeenCalled();
+        });
+
+        it('should send reminder when user has invalid timezone (fallback)', async () => {
+            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+
+            mockModel.find
+                .mockReturnValueOnce(
+                    mockFindChain([
+                        {
+                            _id: { toString: () => 'user-1' },
+                            email: 'bad-tz@test.com',
+                            preferredLang: 'en',
+                            deletedAt,
+                            timezone: 'Invalid/Timezone',
+                        },
+                    ])
+                )
+                .mockReturnValueOnce(mockFindChain([]));
+
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.handleExpiredAccounts();
+
+            expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledTimes(
+                1
+            );
+        });
+
+        it('should mix: send to daytime users, defer nighttime users', async () => {
+            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const daytimeTimezone = timezoneWithLocalHour(10);
+            const nighttimeTimezone = timezoneWithLocalHour(2);
+
+            mockModel.find
+                .mockReturnValueOnce(
+                    mockFindChain([
+                        {
+                            _id: { toString: () => 'day-user' },
+                            email: 'day@test.com',
+                            preferredLang: 'en',
+                            deletedAt,
+                            timezone: daytimeTimezone,
+                        },
+                        {
+                            _id: { toString: () => 'night-user' },
+                            email: 'night@test.com',
+                            preferredLang: 'uk',
+                            deletedAt,
+                            timezone: nighttimeTimezone,
+                        },
+                    ])
+                )
+                .mockReturnValueOnce(mockFindChain([]));
+
+            mockModel.findByIdAndUpdate.mockResolvedValue(undefined);
+
+            await service.handleExpiredAccounts();
+
+            expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledTimes(
+                1
+            );
+            expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledWith(
+                expect.objectContaining({ email: 'day@test.com' })
+            );
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                'day-user',
+                { deletionReminderSentAt: expect.any(Date) }
             );
         });
     });
