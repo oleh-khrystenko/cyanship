@@ -21,8 +21,7 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "@cyanship/types": ["../../packages/types/src/index.ts"],
-            "@cyanship/types/agency": ["../../packages/types/src/agency.ts"]
+            "@cyanship/types": ["../../packages/types/src/index.ts"]
         }
     },
     "include": [

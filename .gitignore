@@ -64,10 +64,16 @@ Thumbs.db
 
 # --- Build outputs (Nest / Next / Packages) ---
 apps/api/dist/
+apps/api/email-previews/**/*.js
+apps/api/email-previews/**/*.d.ts
+apps/api/email-previews/**/*.js.map
 apps/web/.next/
 apps/web/out/
 apps/web/.cache/
 packages/*/dist/
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
 packages/*/.tsbuildinfo
 
 # --- Misc ---

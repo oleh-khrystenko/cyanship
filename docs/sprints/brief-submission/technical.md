@@ -182,7 +182,7 @@ pnpm --filter @cyanship/types build
 ```typescript
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { BRIEF_STATUS, type BriefStatus, type BriefBudget, type BriefDeadline } from '@cyanship/types/agency';
+import { BRIEF_STATUS, type BriefStatus, type BriefBudget, type BriefDeadline } from '@cyanship/types';
 
 @Schema({ timestamps: true, collection: 'briefs' })
 export class Brief extends Document {
@@ -224,7 +224,7 @@ export const BriefSchema = SchemaFactory.createForClass(Brief);
 
 ```typescript
 import { createZodDto } from '@anatine/zod-nestjs';
-import { SubmitBriefSchema } from '@cyanship/types/agency';
+import { SubmitBriefSchema } from '@cyanship/types';
 
 export class SubmitBriefDto extends createZodDto(SubmitBriefSchema) {}
 ```
@@ -306,7 +306,7 @@ import {
     BRIEF_DEADLINE_LABEL,
     type BriefBudget,
     type BriefDeadline,
-} from '@cyanship/types/agency';
+} from '@cyanship/types';
 
 import { EmailService } from '../../email/email.service';
 import { Brief } from '../schemas/brief.schema';
@@ -1089,7 +1089,7 @@ export {
 
 ```typescript
 import { apiClient } from './client';
-import type { SubmitBrief } from '@cyanship/types/agency';
+import type { SubmitBrief } from '@cyanship/types';
 
 export async function submitBrief(data: SubmitBrief): Promise<{ code: string }> {
     const { data: response } = await apiClient.post<{ data: null; code: string }>(
@@ -1182,7 +1182,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
-import { SubmitBriefSchema, BRIEF_BUDGET, BRIEF_DEADLINE } from '@cyanship/types/agency';
+import { SubmitBriefSchema, BRIEF_BUDGET, BRIEF_DEADLINE } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';

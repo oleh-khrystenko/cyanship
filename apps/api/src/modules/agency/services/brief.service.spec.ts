@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { BRIEF_STATUS, BRIEF_BUDGET_LABEL, BRIEF_DEADLINE_LABEL } from '@cyanship/types/agency';
+import { BRIEF_STATUS, BRIEF_BUDGET_LABEL, BRIEF_DEADLINE_LABEL } from '@cyanship/types';
 
 import { BriefService } from './brief.service';
 import { Brief } from '../schemas/brief.schema';

@@ -108,8 +108,7 @@
             "./test-setup.ts"
         ],
         "moduleNameMapper": {
-            "^@cyanship/types$": "<rootDir>/../../../packages/types/src/index.ts",
-            "^@cyanship/types/(.*)$": "<rootDir>/../../../packages/types/src/$1"
+            "^@cyanship/types$": "<rootDir>/../../../packages/types/src/index.ts"
         }
     }
 }

@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { SubmitBrief } from '@cyanship/types/agency';
+import type { SubmitBrief } from '@cyanship/types';
 
 export async function submitBrief(
     data: SubmitBrief,

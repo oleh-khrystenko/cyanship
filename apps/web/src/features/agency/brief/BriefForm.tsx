@@ -8,7 +8,7 @@ import {
     SubmitBriefSchema,
     BRIEF_BUDGET,
     BRIEF_DEADLINE,
-} from '@cyanship/types/agency';
+} from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
