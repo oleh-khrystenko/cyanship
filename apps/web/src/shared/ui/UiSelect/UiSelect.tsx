@@ -7,7 +7,7 @@ import {
     ListboxOption,
     ListboxOptions,
 } from '@headlessui/react';
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { composeClasses } from '@/shared/lib';
 import type { UiSelectProps, UiSelectSize, UiSelectVariant } from './types';
 
@@ -17,20 +17,16 @@ const sizeStyles: Record<UiSelectSize, string> = {
     lg: 'px-6 py-3 text-lg',
 };
 
-/**
- * Theme-agnostic variant styles using neutral colors
- * Override via className prop for custom design systems
- */
 const variantStyles: Record<UiSelectVariant, string> = {
-    filled: 'bg-primary text-primary-foreground hover:bg-primary/90',
     outlined:
-        'bg-transparent text-foreground border border-border hover:border-muted-foreground',
+        'bg-transparent text-foreground border border-border hover:border-muted-foreground focus-within:border-primary',
+    filled: 'bg-secondary text-foreground border border-transparent hover:bg-card focus-within:bg-card',
 };
 
-const optionStyles: Record<UiSelectVariant, string> = {
-    filled: 'bg-primary text-primary-foreground data-[focus]:bg-primary/90 data-[selected]:bg-primary/90',
-    outlined:
-        'bg-transparent text-foreground data-[focus]:bg-secondary data-[selected]:bg-secondary',
+const optionSizeStyles: Record<UiSelectSize, string> = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-6 py-3 text-lg',
 };
 
 const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
@@ -38,7 +34,7 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
         options,
         value,
         onChange,
-        variant = 'filled',
+        variant = 'outlined',
         size = 'md',
         className,
         disabled = false,
@@ -50,19 +46,14 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
     const selected = options.find((o) => o.value === value);
 
     const buttonClasses = composeClasses(
-        'inline-flex items-center justify-between gap-2',
-        'cursor-pointer disabled:cursor-not-allowed',
+        'flex w-full items-center justify-between gap-2',
+        'rounded-md transition-colors',
+        'cursor-pointer',
         'focus:outline-none',
         disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         sizeStyles[size],
         variantStyles[variant],
         className
-    );
-
-    const optionsClasses = composeClasses(
-        'absolute z-50 mt-1 w-full',
-        'focus:outline-none',
-        optionStyles[variant]
     );
 
     return (
@@ -83,21 +74,51 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
                     data-variant={variant}
                     data-size={size}
                 >
-                    <span>{selected?.label || placeholder}</span>
-                    <ChevronDown className="h-4 w-4" />
+                    <span
+                        className={composeClasses(
+                            'truncate',
+                            !selected && 'text-muted-foreground'
+                        )}
+                    >
+                        {selected?.label || placeholder}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform ui-open:rotate-180" />
                 </ListboxButton>
 
-                <ListboxOptions className={optionsClasses}>
+                <ListboxOptions
+                    className={composeClasses(
+                        'absolute z-50 mt-1 w-full',
+                        'max-h-60 overflow-auto',
+                        'rounded-md border border-border bg-popover shadow-md',
+                        'focus:outline-none'
+                    )}
+                >
                     {options.map((option) => (
                         <ListboxOption
                             key={option.value}
                             value={option.value}
                             className={composeClasses(
-                                'cursor-pointer select-none',
-                                sizeStyles[size]
+                                'flex cursor-pointer select-none items-center justify-between',
+                                'text-foreground transition-colors',
+                                'data-focus:bg-secondary data-selected:bg-secondary',
+                                optionSizeStyles[size]
                             )}
                         >
-                            {option.label}
+                            {({ selected: isSelected }) => (
+                                <>
+                                    <span
+                                        className={composeClasses(
+                                            'truncate',
+                                            isSelected && 'font-medium'
+                                        )}
+                                    >
+                                        {option.label}
+                                    </span>
+                                    {isSelected && (
+                                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                                    )}
+                                </>
+                            )}
                         </ListboxOption>
                     ))}
                 </ListboxOptions>
