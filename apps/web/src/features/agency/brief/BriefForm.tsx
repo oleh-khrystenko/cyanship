@@ -115,49 +115,64 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <UiInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('name_placeholder')}
-                error={errors.name}
-                disabled={loading}
-                required
-            />
-            <UiInput
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t('email_placeholder')}
-                error={errors.email}
-                disabled={loading}
-                required
-            />
-            <UiTextarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={t('description_placeholder')}
-                rows={4}
-                error={errors.description}
-                disabled={loading}
-                required
-            />
-            <UiSelect
-                options={budgetOptions}
-                value={budget}
-                onChange={setBudget}
-                placeholder={t('budget_placeholder')}
-                variant="outlined"
-            />
-            {errors.budget && (
-                <p className="text-sm text-destructive">{errors.budget}</p>
-            )}
-            <UiSelect
-                options={deadlineOptions}
-                value={deadline}
-                onChange={setDeadline}
-                placeholder={t('deadline_placeholder')}
-                variant="outlined"
-            />
+            <fieldset className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-foreground">{t('name_label')}</label>
+                <UiInput
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t('name_placeholder')}
+                    error={errors.name}
+                    disabled={loading}
+                    required
+                />
+            </fieldset>
+            <fieldset className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-foreground">{t('email_label')}</label>
+                <UiInput
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('email_placeholder')}
+                    error={errors.email}
+                    disabled={loading}
+                    required
+                />
+            </fieldset>
+            <fieldset className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-foreground">{t('description_label')}</label>
+                <UiTextarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={t('description_placeholder')}
+                    rows={4}
+                    error={errors.description}
+                    disabled={loading}
+                    required
+                />
+            </fieldset>
+            <fieldset className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-foreground">{t('budget_label')}</label>
+                <UiSelect
+                    options={budgetOptions}
+                    value={budget}
+                    onChange={setBudget}
+                    placeholder={t('budget_placeholder')}
+                    variant="outlined"
+                />
+                {errors.budget && (
+                    <p className="text-sm text-destructive">{errors.budget}</p>
+                )}
+            </fieldset>
+            <fieldset className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-foreground">{t('deadline_label')}</label>
+                <UiSelect
+                    options={deadlineOptions}
+                    value={deadline}
+                    onChange={setDeadline}
+                    placeholder={t('deadline_placeholder')}
+                    variant="outlined"
+                />
+            </fieldset>
 
             {/* Turnstile invisible container */}
             <div ref={containerRef} />

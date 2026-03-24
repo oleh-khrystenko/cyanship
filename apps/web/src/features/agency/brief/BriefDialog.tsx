@@ -24,7 +24,7 @@ export default function BriefDialog({ children }: BriefDialogProps) {
             <UiModalTrigger asChild>{children}</UiModalTrigger>
             <UiModalContent>
                 <UiModalHeader>
-                    <UiModalTitle>{t('title')}</UiModalTitle>
+                    <UiModalTitle className="text-xl">{t('title')}</UiModalTitle>
                 </UiModalHeader>
                 <div className="px-4 pb-6">
                     <BriefForm onSuccess={() => setOpen(false)} />
