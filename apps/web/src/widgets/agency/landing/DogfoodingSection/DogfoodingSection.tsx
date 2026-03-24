@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-    UiSheet,
-    UiSheetContent,
-    UiSheetHeader,
-    UiSheetTitle,
-} from '@/shared/ui/UiSheet';
+import { useDogfoodingSheetStore } from '@/stores/dogfoodingSheet';
 import ProofTabs from './ProofTabs';
 import ProofWindow from './ProofWindow';
 import type { ProofTabKey } from './types';
@@ -16,7 +11,6 @@ const DESKTOP_MQ = '(min-width: 1024px)';
 const VALID_TABS = new Set<ProofTabKey>(['auth', 'billing', 'usage']);
 
 function parseTabFromHash(hash: string): ProofTabKey | null {
-    // #dogfooding-usage → usage, #dogfooding-billing → billing
     const match = hash.match(/^#dogfooding-(\w+)$/);
     const tab = match?.[1] as ProofTabKey | undefined;
     return tab && VALID_TABS.has(tab) ? tab : null;
@@ -24,12 +18,10 @@ function parseTabFromHash(hash: string): ProofTabKey | null {
 
 const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
-    const [activeTab, setActiveTab] = useState<ProofTabKey | null>(null);
+    const activeTab = useDogfoodingSheetStore((s) => s.activeTab);
+    const setActiveTab = useDogfoodingSheetStore((s) => s.setActiveTab);
     const [isDesktop, setIsDesktop] = useState(false);
     const sectionRef = useRef<HTMLElement>(null);
-    const tabsRef = useRef<HTMLDivElement>(null);
-
-    const sheetOpen = !isDesktop && activeTab !== null;
 
     useEffect(() => {
         const mql = window.matchMedia(DESKTOP_MQ);
@@ -39,7 +31,6 @@ const DogfoodingSection = () => {
             if (tab) {
                 setActiveTab(tab);
                 sectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                // Clean up hash to plain #dogfooding so refresh doesn't re-trigger
                 history.replaceState(null, '', '#dogfooding');
             }
         };
@@ -48,7 +39,7 @@ const DogfoodingSection = () => {
             setIsDesktop(matches);
 
             if (matches) {
-                setActiveTab((prev) => prev ?? 'auth');
+                setActiveTab(useDogfoodingSheetStore.getState().activeTab ?? 'auth');
             } else {
                 setActiveTab(null);
             }
@@ -57,7 +48,6 @@ const DogfoodingSection = () => {
         update(mql.matches);
         applyDeepLink();
 
-        // Listen for hash changes (e.g. client-side navigation from success page)
         window.addEventListener('hashchange', applyDeepLink);
         const handler = (e: MediaQueryListEvent) => update(e.matches);
         mql.addEventListener('change', handler);
@@ -65,7 +55,7 @@ const DogfoodingSection = () => {
             window.removeEventListener('hashchange', applyDeepLink);
             mql.removeEventListener('change', handler);
         };
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleTabChange = (tab: ProofTabKey) => {
         if (!isDesktop && activeTab === tab) {
@@ -73,22 +63,6 @@ const DogfoodingSection = () => {
         } else {
             setActiveTab(tab);
         }
-    };
-
-    const handleSheetOpenChange = (open: boolean) => {
-        if (!open) {
-            setActiveTab(null);
-        }
-    };
-
-    const handleInteractOutside = (e: Event) => {
-        if (tabsRef.current?.contains(e.target as Node)) {
-            e.preventDefault();
-        }
-    };
-
-    const handleRequestAuth = () => {
-        setActiveTab('auth');
     };
 
     return (
@@ -106,7 +80,7 @@ const DogfoodingSection = () => {
                             {t('description')}
                         </p>
 
-                        <div ref={tabsRef} className="mt-12">
+                        <div className="mt-12" data-dogfooding-tabs>
                             <ProofTabs
                                 activeTab={activeTab}
                                 onTabChange={handleTabChange}
@@ -118,34 +92,11 @@ const DogfoodingSection = () => {
                         {activeTab && (
                             <ProofWindow
                                 activeTab={activeTab}
-                                onRequestAuth={handleRequestAuth}
+                                onRequestAuth={() => setActiveTab('auth')}
                             />
                         )}
                     </div>
                 </div>
-
-                <UiSheet open={sheetOpen} onOpenChange={handleSheetOpenChange} modal={false}>
-                    <UiSheetContent
-                        side="bottom"
-                        hideOverlay
-                        onInteractOutside={handleInteractOutside}
-                    >
-                        <UiSheetHeader>
-                            <UiSheetTitle className="text-xl">
-                                {activeTab && t(`proof_shell.sheet_title_${activeTab}`)}
-                            </UiSheetTitle>
-                        </UiSheetHeader>
-                        <div className="flex h-[60vh] flex-col overflow-y-auto p-4 pt-0">
-                            {activeTab && (
-                                <ProofWindow
-                                    activeTab={activeTab}
-                                    onRequestAuth={handleRequestAuth}
-                                    variant="embedded"
-                                />
-                            )}
-                        </div>
-                    </UiSheetContent>
-                </UiSheet>
             </div>
         </section>
     );

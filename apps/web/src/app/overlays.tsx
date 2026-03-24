@@ -14,6 +14,12 @@ const TermsReacceptDialog = dynamic(
 const BillingResetDialog = dynamic(
     () => import('@/features/billing/BillingResetDialog'),
 );
+const MobileMenuSheet = dynamic(
+    () => import('@/widgets/header/MobileMenuSheet'),
+);
+const DogfoodingSheet = dynamic(
+    () => import('@/widgets/agency/landing/DogfoodingSection/DogfoodingSheet'),
+);
 
 export function Overlays() {
     return (
@@ -22,6 +28,8 @@ export function Overlays() {
             <DeleteAccountDialog />
             <TermsReacceptDialog />
             <BillingResetDialog />
+            <MobileMenuSheet />
+            <DogfoodingSheet />
         </>
     );
 }
