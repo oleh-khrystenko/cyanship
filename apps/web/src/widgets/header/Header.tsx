@@ -147,7 +147,7 @@ const Header = () => {
         : '';
 
     return (
-        <header className="liquid-glass sticky top-0 z-50">
+        <header className="liquid-glass sticky top-0 z-50 border-b border-b-[var(--liquid-glass-border)]">
             <div className="container flex h-16 items-center justify-between gap-6 px-6">
                 {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
                 {hasNav ? (
