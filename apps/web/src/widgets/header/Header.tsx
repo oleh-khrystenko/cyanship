@@ -172,13 +172,15 @@ const Header = () => {
 
     return (
         <header className="sticky top-0 z-50">
-                <div
-                    className={`pointer-events-none absolute inset-0 liquid-glass border-b border-b-liquid-glass-border ${
-                        canAnimate ? 'transition-opacity duration-700 ease-out' : ''
-                    } ${showGlass ? 'opacity-100' : 'opacity-0'}`}
-                    aria-hidden="true"
-                />
-            <div className="container relative z-10 flex h-16 items-center justify-between gap-6 px-6">
+            <div
+                className={`pointer-events-none absolute inset-0 ${
+                    canAnimate
+                        ? 'liquid-glass border-b-liquid-glass-border border-b transition-opacity duration-700 ease-out'
+                        : ''
+                } ${showGlass ? 'opacity-100' : 'opacity-0'}`}
+                aria-hidden="true"
+            />
+            <div className="relative z-10 container flex h-16 items-center justify-between gap-6 px-6">
                 {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
                 {hasNav ? (
                     <UiButton
@@ -253,7 +255,9 @@ const Header = () => {
                                 <div className="flex items-center gap-2.5">
                                     <UiAvatar size="sm">
                                         <UiAvatarImage
-                                            src={user.profile.avatar ?? undefined}
+                                            src={
+                                                user.profile.avatar ?? undefined
+                                            }
                                             alt={user.profile.name ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
@@ -261,10 +265,10 @@ const Header = () => {
                                         </UiAvatarFallback>
                                     </UiAvatar>
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">
+                                        <span className="text-foreground text-sm font-medium">
                                             {user.profile.name}
                                         </span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-muted-foreground text-xs">
                                             {user.email}
                                         </span>
                                     </div>
@@ -278,12 +282,9 @@ const Header = () => {
                                     <UiAvatar size="sm">
                                         <UiAvatarImage
                                             src={
-                                                user.profile.avatar ??
-                                                undefined
+                                                user.profile.avatar ?? undefined
                                             }
-                                            alt={
-                                                user.profile.name ?? ''
-                                            }
+                                            alt={user.profile.name ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
                                             {initials}
@@ -320,10 +321,7 @@ const Header = () => {
 
                 {/* Mobile hamburger */}
                 <div className="lg:hidden">
-                    <UiSheet
-                        open={isSheetOpen}
-                        onOpenChange={setIsSheetOpen}
-                    >
+                    <UiSheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                         <UiSheetTrigger asChild>
                             <UiButton
                                 variant="icon"
@@ -343,28 +341,22 @@ const Header = () => {
                                 {/* Mobile nav */}
                                 {hasNav && (
                                     <nav className="flex flex-col gap-4">
-                                        {navItems.map(
-                                            ({ href, label }) => (
-                                                <a
-                                                    key={href}
-                                                    href={href}
-                                                    className="text-muted-foreground hover:text-foreground py-2 text-sm transition-colors"
-                                                    onClick={() =>
-                                                        setIsSheetOpen(
-                                                            false
-                                                        )
-                                                    }
-                                                >
-                                                    {label}
-                                                </a>
-                                            )
-                                        )}
+                                        {navItems.map(({ href, label }) => (
+                                            <a
+                                                key={href}
+                                                href={href}
+                                                className="text-muted-foreground hover:text-foreground py-2 text-sm transition-colors"
+                                                onClick={() =>
+                                                    setIsSheetOpen(false)
+                                                }
+                                            >
+                                                {label}
+                                            </a>
+                                        ))}
                                     </nav>
                                 )}
 
-                                {hasNav && (
-                                    <div className="bg-border h-px" />
-                                )}
+                                {hasNav && <div className="bg-border h-px" />}
 
                                 {/* Mobile settings */}
                                 <div className="flex items-center gap-2">
@@ -386,13 +378,11 @@ const Header = () => {
                                             <UiAvatar size="md">
                                                 <UiAvatarImage
                                                     src={
-                                                        user.profile
-                                                            .avatar ??
+                                                        user.profile.avatar ??
                                                         undefined
                                                     }
                                                     alt={
-                                                        user.profile
-                                                            .name ?? ''
+                                                        user.profile.name ?? ''
                                                     }
                                                 />
                                                 <UiAvatarFallback size="md">
@@ -430,7 +420,7 @@ const Header = () => {
                                                 </span>
                                                 <span>{item.label}</span>
                                                 {item.badge != null && (
-                                                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs leading-none text-muted-foreground">
+                                                    <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs leading-none">
                                                         {item.badge}
                                                     </span>
                                                 )}
@@ -462,9 +452,7 @@ const Header = () => {
                                         variant="filled"
                                         size="md"
                                         className="mt-2 w-full"
-                                        onClick={() =>
-                                            setIsSheetOpen(false)
-                                        }
+                                        onClick={() => setIsSheetOpen(false)}
                                     >
                                         {cta.label}
                                     </UiButton>
