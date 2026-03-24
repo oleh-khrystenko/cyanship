@@ -41,7 +41,7 @@ const HeroSection = () => {
                         </UiButton>
                         <UiButton
                             as="link"
-                            href="/auth/signin"
+                            href="/billing"
                             variant="outline"
                             size="lg"
                             className="w-full sm:w-auto"
