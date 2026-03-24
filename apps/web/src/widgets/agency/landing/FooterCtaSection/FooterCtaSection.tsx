@@ -7,8 +7,7 @@ import {
     CheckCircle2,
     LucideIcon,
 } from 'lucide-react';
-import UiButton from '@/shared/ui/UiButton';
-import { useBriefDialogStore } from '@/stores/briefDialog';
+import StartBriefButton from '../StartBriefButton';
 
 const steps: { key: number; icon: LucideIcon; primary?: boolean }[] = [
     { key: 1, icon: Send, primary: true },
@@ -19,7 +18,6 @@ const steps: { key: number; icon: LucideIcon; primary?: boolean }[] = [
 
 const FooterCtaSection = () => {
     const t = useTranslations('landing_page.footer_cta');
-    const openBrief = useBriefDialogStore((s) => s.open);
 
     return (
         <section
@@ -39,15 +37,14 @@ const FooterCtaSection = () => {
                         <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
                             {t('description')}
                         </p>
-                        <UiButton
+                        <StartBriefButton
                             variant="filled"
                             size="lg"
                             className="mt-8 w-full font-semibold sm:w-auto"
                             IconRight={<ArrowRight />}
-                            onClick={openBrief}
                         >
                             {t('cta')}
-                        </UiButton>
+                        </StartBriefButton>
                     </div>
 
                     {/* Steps */}

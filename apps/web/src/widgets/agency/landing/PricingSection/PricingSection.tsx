@@ -1,7 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import UiButton from '@/shared/ui/UiButton';
-import { useBriefDialogStore } from '@/stores/briefDialog';
+import StartBriefButton from '../StartBriefButton';
 
 const includeKeys = [
     'include_1',
@@ -15,7 +14,6 @@ const faqKeys = [1, 2, 3, 4, 5] as const;
 
 const PricingSection = () => {
     const t = useTranslations('landing_page.pricing');
-    const openBrief = useBriefDialogStore((s) => s.open);
 
     return (
         <section
@@ -61,14 +59,13 @@ const PricingSection = () => {
                                 ))}
                             </ul>
 
-                            <UiButton
+                            <StartBriefButton
                                 variant="filled"
                                 size="lg"
                                 className="mt-8 w-full justify-center"
-                                onClick={openBrief}
                             >
                                 {t('cta')}
-                            </UiButton>
+                            </StartBriefButton>
                         </div>
                     </div>
 
