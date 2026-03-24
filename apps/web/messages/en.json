@@ -250,6 +250,9 @@
         },
         "users": {
             "terms_accepted": "Terms accepted."
+        },
+        "agency": {
+            "brief_submitted": "Request submitted. We will respond within 24 hours."
         }
     },
     "errors": {
@@ -268,7 +271,32 @@
             "email_send_failed": "Failed to send the email. Please try again later",
             "internal_error": "Something went wrong. Please try again later",
             "unknown": "Something went wrong. Please try again later"
+        },
+        "agency": {
+            "captcha_failed": "Security verification failed. Please try again."
         }
+    },
+    "brief_form": {
+        "title": "Submit Your Project Brief",
+        "name_placeholder": "Your name",
+        "email_placeholder": "Email address",
+        "description_placeholder": "Describe your project idea, goals, and any technical requirements...",
+        "budget_placeholder": "Select budget range",
+        "budget_under_2500": "< $2,500 (Consulting only)",
+        "budget_2500_5000": "$2,500 – $5,000",
+        "budget_5000_10000": "$5,000 – $10,000",
+        "budget_over_10000": "$10,000+",
+        "deadline_placeholder": "Timeline (optional)",
+        "deadline_asap": "ASAP",
+        "deadline_1_3_months": "1–3 months",
+        "deadline_flexible": "Flexible",
+        "submit": "Submit Brief",
+        "submitting": "Submitting...",
+        "captcha_not_ready": "Security verification in progress. Please try again in a moment.",
+        "validation_name": "Name is required",
+        "validation_email": "Please enter a valid email address",
+        "validation_description": "Please describe your project (at least 10 characters)",
+        "validation_budget": "Please select a budget range"
     },
     "profile_page": {
         "heading": "Profile",
