@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { LANG } from '../constants/lang';
 import { CURRENT_TERMS_VERSION } from '../constants/terms';
+import { nameSchema } from '../validation/common';
 
 const langValues = Object.values(LANG) as [string, ...string[]];
 
@@ -10,13 +11,7 @@ export const UpdateLangSchema = z.object({
 });
 
 export const UpdateProfileSchema = z.object({
-    name: z
-        .string()
-        .trim()
-        .min(2)
-        .max(100)
-        .regex(/^[\p{L}\s'\-]+$/u)
-        .optional(),
+    name: nameSchema.optional(),
     avatar: z.string().url().optional(),
     preferredLang: z.enum(langValues).optional(),
 });
