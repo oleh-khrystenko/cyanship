@@ -8,6 +8,7 @@ import {
     LucideIcon,
 } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
+import BriefDialog from '@/features/agency/brief/BriefDialog';
 
 const steps: { key: number; icon: LucideIcon; primary?: boolean }[] = [
     { key: 1, icon: Send, primary: true },
@@ -37,16 +38,16 @@ const FooterCtaSection = () => {
                         <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
                             {t('description')}
                         </p>
-                        <UiButton
-                            as="a"
-                            href="#"
-                            variant="filled"
-                            size="lg"
-                            className="mt-8 w-full font-semibold sm:w-auto"
-                            IconRight={<ArrowRight />}
-                        >
-                            {t('cta')}
-                        </UiButton>
+                        <BriefDialog>
+                            <UiButton
+                                variant="filled"
+                                size="lg"
+                                className="mt-8 w-full font-semibold sm:w-auto"
+                                IconRight={<ArrowRight />}
+                            >
+                                {t('cta')}
+                            </UiButton>
+                        </BriefDialog>
                     </div>
 
                     {/* Steps */}
