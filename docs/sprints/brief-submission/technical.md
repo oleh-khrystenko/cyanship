@@ -120,11 +120,27 @@ export const SubmitBriefSchema = z.object({
 });
 
 export type SubmitBrief = z.infer<typeof SubmitBriefSchema>;
+
+// --- Human-readable labels (for notification emails, admin UI) ---
+
+export const BRIEF_BUDGET_LABEL: Record<BriefBudget, string> = {
+    [BRIEF_BUDGET.UNDER_2500]: '< $2,500 (Consulting only)',
+    [BRIEF_BUDGET.FROM_2500_TO_5000]: '$2,500 – $5,000',
+    [BRIEF_BUDGET.FROM_5000_TO_10000]: '$5,000 – $10,000',
+    [BRIEF_BUDGET.OVER_10000]: '$10,000+',
+};
+
+export const BRIEF_DEADLINE_LABEL: Record<BriefDeadline, string> = {
+    [BRIEF_DEADLINE.ASAP]: 'ASAP',
+    [BRIEF_DEADLINE.ONE_TO_THREE_MONTHS]: '1–3 months',
+    [BRIEF_DEADLINE.FLEXIBLE]: 'Flexible',
+};
 ```
 
 **Зміни vs попередня версія:**
 - `name` → `nameSchema` (shared, regex validated, min 2)
 - `source` max → 253 (max довжина hostname за RFC 1035)
+- `BRIEF_BUDGET_LABEL` / `BRIEF_DEADLINE_LABEL` — human-readable labels для notification email та майбутньої адмінки
 
 ### 1.2. Export з agency barrel
 
@@ -284,7 +300,13 @@ CAPTCHA_FAILED: 'CAPTCHA_FAILED',
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { BRIEF_STATUS } from '@cyanship/types/agency';
+import {
+    BRIEF_STATUS,
+    BRIEF_BUDGET_LABEL,
+    BRIEF_DEADLINE_LABEL,
+    type BriefBudget,
+    type BriefDeadline,
+} from '@cyanship/types/agency';
 
 import { EmailService } from '../../email/email.service';
 import { Brief } from '../schemas/brief.schema';
@@ -326,7 +348,11 @@ export class BriefService {
                 email: dto.email,
                 description: dto.description,
                 budget: dto.budget,
+                budgetLabel: BRIEF_BUDGET_LABEL[dto.budget as BriefBudget],
                 deadline: dto.deadline ?? null,
+                deadlineLabel: dto.deadline
+                    ? BRIEF_DEADLINE_LABEL[dto.deadline as BriefDeadline]
+                    : null,
                 source: dto.source ?? null,
             }),
         ]).then((results) => {
@@ -351,7 +377,6 @@ export class BriefService {
 
 ```typescript
 import { Body, Controller, Ip, Post } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
 import { RESPONSE_CODE } from '@cyanship/types';
 
 import { SkipOnboarding } from '../../common/decorators/skip-onboarding.decorator';
@@ -532,7 +557,9 @@ interface BriefNotificationEmailProps {
     email: string;
     description: string;
     budget: string;
+    budgetLabel: string;
     deadline: string | null;
+    deadlineLabel: string | null;
     source: string | null;
 }
 
@@ -540,8 +567,8 @@ export function BriefNotificationEmail({
     name,
     email,
     description,
-    budget,
-    deadline,
+    budgetLabel,
+    deadlineLabel,
     source,
 }: BriefNotificationEmailProps) {
     return (
@@ -550,8 +577,8 @@ export function BriefNotificationEmail({
             <Hr style={divider} />
             <Text style={field}><strong>Name:</strong> {name}</Text>
             <Text style={field}><strong>Email:</strong> {email}</Text>
-            <Text style={field}><strong>Budget:</strong> {budget}</Text>
-            {deadline && <Text style={field}><strong>Deadline:</strong> {deadline}</Text>}
+            <Text style={field}><strong>Budget:</strong> {budgetLabel}</Text>
+            {deadlineLabel && <Text style={field}><strong>Deadline:</strong> {deadlineLabel}</Text>}
             {source && <Text style={field}><strong>Source:</strong> {source}</Text>}
             <Hr style={divider} />
             <Text style={descriptionLabel}><strong>Description:</strong></Text>
@@ -624,12 +651,14 @@ async sendBriefNotification(params: {
     email: string;
     description: string;
     budget: string;
+    budgetLabel: string;
     deadline: string | null;
+    deadlineLabel: string | null;
     source: string | null;
 }): Promise<void> {
     await this.send({
         to: ENV.BRIEF_NOTIFICATION_EMAIL,
-        subject: `New brief: ${params.name} — ${params.budget}`,
+        subject: `New brief: ${params.name} — ${params.budgetLabel}`,
         react: BriefNotificationEmail(params),
     });
 
@@ -963,14 +992,13 @@ function UiModalContent({
                     'bg-background fixed z-50 flex flex-col',
                     'transition ease-in-out',
                     'data-[state=open]:animate-in data-[state=closed]:animate-out',
-                    // Mobile: bottom sheet
+                    'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+                    'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+                    'data-[state=closed]:duration-200 data-[state=open]:duration-300',
+                    // Mobile: bottom sheet layout
                     'inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-2xl border-t shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.15)]',
-                    'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
-                    'data-[state=closed]:duration-300 data-[state=open]:duration-500',
-                    // Desktop: centered modal
+                    // Desktop: centered modal layout
                     'md:inset-auto md:top-1/2 md:left-1/2 md:max-h-[85vh] md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:border md:shadow-lg',
-                    'md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0',
-                    'md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95',
                     className
                 )}
                 {...props}
@@ -1048,9 +1076,10 @@ export {
 
 **Чому окремий компонент, а не responsive UiSheet:**
 - `UiSheet` має hardcoded `slideStyles` з `inset-y-0 right-0` / `inset-x-0 bottom-0` — override через className бореться з цими стилями
-- Modal і sheet — різні UX паттерни з різними анімаціями (fade+zoom vs slide)
 - `UiModal` — reusable для будь-яких confirmation/form dialogs в проєкті
 - Обидва побудовані на `@radix-ui/react-dialog` — zero нових залежностей
+
+**Анімація:** Одна анімація (fade + zoom) для обох layout. Різні анімації для mobile/desktop через Tailwind responsive variants не працюють коректно — mobile класи (`slide-in-from-bottom`) не скасовуються на desktop, а компонуються з desktop класами. Fade + zoom природно працює і для bottom sheet, і для centered modal.
 
 Оновити `docs/conventions/ui-primitives.md` — додати `UiModal` до реєстру компонентів.
 

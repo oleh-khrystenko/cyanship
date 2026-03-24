@@ -36,8 +36,8 @@
 
 Приховане поле (automated):
 - **Source** — визначається програмно при першому візиті:
-  - UTM-мітка з URL (`?utm_source=linkedin`)
-  - Або `document.referrer` (e.g., "linkedin.com" → "linkedin")
+  - UTM-мітка з URL (`?utm_source=linkedin`) — зберігається as-is
+  - Або `document.referrer` — зберігається як повний домен без www (e.g., `linkedin.com`, `t.co`, `news.ycombinator.com`)
   - Або `"direct"` якщо обидва відсутні
   - Кешується в `sessionStorage` щоб не втратити при навігації по лендінгу
 
@@ -71,7 +71,7 @@
 - Без CTA кнопки — це чисте підтвердження
 - Footer: стандартний CyanShip footer
 
-Email відправляється мовою браузера користувача (визначається через `Accept-Language` header або `navigator.language`, передається в payload як `lang`).
+Email відправляється мовою браузера користувача (визначається через `navigator.language`, передається в payload як `lang`).
 
 ### 6. Notification email (власнику)
 
