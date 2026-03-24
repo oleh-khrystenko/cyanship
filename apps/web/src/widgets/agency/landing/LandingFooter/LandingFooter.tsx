@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
-import { Linkedin, Twitter, Mail } from 'lucide-react';
+import { Linkedin, Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
+import { XIcon } from '@/shared/icons';
 
 const navLinks = [
     { key: 'pricing', href: '#pricing' },
@@ -19,9 +20,9 @@ const socialLinks = [
         icon: Linkedin,
     },
     {
-        key: 'twitter',
+        key: 'x',
         href: 'https://x.com/cyanshiphq',
-        icon: Twitter,
+        icon: XIcon,
     },
 ] as const;
 
@@ -87,32 +88,29 @@ const LandingFooter = () => {
                             <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                                 {t('col_connect')}
                             </h4>
-                            <ul className="mt-4 space-y-3">
-                                <li>
-                                    <a
-                                        href="mailto:oleg@cyanship.com"
-                                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
-                                    >
-                                        <Mail className="size-3.5" />
-                                        {t('email')}
-                                    </a>
-                                </li>
+                            <a
+                                href="mailto:oleg@cyanship.com"
+                                className="text-muted-foreground hover:text-foreground mt-4 inline-flex items-center gap-1.5 text-sm transition-colors"
+                            >
+                                <Mail className="size-3.5" />
+                                {t('email')}
+                            </a>
+                            <div className="mt-4 flex items-center gap-3">
                                 {socialLinks.map(
                                     ({ key, href, icon: Icon }) => (
-                                        <li key={key}>
-                                            <a
-                                                href={href}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                aria-label={t(`social_${key}`)}
-                                                className="text-muted-foreground hover:text-foreground inline-flex transition-colors"
-                                            >
-                                                <Icon className="size-4" />
-                                            </a>
-                                        </li>
+                                        <a
+                                            key={key}
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={t(`social_${key}`)}
+                                            className="text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            <Icon className="size-4" />
+                                        </a>
                                     )
                                 )}
-                            </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
