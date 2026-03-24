@@ -36,6 +36,8 @@ Ui-компоненти інкапсулюють:
 | `UiDropdownMenu` | Context menus, action menus, option pickers | align: `start`/`end`; sizes: sm/md/lg |
 | `UiFullPageLoader` | Full-screen centered spinner з optional message | композиція UiSpinner; для Suspense fallback та loading states |
 | `UiConfirmDialog` | `window.confirm()`, кастомні confirmation modals | `default`, `destructive`; controlled (open/onOpenChange); Radix AlertDialog |
+| `UiTextarea` | `<textarea>` | `outlined`, `filled` |
+| `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet, desktop centered; Radix Dialog |
 
 ## Rules
 
@@ -52,6 +54,7 @@ Ui-компоненти інкапсулюють:
 | `<input type="password">` | `UiPasswordInput` |
 | `<select>` | `UiSelect` |
 | `<input type="checkbox">` (toggle) | `UiSwitch` |
+| `<textarea>` | `UiTextarea` |
 | `window.confirm()` | `UiConfirmDialog` |
 
 **Винятки:**
