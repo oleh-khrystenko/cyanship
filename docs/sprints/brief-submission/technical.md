@@ -18,7 +18,45 @@
 
 ## Крок 1: Shared types — Zod schema, enums, constants
 
-**Файли:** `packages/types/src/agency/`
+**Файли:** `packages/types/src/validation/`, `packages/types/src/agency/`
+
+### 1.0. Shared name validation
+
+Файл: `packages/types/src/validation/common.ts`
+
+В `UpdateProfileSchema` (`packages/types/src/contracts/users.ts`) вже є name validation:
+
+```typescript
+name: z.string().trim().min(2).max(100).regex(/^[\p{L}\s'\-]+$/u)
+```
+
+Цей паттерн потрібен і в `SubmitBriefSchema`. Винести як shared primitive:
+
+```typescript
+// packages/types/src/validation/common.ts
+import { z } from 'zod';
+
+/** Unicode letters, spaces, apostrophes, hyphens. Min 2, max 100 chars. */
+export const nameSchema = z
+    .string()
+    .trim()
+    .min(2)
+    .max(100)
+    .regex(/^[\p{L}\s'\-]+$/u);
+```
+
+Оновити `UpdateProfileSchema` щоб використовував `nameSchema`:
+
+```typescript
+// packages/types/src/contracts/users.ts
+import { nameSchema } from '../validation/common';
+
+export const UpdateProfileSchema = z.object({
+    name: nameSchema.optional(),
+    avatar: z.string().url().optional(),
+    preferredLang: z.enum(langValues).optional(),
+});
+```
 
 ### 1.1. Brief status enum
 
@@ -26,6 +64,7 @@
 
 ```typescript
 import { z } from 'zod';
+import { nameSchema } from '../validation/common';
 
 // --- Enums ---
 
@@ -59,7 +98,7 @@ export type BriefDeadline = (typeof BRIEF_DEADLINE)[keyof typeof BRIEF_DEADLINE]
 // --- Submission schema (shared between frontend & backend) ---
 
 export const SubmitBriefSchema = z.object({
-    name: z.string().trim().min(1).max(100),
+    name: nameSchema,
     email: z.string().trim().email().max(254),
     description: z.string().trim().min(10).max(5000),
     budget: z.enum([
@@ -75,13 +114,17 @@ export const SubmitBriefSchema = z.object({
             BRIEF_DEADLINE.FLEXIBLE,
         ])
         .optional(),
-    source: z.string().max(100).optional(),
+    source: z.string().max(253).optional(),
     lang: z.string().min(2).max(5),
     captchaToken: z.string().min(1),
 });
 
 export type SubmitBrief = z.infer<typeof SubmitBriefSchema>;
 ```
+
+**Зміни vs попередня версія:**
+- `name` → `nameSchema` (shared, regex validated, min 2)
+- `source` max → 253 (max довжина hostname за RFC 1035)
 
 ### 1.2. Export з agency barrel
 
@@ -660,25 +703,26 @@ const SESSION_KEY = 'brief_source';
 function detectSource(): string {
     if (typeof window === 'undefined') return 'unknown';
 
-    // 1. Check UTM parameters
-    const url = new URL(window.location.href);
-    const utmSource = url.searchParams.get('utm_source');
-    if (utmSource) return utmSource.toLowerCase().slice(0, 100);
+    // 1. UTM parameter — highest priority, explicit attribution
+    const utmSource = new URL(window.location.href).searchParams.get('utm_source');
+    if (utmSource) return utmSource.toLowerCase();
 
-    // 2. Check document.referrer
+    // 2. Referrer — full domain without www, preserves all information
+    //    Examples: "linkedin.com", "t.co", "news.ycombinator.com"
+    //    No hardcoded referrer map — normalization is an analytics concern, not a capture concern.
     if (document.referrer) {
         try {
-            const referrerHost = new URL(document.referrer).hostname;
-            // Strip www. and extract domain name
-            const domain = referrerHost.replace(/^www\./, '').split('.')[0];
-            if (domain && domain !== window.location.hostname.replace(/^www\./, '').split('.')[0]) {
-                return domain.slice(0, 100);
+            const referrerHostname = new URL(document.referrer).hostname.replace(/^www\./, '');
+            const ownHostname = window.location.hostname.replace(/^www\./, '');
+            if (referrerHostname && referrerHostname !== ownHostname) {
+                return referrerHostname;
             }
         } catch {
-            // Invalid referrer URL — ignore
+            // Invalid referrer URL — fall through to direct
         }
     }
 
+    // 3. No UTM, no external referrer — direct visit
     return 'direct';
 }
 
@@ -694,10 +738,27 @@ export function getSource(): string {
 }
 
 export function initSource(): void {
-    // Call on first page load to cache source before user navigates
+    // Call on first page load to cache source before user navigates away.
+    // sessionStorage is per-tab and clears on tab close — correct behavior
+    // for first-touch attribution within a single visit session.
     getSource();
 }
 ```
+
+**Чому sessionStorage, а не альтернативи:**
+
+| Варіант | Проблема |
+|---------|----------|
+| `localStorage` | Зберігає source назавжди — повернувся через місяць напряму, а source досі `linkedin`. Хибна атрибуція. |
+| `Zustand (in-memory)` | Втрачається при hard refresh (F5). Page refresh ≠ новий візит. |
+| `Cookie` | Працює, але потребує GDPR consent для non-essential cookies. Зайва складність. |
+| **`sessionStorage`** | Per-tab, очищується при закритті вкладки. Кожна вкладка = окремий візит intent. Переживає навігацію по SPA та hard refresh. |
+
+**Чому повний домен замість маппінгу:**
+- `t.co`, `l.facebook.com`, `news.ycombinator.com` — зберігаються as-is
+- Жодна інформація не втрачається
+- Нормалізація (`t.co` → `x`) — задача аналітичного шару, а не форми збору даних
+- Hardcoded map гарантовано стане outdated
 
 ### 5.2. Source initialization
 
@@ -1547,9 +1608,12 @@ pnpm build
 ## Фінальна структура файлів
 
 ```
-packages/types/src/agency/
-├── index.ts                          # ОНОВИТИ: export brief
-└── brief.ts                          # NEW: enums, Zod schema, types
+packages/types/src/
+├── validation/common.ts              # ОНОВИТИ: +nameSchema (shared validation primitive)
+├── contracts/users.ts                # ОНОВИТИ: використати nameSchema замість inline regex
+└── agency/
+    ├── index.ts                      # ОНОВИТИ: export brief
+    └── brief.ts                      # NEW: enums, Zod schema, types (uses nameSchema)
 
 apps/api/src/
 ├── config/env.ts                     # ОНОВИТИ: +TURNSTILE_SECRET_KEY, +BRIEF_NOTIFICATION_EMAIL
@@ -1649,7 +1713,8 @@ docs/conventions/ui-primitives.md    # ОНОВИТИ: +UiTextarea, +UiModal в 
 - [ ] `docs/conventions/ui-primitives.md` оновлений: додано UiTextarea та UiModal до реєстру
 - [ ] Turnstile token верифікується на сервері перед збереженням
 - [ ] Email failures не блокують brief submission (Promise.allSettled)
-- [ ] Source tracking кешується в sessionStorage
+- [ ] Source tracking кешується в sessionStorage, referrer зберігається як повний домен без маппінгу
+- [ ] `nameSchema` — shared primitive, використовується і в `UpdateProfileSchema`, і в `SubmitBriefSchema`
 - [ ] Error handling у формі використовує `AxiosError` type guard (не unsafe cast)
 - [ ] i18n merge: `agency` key додано в існуючі `notifications` та `errors` об'єкти, не перезаписано
 - [ ] Unit тести покривають: service, controller, turnstile, form, source utility
