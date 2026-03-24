@@ -1,4 +1,3 @@
-import { type ReactNode } from 'react';
 import { create } from 'zustand';
 
 interface NavItem {
@@ -8,7 +7,7 @@ interface NavItem {
 
 interface CtaConfig {
     label: string;
-    renderWrapper?: (children: ReactNode) => ReactNode;
+    onClick?: () => void;
 }
 
 interface HeaderNavState {

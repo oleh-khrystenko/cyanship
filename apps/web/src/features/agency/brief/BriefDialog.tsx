@@ -1,33 +1,28 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
     UiModal,
-    UiModalTrigger,
     UiModalContent,
     UiModalHeader,
     UiModalTitle,
 } from '@/shared/ui/UiModal';
+import { useBriefDialogStore } from '@/stores/briefDialog';
 import BriefForm from './BriefForm';
 
-interface BriefDialogProps {
-    children: React.ReactNode;
-}
-
-export default function BriefDialog({ children }: BriefDialogProps) {
+export default function BriefDialog() {
     const t = useTranslations('brief_form');
-    const [open, setOpen] = useState(false);
+    const isOpen = useBriefDialogStore((s) => s.isOpen);
+    const close = useBriefDialogStore((s) => s.close);
 
     return (
-        <UiModal open={open} onOpenChange={setOpen}>
-            <UiModalTrigger asChild>{children}</UiModalTrigger>
+        <UiModal open={isOpen} onOpenChange={(open) => !open && close()}>
             <UiModalContent>
                 <UiModalHeader>
                     <UiModalTitle className="text-xl">{t('title')}</UiModalTitle>
                 </UiModalHeader>
                 <div className="px-4 pb-6">
-                    <BriefForm onSuccess={() => setOpen(false)} />
+                    <BriefForm onSuccess={close} />
                 </div>
             </UiModalContent>
         </UiModal>

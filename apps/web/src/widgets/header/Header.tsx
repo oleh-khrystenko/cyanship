@@ -306,14 +306,16 @@ const Header = () => {
                         )
                     )}
 
-                    {cta && (() => {
-                        const btn = (
-                            <UiButton variant="filled" size="sm" className="ml-2">
-                                {cta.label}
-                            </UiButton>
-                        );
-                        return cta.renderWrapper ? cta.renderWrapper(btn) : btn;
-                    })()}
+                    {cta && (
+                        <UiButton
+                            variant="filled"
+                            size="sm"
+                            className="ml-2"
+                            onClick={cta.onClick}
+                        >
+                            {cta.label}
+                        </UiButton>
+                    )}
                 </div>
 
                 {/* Mobile hamburger */}
@@ -442,14 +444,19 @@ const Header = () => {
                                 )}
 
                                 {/* Mobile CTA */}
-                                {cta && (() => {
-                                    const btn = (
-                                        <UiButton variant="filled" size="md" className="mt-2 w-full" onClick={() => setIsSheetOpen(false)}>
-                                            {cta.label}
-                                        </UiButton>
-                                    );
-                                    return cta.renderWrapper ? cta.renderWrapper(btn) : btn;
-                                })()}
+                                {cta && (
+                                    <UiButton
+                                        variant="filled"
+                                        size="md"
+                                        className="mt-2 w-full"
+                                        onClick={() => {
+                                            setIsSheetOpen(false);
+                                            cta.onClick?.();
+                                        }}
+                                    >
+                                        {cta.label}
+                                    </UiButton>
+                                )}
                             </div>
                         </UiSheetContent>
                     </UiSheet>

@@ -1,9 +1,9 @@
 'use client';
 
-import { type ReactNode, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useHeaderNavStore } from '@/stores/headerNav';
-import BriefDialog from '@/features/agency/brief/BriefDialog';
+import { useBriefDialogStore } from '@/stores/briefDialog';
 
 const navKeys = [
     { key: 'approach', href: '#problem' },
@@ -27,9 +27,7 @@ export default function LandingNav() {
 
         setNav(items, {
             label: tHeader('get_started'),
-            renderWrapper: (children: ReactNode) => (
-                <BriefDialog>{children}</BriefDialog>
-            ),
+            onClick: () => useBriefDialogStore.getState().open(),
         });
 
         return () => clearNav();

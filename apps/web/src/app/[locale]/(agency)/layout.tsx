@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { LandingNav } from '@/features/agency/landing-nav';
+import { BriefDialog } from '@/features/agency/brief';
 import { SourceTracker } from '@/features/agency/brief/ui/SourceTracker';
 
 interface AgencyLayoutProps {
@@ -11,6 +12,7 @@ export default function AgencyLayout({ children }: AgencyLayoutProps) {
         <>
             <SourceTracker />
             <LandingNav />
+            <BriefDialog />
             {children}
         </>
     );

@@ -1,11 +1,12 @@
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
-import BriefDialog from '@/features/agency/brief/BriefDialog';
+import { useBriefDialogStore } from '@/stores/briefDialog';
 
 const HeroSection = () => {
     const t = useTranslations('landing_page.hero');
     const tBrand = useTranslations('brand');
+    const openBrief = useBriefDialogStore((s) => s.open);
 
     return (
         <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
@@ -30,16 +31,15 @@ const HeroSection = () => {
                     </p>
 
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-                        <BriefDialog>
-                            <UiButton
-                                variant="filled"
-                                size="lg"
-                                className="w-full font-semibold sm:w-auto"
-                                IconRight={<ArrowRight />}
-                            >
-                                {t('cta_primary')}
-                            </UiButton>
-                        </BriefDialog>
+                        <UiButton
+                            variant="filled"
+                            size="lg"
+                            className="w-full font-semibold sm:w-auto"
+                            IconRight={<ArrowRight />}
+                            onClick={openBrief}
+                        >
+                            {t('cta_primary')}
+                        </UiButton>
                         <UiButton
                             as="link"
                             href="/billing"
