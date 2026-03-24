@@ -14,7 +14,7 @@ Trigger (кнопка, подія, store action)
    shared/ui/Ui*   <-- єдиний спосіб рендерити overlay
         |
         v
-   Layout mount    <-- overlay монтується один раз у відповідному layout
+   Layout mount    <-- overlay монтується один раз у root layout
 ```
 
 Overlay ніколи не монтується поруч із trigger. Trigger лише викликає `store.open()`.
@@ -52,16 +52,11 @@ Store може містити payload для параметризації overla
 
 **Чому:** єдиний патерн для всіх overlay — передбачуваний, тестований, масштабований. Коли з'являється другий trigger, нічого не треба рефакторити.
 
-### 3. Один overlay — один mount
+### 3. Один overlay — один mount у root layout
 
-Кожен overlay монтується **один раз** у відповідному layout:
+Всі overlay монтуються в одному місці — `app/[locale]/layout.tsx`. Lazy-завантаження вирішується через `dynamic(() => import(...))` на рівні компонента.
 
-| Scope overlay | Де монтувати |
-|---------------|-------------|
-| Глобальний (terms, auth) | `app/[locale]/layout.tsx` |
-| Секція (agency, protected) | `app/[locale]/(agency)/layout.tsx` або `app/[locale]/(protected)/layout.tsx` |
-
-**Заборонено:** монтувати один overlay в кількох місцях, обгортати trigger компонентом overlay.
+**Заборонено:** монтувати overlay в секційних layout'ах, монтувати один overlay в кількох місцях, обгортати trigger компонентом overlay.
 
 ### 4. Вибір примітиву
 
@@ -139,18 +134,17 @@ export default function BriefDialog() {
 
 **Layout mount:**
 ```tsx
-// app/[locale]/(agency)/layout.tsx
-export default function AgencyLayout({ children }) {
-    return (
-        <>
-            <BriefDialog />
-            {children}
-        </>
-    );
-}
+// app/[locale]/layout.tsx
+<Providers>
+    <NextIntlClientProvider>
+        <BriefDialog />
+        <Header />
+        {children}
+    </NextIntlClientProvider>
+</Providers>
 ```
 
-**Trigger (будь-де в agency scope):**
+**Trigger (будь-де в app):**
 ```tsx
 const openBrief = useBriefDialogStore((s) => s.open);
 <UiButton onClick={openBrief}>Get started</UiButton>
