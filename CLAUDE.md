@@ -233,7 +233,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 ## Rules & Conventions
 
 - Source of truth для repo-wide правил: `docs/conventions/README.md`
-- Читай перед роботою з відповідними зонами: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
+- Читай перед роботою з відповідними зонами: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`, `overlays.md`
 - Повна документація auth та billing flow: `docs/architecture/auth-flow/README.md`, `docs/architecture/payments-flow/README.md`
 
 ## Known Complexities
