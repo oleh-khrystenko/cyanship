@@ -14,6 +14,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { AgencyModule } from './modules/agency/agency.module';
 
 @Module({
     imports: [
@@ -31,6 +32,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
         ReportsModule,
         StorageModule,
         PaymentsModule,
+        AgencyModule,
     ],
     controllers: [AppController],
     providers: [

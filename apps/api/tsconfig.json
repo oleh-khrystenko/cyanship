@@ -10,6 +10,10 @@
         "sourceMap": true,
         "outDir": "./dist",
         "baseUrl": "./",
+        "paths": {
+            "@cyanship/types": ["../../packages/types/src/index.ts"],
+            "@cyanship/types/agency": ["../../packages/types/src/agency.ts"]
+        },
         "incremental": true,
         "skipLibCheck": true,
         "strict": true,
