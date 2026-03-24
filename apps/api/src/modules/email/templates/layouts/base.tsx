@@ -2,7 +2,9 @@ import {
     Body,
     Container,
     Head,
+    Hr,
     Html,
+    Link,
     Section,
     Text,
 } from '@react-email/components';
@@ -20,9 +22,35 @@ export function BaseLayout({ lang, children }: BaseLayoutProps) {
             <Body style={body}>
                 <Container style={container}>
                     <Section style={header}>
-                        <Text style={brand}>CyanShip</Text>
+                        <Link href="https://cyanship.com" style={brandLink}>
+                            <Text style={brand}>CyanShip</Text>
+                        </Link>
                     </Section>
                     {children}
+                    <Hr style={divider} />
+                    <Section style={footerSection}>
+                        <Link
+                            href="https://www.linkedin.com/company/cyanship"
+                            style={socialLink}
+                        >
+                            LinkedIn
+                        </Link>
+                        <span style={socialDot}>&middot;</span>
+                        <Link
+                            href="https://x.com/cyanshiphq"
+                            style={socialLink}
+                        >
+                            X
+                        </Link>
+                    </Section>
+                    <Text style={siteLink}>
+                        <Link
+                            href="https://cyanship.com"
+                            style={siteLinkAnchor}
+                        >
+                            cyanship.com
+                        </Link>
+                    </Text>
                 </Container>
             </Body>
         </Html>
@@ -48,9 +76,44 @@ const header: React.CSSProperties = {
     marginBottom: '8px',
 };
 
+const brandLink: React.CSSProperties = {
+    textDecoration: 'none',
+};
+
 const brand: React.CSSProperties = {
     fontSize: '24px',
     fontWeight: 700,
     color: EMAIL_COLORS.foreground,
     margin: '0',
+};
+
+const divider: React.CSSProperties = {
+    borderColor: EMAIL_COLORS.background,
+    margin: '32px 0 24px',
+};
+
+const footerSection: React.CSSProperties = {
+    textAlign: 'center' as const,
+};
+
+const socialLink: React.CSSProperties = {
+    color: EMAIL_COLORS.mutedForeground,
+    fontSize: '13px',
+    textDecoration: 'none',
+};
+
+const socialDot: React.CSSProperties = {
+    color: EMAIL_COLORS.mutedForeground,
+    margin: '0 8px',
+    fontSize: '13px',
+};
+
+const siteLink: React.CSSProperties = {
+    margin: '8px 0 0',
+};
+
+const siteLinkAnchor: React.CSSProperties = {
+    color: EMAIL_COLORS.mutedForeground,
+    fontSize: '13px',
+    textDecoration: 'none',
 };
