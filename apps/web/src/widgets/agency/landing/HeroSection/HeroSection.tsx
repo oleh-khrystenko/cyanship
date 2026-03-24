@@ -7,7 +7,7 @@ const HeroSection = () => {
     const tBrand = useTranslations('brand');
 
     return (
-        <section className="relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden py-20 md:py-28">
+        <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
             {/* Ambient glow — backlighting effect */}
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
                 <div className="absolute left-1/2 top-1/3 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.04] blur-[160px] dark:bg-primary/[0.07]" />
