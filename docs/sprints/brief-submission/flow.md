@@ -16,7 +16,7 @@
 - **Bottom sheet** на мобільних (viewport < 768px) — знизу, як нативний mobile sheet
 - **Модальне вікно** на десктопі (viewport >= 768px) — по центру екрана
 
-Використовується один компонент (Radix Dialog), що змінює стиль залежно від розміру екрану.
+Використовується компонент `UiModal` (новий UI primitive на Radix Dialog) з responsive поведінкою через Tailwind breakpoints. `UiModal` — окремий компонент від `UiSheet`, бо modal і sheet це різні UX паттерни з різними анімаціями.
 
 ### 2. Заповнення форми
 

@@ -723,7 +723,275 @@ export function SourceTracker() {
 
 ---
 
-## Крок 6: Frontend — BriefForm компонент
+## Крок 6: Frontend — UI primitives та BriefForm компонент
+
+### 6.0a. UiTextarea компонент
+
+Конвенція `ui-primitives.md` забороняє raw HTML form елементи. `UiTextarea` не існує в UI kit — створити як частину цього спринту. Структура ідентична `UiInput`: forwardRef, variant/size стилі, error prop.
+
+Файл: `apps/web/src/shared/ui/UiTextarea/types.ts`
+
+```typescript
+import { TextareaHTMLAttributes } from 'react';
+
+export type UiTextareaVariant = 'outlined' | 'filled';
+export type UiTextareaSize = 'sm' | 'md' | 'lg';
+
+export interface UiTextareaProps extends Omit<
+    TextareaHTMLAttributes<HTMLTextAreaElement>,
+    'size'
+> {
+    variant?: UiTextareaVariant;
+    size?: UiTextareaSize;
+    error?: string;
+}
+```
+
+Файл: `apps/web/src/shared/ui/UiTextarea/UiTextarea.tsx`
+
+```typescript
+'use client';
+
+import { forwardRef } from 'react';
+import { composeClasses } from '@/shared/lib';
+import type { UiTextareaProps, UiTextareaSize, UiTextareaVariant } from './types';
+
+const sizeStyles: Record<UiTextareaSize, string> = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-6 py-3 text-lg',
+};
+
+const variantStyles: Record<UiTextareaVariant, string> = {
+    outlined:
+        'bg-transparent text-foreground border border-border hover:border-muted-foreground focus-within:border-primary',
+    filled: 'bg-secondary text-foreground border border-transparent hover:bg-card focus-within:bg-card',
+};
+
+const errorStyles = 'border-destructive hover:border-destructive focus-within:border-destructive';
+
+const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>((props, ref) => {
+    const {
+        variant = 'outlined',
+        size = 'md',
+        error,
+        className,
+        disabled,
+        ...textareaProps
+    } = props;
+
+    const wrapperClasses = composeClasses(
+        'rounded-md transition-colors',
+        sizeStyles[size],
+        variantStyles[variant],
+        error && errorStyles,
+        disabled && 'opacity-50 cursor-not-allowed',
+        className
+    );
+
+    return (
+        <div>
+            <div className={wrapperClasses} data-variant={variant} data-size={size}>
+                <textarea
+                    {...textareaProps}
+                    ref={ref}
+                    disabled={disabled}
+                    className="w-full resize-y bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+                />
+            </div>
+            {error && (
+                <p className="mt-1 text-sm text-destructive">
+                    {error}
+                </p>
+            )}
+        </div>
+    );
+});
+
+UiTextarea.displayName = 'UiTextarea';
+
+export default UiTextarea;
+```
+
+Файл: `apps/web/src/shared/ui/UiTextarea/index.ts`
+
+```typescript
+export type { UiTextareaProps, UiTextareaSize, UiTextareaVariant } from './types';
+export { default } from './UiTextarea';
+```
+
+Оновити `docs/conventions/ui-primitives.md` — додати `UiTextarea` до реєстру компонентів.
+
+### 6.0b. UiModal компонент
+
+`UiSheet` — це side panel (slide-in з краю екрану). Для centered dialog потрібна окрема абстракція. Перевикористання `UiSheet` з responsive className overrides — це хак, що бореться з вбудованими стилями компонента.
+
+`UiModal` — centered modal dialog на `@radix-ui/react-dialog` (вже встановлений як залежність `UiSheet`). На mobile (< md) він розтягується на весь екран знизу як bottom sheet. На desktop — centered overlay з max-width.
+
+Файл: `apps/web/src/shared/ui/UiModal/types.ts`
+
+```typescript
+import type { ComponentPropsWithoutRef } from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+
+export interface UiModalProps extends ComponentPropsWithoutRef<typeof DialogPrimitive.Root> {}
+export interface UiModalTriggerProps extends ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger> {}
+export interface UiModalCloseProps extends ComponentPropsWithoutRef<typeof DialogPrimitive.Close> {}
+
+export interface UiModalContentProps extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+    hideOverlay?: boolean;
+}
+
+export interface UiModalHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+export interface UiModalTitleProps extends ComponentPropsWithoutRef<typeof DialogPrimitive.Title> {}
+```
+
+Файл: `apps/web/src/shared/ui/UiModal/UiModal.tsx`
+
+```typescript
+'use client';
+
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
+import { composeClasses } from '@/shared/lib';
+import type {
+    UiModalProps,
+    UiModalTriggerProps,
+    UiModalCloseProps,
+    UiModalContentProps,
+    UiModalHeaderProps,
+    UiModalTitleProps,
+} from './types';
+
+function UiModal({ ...props }: UiModalProps) {
+    return <DialogPrimitive.Root {...props} />;
+}
+
+function UiModalTrigger({ ...props }: UiModalTriggerProps) {
+    return <DialogPrimitive.Trigger {...props} />;
+}
+
+function UiModalClose({ ...props }: UiModalCloseProps) {
+    return <DialogPrimitive.Close {...props} />;
+}
+
+function UiModalOverlay({ className }: { className?: string }) {
+    return (
+        <DialogPrimitive.Overlay
+            className={composeClasses(
+                'fixed inset-0 z-50 bg-black/50',
+                'data-[state=open]:animate-in data-[state=closed]:animate-out',
+                'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+                className
+            )}
+        />
+    );
+}
+
+function UiModalContent({
+    className,
+    children,
+    hideOverlay = false,
+    ...props
+}: UiModalContentProps) {
+    return (
+        <DialogPrimitive.Portal>
+            {!hideOverlay && <UiModalOverlay />}
+            <DialogPrimitive.Content
+                className={composeClasses(
+                    'bg-background fixed z-50 flex flex-col',
+                    'transition ease-in-out',
+                    'data-[state=open]:animate-in data-[state=closed]:animate-out',
+                    // Mobile: bottom sheet
+                    'inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-2xl border-t shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.15)]',
+                    'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+                    'data-[state=closed]:duration-300 data-[state=open]:duration-500',
+                    // Desktop: centered modal
+                    'md:inset-auto md:top-1/2 md:left-1/2 md:max-h-[85vh] md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:border md:shadow-lg',
+                    'md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0',
+                    'md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95',
+                    className
+                )}
+                {...props}
+            >
+                {children}
+                <DialogPrimitive.Close
+                    className={composeClasses(
+                        'absolute top-3 right-4 flex size-8 items-center justify-center rounded-md opacity-70 transition-opacity',
+                        'hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none',
+                        'disabled:pointer-events-none'
+                    )}
+                >
+                    <X className="size-5" />
+                    <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+            </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+    );
+}
+
+function UiModalHeader({ className, ...props }: UiModalHeaderProps) {
+    return (
+        <div
+            className={composeClasses(
+                'flex flex-col gap-1.5 p-4',
+                className
+            )}
+            {...props}
+        />
+    );
+}
+
+function UiModalTitle({ className, ...props }: UiModalTitleProps) {
+    return (
+        <DialogPrimitive.Title
+            className={composeClasses(
+                'text-foreground font-semibold',
+                className
+            )}
+            {...props}
+        />
+    );
+}
+
+export {
+    UiModal,
+    UiModalTrigger,
+    UiModalClose,
+    UiModalContent,
+    UiModalHeader,
+    UiModalTitle,
+};
+```
+
+Файл: `apps/web/src/shared/ui/UiModal/index.ts`
+
+```typescript
+export type {
+    UiModalProps,
+    UiModalTriggerProps,
+    UiModalCloseProps,
+    UiModalContentProps,
+    UiModalHeaderProps,
+    UiModalTitleProps,
+} from './types';
+export {
+    UiModal,
+    UiModalTrigger,
+    UiModalClose,
+    UiModalContent,
+    UiModalHeader,
+    UiModalTitle,
+} from './UiModal';
+```
+
+**Чому окремий компонент, а не responsive UiSheet:**
+- `UiSheet` має hardcoded `slideStyles` з `inset-y-0 right-0` / `inset-x-0 bottom-0` — override через className бореться з цими стилями
+- Modal і sheet — різні UX паттерни з різними анімаціями (fade+zoom vs slide)
+- `UiModal` — reusable для будь-яких confirmation/form dialogs в проєкті
+- Обидва побудовані на `@radix-ui/react-dialog` — zero нових залежностей
+
+Оновити `docs/conventions/ui-primitives.md` — додати `UiModal` до реєстру компонентів.
 
 ### 6.1. API wrapper
 
@@ -822,12 +1090,13 @@ export function useTurnstile() {
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { SubmitBriefSchema, BRIEF_BUDGET, BRIEF_DEADLINE } from '@cyanship/types/agency';
-import { RESPONSE_CODE } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
+import UiTextarea from '@/shared/ui/UiTextarea';
 import UiSelect from '@/shared/ui/UiSelect';
 import { submitBrief } from '@/shared/api/agency';
 import { getApiMessageKey } from '@/shared/api/mapApiCode';
@@ -903,15 +1172,17 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             const messageKey = getApiMessageKey(code, 'agency');
             toast.success(tNotifications(messageKey));
             onSuccess();
-        } catch (err: unknown) {
+        } catch (err) {
             resetTurnstile();
-            const apiCode =
-                (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
-            if (apiCode) {
-                const messageKey = getApiMessageKey(apiCode, 'agency');
+            // Pattern from ChangePasswordForm: AxiosError type guard
+            const code = err instanceof AxiosError
+                ? err.response?.data?.error?.code
+                : undefined;
+            if (code) {
+                const messageKey = getApiMessageKey(code, 'agency');
                 toast.error(tErrors(messageKey));
             } else {
-                toast.error(tErrors('errors.generic.unknown'));
+                toast.error(tErrors('generic.unknown'));
             }
         } finally {
             setLoading(false);
@@ -937,19 +1208,15 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 disabled={loading}
                 required
             />
-            {/* textarea — виняток з ui-primitives.md, бо UiTextarea не існує */}
-            <textarea
+            <UiTextarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('description_placeholder')}
                 rows={4}
+                error={errors.description}
                 disabled={loading}
                 required
-                className="w-full rounded-lg border border-border bg-transparent px-4 py-2 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none disabled:opacity-50"
             />
-            {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-            )}
             <UiSelect
                 options={budgetOptions}
                 value={budget}
@@ -985,31 +1252,24 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
 }
 ```
 
-**Примітка щодо textarea:** `UiTextarea` не існує в UI kit. Два варіанти:
-- Створити `UiTextarea` компонент (рекомендовано для consistency)
-- Використати raw `<textarea>` з коментарем-виключенням
-
-Рекомендація: створити `UiTextarea` — це простий компонент, ~30 рядків, аналог `UiInput` з `<textarea>` замість `<input>`.
-
 ### 6.4. BriefDialog — адаптивний контейнер
 
 Файл: `apps/web/src/features/agency/brief/BriefDialog.tsx`
 
-Рішення для адаптивності (sheet на mobile, modal на desktop): використовуємо існуючий `UiSheet` з side `bottom` (mobile) та окремий Radix Dialog (desktop). Або один підхід: `UiSheet` з `side="bottom"` на mobile та кастомний content стиль на desktop.
-
-Рекомендований підхід — **responsive UiSheet**:
+Використовує `UiModal` (Крок 6.0b) — bottom sheet на mobile, centered modal на desktop. Responsive поведінка вбудована в `UiModalContent` через Tailwind breakpoints.
 
 ```typescript
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-    UiSheet,
-    UiSheetTrigger,
-    UiSheetContent,
-    UiSheetHeader,
-    UiSheetTitle,
-} from '@/shared/ui/UiSheet';
+    UiModal,
+    UiModalTrigger,
+    UiModalContent,
+    UiModalHeader,
+    UiModalTitle,
+} from '@/shared/ui/UiModal';
 import BriefForm from './BriefForm';
 
 interface BriefDialogProps {
@@ -1021,27 +1281,22 @@ export default function BriefDialog({ children }: BriefDialogProps) {
     const [open, setOpen] = useState(false);
 
     return (
-        <UiSheet open={open} onOpenChange={setOpen}>
-            <UiSheetTrigger asChild>
+        <UiModal open={open} onOpenChange={setOpen}>
+            <UiModalTrigger asChild>
                 {children}
-            </UiSheetTrigger>
-            <UiSheetContent
-                side="bottom"
-                className="mx-auto max-h-[90vh] overflow-y-auto md:inset-x-auto md:inset-y-auto md:top-1/2 md:left-1/2 md:bottom-auto md:h-auto md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:border"
-            >
-                <UiSheetHeader>
-                    <UiSheetTitle>{t('title')}</UiSheetTitle>
-                </UiSheetHeader>
+            </UiModalTrigger>
+            <UiModalContent>
+                <UiModalHeader>
+                    <UiModalTitle>{t('title')}</UiModalTitle>
+                </UiModalHeader>
                 <div className="px-4 pb-6">
                     <BriefForm onSuccess={() => setOpen(false)} />
                 </div>
-            </UiSheetContent>
-        </UiSheet>
+            </UiModalContent>
+        </UiModal>
     );
 }
 ```
-
-**Альтернатива (якщо responsive className виглядає як хак):** створити окремий `UiModal` компонент на Radix Dialog. Але для MVP responsive sheet — pragmatic choice.
 
 ---
 
@@ -1099,7 +1354,25 @@ import BriefDialog from '@/features/agency/brief/BriefDialog';
 
 ## Крок 8: i18n — frontend translations
 
-### 8.1. messages/en.json — додати
+### 8.1. messages/en.json
+
+Структура файлу вже містить `notifications` та `errors` як вкладені об'єкти:
+
+```json
+{
+    "notifications": {
+        "auth": { "magic_link_sent": "...", ... },
+        "users": { "terms_accepted": "..." }
+    },
+    "errors": {
+        "auth": { "unauthorized": "...", ... },
+        "payments": { "already_subscribed": "...", ... },
+        "generic": { "validation_error": "...", ... }
+    }
+}
+```
+
+**Додати `"brief_form"` як новий top-level ключ** (поруч з `landing_page`, `notifications`, тощо):
 
 ```json
 "brief_form": {
@@ -1123,20 +1396,39 @@ import BriefDialog from '@/features/agency/brief/BriefDialog';
     "validation_email": "Please enter a valid email address",
     "validation_description": "Please describe your project (at least 10 characters)",
     "validation_budget": "Please select a budget range"
-},
+}
+```
+
+**Merge `"agency"` key в існуючий `notifications` об'єкт** (поруч з `auth`, `users`):
+
+```json
 "notifications": {
+    "auth": { ... },
+    "users": { ... },
     "agency": {
         "brief_submitted": "Request submitted. We will respond within 24 hours."
     }
-},
+}
+```
+
+**Merge `"agency"` key в існуючий `errors` об'єкт** (поруч з `auth`, `payments`, `generic`):
+
+```json
 "errors": {
+    "auth": { ... },
+    "payments": { ... },
+    "generic": { ... },
     "agency": {
         "captcha_failed": "Security verification failed. Please try again."
     }
 }
 ```
 
-### 8.2. messages/uk.json — додати
+### 8.2. messages/uk.json
+
+Аналогічна структура. Merge за тим самим принципом.
+
+**Новий top-level ключ `"brief_form"`:**
 
 ```json
 "brief_form": {
@@ -1160,20 +1452,24 @@ import BriefDialog from '@/features/agency/brief/BriefDialog';
     "validation_email": "Введіть коректну електронну адресу",
     "validation_description": "Опишіть ваш проєкт (мінімум 10 символів)",
     "validation_budget": "Оберіть діапазон бюджету"
-},
-"notifications": {
-    "agency": {
-        "brief_submitted": "Запит надіслано. Ми відповімо протягом 24 годин."
-    }
-},
-"errors": {
-    "agency": {
-        "captcha_failed": "Перевірка безпеки не пройдена. Спробуйте ще раз."
-    }
 }
 ```
 
-**Увага:** ключі `notifications` та `errors` можуть вже існувати як об'єкти — в такому випадку merge `agency` nested key в існуючі об'єкти, не перезаписуй.
+**Merge в існуючий `"notifications"`:**
+
+```json
+"agency": {
+    "brief_submitted": "Запит надіслано. Ми відповімо протягом 24 годин."
+}
+```
+
+**Merge в існуючий `"errors"`:**
+
+```json
+"agency": {
+    "captcha_failed": "Перевірка безпеки не пройдена. Спробуйте ще раз."
+}
+```
 
 ---
 
@@ -1286,7 +1582,16 @@ apps/api/src/
 apps/web/src/
 ├── shared/
 │   ├── config/env.ts                # ОНОВИТИ: +NEXT_PUBLIC_TURNSTILE_SITE_KEY
-│   └── api/agency.ts               # NEW
+│   ├── api/agency.ts               # NEW
+│   └── ui/
+│       ├── UiTextarea/              # NEW: textarea primitive
+│       │   ├── UiTextarea.tsx
+│       │   ├── types.ts
+│       │   └── index.ts
+│       └── UiModal/                 # NEW: responsive modal (bottom sheet mobile, centered desktop)
+│           ├── UiModal.tsx
+│           ├── types.ts
+│           └── index.ts
 ├── features/agency/brief/
 │   ├── BriefForm.tsx                # NEW
 │   ├── BriefForm.test.tsx           # NEW
@@ -1300,9 +1605,10 @@ apps/web/src/
 │   ├── HeroSection/HeroSection.tsx  # ОНОВИТИ: CTA → BriefDialog trigger
 │   └── FooterCtaSection/FooterCtaSection.tsx # ОНОВИТИ: CTA → BriefDialog trigger
 └── messages/
-    ├── en.json                      # ОНОВИТИ: +brief_form, +notifications.agency, +errors.agency
-    └── uk.json                      # ОНОВИТИ: +brief_form, +notifications.agency, +errors.agency
+    ├── en.json                      # ОНОВИТИ: +brief_form, merge agency в notifications та errors
+    └── uk.json                      # ОНОВИТИ: +brief_form, merge agency в notifications та errors
 
+docs/conventions/ui-primitives.md    # ОНОВИТИ: +UiTextarea, +UiModal в реєстрі
 .env.example                         # ОНОВИТИ: +TURNSTILE_*, +BRIEF_NOTIFICATION_EMAIL
 ```
 
@@ -1311,17 +1617,21 @@ apps/web/src/
 ## Порядок виконання (залежності)
 
 ```
-Крок 1 (types) ──────┐
-                      ├──→ Крок 2 (API module) ──→ Крок 3 (email templates) ──→ Крок 4 (env vars)
-                      │
-                      └──→ Крок 5 (source tracking) ──→ Крок 6 (BriefForm) ──→ Крок 7 (CTA integration) ──→ Крок 8 (i18n)
-                                                                                                              │
-                                                                                              Крок 9 (tests) ←┘
-                                                                                                              │
-                                                                                              Крок 10 (verify) ←┘
+Крок 1 (types) ──────────────┐
+                              ├──→ Крок 2 (API module) ──→ Крок 3 (email templates) ──→ Крок 4 (env vars)
+                              │
+Крок 6.0a (UiTextarea) ──┐   │
+Крок 6.0b (UiModal) ─────┤   │
+                          └───┴──→ Крок 5 (source) ──→ Крок 6 (BriefForm) ──→ Крок 7 (CTA) ──→ Крок 8 (i18n)
+                                                                                                     │
+                                                                                      Крок 9 (tests) ←┘
+                                                                                                     │
+                                                                                      Крок 10 (verify) ←┘
 ```
 
-Кроки 2-4 (backend) та 5-8 (frontend) можуть виконуватись паралельно після Кроку 1.
+- Кроки 2-4 (backend) та 5-8 (frontend) можуть виконуватись **паралельно** після Кроку 1
+- Кроки 6.0a/6.0b (UI primitives) не залежать від типів — можуть виконуватись **паралельно** з Кроком 1
+- Крок 6 (BriefForm) залежить від: Крок 1 (types) + Крок 5 (source) + Крок 6.0a/6.0b (UI primitives)
 
 ---
 
@@ -1334,9 +1644,12 @@ apps/web/src/
 - [ ] Response codes зареєстровані в `RESPONSE_CODE` та `RESPONSE_CODE_TYPE`
 - [ ] Frontend i18n keys відповідають конвенції `tone.md` (past tense, no emojis)
 - [ ] Agency код не імпортується core модулями
-- [ ] UiSheet/Dialog використовує theme tokens (design-tokens.md)
-- [ ] UI елементи — тільки Ui* компоненти (ui-primitives.md), виняток: textarea
+- [ ] UiModal використовує theme tokens, не hardcoded кольори (design-tokens.md)
+- [ ] UI елементи — тільки Ui* компоненти (ui-primitives.md), включно з UiTextarea та UiModal
+- [ ] `docs/conventions/ui-primitives.md` оновлений: додано UiTextarea та UiModal до реєстру
 - [ ] Turnstile token верифікується на сервері перед збереженням
 - [ ] Email failures не блокують brief submission (Promise.allSettled)
 - [ ] Source tracking кешується в sessionStorage
+- [ ] Error handling у формі використовує `AxiosError` type guard (не unsafe cast)
+- [ ] i18n merge: `agency` key додано в існуючі `notifications` та `errors` об'єкти, не перезаписано
 - [ ] Unit тести покривають: service, controller, turnstile, form, source utility
