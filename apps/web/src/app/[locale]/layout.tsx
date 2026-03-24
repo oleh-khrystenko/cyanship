@@ -5,15 +5,10 @@ import { routing } from '@/i18n/routing';
 import localFont from 'next/font/local';
 import '@/app/globals.css';
 import { PageParams } from '@/shared/types/settings';
-import dynamic from 'next/dynamic';
 import { Header } from '@/widgets/header';
 import { AuthInitializer } from '@/features/auth';
 import { Providers } from '@/app/providers';
-
-const BriefDialog = dynamic(
-    () => import('@/features/agency/brief/BriefDialog'),
-);
-
+import { Overlays } from '@/app/overlays';
 
 const mulish = localFont({
     src: [
@@ -67,7 +62,7 @@ export default async function LocaleLayout({
                 <Providers>
                     <NextIntlClientProvider>
                         <AuthInitializer />
-                        <BriefDialog />
+                        <Overlays />
                         <Header />
                         {children}
                     </NextIntlClientProvider>
