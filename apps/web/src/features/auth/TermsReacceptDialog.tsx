@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 import {
@@ -25,6 +25,14 @@ export default function TermsReacceptDialog() {
     const [agreed, setAgreed] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setAgreed(false);
+            setError('');
+            setSubmitting(false);
+        }
+    }, [isOpen]);
 
     const handleSubmit = async () => {
         if (!agreed) {
