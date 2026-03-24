@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { Linkedin, Twitter, ExternalLink, Mail } from 'lucide-react';
+import { Linkedin, Twitter, Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
 
 const navLinks = [
@@ -15,12 +15,12 @@ const legalLinks = [
 const socialLinks = [
     {
         key: 'linkedin',
-        href: 'https://www.linkedin.com/in/oleg-khrystenko/',
+        href: 'https://www.linkedin.com/company/cyanship',
         icon: Linkedin,
     },
     {
         key: 'twitter',
-        href: 'https://x.com/kh_oleg_',
+        href: 'https://x.com/cyanshiphq',
         icon: Twitter,
     },
 ] as const;
@@ -104,11 +104,10 @@ const LandingFooter = () => {
                                                 href={href}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
+                                                aria-label={t(`social_${key}`)}
+                                                className="text-muted-foreground hover:text-foreground inline-flex transition-colors"
                                             >
-                                                <Icon className="size-3.5" />
-                                                {t(`social_${key}`)}
-                                                <ExternalLink className="size-3" />
+                                                <Icon className="size-4" />
                                             </a>
                                         </li>
                                     )
