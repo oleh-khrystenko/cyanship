@@ -113,7 +113,7 @@ const siteLink: React.CSSProperties = {
 };
 
 const siteLinkAnchor: React.CSSProperties = {
-    color: EMAIL_COLORS.mutedForeground,
+    color: EMAIL_COLORS.primary,
     fontSize: '13px',
     textDecoration: 'none',
 };
