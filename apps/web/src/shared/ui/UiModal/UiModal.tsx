@@ -41,6 +41,7 @@ function UiModalContent({
     className,
     children,
     hideOverlay = false,
+    hideCloseButton = false,
     ...props
 }: UiModalContentProps) {
     return (
@@ -63,16 +64,18 @@ function UiModalContent({
                 {...props}
             >
                 {children}
-                <DialogPrimitive.Close
-                    className={composeClasses(
-                        'absolute top-3 right-4 flex size-8 items-center justify-center rounded-md opacity-70 transition-opacity',
-                        'hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none',
-                        'disabled:pointer-events-none',
-                    )}
-                >
-                    <X className="size-5" />
-                    <span className="sr-only">Close</span>
-                </DialogPrimitive.Close>
+                {!hideCloseButton && (
+                    <DialogPrimitive.Close
+                        className={composeClasses(
+                            'absolute top-3 right-4 flex size-8 items-center justify-center rounded-md opacity-70 transition-opacity',
+                            'hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none',
+                            'disabled:pointer-events-none',
+                        )}
+                    >
+                        <X className="size-5" />
+                        <span className="sr-only">Close</span>
+                    </DialogPrimitive.Close>
+                )}
             </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
     );

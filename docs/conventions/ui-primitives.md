@@ -37,7 +37,7 @@ Ui-компоненти інкапсулюють:
 | `UiFullPageLoader` | Full-screen centered spinner з optional message | композиція UiSpinner; для Suspense fallback та loading states |
 | `UiConfirmDialog` | `window.confirm()`, кастомні confirmation modals | `default`, `destructive`; controlled (open/onOpenChange); Radix AlertDialog |
 | `UiTextarea` | `<textarea>` | `outlined`, `filled` |
-| `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet, desktop centered; Radix Dialog |
+| `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet, desktop centered; hideOverlay, hideCloseButton; Radix Dialog |
 
 ## Rules
 

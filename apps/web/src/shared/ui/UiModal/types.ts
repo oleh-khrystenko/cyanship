@@ -11,6 +11,7 @@ export interface UiModalCloseProps
 export interface UiModalContentProps
     extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
     hideOverlay?: boolean;
+    hideCloseButton?: boolean;
 }
 
 export interface UiModalHeaderProps

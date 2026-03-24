@@ -47,7 +47,11 @@ export default function TermsReacceptDialog() {
 
     return (
         <UiModal open={isOpen}>
-            <UiModalContent hideOverlay>
+            <UiModalContent
+                hideCloseButton
+                onEscapeKeyDown={(e) => e.preventDefault()}
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <UiModalHeader>
                     <UiModalTitle className="text-xl">{t('title')}</UiModalTitle>
                 </UiModalHeader>
