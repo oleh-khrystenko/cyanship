@@ -109,7 +109,13 @@ const Header = () => {
     const activeSection = useActiveSection(sectionIds);
     const isScrolled = useScrolled(32);
     const showGlass = !hasNav || isScrolled;
+    const [canAnimate, setCanAnimate] = useState(false);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+    useEffect(() => {
+        const id = requestAnimationFrame(() => setCanAnimate(true));
+        return () => cancelAnimationFrame(id);
+    }, []);
 
     const handleLogout = async () => {
         await logout();
@@ -167,9 +173,9 @@ const Header = () => {
     return (
         <header className="sticky top-0 z-50">
                 <div
-                    className={`pointer-events-none absolute inset-0 liquid-glass border-b border-b-liquid-glass-border transition-opacity duration-700 ease-out ${
-                        showGlass ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`pointer-events-none absolute inset-0 liquid-glass border-b border-b-liquid-glass-border ${
+                        canAnimate ? 'transition-opacity duration-700 ease-out' : ''
+                    } ${showGlass ? 'opacity-100' : 'opacity-0'}`}
                     aria-hidden="true"
                 />
             <div className="container relative z-10 flex h-16 items-center justify-between gap-6 px-6">
