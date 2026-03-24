@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
-import { Linkedin, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
-import { XIcon } from '@/shared/icons';
+import { LinkedInIcon, XIcon } from '@/shared/icons';
 
 const navLinks = [
     { key: 'pricing', href: '#pricing' },
@@ -17,7 +17,7 @@ const socialLinks = [
     {
         key: 'linkedin',
         href: 'https://www.linkedin.com/company/cyanship',
-        icon: Linkedin,
+        icon: LinkedInIcon,
     },
     {
         key: 'x',
