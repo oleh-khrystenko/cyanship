@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { ProofTabKey } from '@/widgets/agency/landing/DogfoodingSection/types';
+
+export type ProofTabKey = 'auth' | 'billing' | 'usage';
 
 interface DogfoodingSheetState {
     activeTab: ProofTabKey | null;

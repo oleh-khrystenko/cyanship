@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { LogOut, User, CreditCard, Menu } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -14,10 +14,10 @@ import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
-import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
+import { useUserMenu } from './useUserMenu';
 
 function useScrolled(threshold: number) {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -70,30 +70,16 @@ function useActiveSection(sectionIds: string[]) {
     return activeId;
 }
 
-function getInitials(name: string | undefined, email: string): string {
-    if (name) {
-        return name
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    }
-    return email[0]?.toUpperCase() ?? '';
-}
-
 const Header = () => {
     const t = useTranslations('components.header');
     const locale = useLocale();
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
-    const clearUser = useAuthStore((s) => s.clearUser);
     const navItems = useHeaderNavStore((s) => s.navItems);
     const cta = useHeaderNavStore((s) => s.cta);
     const openMobileMenu = useMobileMenuSheetStore((s) => s.open);
 
-    const router = useRouter();
     const pathname = usePathname();
     const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
@@ -106,62 +92,16 @@ const Header = () => {
     const showGlass = !hasNav || isScrolled;
     const [canAnimate, setCanAnimate] = useState(false);
 
+    const { visibleItems, handleSelect, initials } = useUserMenu({
+        profile: <User />,
+        billing: <CreditCard />,
+        logout: <LogOut />,
+    });
+
     useEffect(() => {
         const id = requestAnimationFrame(() => setCanAnimate(true));
         return () => cancelAnimationFrame(id);
     }, []);
-
-    const handleLogout = async () => {
-        await logout();
-        clearUser();
-        window.location.assign(`/${locale}`);
-    };
-
-    const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
-
-    const allUserMenuItems: {
-        value: string;
-        label: string;
-        icon: React.ReactNode;
-        route?: string;
-        badge?: string;
-    }[] = [
-        {
-            value: 'profile',
-            label: t('profile'),
-            icon: <User />,
-            route: `/${locale}/profile`,
-        },
-        {
-            value: 'billing',
-            label: t('billing'),
-            icon: <CreditCard />,
-            route: `/${locale}/billing`,
-            badge: formattedExecutions,
-        },
-        {
-            value: 'logout',
-            label: t('logout'),
-            icon: <LogOut />,
-        },
-    ];
-
-    const userMenuItems = allUserMenuItems.filter(
-        (item) => !item.route || !pathname.startsWith(item.route)
-    );
-
-    const handleUserMenuSelect = (value: string) => {
-        const item = allUserMenuItems.find((i) => i.value === value);
-        if (item?.route) {
-            router.push(item.route);
-        } else if (value === 'logout') {
-            void handleLogout();
-        }
-    };
-
-    const initials = user
-        ? getInitials(user.profile.name, user.email)
-        : '';
 
     return (
         <header className="sticky top-0 z-50">
@@ -241,8 +181,8 @@ const Header = () => {
                         <div className="bg-secondary h-8 w-20 animate-pulse rounded-lg" />
                     ) : isAuthenticated && user ? (
                         <UiDropdownMenu
-                            items={userMenuItems}
-                            onSelect={handleUserMenuSelect}
+                            items={visibleItems}
+                            onSelect={(value) => handleSelect(value)}
                             size="sm"
                             header={
                                 <div className="flex items-center gap-2.5">
