@@ -32,6 +32,14 @@
     --success: oklch(0.65 0.15 150);
     --warning: oklch(0.80 0.15 80);
     --radius: 0.625rem;
+
+    /* Liquid Glass */
+    --liquid-glass-bg: oklch(1 0 0 / 0.55);
+    --liquid-glass-border: oklch(1 0 0 / 0.35);
+    --liquid-glass-highlight: oklch(1 0 0 / 0.4);
+    --liquid-glass-shadow: oklch(0.3 0.01 260 / 0.08);
+    --liquid-glass-blur: 24px;
+    --liquid-glass-saturation: 1.8;
 }
 
 .dark {
@@ -64,6 +72,14 @@
 
     --success: oklch(0.55 0.15 150);
     --warning: oklch(0.70 0.15 80);
+
+    /* Liquid Glass */
+    --liquid-glass-bg: oklch(0.18 0.01 260 / 0.45);
+    --liquid-glass-border: oklch(1 0 0 / 0.08);
+    --liquid-glass-highlight: oklch(1 0 0 / 0.1);
+    --liquid-glass-shadow: oklch(0 0 0 / 0.3);
+    --liquid-glass-blur: 24px;
+    --liquid-glass-saturation: 1.6;
 }
 
 @theme inline {
