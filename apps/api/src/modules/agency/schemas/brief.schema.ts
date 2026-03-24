@@ -18,19 +18,19 @@ export class Brief extends Document {
     @Prop({ required: true, trim: true })
     description!: string;
 
-    @Prop({ required: true })
+    @Prop({ type: String, required: true })
     budget!: BriefBudget;
 
-    @Prop({ default: null })
+    @Prop({ type: String, default: null })
     deadline!: BriefDeadline | null;
 
-    @Prop({ default: null })
+    @Prop({ type: String, default: null })
     source!: string | null;
 
-    @Prop({ default: null })
+    @Prop({ type: String, default: null })
     lang!: string | null;
 
-    @Prop({ default: BRIEF_STATUS.NEW, index: true })
+    @Prop({ type: String, default: BRIEF_STATUS.NEW, index: true })
     status!: BriefStatus;
 
     // timestamps: true дає createdAt, updatedAt
