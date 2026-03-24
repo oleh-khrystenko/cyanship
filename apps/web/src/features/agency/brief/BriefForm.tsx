@@ -115,8 +115,8 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <fieldset className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">{t('name_label')}</label>
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">{t('name_label')}</span>
                 <UiInput
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -125,9 +125,9 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                     disabled={loading}
                     required
                 />
-            </fieldset>
-            <fieldset className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">{t('email_label')}</label>
+            </div>
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">{t('email_label')}</span>
                 <UiInput
                     type="email"
                     value={email}
@@ -137,9 +137,9 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                     disabled={loading}
                     required
                 />
-            </fieldset>
-            <fieldset className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">{t('description_label')}</label>
+            </div>
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">{t('description_label')}</span>
                 <UiTextarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -149,9 +149,9 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                     disabled={loading}
                     required
                 />
-            </fieldset>
-            <fieldset className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">{t('budget_label')}</label>
+            </div>
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">{t('budget_label')}</span>
                 <UiSelect
                     options={budgetOptions}
                     value={budget}
@@ -162,9 +162,9 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 {errors.budget && (
                     <p className="text-sm text-destructive">{errors.budget}</p>
                 )}
-            </fieldset>
-            <fieldset className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-foreground">{t('deadline_label')}</label>
+            </div>
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">{t('deadline_label')}</span>
                 <UiSelect
                     options={deadlineOptions}
                     value={deadline}
@@ -172,7 +172,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                     placeholder={t('deadline_placeholder')}
                     variant="outlined"
                 />
-            </fieldset>
+            </div>
 
             {/* Turnstile invisible container */}
             <div ref={containerRef} />
