@@ -8,7 +8,6 @@ interface NavItem {
 
 interface CtaConfig {
     label: string;
-    href?: string;
     renderWrapper?: (children: ReactNode) => ReactNode;
 }
 

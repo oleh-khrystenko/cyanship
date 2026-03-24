@@ -307,11 +307,7 @@ const Header = () => {
                     )}
 
                     {cta && (() => {
-                        const btn = cta.href ? (
-                            <UiButton as="a" href={cta.href} variant="filled" size="sm" className="ml-2">
-                                {cta.label}
-                            </UiButton>
-                        ) : (
+                        const btn = (
                             <UiButton variant="filled" size="sm" className="ml-2">
                                 {cta.label}
                             </UiButton>
@@ -447,11 +443,7 @@ const Header = () => {
 
                                 {/* Mobile CTA */}
                                 {cta && (() => {
-                                    const btn = cta.href ? (
-                                        <UiButton as="a" href={cta.href} variant="filled" size="md" className="mt-2 w-full" onClick={() => setIsSheetOpen(false)}>
-                                            {cta.label}
-                                        </UiButton>
-                                    ) : (
+                                    const btn = (
                                         <UiButton variant="filled" size="md" className="mt-2 w-full" onClick={() => setIsSheetOpen(false)}>
                                             {cta.label}
                                         </UiButton>
