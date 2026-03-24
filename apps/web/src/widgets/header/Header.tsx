@@ -306,17 +306,18 @@ const Header = () => {
                         )
                     )}
 
-                    {cta && (
-                        <UiButton
-                            as="a"
-                            href={cta.href}
-                            variant="filled"
-                            size="sm"
-                            className="ml-2"
-                        >
-                            {cta.label}
-                        </UiButton>
-                    )}
+                    {cta && (() => {
+                        const btn = cta.href ? (
+                            <UiButton as="a" href={cta.href} variant="filled" size="sm" className="ml-2">
+                                {cta.label}
+                            </UiButton>
+                        ) : (
+                            <UiButton variant="filled" size="sm" className="ml-2">
+                                {cta.label}
+                            </UiButton>
+                        );
+                        return cta.renderWrapper ? cta.renderWrapper(btn) : btn;
+                    })()}
                 </div>
 
                 {/* Mobile hamburger */}
@@ -445,18 +446,18 @@ const Header = () => {
                                 )}
 
                                 {/* Mobile CTA */}
-                                {cta && (
-                                    <UiButton
-                                        as="a"
-                                        href={cta.href}
-                                        variant="filled"
-                                        size="md"
-                                        className="mt-2 w-full"
-                                        onClick={() => setIsSheetOpen(false)}
-                                    >
-                                        {cta.label}
-                                    </UiButton>
-                                )}
+                                {cta && (() => {
+                                    const btn = cta.href ? (
+                                        <UiButton as="a" href={cta.href} variant="filled" size="md" className="mt-2 w-full" onClick={() => setIsSheetOpen(false)}>
+                                            {cta.label}
+                                        </UiButton>
+                                    ) : (
+                                        <UiButton variant="filled" size="md" className="mt-2 w-full" onClick={() => setIsSheetOpen(false)}>
+                                            {cta.label}
+                                        </UiButton>
+                                    );
+                                    return cta.renderWrapper ? cta.renderWrapper(btn) : btn;
+                                })()}
                             </div>
                         </UiSheetContent>
                     </UiSheet>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useHeaderNavStore } from '@/stores/headerNav';
+import BriefDialog from '@/features/agency/brief/BriefDialog';
 
 const navKeys = [
     { key: 'approach', href: '#problem' },
@@ -10,7 +11,6 @@ const navKeys = [
     // { key: 'portfolio', href: '#portfolio' },
     { key: 'workflow', href: '#workflow' },
     { key: 'pricing', href: '#pricing' },
-    { key: 'get_started', href: '#footer-cta' },
 ] as const;
 
 export default function LandingNav() {
@@ -25,7 +25,12 @@ export default function LandingNav() {
             label: tNav(key),
         }));
 
-        setNav(items, { href: '#footer-cta', label: tHeader('get_started') });
+        setNav(items, {
+            label: tHeader('get_started'),
+            renderWrapper: (children: ReactNode) => (
+                <BriefDialog>{children}</BriefDialog>
+            ),
+        });
 
         return () => clearNav();
     }, [tNav, tHeader, setNav, clearNav]);

@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
+import BriefDialog from '@/features/agency/brief/BriefDialog';
 
 const includeKeys = [
     'include_1',
@@ -59,15 +60,15 @@ const PricingSection = () => {
                                 ))}
                             </ul>
 
-                            <UiButton
-                                as="a"
-                                href="#footer-cta"
-                                variant="filled"
-                                size="lg"
-                                className="mt-8 w-full justify-center"
-                            >
-                                {t('cta')}
-                            </UiButton>
+                            <BriefDialog>
+                                <UiButton
+                                    variant="filled"
+                                    size="lg"
+                                    className="mt-8 w-full justify-center"
+                                >
+                                    {t('cta')}
+                                </UiButton>
+                            </BriefDialog>
                         </div>
                     </div>
 
