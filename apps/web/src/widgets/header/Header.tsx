@@ -25,6 +25,22 @@ import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import { useHeaderNavStore } from '@/stores/headerNav';
 
+function useScrolled(threshold: number) {
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > threshold);
+        };
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [threshold]);
+
+    return isScrolled;
+}
+
 function useActiveSection(sectionIds: string[]) {
     const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -91,6 +107,8 @@ const Header = () => {
         [navItems]
     );
     const activeSection = useActiveSection(sectionIds);
+    const isScrolled = useScrolled(32);
+    const showGlass = !hasNav || isScrolled;
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const handleLogout = async () => {
@@ -147,8 +165,14 @@ const Header = () => {
         : '';
 
     return (
-        <header className="liquid-glass sticky top-0 z-50 border-b border-b-liquid-glass-border">
-            <div className="container flex h-16 items-center justify-between gap-6 px-6">
+        <header className="sticky top-0 z-50">
+                <div
+                    className={`pointer-events-none absolute inset-0 liquid-glass border-b border-b-liquid-glass-border transition-opacity duration-300 ease-out ${
+                        showGlass ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    aria-hidden="true"
+                />
+            <div className="container relative z-10 flex h-16 items-center justify-between gap-6 px-6">
                 {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
                 {hasNav ? (
                     <UiButton
