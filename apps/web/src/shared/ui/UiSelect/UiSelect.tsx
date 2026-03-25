@@ -90,38 +90,40 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
                     className={composeClasses(
                         'absolute z-50 mt-1 w-full',
                         'max-h-60 overflow-auto',
-                        'rounded-md border border-border bg-popover shadow-md',
+                        'rounded-lg border border-border bg-card shadow-md',
                         'focus:outline-none'
                     )}
                 >
-                    {options.map((option) => (
-                        <ListboxOption
-                            key={option.value}
-                            value={option.value}
-                            className={composeClasses(
-                                'flex cursor-pointer select-none items-center justify-between',
-                                'text-foreground transition-colors',
-                                'data-focus:bg-secondary data-selected:bg-secondary',
-                                optionSizeStyles[size]
-                            )}
-                        >
-                            {({ selected: isSelected }) => (
-                                <>
-                                    <span
-                                        className={composeClasses(
-                                            'truncate',
-                                            isSelected && 'font-medium'
+                    <div className="p-1">
+                        {options.map((option) => (
+                            <ListboxOption
+                                key={option.value}
+                                value={option.value}
+                                className={composeClasses(
+                                    'flex cursor-pointer select-none items-center justify-between',
+                                    'rounded-md text-foreground transition-colors',
+                                    'data-focus:bg-accent',
+                                    optionSizeStyles[size]
+                                )}
+                            >
+                                {({ selected: isSelected }) => (
+                                    <>
+                                        <span
+                                            className={composeClasses(
+                                                'truncate',
+                                                isSelected && 'font-medium'
+                                            )}
+                                        >
+                                            {option.label}
+                                        </span>
+                                        {isSelected && (
+                                            <Check className="h-4 w-4 shrink-0 text-primary" />
                                         )}
-                                    >
-                                        {option.label}
-                                    </span>
-                                    {isSelected && (
-                                        <Check className="h-4 w-4 shrink-0 text-primary" />
-                                    )}
-                                </>
-                            )}
-                        </ListboxOption>
-                    ))}
+                                    </>
+                                )}
+                            </ListboxOption>
+                        ))}
+                    </div>
                 </ListboxOptions>
             </div>
         </Listbox>
