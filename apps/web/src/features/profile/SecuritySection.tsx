@@ -1,9 +1,12 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { Pencil, ShieldCheck, ShieldOff } from 'lucide-react';
 import type { UserProfile } from '@cyanship/types';
 import { passwordSchema } from '@cyanship/types';
@@ -14,6 +17,12 @@ import { setPassword, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import ChangePasswordForm from './ChangePasswordForm';
 
+const SetPasswordFormSchema = z.object({
+    password: z.string(),
+});
+
+type SetPasswordFormValues = z.input<typeof SetPasswordFormSchema>;
+
 export type ProfileMode = 'new' | 'set-password' | null;
 
 interface SecuritySectionProps {
@@ -23,13 +32,17 @@ interface SecuritySectionProps {
 
 const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     const t = useTranslations('profile_page.security');
-
     const setUser = useAuthStore((s) => s.setUser);
 
     const [editing, setEditing] = useState(false);
-    const [newPwd, setNewPwd] = useState('');
-    const [newPwdError, setNewPwdError] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+
+    const form = useForm<SetPasswordFormValues>({
+        resolver: zodResolver(SetPasswordFormSchema),
+        defaultValues: { password: '' },
+    });
+
+    const { errors, isSubmitting } = form.formState;
+    const password = form.watch('password');
 
     const hasPassword = user.hasPassword;
 
@@ -43,30 +56,28 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
     const isPasswordOptional = mode === 'new' || mode === 'set-password';
 
-    // View mode: has password, normal mode, not editing
     const isViewMode = isChangeMode && !editing;
 
-    const handleSetPassword = async (e: FormEvent) => {
-        e.preventDefault();
-
-        if (isPasswordOptional && !newPwd) {
+    const onSetPassword = async (data: SetPasswordFormValues) => {
+        if (isPasswordOptional && !data.password) {
             return;
         }
 
-        const result = passwordSchema.safeParse(newPwd);
+        const result = passwordSchema.safeParse(data.password);
         if (!result.success) {
-            setNewPwdError(t('password_too_short'));
+            form.setError('password', {
+                type: 'validate',
+                message: t('password_too_short'),
+            });
             return;
         }
 
-        setSubmitting(true);
         try {
-            await setPassword(newPwd);
+            await setPassword(data.password);
             const me = await getMe();
             setUser(me);
             toast.success(t('password_set'));
-            setNewPwd('');
-            setNewPwdError('');
+            form.reset();
         } catch (err) {
             const code =
                 err instanceof AxiosError
@@ -78,8 +89,6 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             } else {
                 toast.error(t('error_generic'));
             }
-        } finally {
-            setSubmitting(false);
         }
     };
 
@@ -127,7 +136,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
 
             {/* Set password mode */}
             {isSetMode && (
-                <form onSubmit={handleSetPassword} className="mt-5 space-y-4">
+                <form onSubmit={form.handleSubmit(onSetPassword)} className="mt-5 space-y-4">
                     <div className="flex items-center gap-2">
                         <ShieldOff className="size-4 text-muted-foreground" />
                         <span className="text-muted-foreground text-sm">
@@ -135,14 +144,15 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         </span>
                     </div>
                     <UiPasswordInput
+                        {...form.register('password', {
+                            onChange: () => {
+                                if (errors.password) {
+                                    form.clearErrors('password');
+                                }
+                            },
+                        })}
                         placeholder={t('password_placeholder')}
-                        value={newPwd}
-                        onChange={(e) => {
-                            setNewPwd(e.target.value);
-                            if (newPwdError) setNewPwdError('');
-                        }}
-                        error={newPwdError || undefined}
-                        required={!isPasswordOptional}
+                        error={errors.password?.message}
                         size="lg"
                         showLabel={t('show_password')}
                         hideLabel={t('hide_password')}
@@ -152,11 +162,11 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         variant="filled"
                         size="md"
                         disabled={
-                            submitting ||
-                            (!isPasswordOptional && !newPwd)
+                            isSubmitting ||
+                            (!isPasswordOptional && !password)
                         }
                     >
-                        {submitting ? (
+                        {isSubmitting ? (
                             <UiSpinner size="sm" />
                         ) : (
                             t('set_password')
