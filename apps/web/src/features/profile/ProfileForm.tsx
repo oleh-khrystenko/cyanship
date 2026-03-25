@@ -72,9 +72,12 @@ const ProfileForm = ({
 
         if (!nameResult.success) {
             const code = nameResult.error.issues[0]?.code;
-            const message = code === 'too_small'
-                ? t('name_too_short')
-                : t('name_invalid_chars');
+            const message =
+                code === 'too_small'
+                    ? t('name_too_short')
+                    : code === 'too_big'
+                      ? t('name_too_long')
+                      : t('name_invalid_chars');
             form.setError('firstName', { type: 'validate', message });
             return;
         }
@@ -83,10 +86,9 @@ const ProfileForm = ({
             await updateProfile({ name: fullName });
             const me = await getMe();
             setUser(me);
-            const newParsed = parseName(me.profile.name);
             form.reset({
-                firstName: newParsed.firstName,
-                lastName: newParsed.lastName,
+                firstName: data.firstName.trim(),
+                lastName: data.lastName.trim(),
             });
             toast.success(t('saved'));
             onSaved?.();
