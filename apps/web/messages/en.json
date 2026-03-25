@@ -473,7 +473,9 @@
             "profile": "Profile",
             "billing": "Billing",
             "settings": "Settings",
-            "menu": "Open menu"
+            "menu": "Open menu",
+            "language": "Language",
+            "theme": "Theme"
         },
         "change_lang": {
             "label": "Change language"
