@@ -80,9 +80,31 @@ describe('BriefForm', () => {
 
         render(<BriefForm onSuccess={mockOnSuccess} />);
 
+        fireEvent.change(screen.getByPlaceholderText('name_placeholder'), {
+            target: { value: 'John Doe' },
+        });
+        fireEvent.change(screen.getByPlaceholderText('email_placeholder'), {
+            target: { value: 'john@example.com' },
+        });
+        fireEvent.change(
+            screen.getByPlaceholderText('description_placeholder'),
+            {
+                target: {
+                    value: 'A project description that is long enough for validation',
+                },
+            },
+        );
+
+        const budgetSelect = screen.getByText('budget_placeholder');
+        fireEvent.click(budgetSelect);
+        const budgetOption = await screen.findByText('budget_under_2500');
+        fireEvent.click(budgetOption);
+
         fireEvent.submit(screen.getByText('submit').closest('form')!);
 
-        expect(mockToastError).toHaveBeenCalledWith('captcha_not_ready');
+        await waitFor(() => {
+            expect(mockToastError).toHaveBeenCalledWith('captcha_not_ready');
+        });
         expect(mockSubmitBrief).not.toHaveBeenCalled();
     });
 

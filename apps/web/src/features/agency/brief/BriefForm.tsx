@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import {
     SubmitBriefSchema,
     BRIEF_BUDGET,
@@ -20,6 +22,16 @@ import { getApiMessageKey } from '@/shared/api/mapApiCode';
 import { getSource } from './lib/source';
 import { useTurnstile } from './lib/useTurnstile';
 
+const BriefFormSchema = SubmitBriefSchema.pick({
+    name: true,
+    email: true,
+    description: true,
+    budget: true,
+    deadline: true,
+});
+
+type BriefFormValues = z.input<typeof BriefFormSchema>;
+
 interface BriefFormProps {
     onSuccess: () => void;
 }
@@ -28,13 +40,20 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
     const t = useTranslations('brief_form');
     const tGlobal = useTranslations();
 
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [description, setDescription] = useState('');
-    const [budget, setBudget] = useState('');
-    const [deadline, setDeadline] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const {
+        register,
+        control,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<BriefFormValues>({
+        resolver: zodResolver(BriefFormSchema),
+        mode: 'onTouched',
+        defaultValues: {
+            name: '',
+            email: '',
+            description: '',
+        },
+    });
 
     const { containerRef, token, reset: resetTurnstile } = useTurnstile();
 
@@ -60,40 +79,23 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         { value: BRIEF_DEADLINE.FLEXIBLE, label: t('deadline_flexible') },
     ];
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrors({});
-
+    const onSubmit = async (data: BriefFormValues) => {
         if (!token) {
             toast.error(t('captcha_not_ready'));
             return;
         }
 
+        const { deadline, ...fields } = data;
         const payload = {
-            name,
-            email,
-            description,
-            budget,
+            ...fields,
             ...(deadline && { deadline }),
             source: getSource(),
             lang: navigator.language.slice(0, 5),
             captchaToken: token,
         };
 
-        const result = SubmitBriefSchema.safeParse(payload);
-        if (!result.success) {
-            const fieldErrors: Record<string, string> = {};
-            result.error.issues.forEach((issue) => {
-                const field = issue.path[0]?.toString();
-                if (field) fieldErrors[field] = t(`validation_${field}`);
-            });
-            setErrors(fieldErrors);
-            return;
-        }
-
-        setLoading(true);
         try {
-            const { code } = await submitBrief(result.data);
+            const { code } = await submitBrief(payload);
             const messageKey = getApiMessageKey(code, 'agency');
             toast.success(tGlobal(messageKey));
             onSuccess();
@@ -109,59 +111,68 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             } else {
                 toast.error(tGlobal('errors.generic.unknown'));
             }
-        } finally {
-            setLoading(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <UiInput
+                {...register('name')}
                 label={t('name_label')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 placeholder={t('name_placeholder')}
-                error={errors.name}
-                disabled={loading}
+                error={errors.name && t('validation_name')}
+                disabled={isSubmitting}
                 required
             />
             <UiInput
+                {...register('email')}
                 label={t('email_label')}
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder={t('email_placeholder')}
-                error={errors.email}
-                disabled={loading}
+                error={errors.email && t('validation_email')}
+                disabled={isSubmitting}
                 required
             />
             <UiTextarea
+                {...register('description')}
                 label={t('description_label')}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('description_placeholder')}
                 rows={4}
-                error={errors.description}
-                disabled={loading}
+                error={errors.description && t('validation_description')}
+                disabled={isSubmitting}
                 required
             />
-            <UiSelect
-                label={t('budget_label')}
-                options={budgetOptions}
-                value={budget}
-                onChange={setBudget}
-                placeholder={t('budget_placeholder')}
-                variant="outlined"
-                required
+            <Controller
+                name="budget"
+                control={control}
+                render={({ field }) => (
+                    <UiSelect
+                        label={t('budget_label')}
+                        options={budgetOptions}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        placeholder={t('budget_placeholder')}
+                        variant="outlined"
+                        required
+                    />
+                )}
             />
             {errors.budget && (
-                <p className="text-sm text-destructive">{errors.budget}</p>
+                <p className="text-sm text-destructive">
+                    {t('validation_budget')}
+                </p>
             )}
-            <UiChipGroup
-                label={t('deadline_label')}
-                options={deadlineOptions}
-                value={deadline}
-                onChange={setDeadline}
+            <Controller
+                name="deadline"
+                control={control}
+                render={({ field }) => (
+                    <UiChipGroup
+                        label={t('deadline_label')}
+                        options={deadlineOptions}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                    />
+                )}
             />
 
             {/* Turnstile invisible container */}
@@ -171,10 +182,10 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 type="submit"
                 variant="filled"
                 size="lg"
-                disabled={loading}
+                disabled={isSubmitting}
                 className="mt-2 w-full font-semibold"
             >
-                {loading ? t('submitting') : t('submit')}
+                {isSubmitting ? t('submitting') : t('submit')}
             </UiButton>
         </form>
     );
