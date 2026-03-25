@@ -103,9 +103,7 @@ export default function MobileMenuSheet() {
                             <div className="flex items-center gap-3 pb-3">
                                 <UiAvatar size="md">
                                     <UiAvatarImage
-                                        src={
-                                            user.profile.avatar ?? undefined
-                                        }
+                                        src={user.profile.avatar ?? undefined}
                                         alt={user.profile.name ?? ''}
                                     />
                                     <UiAvatarFallback size="md">
@@ -144,6 +142,8 @@ export default function MobileMenuSheet() {
                                         )}
                                     </button>
                                 ))}
+
+                            <div className="bg-border mx-1 my-2 h-px" />
 
                             <ChangeLang
                                 align="start"
@@ -184,10 +184,8 @@ export default function MobileMenuSheet() {
 
                             <button
                                 type="button"
-                                className="-mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-                                onClick={() =>
-                                    handleSelect('logout', close)
-                                }
+                                className="text-destructive hover:bg-destructive/10 -mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+                                onClick={() => handleSelect('logout', close)}
                             >
                                 <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
                                     <LogOut />
@@ -197,6 +195,9 @@ export default function MobileMenuSheet() {
                         </div>
                     ) : (
                         <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground px-1 text-xs font-medium tracking-wider uppercase">
+                                {t('settings')}
+                            </span>
                             <ChangeLang
                                 align="start"
                                 trigger={
