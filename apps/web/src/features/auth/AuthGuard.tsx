@@ -24,6 +24,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
     const onboardingDone = user ? isOnboardingComplete(user.profile) : true;
     const isProfilePage = pathname.includes('/profile');
+    const onboardingMessage = t('onboarding_required');
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -33,10 +34,10 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
     useEffect(() => {
         if (isAuthenticated && !onboardingDone && !isProfilePage) {
-            toast.info(t('onboarding_required'));
+            toast.info(onboardingMessage);
             router.replace(`/${locale}/profile?mode=new`);
         }
-    }, [isAuthenticated, onboardingDone, isProfilePage, router, locale, t]);
+    }, [isAuthenticated, onboardingDone, isProfilePage, router, locale, onboardingMessage]);
 
     if (isLoading) {
         return <UiFullPageLoader />;
