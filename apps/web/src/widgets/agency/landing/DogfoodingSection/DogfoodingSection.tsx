@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useMediaQuery } from '@/shared/lib';
 import { useDogfoodingSheetStore } from '@/stores/dogfoodingSheet';
 import ProofTabs from './ProofTabs';
 import ProofWindow from './ProofWindow';
@@ -20,12 +21,18 @@ const DogfoodingSection = () => {
     const t = useTranslations('landing_page.dogfooding');
     const activeTab = useDogfoodingSheetStore((s) => s.activeTab);
     const setActiveTab = useDogfoodingSheetStore((s) => s.setActiveTab);
-    const [isDesktop, setIsDesktop] = useState(false);
+    const isDesktop = useMediaQuery(DESKTOP_MQ);
     const sectionRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
-        const mql = window.matchMedia(DESKTOP_MQ);
+        if (isDesktop) {
+            setActiveTab(useDogfoodingSheetStore.getState().activeTab ?? 'auth');
+        } else {
+            setActiveTab(null);
+        }
+    }, [isDesktop, setActiveTab]);
 
+    useEffect(() => {
         const applyDeepLink = () => {
             const tab = parseTabFromHash(window.location.hash);
             if (tab) {
@@ -35,27 +42,10 @@ const DogfoodingSection = () => {
             }
         };
 
-        const update = (matches: boolean) => {
-            setIsDesktop(matches);
-
-            if (matches) {
-                setActiveTab(useDogfoodingSheetStore.getState().activeTab ?? 'auth');
-            } else {
-                setActiveTab(null);
-            }
-        };
-
-        update(mql.matches);
         applyDeepLink();
-
         window.addEventListener('hashchange', applyDeepLink);
-        const handler = (e: MediaQueryListEvent) => update(e.matches);
-        mql.addEventListener('change', handler);
-        return () => {
-            window.removeEventListener('hashchange', applyDeepLink);
-            mql.removeEventListener('change', handler);
-        };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        return () => window.removeEventListener('hashchange', applyDeepLink);
+    }, [setActiveTab]);
 
     const handleTabChange = (tab: ProofTabKey) => {
         if (!isDesktop && activeTab === tab) {
