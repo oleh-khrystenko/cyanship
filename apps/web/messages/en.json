@@ -435,6 +435,7 @@
         },
         "packs": {
             "executions_count": "{count} executions",
+            "executions_label": "executions",
             "basic": {
                 "name": "Basic Pack",
                 "tagline": "Quick top-up for instant needs"

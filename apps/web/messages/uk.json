@@ -435,6 +435,7 @@
         },
         "packs": {
             "executions_count": "{count} виконань",
+            "executions_label": "виконань",
             "basic": {
                 "name": "Basic Pack",
                 "tagline": "Швидке поповнення для миттєвих потреб"
@@ -442,7 +443,7 @@
             "max": {
                 "name": "Max Pack",
                 "tagline": "Найвигідніше для використання за потребою",
-                "badge": "Найвигідніше"
+                "badge": "Вигода"
             }
         },
         "catalog_error": "Не вдалося завантажити інформацію про ціни",
