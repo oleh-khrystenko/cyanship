@@ -8,6 +8,7 @@
 |-----|-----------|--------|
 | Core | TypeScript, Node.js, pnpm, Turborepo | TS 5.9, Node 20, pnpm 10 |
 | Frontend | Next.js (App Router), React, Zustand, TailwindCSS, next-intl | Next 16.0.1, React 19.2 |
+| Forms | React Hook Form + @hookform/resolvers (Zod) | RHF 7.72 |
 | Backend | NestJS, Mongoose, ioredis, Passport | NestJS 11.1, Mongoose 8 |
 | Validation | Zod (shared contracts) | Zod 4.3 |
 | Payments | Stripe | 20.4 |
@@ -93,7 +94,10 @@ docs/
 Guard + `@CurrentUser()` decorator + DTO + Service, повертає `{ data: ... }` envelope. Приклад: `apps/api/src/modules/payments/payments.controller.ts`
 
 ### Валідація
-Zod schema в `packages/types/src/contracts/*` → `createZodDto()` в api dto → ті ж Zod schemas на фронті. Приклад: `apps/api/src/modules/payments/dto/create-checkout-session.dto.ts`
+Zod schema в `packages/types/src/contracts/*` → `createZodDto()` в api dto → ті ж Zod schemas на фронті через `@hookform/resolvers/zod`. Приклад: `apps/api/src/modules/payments/dto/create-checkout-session.dto.ts`
+
+### Форми (Frontend)
+React Hook Form + Zod resolver для всіх форм. Приклад: `apps/web/src/features/profile/ProfileForm.tsx`
 
 ### Авторизація (Guards)
 - `JwtActiveGuard` — **основний**, перевіряє JWT + блокує soft-deleted users
@@ -273,7 +277,6 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 - **Refresh cookie працює через proxy**: `next.config.ts` проксує `/api/*` на backend — тому `bid_refresh` cookie (httpOnly) видимий і в middleware, і в API (same origin).
 - **`test-setup.ts` fallback env**: Без цього файлу fail-fast policy крашить Jest ще до запуску тестів. Використовує `??=` оператор — не перезаписує реальні env vars.
 - **`packages/types` build order**: Має бути зібраний ДО `apps/api` та `apps/web`. Turborepo `dependsOn: ["^build"]` це забезпечує, але manual build без turbo зламається.
-- **Web API double prefix**: `shared/api/payments.ts` додає `/api/payments/...` поверх `apiClient` base URL. З `.env.example` default `NEXT_PUBLIC_API_URL=/api` запити стають `/api/api/payments/...`.
 - **Magic link locale**: `sendMagicLink()` на фронті відправляє `lang`, але backend ігнорує і використовує `user.preferredLang` або fallback `LANG.UK`.
 - **Webhook route dynamic provider**: URL шаблон `/webhook/:provider`, але наразі підтримується тільки `stripe`. Невідомий provider тихо відхиляється.
 - **Orphaned customer retry cap**: `PaymentsCleanupService` робить максимум 5 спроб видалити Stripe customer. Після 5 невдач запис залишається в колекції назавжни — потребує ручного втручання.
