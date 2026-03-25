@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { LANG } from '../constants/lang';
 import { CURRENT_TERMS_VERSION } from '../constants/terms';
-import { nameSchema } from '../validation/common';
+import { firstNameSchema, lastNameSchema } from '../validation/common';
 
 const langValues = Object.values(LANG) as [string, ...string[]];
 
@@ -11,7 +11,8 @@ export const UpdateLangSchema = z.object({
 });
 
 export const UpdateProfileSchema = z.object({
-    name: nameSchema.optional(),
+    firstName: firstNameSchema.optional(),
+    lastName: lastNameSchema.optional(),
     avatar: z.string().url().optional(),
     preferredLang: z.enum(langValues).optional(),
 });

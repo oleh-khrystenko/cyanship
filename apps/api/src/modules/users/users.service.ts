@@ -12,7 +12,8 @@ import { User, UserDocument } from './schemas/user.schema';
 
 interface GoogleProfile {
     email: string;
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: string;
     providerId: string;
 }
@@ -52,8 +53,12 @@ export class UsersService {
                 };
             }
 
-            if (googleProfile.name && !existing.profile.name) {
-                existing.profile.name = googleProfile.name;
+            if (googleProfile.firstName && !existing.profile.firstName) {
+                existing.profile.firstName = googleProfile.firstName;
+            }
+
+            if (googleProfile.lastName && !existing.profile.lastName) {
+                existing.profile.lastName = googleProfile.lastName;
             }
 
             if (googleProfile.avatar && !existing.profile.avatar) {
@@ -67,7 +72,8 @@ export class UsersService {
             email: googleProfile.email.toLowerCase(),
             provider: { name: 'google', id: googleProfile.providerId },
             profile: {
-                name: googleProfile.name,
+                firstName: googleProfile.firstName,
+                lastName: googleProfile.lastName,
                 avatar: googleProfile.avatar,
             },
             lastLoginAt: new Date(),
@@ -233,10 +239,18 @@ export class UsersService {
 
     async updateProfile(
         userId: string,
-        data: { name?: string; avatar?: string; preferredLang?: string }
+        data: {
+            firstName?: string;
+            lastName?: string;
+            avatar?: string;
+            preferredLang?: string;
+        }
     ): Promise<UserDocument | null> {
         const update: Record<string, unknown> = {};
-        if (data.name !== undefined) update['profile.name'] = data.name;
+        if (data.firstName !== undefined)
+            update['profile.firstName'] = data.firstName;
+        if (data.lastName !== undefined)
+            update['profile.lastName'] = data.lastName;
         if (data.avatar !== undefined) update['profile.avatar'] = data.avatar;
         if (data.preferredLang !== undefined)
             update.preferredLang = data.preferredLang;

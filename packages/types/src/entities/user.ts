@@ -9,7 +9,8 @@ export const UserProviderSchema = z.object({
 });
 
 export const UserProfileDataSchema = z.object({
-    name: z.string().optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     avatar: z.string().url().optional(),
 });
 

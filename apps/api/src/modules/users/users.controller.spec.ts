@@ -10,7 +10,7 @@ const mockUser = {
     id: '507f1f77bcf86cd799439011',
     _id: { toString: () => '507f1f77bcf86cd799439011' },
     email: 'test@gmail.com',
-    profile: { name: 'John Doe', avatar: null },
+    profile: { firstName: 'John', lastName: 'Doe', avatar: null },
     executions: { balance: 5, freeReportUsed: false },
     passwordHash: '$2b$10$hash',
     deletedAt: null as Date | null,
@@ -57,7 +57,11 @@ describe('UsersController', () => {
                 data: {
                     id: '507f1f77bcf86cd799439011',
                     email: 'test@gmail.com',
-                    profile: { name: 'John Doe', avatar: null },
+                    profile: {
+                        firstName: 'John',
+                        lastName: 'Doe',
+                        avatar: null,
+                    },
                     executions: { balance: 5, freeReportUsed: false },
                     hasPassword: true,
                     deletedAt: null,
@@ -93,24 +97,34 @@ describe('UsersController', () => {
             const updated = {
                 ...mockUser,
                 _id: '507f1f77bcf86cd799439011',
-                profile: { name: 'New Name', avatar: 'https://new.url' },
+                profile: {
+                    firstName: 'New',
+                    lastName: 'Name',
+                    avatar: 'https://new.url',
+                },
             };
             mockUsersService.updateProfile.mockResolvedValue(updated);
 
             const result = await controller.updateProfile(
                 mockUser as any,
                 {
-                    name: 'New Name',
+                    firstName: 'New',
+                    lastName: 'Name',
                     avatar: 'https://new.url',
                 } as any
             );
 
             expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { name: 'New Name', avatar: 'https://new.url' }
+                {
+                    firstName: 'New',
+                    lastName: 'Name',
+                    avatar: 'https://new.url',
+                }
             );
             expect(result.data.profile).toEqual({
-                name: 'New Name',
+                firstName: 'New',
+                lastName: 'Name',
                 avatar: 'https://new.url',
             });
         });

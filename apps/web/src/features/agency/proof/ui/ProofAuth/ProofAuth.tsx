@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { z } from 'zod';
-import { CheckEmailSchema } from '@cyanship/types';
+import { CheckEmailSchema, getFullName } from '@cyanship/types';
 import type { MagicLinkPurpose } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
@@ -177,8 +177,9 @@ const ProofAuth = () => {
 
     // Authenticated view
     if (isAuthenticated && user) {
-        const initials = user.profile.name
-            ? user.profile.name
+        const fullName = getFullName(user.profile.firstName, user.profile.lastName);
+        const initials = fullName
+            ? fullName
                   .split(' ')
                   .filter(Boolean)
                   .map((w) => w[0])
@@ -194,16 +195,16 @@ const ProofAuth = () => {
                         {user.profile.avatar && (
                             <UiAvatarImage
                                 src={user.profile.avatar}
-                                alt={user.profile.name || user.email}
+                                alt={fullName || user.email}
                             />
                         )}
                         <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
                     </UiAvatar>
 
                     <div className="space-y-1 text-center">
-                        {user.profile.name && (
+                        {fullName && (
                             <p className="text-xl font-semibold text-foreground">
-                                {user.profile.name}
+                                {fullName}
                             </p>
                         )}
                         <p className="text-base text-muted-foreground">{user.email}</p>

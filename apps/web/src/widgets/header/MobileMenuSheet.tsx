@@ -27,6 +27,7 @@ import {
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
 import { useAuthStore } from '@/stores/auth';
+import { getFullName } from '@cyanship/types';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
 import { useUserMenu } from './useUserMenu';
@@ -104,7 +105,7 @@ export default function MobileMenuSheet() {
                                 <UiAvatar size="md">
                                     <UiAvatarImage
                                         src={user.profile.avatar ?? undefined}
-                                        alt={user.profile.name ?? ''}
+                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
                                     />
                                     <UiAvatarFallback size="md">
                                         {initials}
@@ -112,7 +113,7 @@ export default function MobileMenuSheet() {
                                 </UiAvatar>
                                 <div className="flex min-w-0 flex-col">
                                     <span className="truncate text-sm font-medium">
-                                        {user.profile.name}
+                                        {getFullName(user.profile.firstName, user.profile.lastName)}
                                     </span>
                                     <span className="text-muted-foreground truncate text-xs">
                                         {user.email}

@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
+import { getFullName } from '@cyanship/types';
 import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -77,7 +78,10 @@ export function useUserMenu(icons: {
         }
     };
 
-    const initials = user ? getInitials(user.profile.name, user.email) : '';
+    const fullName = user
+        ? getFullName(user.profile.firstName, user.profile.lastName)
+        : '';
+    const initials = user ? getInitials(fullName, user.email) : '';
 
     return { allItems, visibleItems, handleSelect, initials };
 }
