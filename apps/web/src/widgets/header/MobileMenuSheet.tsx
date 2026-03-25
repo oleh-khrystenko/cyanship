@@ -3,14 +3,19 @@
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { LogOut, User, CreditCard } from 'lucide-react';
+import { LogOut, User, CreditCard, LogIn } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
 const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
     ssr: false,
 });
+import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
-import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
+import {
+    UiAvatar,
+    UiAvatarImage,
+    UiAvatarFallback,
+} from '@/shared/ui/UiAvatar';
 import {
     UiSheet,
     UiSheetContent,
@@ -46,122 +51,128 @@ export default function MobileMenuSheet() {
 
     return (
         <UiSheet open={isOpen} onOpenChange={(open) => !open && close()}>
-            <UiSheetContent side="right" className="w-80">
+            <UiSheetContent side="right">
                 <UiSheetHeader>
                     <UiSheetTitle className="text-left">
-                        CyanShip
+                        <Logo />
                     </UiSheetTitle>
                 </UiSheetHeader>
 
-                <div className="flex flex-col gap-6 px-4 py-2">
-                    {/* Mobile nav */}
-                    {hasNav && (
-                        <nav className="flex flex-col gap-4">
-                            {navItems.map(({ href, label }) => (
-                                <a
-                                    key={href}
-                                    href={href}
-                                    className="text-muted-foreground hover:text-foreground py-2 text-sm transition-colors"
+                <div className="flex flex-1 flex-col justify-between px-5 pb-6">
+                    <div className="flex flex-col gap-6">
+                        {/* Navigation */}
+                        {hasNav && (
+                            <nav className="flex flex-col gap-1">
+                                {navItems.map(({ href, label }) => (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 -mx-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+                                        onClick={close}
+                                    >
+                                        {label}
+                                    </a>
+                                ))}
+                            </nav>
+                        )}
+
+                        {hasNav && <div className="bg-border h-px" />}
+
+                        {/* User section */}
+                        {isLoading ? (
+                            <div className="flex items-center gap-3">
+                                <div className="bg-secondary size-10 shrink-0 animate-pulse rounded-full" />
+                                <div className="flex flex-1 flex-col gap-1.5">
+                                    <div className="bg-secondary h-3.5 w-24 animate-pulse rounded" />
+                                    <div className="bg-secondary h-3 w-32 animate-pulse rounded" />
+                                </div>
+                            </div>
+                        ) : isAuthenticated && user ? (
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-3 pb-3">
+                                    <UiAvatar size="md">
+                                        <UiAvatarImage
+                                            src={
+                                                user.profile.avatar ?? undefined
+                                            }
+                                            alt={user.profile.name ?? ''}
+                                        />
+                                        <UiAvatarFallback size="md">
+                                            {initials}
+                                        </UiAvatarFallback>
+                                    </UiAvatar>
+                                    <div className="flex min-w-0 flex-col">
+                                        <span className="truncate text-sm font-medium">
+                                            {user.profile.name}
+                                        </span>
+                                        <span className="text-muted-foreground truncate text-xs">
+                                            {user.email}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {visibleItems.map((item) => (
+                                    <button
+                                        key={item.value}
+                                        type="button"
+                                        className={`-mx-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                                            item.value === 'logout'
+                                                ? 'text-destructive hover:bg-destructive/10'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                        }`}
+                                        onClick={() =>
+                                            handleSelect(item.value, close)
+                                        }
+                                    >
+                                        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                            {item.icon}
+                                        </span>
+                                        <span>{item.label}</span>
+                                        {item.badge != null && (
+                                            <span className="bg-muted text-muted-foreground ml-auto rounded-full px-2 py-0.5 text-xs leading-none">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            !isSigninPage && (
+                                <UiButton
+                                    as="link"
+                                    href={`/${locale}/auth/signin`}
+                                    variant="text"
+                                    size="md"
+                                    IconLeft={<LogIn />}
+                                    className="justify-start"
                                     onClick={close}
                                 >
-                                    {label}
-                                </a>
-                            ))}
-                        </nav>
-                    )}
+                                    {t('signin')}
+                                </UiButton>
+                            )
+                        )}
 
-                    {hasNav && <div className="bg-border h-px" />}
+                        {/* CTA */}
+                        {cta && (
+                            <UiButton
+                                variant="filled"
+                                size="md"
+                                className="w-full"
+                                onClick={() => {
+                                    close();
+                                    cta.onClick?.();
+                                }}
+                            >
+                                {cta.label}
+                            </UiButton>
+                        )}
+                    </div>
 
-                    {/* Mobile settings */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-sm">
-                            {t('settings')}:
-                        </span>
+                    {/* Settings — bottom */}
+                    <div className="flex items-center gap-1 pt-6">
                         <ChangeLang />
                         <ChangeTheme />
                     </div>
-
-                    <div className="bg-border h-px" />
-
-                    {/* Mobile auth */}
-                    {isLoading ? (
-                        <div className="bg-secondary h-10 w-full animate-pulse rounded-lg" />
-                    ) : isAuthenticated && user ? (
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <UiAvatar size="md">
-                                    <UiAvatarImage
-                                        src={user.profile.avatar ?? undefined}
-                                        alt={user.profile.name ?? ''}
-                                    />
-                                    <UiAvatarFallback size="md">
-                                        {initials}
-                                    </UiAvatarFallback>
-                                </UiAvatar>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium">
-                                        {user.profile.name}
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                        {user.email}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {visibleItems.map((item) => (
-                                <button
-                                    key={item.value}
-                                    type="button"
-                                    className={`flex items-center gap-2 py-2 text-sm transition-colors ${
-                                        item.value === 'logout'
-                                            ? 'text-destructive hover:text-destructive/80'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                    onClick={() =>
-                                        handleSelect(item.value, close)
-                                    }
-                                >
-                                    <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-                                        {item.icon}
-                                    </span>
-                                    <span>{item.label}</span>
-                                    {item.badge != null && (
-                                        <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs leading-none">
-                                            {item.badge}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        !isSigninPage && (
-                            <UiButton
-                                as="link"
-                                href={`/${locale}/auth/signin`}
-                                variant="text"
-                                size="md"
-                                className="justify-start"
-                                onClick={close}
-                            >
-                                {t('signin')}
-                            </UiButton>
-                        )
-                    )}
-
-                    {/* Mobile CTA */}
-                    {cta && (
-                        <UiButton
-                            variant="filled"
-                            size="md"
-                            className="mt-2 w-full"
-                            onClick={() => {
-                                close();
-                                cta.onClick?.();
-                            }}
-                        >
-                            {cta.label}
-                        </UiButton>
-                    )}
                 </div>
             </UiSheetContent>
         </UiSheet>
