@@ -194,6 +194,7 @@ function SigninContent() {
     };
 
     const onPasswordSubmit = async (data: PasswordFormValues) => {
+        passwordForm.clearErrors('root');
         setShowMagicLinkSuggestion(false);
 
         try {

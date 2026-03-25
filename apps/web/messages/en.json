@@ -202,7 +202,9 @@
             "session_revoked": "Session ended. Please sign in again",
             "error_generic": "Something went wrong. Please try again",
             "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
-            "terms_required": "Please accept the Terms of Service and Privacy Policy to continue"
+            "terms_required": "Please accept the Terms of Service and Privacy Policy to continue",
+            "validation_email": "Enter a valid email address",
+            "validation_password": "Enter your password"
         },
         "recovery": {
             "title": "Account deactivated",
