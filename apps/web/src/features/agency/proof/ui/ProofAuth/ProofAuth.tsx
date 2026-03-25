@@ -270,7 +270,7 @@ const ProofAuth = () => {
 
     // Default: idle — auth form
     return (
-        <div className="w-full space-y-5">
+        <form onSubmit={handleEmailSubmit} className="w-full space-y-5">
             <UiCheckbox
                 checked={agreedToTerms}
                 onChange={handleTermsChange}
@@ -321,7 +321,7 @@ const ProofAuth = () => {
                 <div className="h-px flex-1 bg-border" />
             </div>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <div className="space-y-4">
                 <UiInput
                     type="email"
                     placeholder={t('email_placeholder')}
@@ -342,8 +342,8 @@ const ProofAuth = () => {
                 >
                     {t('continue_button')}
                 </UiButton>
-            </form>
-        </div>
+            </div>
+        </form>
     );
 };
 
