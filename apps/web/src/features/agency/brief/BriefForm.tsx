@@ -157,6 +157,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             )}
             <UiSelect
                 label={t('deadline_label')}
+                labelHint={t('deadline_label_hint')}
                 options={deadlineOptions}
                 value={deadline}
                 onChange={setDeadline}

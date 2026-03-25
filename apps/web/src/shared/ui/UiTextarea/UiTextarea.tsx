@@ -29,6 +29,7 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
             variant = 'outlined',
             size = 'md',
             label,
+            labelHint,
             error,
             className,
             disabled,
@@ -56,6 +57,11 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
                         className="mb-1 block text-sm font-medium text-foreground"
                     >
                         {label}
+                        {labelHint && (
+                            <span className="ml-1 font-normal text-muted-foreground">
+                                {labelHint}
+                            </span>
+                        )}
                     </label>
                 )}
                 <div

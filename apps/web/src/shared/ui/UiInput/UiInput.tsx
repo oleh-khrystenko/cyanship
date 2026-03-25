@@ -29,6 +29,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
         variant = 'outlined',
         size = 'md',
         label,
+        labelHint,
         error,
         IconLeft,
         IconRight,
@@ -64,6 +65,11 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     className="mb-1 block text-sm font-medium text-foreground"
                 >
                     {label}
+                    {labelHint && (
+                        <span className="ml-1 font-normal text-muted-foreground">
+                            {labelHint}
+                        </span>
+                    )}
                 </label>
             )}
             <div
