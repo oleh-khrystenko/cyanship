@@ -19,7 +19,7 @@ export class BriefService {
 
     constructor(
         @InjectModel(Brief.name) private readonly briefModel: Model<Brief>,
-        private readonly emailService: EmailService,
+        private readonly emailService: EmailService
     ) {}
 
     async submit(dto: SubmitBriefDto): Promise<void> {
@@ -34,7 +34,9 @@ export class BriefService {
             status: BRIEF_STATUS.NEW,
         });
 
-        this.logger.log(`Brief submitted: ${brief._id} from ${dto.email}`);
+        this.logger.log(
+            `Brief submitted: ${brief._id.toString()} from ${dto.email}`
+        );
 
         // Fire-and-forget: emails should not block the response
         // but we still log failures
@@ -61,7 +63,7 @@ export class BriefService {
                 if (r.status === 'rejected') {
                     const target = i === 0 ? 'confirmation' : 'notification';
                     this.logger.error(
-                        `Failed to send brief ${target} email: ${r.reason}`,
+                        `Failed to send brief ${target} email: ${r.reason}`
                     );
                 }
             });

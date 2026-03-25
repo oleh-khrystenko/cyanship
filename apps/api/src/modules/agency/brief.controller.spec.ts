@@ -65,7 +65,7 @@ describe('BriefController', () => {
 
         expect(mockTurnstileService.verify).toHaveBeenCalledWith(
             'test-token',
-            '192.168.1.1',
+            '192.168.1.1'
         );
     });
 
@@ -73,11 +73,11 @@ describe('BriefController', () => {
         mockTurnstileService.verify.mockRejectedValue(
             new BadRequestException({
                 code: RESPONSE_CODE.CAPTCHA_FAILED,
-            }),
+            })
         );
 
         await expect(
-            controller.submitBrief(testDto, '127.0.0.1'),
+            controller.submitBrief(testDto, '127.0.0.1')
         ).rejects.toThrow(BadRequestException);
 
         expect(mockBriefService.submit).not.toHaveBeenCalled();

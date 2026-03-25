@@ -40,7 +40,7 @@ describe('TurnstileService', () => {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-            }),
+            })
         );
 
         const body = mockFetch.mock.calls[0][1].body as URLSearchParams;
@@ -58,7 +58,7 @@ describe('TurnstileService', () => {
         });
 
         await expect(service.verify('invalid-token')).rejects.toThrow(
-            BadRequestException,
+            BadRequestException
         );
 
         try {

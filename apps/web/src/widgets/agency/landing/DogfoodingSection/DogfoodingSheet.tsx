@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
     UiSheet,
@@ -8,6 +7,7 @@ import {
     UiSheetHeader,
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
+import { useMediaQuery } from '@/shared/lib';
 import { useDogfoodingSheetStore } from '@/stores/dogfoodingSheet';
 import ProofWindow from './ProofWindow';
 
@@ -17,15 +17,7 @@ export default function DogfoodingSheet() {
     const t = useTranslations('landing_page.dogfooding');
     const activeTab = useDogfoodingSheetStore((s) => s.activeTab);
     const setActiveTab = useDogfoodingSheetStore((s) => s.setActiveTab);
-    const [isDesktop, setIsDesktop] = useState(false);
-
-    useEffect(() => {
-        const mql = window.matchMedia(DESKTOP_MQ);
-        setIsDesktop(mql.matches);
-        const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-        mql.addEventListener('change', handler);
-        return () => mql.removeEventListener('change', handler);
-    }, []);
+    const isDesktop = useMediaQuery(DESKTOP_MQ);
 
     const sheetOpen = !isDesktop && activeTab !== null;
 

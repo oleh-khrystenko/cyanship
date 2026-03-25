@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { BRIEF_STATUS, BRIEF_BUDGET_LABEL, BRIEF_DEADLINE_LABEL } from '@cyanship/types';
+import {
+    BRIEF_STATUS,
+    BRIEF_BUDGET_LABEL,
+    BRIEF_DEADLINE_LABEL,
+} from '@cyanship/types';
 
 import { BriefService } from './brief.service';
 import { Brief } from '../schemas/brief.schema';
@@ -87,7 +91,7 @@ describe('BriefService', () => {
             expect.objectContaining({
                 deadline: null,
                 source: null,
-            }),
+            })
         );
     });
 
@@ -123,16 +127,16 @@ describe('BriefService', () => {
             expect.objectContaining({
                 deadline: null,
                 deadlineLabel: null,
-            }),
+            })
         );
     });
 
     it('saves brief even when emails fail (Promise.allSettled)', async () => {
         mockEmailService.sendBriefConfirmation.mockRejectedValue(
-            new Error('SMTP down'),
+            new Error('SMTP down')
         );
         mockEmailService.sendBriefNotification.mockRejectedValue(
-            new Error('SMTP down'),
+            new Error('SMTP down')
         );
 
         await expect(service.submit(testDto)).resolves.toBeUndefined();
