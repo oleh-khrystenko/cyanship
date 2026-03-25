@@ -34,7 +34,7 @@ export class TurnstileService {
 
         if (!result.success) {
             this.logger.warn(
-                `Turnstile verification failed: ${result['error-codes']?.join(', ') ?? 'unknown'}`,
+                `Turnstile verification failed: ${result['error-codes']?.join(', ') ?? 'unknown'}`
             );
             throw new BadRequestException({
                 code: RESPONSE_CODE.CAPTCHA_FAILED,

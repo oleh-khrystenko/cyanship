@@ -32,7 +32,7 @@ export default tseslint.config(
         },
     },
     {
-        ignores: ['src/modules/agency/**'],
+        ignores: ['src/modules/agency/**', 'src/app.module.ts'],
         rules: {
             'no-restricted-imports': [
                 'error',

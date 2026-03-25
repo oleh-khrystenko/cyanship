@@ -8,9 +8,7 @@ import { TurnstileService } from './services/turnstile.service';
 
 @Module({
     imports: [
-        MongooseModule.forFeature([
-            { name: Brief.name, schema: BriefSchema },
-        ]),
+        MongooseModule.forFeature([{ name: Brief.name, schema: BriefSchema }]),
     ],
     controllers: [BriefController],
     providers: [BriefService, TurnstileService],
