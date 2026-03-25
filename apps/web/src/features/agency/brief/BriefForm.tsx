@@ -57,7 +57,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         },
     });
 
-    const { containerRef, token, reset: resetTurnstile } = useTurnstile();
+    const { containerRef, execute: executeTurnstile, reset: resetTurnstile } = useTurnstile();
 
     const budgetOptions = useMemo(
         () => [
@@ -88,7 +88,10 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
     );
 
     const onSubmit = async (data: BriefFormValues) => {
-        if (!token) {
+        let captchaToken: string;
+        try {
+            captchaToken = await executeTurnstile();
+        } catch {
             toast.error(t('captcha_not_ready'));
             return;
         }
@@ -99,7 +102,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             ...(deadline && { deadline }),
             source: getSource(),
             lang: locale,
-            captchaToken: token,
+            captchaToken,
         };
 
         try {
@@ -180,7 +183,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 )}
             />
 
-            {/* Turnstile invisible container */}
+            {/* Turnstile invisible container — challenge deferred until submit */}
             <div ref={containerRef} />
 
             <UiButton
