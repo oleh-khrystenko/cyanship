@@ -14,6 +14,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
 import UiTextarea from '@/shared/ui/UiTextarea';
 import UiSelect from '@/shared/ui/UiSelect';
+import UiChipGroup from '@/shared/ui/UiChipGroup';
 import { submitBrief } from '@/shared/api/agency';
 import { getApiMessageKey } from '@/shared/api/mapApiCode';
 import { getSource } from './lib/source';
@@ -156,13 +157,11 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             {errors.budget && (
                 <p className="text-sm text-destructive">{errors.budget}</p>
             )}
-            <UiSelect
+            <UiChipGroup
                 label={t('deadline_label')}
                 options={deadlineOptions}
                 value={deadline}
                 onChange={setDeadline}
-                placeholder={t('deadline_placeholder')}
-                variant="outlined"
             />
 
             {/* Turnstile invisible container */}
