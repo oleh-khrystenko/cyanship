@@ -1,10 +1,15 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
+import { z } from 'zod';
+import { CheckEmailSchema } from '@cyanship/types';
+import type { MagicLinkPurpose } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
@@ -17,7 +22,8 @@ import { checkEmail, sendMagicLink, logout } from '@/shared/api';
 import { saveRedirect } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
-import type { MagicLinkPurpose } from '@cyanship/types';
+const EmailFormSchema = CheckEmailSchema;
+type EmailFormValues = z.input<typeof EmailFormSchema>;
 
 type ProofAuthState = 'idle' | 'loading' | 'magic-link-sent';
 
@@ -31,9 +37,14 @@ const ProofAuth = () => {
     const isLoading = useAuthStore((s) => s.isLoading);
     const clearUser = useAuthStore((s) => s.clearUser);
 
+    const emailForm = useForm<EmailFormValues>({
+        resolver: zodResolver(EmailFormSchema),
+        mode: 'onTouched',
+        defaultValues: { email: '' },
+    });
+
     const [state, setState] = useState<ProofAuthState>('idle');
     const [email, setEmail] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [termsError, setTermsError] = useState('');
     const [resendCountdown, setResendCountdown] = useState(0);
@@ -79,29 +90,28 @@ const ProofAuth = () => {
         window.location.href = `${ENV.NEXT_PUBLIC_API_URL}/auth/google`;
     };
 
-    const handleEmailSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const onEmailSubmit = async (data: EmailFormValues) => {
         if (!agreedToTerms) {
             setTermsError(t('terms_required'));
             return;
         }
 
+        setEmail(data.email);
         setState('loading');
-        setErrorMessage('');
 
         try {
-            const { hasPassword, isNewUser } = await checkEmail(email);
+            const { hasPassword, isNewUser } = await checkEmail(data.email);
 
             if (hasPassword) {
                 router.push(
-                    `/${locale}/auth/signin?redirect=${encodeURIComponent(redirectPath)}&email=${encodeURIComponent(email)}&step=password`,
+                    `/${locale}/auth/signin?redirect=${encodeURIComponent(redirectPath)}&email=${encodeURIComponent(data.email)}&step=password`,
                 );
                 return;
             }
 
             const purpose: MagicLinkPurpose = isNewUser ? 'register' : 'login';
             lastPurposeRef.current = purpose;
-            await sendMagicLink(email, locale, purpose, redirectPath);
+            await sendMagicLink(data.email, locale, purpose, redirectPath);
             startResendTimer();
             setState('magic-link-sent');
         } catch (err) {
@@ -111,9 +121,15 @@ const ProofAuth = () => {
                     : undefined;
 
             if (code === 'RATE_LIMIT_EXCEEDED') {
-                setErrorMessage(t('error_rate_limit'));
+                emailForm.setError('email', {
+                    type: 'server',
+                    message: t('error_rate_limit'),
+                });
             } else {
-                setErrorMessage(t('error_generic'));
+                emailForm.setError('email', {
+                    type: 'server',
+                    message: t('error_generic'),
+                });
             }
             setState('idle');
         }
@@ -143,8 +159,8 @@ const ProofAuth = () => {
 
     const goBackToIdle = () => {
         setState('idle');
+        emailForm.reset();
         setEmail('');
-        setErrorMessage('');
         setTermsError('');
         if (timerRef.current) clearInterval(timerRef.current);
         setResendCountdown(0);
@@ -268,9 +284,11 @@ const ProofAuth = () => {
         );
     }
 
+    const emailErrors = emailForm.formState.errors;
+
     // Default: idle — auth form
     return (
-        <form onSubmit={handleEmailSubmit} className="w-full space-y-5">
+        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="w-full space-y-5">
             <UiCheckbox
                 checked={agreedToTerms}
                 onChange={handleTermsChange}
@@ -323,14 +341,23 @@ const ProofAuth = () => {
 
             <div className="space-y-4">
                 <UiInput
+                    {...emailForm.register('email', {
+                        onChange: () => {
+                            if (emailErrors.email?.type === 'server') {
+                                emailForm.clearErrors('email');
+                            }
+                        },
+                    })}
                     type="email"
                     placeholder={t('email_placeholder')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    error={
+                        emailErrors.email?.type === 'server'
+                            ? emailErrors.email.message
+                            : emailErrors.email && t('validation_email')
+                    }
                     required
                     size="lg"
                     IconLeft={<Mail />}
-                    error={errorMessage || undefined}
                 />
 
                 <UiButton
@@ -338,7 +365,7 @@ const ProofAuth = () => {
                     variant="filled"
                     size="lg"
                     className="w-full justify-center"
-                    disabled={!email}
+                    disabled={emailForm.formState.isSubmitting}
                 >
                     {t('continue_button')}
                 </UiButton>

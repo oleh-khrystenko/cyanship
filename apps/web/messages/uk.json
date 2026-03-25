@@ -71,7 +71,8 @@
                 "authenticated_greeting": "Ви увійшли як",
                 "logout_button": "Вийти",
                 "error_generic": "Щось пішло не так. Спробуйте ще раз",
-                "error_rate_limit": "Забагато спроб. Спробуйте пізніше"
+                "error_rate_limit": "Забагато спроб. Спробуйте пізніше",
+                "validation_email": "Введіть коректну email-адресу"
             },
             "proof_billing": {
                 "plans_tab": "Плани",

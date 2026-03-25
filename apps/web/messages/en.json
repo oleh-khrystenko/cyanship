@@ -71,7 +71,8 @@
                 "authenticated_greeting": "Signed in as",
                 "logout_button": "Log out",
                 "error_generic": "Something went wrong. Please try again",
-                "error_rate_limit": "Too many attempts. Please try again later"
+                "error_rate_limit": "Too many attempts. Please try again later",
+                "validation_email": "Enter a valid email address"
             },
             "proof_billing": {
                 "plans_tab": "Plans",
