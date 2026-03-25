@@ -86,6 +86,7 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
                 </ListboxButton>
 
                 <ListboxOptions
+                    modal={false}
                     className={composeClasses(
                         'absolute z-50 mt-1 w-full',
                         'max-h-60 overflow-auto',
