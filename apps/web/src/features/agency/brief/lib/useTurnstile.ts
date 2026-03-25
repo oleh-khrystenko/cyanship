@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { ENV } from '@/shared/config';
 
 declare global {
@@ -12,18 +12,25 @@ declare global {
                     'error-callback'?: () => void;
                     'expired-callback'?: () => void;
                     size?: 'invisible' | 'normal' | 'compact';
+                    execution?: 'render' | 'execute';
                 },
             ) => string;
+            execute: (widgetId: string) => void;
             remove: (widgetId: string) => void;
             reset: (widgetId: string) => void;
         };
     }
 }
 
+interface PendingChallenge {
+    resolve: (token: string) => void;
+    reject: (error: Error) => void;
+}
+
 export function useTurnstile() {
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetIdRef = useRef<string | null>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const pendingRef = useRef<PendingChallenge | null>(null);
 
     useEffect(() => {
         function renderWidget() {
@@ -36,9 +43,23 @@ export function useTurnstile() {
                     containerRef.current,
                     {
                         sitekey: ENV.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-                        callback: (t: string) => setToken(t),
-                        'error-callback': () => setToken(null),
-                        'expired-callback': () => setToken(null),
+                        execution: 'execute',
+                        callback: (t: string) => {
+                            pendingRef.current?.resolve(t);
+                            pendingRef.current = null;
+                        },
+                        'error-callback': () => {
+                            pendingRef.current?.reject(
+                                new Error('Challenge failed'),
+                            );
+                            pendingRef.current = null;
+                        },
+                        'expired-callback': () => {
+                            pendingRef.current?.reject(
+                                new Error('Challenge expired'),
+                            );
+                            pendingRef.current = null;
+                        },
                         size: 'invisible',
                     },
                 );
@@ -77,12 +98,23 @@ export function useTurnstile() {
         };
     }, []);
 
+    const execute = useCallback((): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            if (!widgetIdRef.current || !window.turnstile) {
+                reject(new Error('Turnstile not ready'));
+                return;
+            }
+            pendingRef.current = { resolve, reject };
+            window.turnstile.execute(widgetIdRef.current);
+        });
+    }, []);
+
     const reset = useCallback(() => {
-        setToken(null);
+        pendingRef.current = null;
         if (widgetIdRef.current && window.turnstile) {
             window.turnstile.reset(widgetIdRef.current);
         }
     }, []);
 
-    return { containerRef, token, reset };
+    return { containerRef, execute, reset };
 }
