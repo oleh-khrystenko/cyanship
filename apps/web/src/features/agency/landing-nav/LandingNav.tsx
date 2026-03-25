@@ -11,6 +11,7 @@ const navKeys = [
     // { key: 'portfolio', href: '#portfolio' },
     { key: 'workflow', href: '#workflow' },
     { key: 'pricing', href: '#pricing' },
+    { key: 'get_started', href: '#footer-cta' },
 ] as const;
 
 export default function LandingNav() {
