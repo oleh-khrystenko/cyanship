@@ -52,7 +52,7 @@ export default function MobileMenuSheet() {
     return (
         <UiSheet open={isOpen} onOpenChange={(open) => !open && close()}>
             <UiSheetContent side="right">
-                <UiSheetHeader>
+                <UiSheetHeader className="pt-3">
                     <UiSheetTitle className="text-left">
                         <Logo />
                     </UiSheetTitle>
