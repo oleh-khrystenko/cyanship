@@ -45,7 +45,9 @@ function ProfileContent() {
                     onSaved={handleProfileSaved}
                 />
 
-                <SecuritySection user={user} mode={mode} />
+                {mode !== 'new' && (
+                    <SecuritySection user={user} mode={mode} />
+                )}
 
                 {mode === null && <DangerZone />}
             </div>

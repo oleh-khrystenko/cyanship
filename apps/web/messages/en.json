@@ -252,7 +252,8 @@
             "password_reset": "Password reset successfully"
         },
         "users": {
-            "terms_accepted": "Terms accepted."
+            "terms_accepted": "Terms accepted.",
+            "onboarding_required": "Please complete your profile to continue"
         },
         "agency": {
             "brief_submitted": "Request submitted. We will respond within 24 hours."
