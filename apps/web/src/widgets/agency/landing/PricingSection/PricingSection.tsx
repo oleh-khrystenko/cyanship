@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import UiButton from '@/shared/ui/UiButton';
+import StartBriefButton from '../StartBriefButton';
 
 const includeKeys = [
     'include_1',
@@ -59,15 +59,13 @@ const PricingSection = () => {
                                 ))}
                             </ul>
 
-                            <UiButton
-                                as="a"
-                                href="#footer-cta"
+                            <StartBriefButton
                                 variant="filled"
                                 size="lg"
                                 className="mt-8 w-full justify-center"
                             >
                                 {t('cta')}
-                            </UiButton>
+                            </StartBriefButton>
                         </div>
                     </div>
 

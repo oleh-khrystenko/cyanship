@@ -3,26 +3,26 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CURRENT_TERMS_VERSION } from '@cyanship/types';
-
+import {
+    UiModal,
+    UiModalContent,
+    UiModalHeader,
+    UiModalTitle,
+} from '@/shared/ui/UiModal';
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { acceptTerms } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import { useTermsReacceptDialogStore } from '@/stores/termsReacceptDialog';
 
-interface Props {
-    open: boolean;
-    onAccepted: () => void;
-}
-
-export function TermsReacceptModal({ open, onAccepted }: Props) {
+function TermsReacceptForm({ onClose }: { onClose: () => void }) {
     const t = useTranslations('components.terms_reaccept');
     const locale = useLocale();
+
     const [agreed, setAgreed] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-
-    if (!open) return null;
 
     const handleSubmit = async () => {
         if (!agreed) {
@@ -36,7 +36,7 @@ export function TermsReacceptModal({ open, onAccepted }: Props) {
             if (store.user) {
                 store.setUser({ ...store.user, termsVersion: CURRENT_TERMS_VERSION });
             }
-            onAccepted();
+            onClose();
         } catch {
             setError(t('error'));
             setSubmitting(false);
@@ -44,11 +44,11 @@ export function TermsReacceptModal({ open, onAccepted }: Props) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-card mx-4 max-w-md rounded-xl p-8 shadow-xl space-y-6">
-                <h2 className="text-foreground text-xl font-bold">
-                    {t('title')}
-                </h2>
+        <>
+            <UiModalHeader>
+                <UiModalTitle className="text-xl">{t('title')}</UiModalTitle>
+            </UiModalHeader>
+            <div className="space-y-6 px-4 pb-6">
                 <p className="text-muted-foreground text-sm">
                     {t('description')}
                 </p>
@@ -97,6 +97,23 @@ export function TermsReacceptModal({ open, onAccepted }: Props) {
                     {submitting ? <UiSpinner size="sm" /> : t('button')}
                 </UiButton>
             </div>
-        </div>
+        </>
+    );
+}
+
+export default function TermsReacceptDialog() {
+    const isOpen = useTermsReacceptDialogStore((s) => s.isOpen);
+    const close = useTermsReacceptDialogStore((s) => s.close);
+
+    return (
+        <UiModal open={isOpen}>
+            <UiModalContent
+                hideCloseButton
+                onEscapeKeyDown={(e) => e.preventDefault()}
+                onInteractOutside={(e) => e.preventDefault()}
+            >
+                {isOpen && <TermsReacceptForm onClose={close} />}
+            </UiModalContent>
+        </UiModal>
     );
 }

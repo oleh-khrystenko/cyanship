@@ -32,12 +32,11 @@ Core -- це весь поточний код: auth, users, payments, shared UI,
 
 ```
 packages/types/src/
-  index.ts          # Реекспортує ТІЛЬКИ core модулі
+  index.ts          # Реекспортує всі модулі, включаючи agency
   agency/           # Agency-specific schemas, enums, contracts
-  agency.ts         # Окремий entry point для agency
 ```
 
-Agency-код імпортує типи через `@cyanship/types/agency` (окремий export у package.json), а не через головний `@cyanship/types`.
+Agency-типи експортуються через головний `@cyanship/types` — окремий subpath не потрібен, бо `moduleResolution: "node"` не підтримує `exports` map.
 
 ## Однонаправлений потік залежностей
 

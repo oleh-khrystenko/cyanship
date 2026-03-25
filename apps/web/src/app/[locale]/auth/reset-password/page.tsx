@@ -3,8 +3,11 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { passwordSchema } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
@@ -13,7 +16,14 @@ import UiSpinner from '@/shared/ui/UiSpinner';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { resetPassword } from '@/shared/api';
 
-type PageStatus = 'form' | 'submitting' | 'error';
+const ResetPasswordFormSchema = z.object({
+    newPassword: passwordSchema,
+    confirmPassword: passwordSchema,
+});
+
+type ResetPasswordFormValues = z.input<typeof ResetPasswordFormSchema>;
+
+type PageStatus = 'form' | 'error';
 
 function ResetPasswordContent() {
     const t = useTranslations('auth_page.reset_password');
@@ -22,41 +32,30 @@ function ResetPasswordContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
 
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const form = useForm<ResetPasswordFormValues>({
+        resolver: zodResolver(ResetPasswordFormSchema),
+        mode: 'onTouched',
+        defaultValues: { newPassword: '', confirmPassword: '' },
+    });
+
     const [status, setStatus] = useState<PageStatus>(token ? 'form' : 'error');
-    const [fieldErrors, setFieldErrors] = useState<{
-        newPassword?: string;
-        confirmPassword?: string;
-    }>({});
     const [errorMessage, setErrorMessage] = useState(
         token ? '' : t('error_invalid_token')
     );
 
-    const validate = (): boolean => {
-        const errors: typeof fieldErrors = {};
+    const onSubmit = async (data: ResetPasswordFormValues) => {
+        form.clearErrors('confirmPassword');
 
-        const result = passwordSchema.safeParse(newPassword);
-        if (!result.success) {
-            errors.newPassword = t('password_too_short');
+        if (data.newPassword !== data.confirmPassword) {
+            form.setError('confirmPassword', {
+                type: 'mismatch',
+                message: t('passwords_mismatch'),
+            });
+            return;
         }
-
-        if (newPassword !== confirmPassword) {
-            errors.confirmPassword = t('passwords_mismatch');
-        }
-
-        setFieldErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validate() || !token) return;
-
-        setStatus('submitting');
 
         try {
-            await resetPassword(token, newPassword, confirmPassword);
+            await resetPassword(token!, data.newPassword, data.confirmPassword);
             toast.success(t('success_toast'));
             router.replace(`/${locale}/auth/signin`);
         } catch (err) {
@@ -96,7 +95,7 @@ function ResetPasswordContent() {
         );
     }
 
-    const isSubmitting = status === 'submitting';
+    const { errors, isSubmitting } = form.formState;
 
     return (
         <main className="flex min-h-screen items-center justify-center px-4">
@@ -110,38 +109,36 @@ function ResetPasswordContent() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <UiPasswordInput
+                        {...form.register('newPassword', {
+                            onChange: () => {
+                                if (errors.confirmPassword?.type === 'mismatch') {
+                                    form.clearErrors('confirmPassword');
+                                }
+                            },
+                        })}
                         placeholder={t('new_password_placeholder')}
-                        value={newPassword}
-                        onChange={(e) => {
-                            setNewPassword(e.target.value);
-                            if (fieldErrors.newPassword) {
-                                setFieldErrors((prev) => ({
-                                    ...prev,
-                                    newPassword: undefined,
-                                }));
-                            }
-                        }}
-                        error={fieldErrors.newPassword}
+                        error={errors.newPassword && t('password_too_short')}
                         disabled={isSubmitting}
                         autoFocus
                         size="lg"
                     />
 
                     <UiPasswordInput
+                        {...form.register('confirmPassword', {
+                            onChange: () => {
+                                if (errors.confirmPassword?.type === 'mismatch') {
+                                    form.clearErrors('confirmPassword');
+                                }
+                            },
+                        })}
                         placeholder={t('confirm_password_placeholder')}
-                        value={confirmPassword}
-                        onChange={(e) => {
-                            setConfirmPassword(e.target.value);
-                            if (fieldErrors.confirmPassword) {
-                                setFieldErrors((prev) => ({
-                                    ...prev,
-                                    confirmPassword: undefined,
-                                }));
-                            }
-                        }}
-                        error={fieldErrors.confirmPassword}
+                        error={
+                            errors.confirmPassword?.type === 'mismatch'
+                                ? errors.confirmPassword.message
+                                : errors.confirmPassword && t('password_too_short')
+                        }
                         disabled={isSubmitting}
                         size="lg"
                     />

@@ -6,8 +6,8 @@ interface NavItem {
 }
 
 interface CtaConfig {
-    href: string;
     label: string;
+    onClick?: () => void;
 }
 
 interface HeaderNavState {

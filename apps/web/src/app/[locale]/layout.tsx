@@ -8,6 +8,7 @@ import { PageParams } from '@/shared/types/settings';
 import { Header } from '@/widgets/header';
 import { AuthInitializer } from '@/features/auth';
 import { Providers } from '@/app/providers';
+import { Overlays } from '@/app/overlays';
 
 const mulish = localFont({
     src: [
@@ -61,6 +62,7 @@ export default async function LocaleLayout({
                 <Providers>
                     <NextIntlClientProvider>
                         <AuthInitializer />
+                        <Overlays />
                         <Header />
                         {children}
                     </NextIntlClientProvider>

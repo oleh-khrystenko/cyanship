@@ -14,14 +14,12 @@ import {
     createSubscriptionCheckout,
     createOneOffCheckout,
     createPortalSession,
-    resetBilling,
 } from '@/shared/api/payments';
-import { getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
 import { DemoBanner } from '@/features/billing';
 
 export default function BillingPage() {
@@ -29,8 +27,8 @@ export default function BillingPage() {
     const locale = useLocale();
     const user = useAuthStore((s) => s.user);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
-    const [resetDialogOpen, setResetDialogOpen] = useState(false);
     const [catalog, setCatalog] = useState<PaymentsCatalog | null>(null);
+    const openResetDialog = useBillingResetDialogStore((s) => s.open);
     const [catalogLoading, setCatalogLoading] = useState(true);
 
     useEffect(() => {
@@ -84,21 +82,6 @@ export default function BillingPage() {
             window.location.assign(portalUrl);
         } catch {
             toast.error(t('active.manage_error'));
-            setLoadingAction(null);
-        }
-    };
-
-    const handleReset = async () => {
-        setLoadingAction('reset');
-        try {
-            await resetBilling();
-            const me = await getMe();
-            useAuthStore.getState().setUser(me);
-            setResetDialogOpen(false);
-            toast.success(t('reset.success'));
-        } catch {
-            toast.error(t('reset.error'));
-        } finally {
             setLoadingAction(null);
         }
     };
@@ -494,23 +477,11 @@ export default function BillingPage() {
                             variant="destructive-outline"
                             size="md"
                             className="w-full shrink-0 sm:w-auto"
-                            onClick={() => setResetDialogOpen(true)}
+                            onClick={openResetDialog}
                         >
                             {t('reset.button')}
                         </UiButton>
                     </div>
-
-                    <UiConfirmDialog
-                        open={resetDialogOpen}
-                        onOpenChange={setResetDialogOpen}
-                        title={t('reset.dialog_title')}
-                        description={t('reset.dialog_description')}
-                        confirmLabel={t('reset.dialog_confirm')}
-                        cancelLabel={t('reset.dialog_cancel')}
-                        variant="destructive"
-                        loading={loadingAction === 'reset'}
-                        onConfirm={handleReset}
-                    />
                 </section>
             )}
 

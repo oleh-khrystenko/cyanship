@@ -64,7 +64,7 @@ docs/
 Файли: `packages/types/src/contracts/auth.ts`, `packages/types/src/contracts/users.ts`, `packages/types/src/contracts/payments.ts`
 - API DTOs, billing enums, and user profile shapes are defined once in Zod and reused by Nest DTO wrappers and web API clients.
 - `UserBillingSchema` is shared into the web profile/billing UI, so payment-model changes affect both apps immediately.
-- Agency-specific shared types are intended to stay behind `@cyanship/types/agency` per `docs/conventions/modular-boundaries.md`.
+- Agency-specific shared types live in `packages/types/src/agency/` and are exported through the main `@cyanship/types` entry point.
 
 ## Module Dependency Map
 

@@ -7,7 +7,7 @@ import {
     CheckCircle2,
     LucideIcon,
 } from 'lucide-react';
-import UiButton from '@/shared/ui/UiButton';
+import StartBriefButton from '../StartBriefButton';
 
 const steps: { key: number; icon: LucideIcon; primary?: boolean }[] = [
     { key: 1, icon: Send, primary: true },
@@ -37,16 +37,14 @@ const FooterCtaSection = () => {
                         <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
                             {t('description')}
                         </p>
-                        <UiButton
-                            as="a"
-                            href="#"
+                        <StartBriefButton
                             variant="filled"
                             size="lg"
                             className="mt-8 w-full font-semibold sm:w-auto"
                             IconRight={<ArrowRight />}
                         >
                             {t('cta')}
-                        </UiButton>
+                        </StartBriefButton>
                     </div>
 
                     {/* Steps */}

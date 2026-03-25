@@ -33,6 +33,7 @@ import { LoginPasswordDto } from './dto/login-password.dto';
 import { SendMagicLinkDto } from './dto/send-magic-link.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { VerifyMagicLinkDto } from './dto/verify-magic-link.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import { VerifyPasswordDto } from './dto/verify-password.dto';
 import { GoogleValidatedUser } from './strategies/google.strategy';
 
@@ -245,6 +246,7 @@ export class AuthController {
 
     @Post('refresh')
     async refresh(
+        @Body() dto: RefreshDto,
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response
     ): Promise<{ data: { accessToken: string } }> {
@@ -255,8 +257,10 @@ export class AuthController {
         }
 
         try {
-            const tokens =
-                await this.authService.rotateRefreshToken(refreshToken);
+            const tokens = await this.authService.rotateRefreshToken(
+                refreshToken,
+                dto.timezone
+            );
 
             res.cookie(
                 'bid_refresh',

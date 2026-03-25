@@ -425,10 +425,15 @@ describe('AuthController', () => {
             });
             const res = createMockResponse();
 
-            const result = await controller.refresh(req as any, res as any);
+            const result = await controller.refresh(
+                {} as any,
+                req as any,
+                res as any
+            );
 
             expect(mockAuthService.rotateRefreshToken).toHaveBeenCalledWith(
-                'old-refresh'
+                'old-refresh',
+                undefined
             );
             expect(res.cookie).toHaveBeenCalledWith(
                 'bid_refresh',
@@ -445,7 +450,7 @@ describe('AuthController', () => {
             const res = createMockResponse();
 
             await expect(
-                controller.refresh(req as any, res as any)
+                controller.refresh({} as any, req as any, res as any)
             ).rejects.toThrow(UnauthorizedException);
         });
 
@@ -459,7 +464,7 @@ describe('AuthController', () => {
             const res = createMockResponse();
 
             await expect(
-                controller.refresh(req as any, res as any)
+                controller.refresh({} as any, req as any, res as any)
             ).rejects.toThrow(UnauthorizedException);
 
             expect(res.clearCookie).toHaveBeenCalledWith(

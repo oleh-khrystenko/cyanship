@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { LogOut, User, CreditCard, Menu } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -14,16 +14,26 @@ import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
-import {
-    UiSheet,
-    UiSheetTrigger,
-    UiSheetContent,
-    UiSheetHeader,
-    UiSheetTitle,
-} from '@/shared/ui/UiSheet';
-import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import { useHeaderNavStore } from '@/stores/headerNav';
+import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
+import { useUserMenu } from './useUserMenu';
+
+function useScrolled(threshold: number) {
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > threshold);
+        };
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [threshold]);
+
+    return isScrolled;
+}
 
 function useActiveSection(sectionIds: string[]) {
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -60,29 +70,16 @@ function useActiveSection(sectionIds: string[]) {
     return activeId;
 }
 
-function getInitials(name: string | undefined, email: string): string {
-    if (name) {
-        return name
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    }
-    return email[0]?.toUpperCase() ?? '';
-}
-
 const Header = () => {
     const t = useTranslations('components.header');
     const locale = useLocale();
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
-    const clearUser = useAuthStore((s) => s.clearUser);
     const navItems = useHeaderNavStore((s) => s.navItems);
     const cta = useHeaderNavStore((s) => s.cta);
+    const openMobileMenu = useMobileMenuSheetStore((s) => s.open);
 
-    const router = useRouter();
     const pathname = usePathname();
     const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
@@ -91,64 +88,32 @@ const Header = () => {
         [navItems]
     );
     const activeSection = useActiveSection(sectionIds);
-    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const isScrolled = useScrolled(32);
+    const showGlass = !hasNav || isScrolled;
+    const [canAnimate, setCanAnimate] = useState(false);
 
-    const handleLogout = async () => {
-        await logout();
-        clearUser();
-        setIsSheetOpen(false);
-        window.location.assign(`/${locale}`);
-    };
+    const { visibleItems, handleSelect, initials } = useUserMenu({
+        profile: <User />,
+        billing: <CreditCard />,
+        logout: <LogOut />,
+    });
 
-    const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
-
-    const allUserMenuItems: {
-        value: string;
-        label: string;
-        icon: React.ReactNode;
-        route?: string;
-        badge?: string;
-    }[] = [
-        {
-            value: 'profile',
-            label: t('profile'),
-            icon: <User />,
-            route: `/${locale}/profile`,
-        },
-        {
-            value: 'billing',
-            label: t('billing'),
-            icon: <CreditCard />,
-            route: `/${locale}/billing`,
-            badge: formattedExecutions,
-        },
-        {
-            value: 'logout',
-            label: t('logout'),
-            icon: <LogOut />,
-        },
-    ];
-
-    const userMenuItems = allUserMenuItems.filter(
-        (item) => !item.route || !pathname.startsWith(item.route)
-    );
-
-    const handleUserMenuSelect = (value: string) => {
-        const item = allUserMenuItems.find((i) => i.value === value);
-        if (item?.route) {
-            router.push(item.route);
-        } else if (value === 'logout') {
-            void handleLogout();
-        }
-    };
-
-    const initials = user
-        ? getInitials(user.profile.name, user.email)
-        : '';
+    useEffect(() => {
+        const id = requestAnimationFrame(() => setCanAnimate(true));
+        return () => cancelAnimationFrame(id);
+    }, []);
 
     return (
-        <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-            <div className="container flex h-16 items-center justify-between gap-6 px-6">
+        <header className="sticky top-0 z-50">
+            <div
+                className={`pointer-events-none absolute inset-0 ${
+                    canAnimate
+                        ? 'liquid-glass border-b-liquid-glass-border border-b transition-opacity duration-700 ease-out'
+                        : ''
+                } ${showGlass ? 'opacity-100' : 'opacity-0'}`}
+                aria-hidden="true"
+            />
+            <div className="relative z-10 container flex h-16 items-center justify-between gap-6 px-6">
                 {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
                 {hasNav ? (
                     <UiButton
@@ -216,14 +181,16 @@ const Header = () => {
                         <div className="bg-secondary h-8 w-20 animate-pulse rounded-lg" />
                     ) : isAuthenticated && user ? (
                         <UiDropdownMenu
-                            items={userMenuItems}
-                            onSelect={handleUserMenuSelect}
+                            items={visibleItems}
+                            onSelect={(value) => handleSelect(value)}
                             size="sm"
                             header={
                                 <div className="flex items-center gap-2.5">
                                     <UiAvatar size="sm">
                                         <UiAvatarImage
-                                            src={user.profile.avatar ?? undefined}
+                                            src={
+                                                user.profile.avatar ?? undefined
+                                            }
                                             alt={user.profile.name ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
@@ -231,10 +198,10 @@ const Header = () => {
                                         </UiAvatarFallback>
                                     </UiAvatar>
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">
+                                        <span className="text-foreground text-sm font-medium">
                                             {user.profile.name}
                                         </span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-muted-foreground text-xs">
                                             {user.email}
                                         </span>
                                     </div>
@@ -248,12 +215,9 @@ const Header = () => {
                                     <UiAvatar size="sm">
                                         <UiAvatarImage
                                             src={
-                                                user.profile.avatar ??
-                                                undefined
+                                                user.profile.avatar ?? undefined
                                             }
-                                            alt={
-                                                user.profile.name ?? ''
-                                            }
+                                            alt={user.profile.name ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
                                             {initials}
@@ -277,11 +241,10 @@ const Header = () => {
 
                     {cta && (
                         <UiButton
-                            as="a"
-                            href={cta.href}
                             variant="filled"
                             size="sm"
                             className="ml-2"
+                            onClick={cta.onClick}
                         >
                             {cta.label}
                         </UiButton>
@@ -290,158 +253,13 @@ const Header = () => {
 
                 {/* Mobile hamburger */}
                 <div className="lg:hidden">
-                    <UiSheet
-                        open={isSheetOpen}
-                        onOpenChange={setIsSheetOpen}
-                    >
-                        <UiSheetTrigger asChild>
-                            <UiButton
-                                variant="icon"
-                                size="md"
-                                aria-label={t('menu')}
-                                IconLeft={<Menu />}
-                            />
-                        </UiSheetTrigger>
-                        <UiSheetContent side="right" className="w-80">
-                            <UiSheetHeader>
-                                <UiSheetTitle className="text-left">
-                                    CyanShip
-                                </UiSheetTitle>
-                            </UiSheetHeader>
-
-                            <div className="flex flex-col gap-6 px-4 py-2">
-                                {/* Mobile nav */}
-                                {hasNav && (
-                                    <nav className="flex flex-col gap-4">
-                                        {navItems.map(
-                                            ({ href, label }) => (
-                                                <a
-                                                    key={href}
-                                                    href={href}
-                                                    className="text-muted-foreground hover:text-foreground py-2 text-sm transition-colors"
-                                                    onClick={() =>
-                                                        setIsSheetOpen(
-                                                            false
-                                                        )
-                                                    }
-                                                >
-                                                    {label}
-                                                </a>
-                                            )
-                                        )}
-                                    </nav>
-                                )}
-
-                                {hasNav && (
-                                    <div className="bg-border h-px" />
-                                )}
-
-                                {/* Mobile settings */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground text-sm">
-                                        {t('settings')}:
-                                    </span>
-                                    <ChangeLang />
-                                    <ChangeTheme />
-                                </div>
-
-                                <div className="bg-border h-px" />
-
-                                {/* Mobile auth */}
-                                {isLoading ? (
-                                    <div className="bg-secondary h-10 w-full animate-pulse rounded-lg" />
-                                ) : isAuthenticated && user ? (
-                                    <div className="flex flex-col gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <UiAvatar size="md">
-                                                <UiAvatarImage
-                                                    src={
-                                                        user.profile
-                                                            .avatar ??
-                                                        undefined
-                                                    }
-                                                    alt={
-                                                        user.profile
-                                                            .name ?? ''
-                                                    }
-                                                />
-                                                <UiAvatarFallback size="md">
-                                                    {initials}
-                                                </UiAvatarFallback>
-                                            </UiAvatar>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">
-                                                    {user.profile.name}
-                                                </span>
-                                                <span className="text-muted-foreground text-xs">
-                                                    {user.email}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {userMenuItems.map((item) => (
-                                            <button
-                                                key={item.value}
-                                                type="button"
-                                                className={`flex items-center gap-2 py-2 text-sm transition-colors ${
-                                                    item.value === 'logout'
-                                                        ? 'text-destructive hover:text-destructive/80'
-                                                        : 'text-muted-foreground hover:text-foreground'
-                                                }`}
-                                                onClick={() => {
-                                                    setIsSheetOpen(false);
-                                                    handleUserMenuSelect(
-                                                        item.value
-                                                    );
-                                                }}
-                                            >
-                                                <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-                                                    {item.icon}
-                                                </span>
-                                                <span>{item.label}</span>
-                                                {item.badge != null && (
-                                                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs leading-none text-muted-foreground">
-                                                        {item.badge}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    !isSigninPage && (
-                                        <UiButton
-                                            as="link"
-                                            href={`/${locale}/auth/signin`}
-                                            variant="text"
-                                            size="md"
-                                            className="justify-start"
-                                            onClick={() =>
-                                                setIsSheetOpen(false)
-                                            }
-                                        >
-                                            {t('signin')}
-                                        </UiButton>
-                                    )
-                                )}
-
-                                {/* Mobile CTA */}
-                                {cta && (
-                                    <UiButton
-                                        as="a"
-                                        href={cta.href}
-                                        variant="filled"
-                                        size="md"
-                                        className="mt-2 w-full"
-                                        onClick={() =>
-                                            setIsSheetOpen(false)
-                                        }
-                                    >
-                                        {cta.label}
-                                    </UiButton>
-                                )}
-                            </div>
-                        </UiSheetContent>
-                    </UiSheet>
+                    <UiButton
+                        variant="icon"
+                        size="md"
+                        aria-label={t('menu')}
+                        IconLeft={<Menu />}
+                        onClick={openMobileMenu}
+                    />
                 </div>
             </div>
         </header>

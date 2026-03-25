@@ -32,6 +32,13 @@
     --success: oklch(0.65 0.15 150);
     --warning: oklch(0.80 0.15 80);
     --radius: 0.625rem;
+
+    /* Liquid Glass */
+    --liquid-glass-bg: oklch(0.98 0.002 260 / 0.55);
+    --liquid-glass-border: oklch(1 0 0 / 0.5);
+    --liquid-glass-highlight: oklch(1 0 0 / 0.12);
+    --liquid-glass-shadow: oklch(0.3 0.01 260 / 0.06);
+    --liquid-glass-blur: 8px;
 }
 
 .dark {
@@ -64,6 +71,13 @@
 
     --success: oklch(0.55 0.15 150);
     --warning: oklch(0.70 0.15 80);
+
+    /* Liquid Glass */
+    --liquid-glass-bg: oklch(0.16 0.01 260 / 0.6);
+    --liquid-glass-border: oklch(1 0 0 / 0.1);
+    --liquid-glass-highlight: oklch(1 0 0 / 0.05);
+    --liquid-glass-shadow: oklch(0 0 0 / 0.25);
+    --liquid-glass-blur: 8px;
 }
 
 @theme inline {
@@ -86,6 +100,7 @@
     --color-ring: var(--ring);
     --color-success: var(--success);
     --color-warning: var(--warning);
+    --color-liquid-glass-border: var(--liquid-glass-border);
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);

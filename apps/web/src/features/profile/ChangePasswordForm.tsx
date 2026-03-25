@@ -1,15 +1,24 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
-import { ChangePasswordSchema } from '@cyanship/types';
+import { z } from 'zod';
+import { passwordSchema } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { changePassword, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+
+const ChangePasswordFormSchema = z.object({
+    currentPassword: z.string().min(1),
+    newPassword: passwordSchema,
+});
+
+type ChangePasswordFormValues = z.input<typeof ChangePasswordFormSchema>;
 
 interface ChangePasswordFormProps {
     onDone: () => void;
@@ -18,38 +27,29 @@ interface ChangePasswordFormProps {
 
 const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
     const t = useTranslations('profile_page.security');
-
     const setUser = useAuthStore((s) => s.setUser);
 
-    const [currentPwd, setCurrentPwd] = useState('');
-    const [newPwd, setNewPwd] = useState('');
-    const [currentPwdError, setCurrentPwdError] = useState('');
-    const [newPwdError, setNewPwdError] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+    const form = useForm<ChangePasswordFormValues>({
+        resolver: zodResolver(ChangePasswordFormSchema),
+        mode: 'onTouched',
+        defaultValues: { currentPassword: '', newPassword: '' },
+    });
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const { errors, isSubmitting } = form.formState;
+    const [currentPwd, newPwd] = form.watch(['currentPassword', 'newPassword']);
+    const canSubmit = !!currentPwd && !!newPwd;
 
-        const parsed = ChangePasswordSchema.safeParse({
-            currentPassword: currentPwd,
-            newPassword: newPwd,
-        });
-        if (!parsed.success) {
-            for (const issue of parsed.error.issues) {
-                if (issue.path[0] === 'newPassword') {
-                    setNewPwdError(
-                        issue.code === 'custom'
-                            ? t('password_same_as_current')
-                            : t('password_too_short')
-                    );
-                }
-            }
+    const onSubmit = async (data: ChangePasswordFormValues) => {
+        if (data.currentPassword === data.newPassword) {
+            form.setError('newPassword', {
+                type: 'same_as_current',
+                message: t('password_same_as_current'),
+            });
             return;
         }
 
-        setSubmitting(true);
         try {
-            await changePassword(currentPwd, newPwd);
+            await changePassword(data.currentPassword, data.newPassword);
             const me = await getMe();
             setUser(me);
             toast.success(t('password_changed'));
@@ -61,31 +61,41 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     : undefined;
 
             if (code === 'UNAUTHORIZED') {
-                setCurrentPwdError(t('password_invalid'));
+                form.setError('currentPassword', {
+                    type: 'server',
+                    message: t('password_invalid'),
+                });
             } else if (code === 'RATE_LIMIT_EXCEEDED') {
                 toast.error(t('error_rate_limit'));
             } else {
                 toast.error(t('error_generic'));
             }
-        } finally {
-            setSubmitting(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-4">
             <div>
                 <label className="text-muted-foreground mb-1.5 block text-sm">
                     {t('current_password_label')}
                 </label>
                 <UiPasswordInput
+                    {...form.register('currentPassword', {
+                        onChange: () => {
+                            if (errors.currentPassword?.type === 'server') {
+                                form.clearErrors('currentPassword');
+                            }
+                            if (errors.newPassword?.type === 'same_as_current') {
+                                form.clearErrors('newPassword');
+                            }
+                        },
+                    })}
                     placeholder={t('password_placeholder')}
-                    value={currentPwd}
-                    onChange={(e) => {
-                        setCurrentPwd(e.target.value);
-                        if (currentPwdError) setCurrentPwdError('');
-                    }}
-                    error={currentPwdError || undefined}
+                    error={
+                        errors.currentPassword?.type === 'server'
+                            ? errors.currentPassword.message
+                            : undefined
+                    }
                     required
                     size="lg"
                     showLabel={t('show_password')}
@@ -98,13 +108,21 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     {t('new_password_label')}
                 </label>
                 <UiPasswordInput
+                    {...form.register('newPassword', {
+                        onChange: () => {
+                            if (errors.newPassword?.type === 'same_as_current') {
+                                form.clearErrors('newPassword');
+                            }
+                        },
+                    })}
                     placeholder={t('password_placeholder')}
-                    value={newPwd}
-                    onChange={(e) => {
-                        setNewPwd(e.target.value);
-                        if (newPwdError) setNewPwdError('');
-                    }}
-                    error={newPwdError || undefined}
+                    error={
+                        errors.newPassword?.type === 'same_as_current'
+                            ? errors.newPassword.message
+                            : errors.newPassword && newPwd
+                                ? t('password_too_short')
+                                : undefined
+                    }
                     required
                     size="lg"
                     showLabel={t('show_password')}
@@ -117,9 +135,9 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     type="submit"
                     variant="filled"
                     size="md"
-                    disabled={submitting || !newPwd || !currentPwd}
+                    disabled={isSubmitting || !canSubmit}
                 >
-                    {submitting ? (
+                    {isSubmitting ? (
                         <UiSpinner size="sm" />
                     ) : (
                         t('change_password')
@@ -131,7 +149,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     variant="text"
                     size="md"
                     onClick={onCancel}
-                    disabled={submitting}
+                    disabled={isSubmitting}
                 >
                     {t('cancel')}
                 </UiButton>

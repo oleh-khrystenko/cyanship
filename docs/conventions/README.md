@@ -15,6 +15,7 @@
 | Modular Boundaries | [modular-boundaries.md](modular-boundaries.md) | Core/Agency розділення, однонаправлені залежності, fork checklist |
 | UI Primitives | [ui-primitives.md](ui-primitives.md) | Заборона нативних HTML-елементів, єдиний набір Ui-компонентів |
 | Design Tokens | [design-tokens.md](design-tokens.md) | Заборона хардкоджених кольорів/шрифтів, використання дизайн-токенів |
+| Overlays | [overlays.md](overlays.md) | Модалки, sheets, confirm dialogs — примітиви, Zustand store, layout mount |
 
 ## Як додати нове правило
 
