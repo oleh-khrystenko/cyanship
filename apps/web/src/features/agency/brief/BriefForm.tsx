@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
@@ -39,6 +40,7 @@ interface BriefFormProps {
 export default function BriefForm({ onSuccess }: BriefFormProps) {
     const t = useTranslations('brief_form');
     const tGlobal = useTranslations();
+    const locale = useLocale();
 
     const {
         register,
@@ -57,27 +59,33 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
 
     const { containerRef, token, reset: resetTurnstile } = useTurnstile();
 
-    const budgetOptions = [
-        { value: BRIEF_BUDGET.UNDER_2500, label: t('budget_under_2500') },
-        {
-            value: BRIEF_BUDGET.FROM_2500_TO_5000,
-            label: t('budget_2500_5000'),
-        },
-        {
-            value: BRIEF_BUDGET.FROM_5000_TO_10000,
-            label: t('budget_5000_10000'),
-        },
-        { value: BRIEF_BUDGET.OVER_10000, label: t('budget_over_10000') },
-    ];
+    const budgetOptions = useMemo(
+        () => [
+            { value: BRIEF_BUDGET.UNDER_2500, label: t('budget_under_2500') },
+            {
+                value: BRIEF_BUDGET.FROM_2500_TO_5000,
+                label: t('budget_2500_5000'),
+            },
+            {
+                value: BRIEF_BUDGET.FROM_5000_TO_10000,
+                label: t('budget_5000_10000'),
+            },
+            { value: BRIEF_BUDGET.OVER_10000, label: t('budget_over_10000') },
+        ],
+        [t],
+    );
 
-    const deadlineOptions = [
-        { value: BRIEF_DEADLINE.ASAP, label: t('deadline_asap') },
-        {
-            value: BRIEF_DEADLINE.ONE_TO_THREE_MONTHS,
-            label: t('deadline_1_3_months'),
-        },
-        { value: BRIEF_DEADLINE.FLEXIBLE, label: t('deadline_flexible') },
-    ];
+    const deadlineOptions = useMemo(
+        () => [
+            { value: BRIEF_DEADLINE.ASAP, label: t('deadline_asap') },
+            {
+                value: BRIEF_DEADLINE.ONE_TO_THREE_MONTHS,
+                label: t('deadline_1_3_months'),
+            },
+            { value: BRIEF_DEADLINE.FLEXIBLE, label: t('deadline_flexible') },
+        ],
+        [t],
+    );
 
     const onSubmit = async (data: BriefFormValues) => {
         if (!token) {
@@ -90,7 +98,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             ...fields,
             ...(deadline && { deadline }),
             source: getSource(),
-            lang: navigator.language.slice(0, 5),
+            lang: locale,
             captchaToken: token,
         };
 
@@ -153,15 +161,12 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                         onChange={field.onChange}
                         placeholder={t('budget_placeholder')}
                         variant="outlined"
+                        error={errors.budget && t('validation_budget')}
+                        disabled={isSubmitting}
                         required
                     />
                 )}
             />
-            {errors.budget && (
-                <p className="text-sm text-destructive">
-                    {t('validation_budget')}
-                </p>
-            )}
             <Controller
                 name="deadline"
                 control={control}

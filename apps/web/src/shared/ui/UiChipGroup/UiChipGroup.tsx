@@ -21,6 +21,7 @@ const UiChipGroup = (props: UiChipGroupProps) => {
         disabled = false,
         label,
         required,
+        error,
     } = props;
 
     const generatedId = useId();
@@ -62,6 +63,9 @@ const UiChipGroup = (props: UiChipGroupProps) => {
                     </Radio>
                 ))}
             </RadioGroup>
+            {error && (
+                <p className="mt-1 text-sm text-destructive">{error}</p>
+            )}
         </div>
     );
 };

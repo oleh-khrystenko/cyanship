@@ -16,4 +16,5 @@ export interface UiChipGroupProps {
     disabled?: boolean;
     label?: string;
     required?: boolean;
+    error?: ReactNode;
 }

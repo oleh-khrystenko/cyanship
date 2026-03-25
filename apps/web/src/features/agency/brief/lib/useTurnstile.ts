@@ -26,16 +26,7 @@ export function useTurnstile() {
     const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        // Load Turnstile script if not already loaded
-        if (!document.querySelector('script[src*="turnstile"]')) {
-            const script = document.createElement('script');
-            script.src =
-                'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-            script.async = true;
-            document.head.appendChild(script);
-        }
-
-        const interval = setInterval(() => {
+        function renderWidget() {
             if (
                 window.turnstile &&
                 containerRef.current &&
@@ -51,12 +42,34 @@ export function useTurnstile() {
                         size: 'invisible',
                     },
                 );
-                clearInterval(interval);
             }
-        }, 100);
+        }
+
+        // Script already loaded (e.g. another instance loaded it earlier)
+        if (window.turnstile) {
+            renderWidget();
+            return;
+        }
+
+        const existingScript =
+            document.querySelector<HTMLScriptElement>('script[src*="turnstile"]');
+
+        if (existingScript) {
+            // Script tag exists but hasn't finished loading yet
+            existingScript.addEventListener('load', renderWidget);
+            return () => existingScript.removeEventListener('load', renderWidget);
+        }
+
+        // Load Turnstile script for the first time
+        const script = document.createElement('script');
+        script.src =
+            'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.addEventListener('load', renderWidget);
+        document.head.appendChild(script);
 
         return () => {
-            clearInterval(interval);
+            script.removeEventListener('load', renderWidget);
             if (widgetIdRef.current && window.turnstile) {
                 window.turnstile.remove(widgetIdRef.current);
                 widgetIdRef.current = null;

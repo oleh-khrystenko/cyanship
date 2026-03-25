@@ -23,6 +23,9 @@ const variantStyles: Record<UiSelectVariant, string> = {
     filled: 'bg-secondary text-foreground border border-transparent hover:bg-card focus-within:bg-card',
 };
 
+const errorStyles =
+    'border-destructive hover:border-destructive focus-within:border-destructive';
+
 const optionSizeStyles: Record<UiSelectSize, string> = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-base',
@@ -41,6 +44,7 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
         placeholder = 'Select an option',
         label,
         required,
+        error,
     } = props;
 
     const generatedId = useId();
@@ -54,6 +58,7 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
         disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         sizeStyles[size],
         variantStyles[variant],
+        !!error && errorStyles,
         className
     );
 
@@ -129,6 +134,9 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
                         ))}
                     </div>
                 </ListboxOptions>
+                {error && (
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
+                )}
             </div>
         </Listbox>
     );
