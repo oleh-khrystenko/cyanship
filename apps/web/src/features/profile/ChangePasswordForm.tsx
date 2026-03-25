@@ -118,7 +118,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     error={
                         errors.newPassword?.type === 'same_as_current'
                             ? errors.newPassword.message
-                            : errors.newPassword
+                            : errors.newPassword && newPwd
                                 ? t('password_too_short')
                                 : undefined
                     }
