@@ -29,10 +29,10 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
             variant = 'outlined',
             size = 'md',
             label,
-            labelHint,
             error,
             className,
             disabled,
+            required,
             id: externalId,
             ...textareaProps
         } = props;
@@ -57,10 +57,8 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
                         className="mb-1 block text-sm font-medium text-foreground"
                     >
                         {label}
-                        {labelHint && (
-                            <span className="ml-1 font-normal text-muted-foreground">
-                                {labelHint}
-                            </span>
+                        {required && (
+                            <span className="ml-1 text-destructive">*</span>
                         )}
                     </label>
                 )}
@@ -74,6 +72,7 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
                         id={textareaId}
                         ref={ref}
                         disabled={disabled}
+                        required={required}
                         className="w-full resize-y bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
                     />
                 </div>

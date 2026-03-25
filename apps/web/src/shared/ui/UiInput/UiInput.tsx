@@ -29,12 +29,12 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
         variant = 'outlined',
         size = 'md',
         label,
-        labelHint,
         error,
         IconLeft,
         IconRight,
         className,
         disabled,
+        required,
         id: externalId,
         ...inputProps
     } = props;
@@ -65,10 +65,8 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     className="mb-1 block text-sm font-medium text-foreground"
                 >
                     {label}
-                    {labelHint && (
-                        <span className="ml-1 font-normal text-muted-foreground">
-                            {labelHint}
-                        </span>
+                    {required && (
+                        <span className="ml-1 text-destructive">*</span>
                     )}
                 </label>
             )}
@@ -87,6 +85,7 @@ const UiInput = forwardRef<HTMLInputElement, UiInputProps>((props, ref) => {
                     id={inputId}
                     ref={ref}
                     disabled={disabled}
+                    required={required}
                     className="w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
                 />
                 {IconRight && (

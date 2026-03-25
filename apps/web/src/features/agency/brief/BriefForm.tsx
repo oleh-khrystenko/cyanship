@@ -151,13 +151,13 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 onChange={setBudget}
                 placeholder={t('budget_placeholder')}
                 variant="outlined"
+                required
             />
             {errors.budget && (
                 <p className="text-sm text-destructive">{errors.budget}</p>
             )}
             <UiSelect
                 label={t('deadline_label')}
-                labelHint={t('deadline_label_hint')}
                 options={deadlineOptions}
                 value={deadline}
                 onChange={setDeadline}

@@ -8,6 +8,5 @@ export interface UiTextareaProps
     variant?: UiTextareaVariant;
     size?: UiTextareaSize;
     label?: string;
-    labelHint?: string;
     error?: string;
 }

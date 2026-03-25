@@ -40,7 +40,7 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
         disabled = false,
         placeholder = 'Select an option',
         label,
-        labelHint,
+        required,
     } = props;
 
     const generatedId = useId();
@@ -66,10 +66,8 @@ const UiSelect = forwardRef<HTMLButtonElement, UiSelectProps>((props, ref) => {
                         className="mb-1 block text-sm font-medium text-foreground"
                     >
                         {label}
-                        {labelHint && (
-                            <span className="ml-1 font-normal text-muted-foreground">
-                                {labelHint}
-                            </span>
+                        {required && (
+                            <span className="ml-1 text-destructive">*</span>
                         )}
                     </label>
                 )}
