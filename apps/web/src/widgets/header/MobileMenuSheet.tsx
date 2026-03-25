@@ -89,7 +89,7 @@ export default function MobileMenuSheet() {
 
                     {hasNav && <div className="bg-border h-px" />}
 
-                    {/* User section */}
+                    {/* User & preferences */}
                     {isLoading ? (
                         <div className="flex items-center gap-3">
                             <div className="bg-secondary size-10 shrink-0 animate-pulse rounded-full" />
@@ -122,45 +122,133 @@ export default function MobileMenuSheet() {
                                 </div>
                             </div>
 
-                            {visibleItems.map((item) => (
-                                <button
-                                    key={item.value}
-                                    type="button"
-                                    className={`-mx-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                                        item.value === 'logout'
-                                            ? 'text-destructive hover:bg-destructive/10'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                    }`}
-                                    onClick={() =>
-                                        handleSelect(item.value, close)
-                                    }
-                                >
-                                    <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-                                        {item.icon}
-                                    </span>
-                                    <span>{item.label}</span>
-                                    {item.badge != null && (
-                                        <span className="bg-muted text-muted-foreground ml-auto rounded-full px-2 py-0.5 text-xs leading-none">
-                                            {item.badge}
+                            {visibleItems
+                                .filter((item) => item.value !== 'logout')
+                                .map((item) => (
+                                    <button
+                                        key={item.value}
+                                        type="button"
+                                        className={menuItemStyles}
+                                        onClick={() =>
+                                            handleSelect(item.value, close)
+                                        }
+                                    >
+                                        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                            {item.icon}
                                         </span>
-                                    )}
-                                </button>
-                            ))}
+                                        <span>{item.label}</span>
+                                        {item.badge != null && (
+                                            <span className="bg-muted text-muted-foreground ml-auto rounded-full px-2 py-0.5 text-xs leading-none">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+
+                            <ChangeLang
+                                align="start"
+                                trigger={
+                                    <button
+                                        type="button"
+                                        className={menuItemStyles}
+                                    >
+                                        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                            <Globe />
+                                        </span>
+                                        <span>{t('language')}</span>
+                                        <span className="text-muted-foreground ml-auto text-xs">
+                                            {locale.toUpperCase()}
+                                        </span>
+                                    </button>
+                                }
+                            />
+                            <ChangeTheme
+                                align="start"
+                                trigger={
+                                    <button
+                                        type="button"
+                                        className={menuItemStyles}
+                                    >
+                                        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                            <ThemeIcon />
+                                        </span>
+                                        <span>{t('theme')}</span>
+                                        <span className="text-muted-foreground ml-auto text-xs">
+                                            {themeLabel}
+                                        </span>
+                                    </button>
+                                }
+                            />
+
+                            <div className="bg-border mx-1 my-2 h-px" />
+
+                            <button
+                                type="button"
+                                className="-mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                                onClick={() =>
+                                    handleSelect('logout', close)
+                                }
+                            >
+                                <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                    <LogOut />
+                                </span>
+                                <span>{t('logout')}</span>
+                            </button>
                         </div>
                     ) : (
-                        !isSigninPage && (
-                            <UiButton
-                                as="link"
-                                href={`/${locale}/auth/signin`}
-                                variant="text"
-                                size="md"
-                                IconLeft={<LogIn />}
-                                className="justify-start"
-                                onClick={close}
-                            >
-                                {t('signin')}
-                            </UiButton>
-                        )
+                        <div className="flex flex-col gap-1">
+                            <ChangeLang
+                                align="start"
+                                trigger={
+                                    <button
+                                        type="button"
+                                        className={menuItemStyles}
+                                    >
+                                        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                            <Globe />
+                                        </span>
+                                        <span>{t('language')}</span>
+                                        <span className="text-muted-foreground ml-auto text-xs">
+                                            {locale.toUpperCase()}
+                                        </span>
+                                    </button>
+                                }
+                            />
+                            <ChangeTheme
+                                align="start"
+                                trigger={
+                                    <button
+                                        type="button"
+                                        className={menuItemStyles}
+                                    >
+                                        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+                                            <ThemeIcon />
+                                        </span>
+                                        <span>{t('theme')}</span>
+                                        <span className="text-muted-foreground ml-auto text-xs">
+                                            {themeLabel}
+                                        </span>
+                                    </button>
+                                }
+                            />
+
+                            {!isSigninPage && (
+                                <>
+                                    <div className="bg-border mx-1 my-2 h-px" />
+                                    <UiButton
+                                        as="link"
+                                        href={`/${locale}/auth/signin`}
+                                        variant="text"
+                                        size="md"
+                                        IconLeft={<LogIn />}
+                                        className="justify-start"
+                                        onClick={close}
+                                    >
+                                        {t('signin')}
+                                    </UiButton>
+                                </>
+                            )}
+                        </div>
                     )}
 
                     {/* CTA */}
@@ -177,46 +265,6 @@ export default function MobileMenuSheet() {
                             {cta.label}
                         </UiButton>
                     )}
-
-                    <div className="bg-border h-px" />
-
-                    {/* Settings */}
-                    <div className="flex flex-col gap-1">
-                        <ChangeLang
-                            align="start"
-                            trigger={
-                                <button
-                                    type="button"
-                                    className={menuItemStyles}
-                                >
-                                    <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-                                        <Globe />
-                                    </span>
-                                    <span>{t('language')}</span>
-                                    <span className="text-muted-foreground ml-auto text-xs">
-                                        {locale.toUpperCase()}
-                                    </span>
-                                </button>
-                            }
-                        />
-                        <ChangeTheme
-                            align="start"
-                            trigger={
-                                <button
-                                    type="button"
-                                    className={menuItemStyles}
-                                >
-                                    <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-                                        <ThemeIcon />
-                                    </span>
-                                    <span>{t('theme')}</span>
-                                    <span className="text-muted-foreground ml-auto text-xs">
-                                        {themeLabel}
-                                    </span>
-                                </button>
-                            }
-                        />
-                    </div>
                 </div>
             </UiSheetContent>
         </UiSheet>
