@@ -12,7 +12,7 @@ export const UpdateLangSchema = z.object({
 
 export const UpdateProfileSchema = z.object({
     firstName: firstNameSchema.optional(),
-    lastName: lastNameSchema.optional(),
+    lastName: lastNameSchema.or(z.literal('')).optional(),
     avatar: z.string().url().optional(),
     preferredLang: z.enum(langValues).optional(),
 });
