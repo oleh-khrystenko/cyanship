@@ -51,9 +51,9 @@ const UiChipGroup = (props: UiChipGroupProps) => {
                         value={option.value}
                         className={composeClasses(
                             'cursor-pointer select-none rounded-md border transition-colors',
+                            'border-border text-muted-foreground hover:border-muted-foreground',
                             'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                            'data-checked:border-primary data-checked:bg-primary/10 data-checked:text-primary',
-                            'data-[not-checked]:border-border data-[not-checked]:text-muted-foreground data-[not-checked]:hover:border-muted-foreground',
+                            'data-checked:border-primary data-checked:bg-primary/10 data-checked:text-primary data-checked:hover:border-primary',
                             disabled && 'cursor-not-allowed opacity-50',
                             chipSizeStyles[size],
                         )}
