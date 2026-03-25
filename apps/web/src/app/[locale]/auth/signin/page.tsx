@@ -386,6 +386,7 @@ function SigninContent() {
                     type="email"
                     placeholder={t('email_placeholder')}
                     error={emailForm.formState.errors.email && t('validation_email')}
+                    required
                     IconLeft={<Mail />}
                     size="lg"
                 />
@@ -444,6 +445,7 @@ function SigninContent() {
                         ? t('validation_password')
                         : passwordForm.formState.errors.root?.serverError?.message
                 }
+                required
                 size="lg"
                 autoFocus
             />

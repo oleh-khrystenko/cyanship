@@ -153,6 +153,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         })}
                         placeholder={t('password_placeholder')}
                         error={errors.password?.message}
+                        required={!isPasswordOptional}
                         size="lg"
                         showLabel={t('show_password')}
                         hideLabel={t('hide_password')}

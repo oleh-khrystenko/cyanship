@@ -96,6 +96,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                             ? errors.currentPassword.message
                             : undefined
                     }
+                    required
                     size="lg"
                     showLabel={t('show_password')}
                     hideLabel={t('hide_password')}
@@ -122,6 +123,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                                 ? t('password_too_short')
                                 : undefined
                     }
+                    required
                     size="lg"
                     showLabel={t('show_password')}
                     hideLabel={t('hide_password')}
