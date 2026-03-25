@@ -93,6 +93,14 @@ export const ResetPasswordSchema = z
         path: ['confirmPassword'],
     });
 
+// --- Refresh ---
+
+export const RefreshSchema = z.object({
+    timezone: z.string().min(1).max(100).optional(),
+});
+
+export type RefreshDto = z.infer<typeof RefreshSchema>;
+
 // --- Delete Account Verify Response ---
 
 export const DeleteAccountVerifyResponseSchema = z.object({

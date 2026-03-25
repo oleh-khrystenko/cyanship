@@ -1,14 +1,24 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { nameSchema } from '@cyanship/types';
 import type { UserProfile } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { updateProfile, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+
+const ProfileFormSchema = z.object({
+    firstName: z.string().trim().min(1),
+    lastName: z.string().trim(),
+});
+
+type ProfileFormValues = z.input<typeof ProfileFormSchema>;
 
 interface ProfileFormProps {
     user: UserProfile;
@@ -39,58 +49,54 @@ const ProfileForm = ({
 
     const parsed = parseName(user.profile.name);
 
-    const [firstName, setFirstName] = useState(parsed.firstName);
-    const [lastName, setLastName] = useState(parsed.lastName);
-    const [submitting, setSubmitting] = useState(false);
-    const [nameError, setNameError] = useState('');
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(ProfileFormSchema),
+        mode: 'onTouched',
+        defaultValues: {
+            firstName: parsed.firstName,
+            lastName: parsed.lastName,
+        },
+    });
 
-    const isDirty =
-        firstName.trim() !== parsed.firstName ||
-        lastName.trim() !== parsed.lastName;
+    const { errors, isSubmitting, isDirty } = form.formState;
 
-    const handleCancel = () => {
-        setFirstName(parsed.firstName);
-        setLastName(parsed.lastName);
-        setNameError('');
+    const clearNameValidationError = () => {
+        if (errors.firstName?.type === 'validate') {
+            form.clearErrors('firstName');
+        }
     };
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: ProfileFormValues) => {
+        const fullName = combineName(data.firstName, data.lastName);
+        const nameResult = nameSchema.safeParse(fullName);
 
-        const namePattern = /^[\p{L}\s'\-]+$/u;
-        const trimmedFirst = firstName.trim();
-
-        if (!trimmedFirst) {
-            setNameError(t('name_required'));
+        if (!nameResult.success) {
+            const code = nameResult.error.issues[0]?.code;
+            const message = code === 'too_small'
+                ? t('name_too_short')
+                : t('name_invalid_chars');
+            form.setError('firstName', { type: 'validate', message });
             return;
         }
-
-        const fullName = combineName(firstName, lastName);
-
-        if (fullName.length < 2) {
-            setNameError(t('name_too_short'));
-            return;
-        }
-
-        if (!namePattern.test(fullName)) {
-            setNameError(t('name_invalid_chars'));
-            return;
-        }
-
-        setSubmitting(true);
-        setNameError('');
 
         try {
             await updateProfile({ name: fullName });
             const me = await getMe();
             setUser(me);
+            const newParsed = parseName(me.profile.name);
+            form.reset({
+                firstName: newParsed.firstName,
+                lastName: newParsed.lastName,
+            });
             toast.success(t('saved'));
             onSaved?.();
         } catch {
             toast.error(t('save_error'));
-        } finally {
-            setSubmitting(false);
         }
+    };
+
+    const handleCancel = () => {
+        form.reset();
     };
 
     return (
@@ -108,21 +114,25 @@ const ProfileForm = ({
                 </dd>
             </dl>
 
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4">
                 <div>
                     <label className="text-muted-foreground mb-1.5 block text-sm">
                         {t('name_label')}
                         <span className="text-destructive ml-1">*</span>
                     </label>
                     <UiInput
+                        {...form.register('firstName', {
+                            onChange: clearNameValidationError,
+                        })}
                         type="text"
                         placeholder={t('name_placeholder')}
-                        value={firstName}
-                        onChange={(e) => {
-                            setFirstName(e.target.value);
-                            if (nameError) setNameError('');
-                        }}
-                        error={nameError || undefined}
+                        error={
+                            errors.firstName?.type === 'validate'
+                                ? errors.firstName.message
+                                : errors.firstName
+                                    ? t('name_required')
+                                    : undefined
+                        }
                         disabled={!editable}
                         size="lg"
                     />
@@ -133,10 +143,11 @@ const ProfileForm = ({
                         {t('last_name_label')}
                     </label>
                     <UiInput
+                        {...form.register('lastName', {
+                            onChange: clearNameValidationError,
+                        })}
                         type="text"
                         placeholder={t('last_name_placeholder')}
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
                         disabled={!editable}
                         size="lg"
                     />
@@ -148,9 +159,9 @@ const ProfileForm = ({
                             type="submit"
                             variant="filled"
                             size="md"
-                            disabled={submitting}
+                            disabled={isSubmitting}
                         >
-                            {submitting ? (
+                            {isSubmitting ? (
                                 <UiSpinner size="sm" />
                             ) : (
                                 t('save_button')
@@ -161,7 +172,7 @@ const ProfileForm = ({
                             variant="text"
                             size="md"
                             onClick={handleCancel}
-                            disabled={submitting}
+                            disabled={isSubmitting}
                         >
                             {t('cancel_button')}
                         </UiButton>

@@ -8,6 +8,8 @@ import {
     type VerifyMagicLinkResponse,
 } from '@cyanship/types';
 
+import { getTimezone } from '@/shared/lib';
+
 import { apiClient, setAccessToken } from './client';
 
 export async function checkEmail(email: string): Promise<CheckEmailResponse> {
@@ -130,7 +132,7 @@ export async function verifyMagicLink(
 export async function refreshToken(): Promise<string> {
     const { data } = await apiClient.post<{
         data: { accessToken: string };
-    }>('/auth/refresh');
+    }>('/auth/refresh', { timezone: getTimezone() });
 
     setAccessToken(data.data.accessToken);
     return data.data.accessToken;

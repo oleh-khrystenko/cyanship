@@ -1,13 +1,14 @@
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
+import StartBriefButton from '../StartBriefButton';
 
 const HeroSection = () => {
     const t = useTranslations('landing_page.hero');
     const tBrand = useTranslations('brand');
 
     return (
-        <section className="relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden py-20 md:py-28">
+        <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
             {/* Ambient glow — backlighting effect */}
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
                 <div className="absolute left-1/2 top-1/3 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.04] blur-[160px] dark:bg-primary/[0.07]" />
@@ -29,19 +30,17 @@ const HeroSection = () => {
                     </p>
 
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-                        <UiButton
-                            as="a"
-                            href="#pricing"
+                        <StartBriefButton
                             variant="filled"
                             size="lg"
                             className="w-full font-semibold sm:w-auto"
                             IconRight={<ArrowRight />}
                         >
                             {t('cta_primary')}
-                        </UiButton>
+                        </StartBriefButton>
                         <UiButton
                             as="link"
-                            href="/auth/signin"
+                            href="/billing"
                             variant="outline"
                             size="lg"
                             className="w-full sm:w-auto"

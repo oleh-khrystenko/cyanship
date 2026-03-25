@@ -26,7 +26,10 @@ const LANG_ITEMS: UiDropdownMenuItem[] = [
     },
 ];
 
-const ChangeLang: FC<ChangeLangProps> = () => {
+const ChangeLang: FC<ChangeLangProps> = ({
+    trigger: customTrigger,
+    align = 'end',
+}) => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -47,22 +50,24 @@ const ChangeLang: FC<ChangeLangProps> = () => {
         }
     };
 
+    const defaultTrigger = (
+        <UiButton
+            variant="icon"
+            size="sm"
+            aria-label={t('label')}
+            className="size-9"
+            IconLeft={<Globe />}
+        />
+    );
+
     return (
         <UiDropdownMenu
             items={LANG_ITEMS}
             onSelect={handleChangeLang}
             activeValue={activeLocale}
-            align="end"
+            align={align}
             size="sm"
-            trigger={
-                <UiButton
-                    variant="icon"
-                    size="sm"
-                    aria-label={t('label')}
-                    className="size-9"
-                    IconLeft={<Globe />}
-                />
-            }
+            trigger={customTrigger ?? defaultTrigger}
         />
     );
 };

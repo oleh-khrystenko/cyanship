@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useHeaderNavStore } from '@/stores/headerNav';
+import { useBriefDialogStore } from '@/stores/briefDialog';
 
 const navKeys = [
     { key: 'approach', href: '#problem' },
@@ -25,7 +26,10 @@ export default function LandingNav() {
             label: tNav(key),
         }));
 
-        setNav(items, { href: '#footer-cta', label: tHeader('get_started') });
+        setNav(items, {
+            label: tHeader('get_started'),
+            onClick: () => useBriefDialogStore.getState().open(),
+        });
 
         return () => clearNav();
     }, [tNav, tHeader, setNav, clearNav]);

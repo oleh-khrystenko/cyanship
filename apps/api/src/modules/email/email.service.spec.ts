@@ -9,6 +9,7 @@ jest.mock('../../config/env', () => ({
         RESEND_API_KEY: 'test-key',
         RESEND_FROM_EMAIL: 'CyanShip <test@resend.dev>',
         WEB_URL: 'http://localhost:3000',
+        ACCOUNT_DELETION_GRACE_DAYS: 2,
     },
 }));
 
@@ -54,7 +55,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     to: email,
-                    subject: 'Вхід до CyanShip',
+                    subject: 'Посилання для входу в CyanShip',
                     react: expect.anything(),
                 })
             );
@@ -91,7 +92,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Скидання пароля',
+                    subject: 'Скидання пароля CyanShip',
                 })
             );
 
@@ -115,7 +116,6 @@ describe('EmailService', () => {
 
             const html = getRenderedHtml();
             expect(html).toContain('Підтвердити видалення');
-            expect(html).toContain('30 днів');
         });
 
         it('should send login email with EN translations', async () => {
@@ -128,7 +128,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Sign in to CyanShip',
+                    subject: 'Your sign-in link for CyanShip',
                 })
             );
 
@@ -164,7 +164,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Reset Your Password',
+                    subject: 'Reset your CyanShip password',
                 })
             );
 
@@ -182,7 +182,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Confirm Account Deletion',
+                    subject: 'Confirm account deletion',
                 })
             );
 
@@ -256,7 +256,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Sign in to CyanShip',
+                    subject: 'Your sign-in link for CyanShip',
                 })
             );
         });
@@ -291,7 +291,7 @@ describe('EmailService', () => {
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     to: email,
-                    subject: 'Ваш акаунт деактивовано',
+                    subject: 'Ваш акаунт CyanShip деактивовано',
                     react: expect.anything(),
                 })
             );
@@ -306,7 +306,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Your account has been deactivated',
+                    subject: 'Your CyanShip account has been deactivated',
                 })
             );
         });
@@ -342,7 +342,7 @@ describe('EmailService', () => {
 
             expect(sendSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    subject: 'Your account has been deactivated',
+                    subject: 'Your CyanShip account has been deactivated',
                 })
             );
         });

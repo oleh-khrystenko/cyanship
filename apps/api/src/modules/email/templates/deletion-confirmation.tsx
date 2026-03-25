@@ -1,12 +1,16 @@
 import { Button, Text } from '@react-email/components';
 import { EMAIL_COLORS } from '@cyanship/types';
 
-import type { DeletionConfirmationTranslations } from '../i18n/types';
 import { BaseLayout } from './layouts/base';
 
 interface DeletionConfirmationEmailProps {
     signInUrl: string;
-    translations: DeletionConfirmationTranslations;
+    translations: {
+        body: (formattedDate: string) => string;
+        instruction: string;
+        cta: string;
+        footer: string;
+    };
     formattedDate: string;
     lang: string;
 }

@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import { deleteAccount } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
-import DeleteAccountModal from './DeleteAccountModal';
+import { useDeleteAccountDialogStore } from '@/stores/deleteAccountDialog';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const RESEND_COOLDOWN_SEC = 60;
@@ -16,13 +15,11 @@ const RESEND_COOLDOWN_SEC = 60;
 const DangerZone = () => {
     const t = useTranslations('profile_page.danger_zone');
     const tModal = useTranslations('delete_account_modal');
-    const locale = useLocale();
-    const router = useRouter();
 
     const user = useAuthStore((s) => s.user);
     const setUser = useAuthStore((s) => s.setUser);
+    const openDeleteDialog = useDeleteAccountDialogStore((s) => s.open);
 
-    const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [cooldownSec, setCooldownSec] = useState(0);
 
@@ -47,7 +44,7 @@ const DangerZone = () => {
             const result = await deleteAccount();
 
             if (result.requiresPassword) {
-                setShowModal(true);
+                openDeleteDialog();
             } else if (result.requiresMagicLink) {
                 if (user) {
                     setUser({
@@ -74,12 +71,6 @@ const DangerZone = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleDeleted = () => {
-        setShowModal(false);
-        toast.success(tModal('deleted'));
-        router.push(`/${locale}/auth/signin`);
     };
 
     const resendDisabled = loading || cooldownSec > 0;
@@ -125,13 +116,6 @@ const DangerZone = () => {
                         : t('delete_button')}
                 </UiButton>
             </div>
-
-            {showModal && (
-                <DeleteAccountModal
-                    onClose={() => setShowModal(false)}
-                    onDeleted={handleDeleted}
-                />
-            )}
         </section>
     );
 };

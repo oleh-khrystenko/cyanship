@@ -24,6 +24,10 @@ export const ENV = {
         process.env.NEXT_PUBLIC_API_URL,
         'NEXT_PUBLIC_API_URL'
     ),
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: assertEnv(
+        process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        'NEXT_PUBLIC_TURNSTILE_SITE_KEY'
+    ),
 } as const;
 
 export const PAYMENTS_SUBSCRIPTION_ENABLED =

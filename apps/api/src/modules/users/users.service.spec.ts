@@ -449,7 +449,11 @@ describe('UsersService', () => {
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
-                { deletedAt: null, accountDeletionRequestedAt: null }
+                {
+                    deletedAt: null,
+                    accountDeletionRequestedAt: null,
+                    deletionReminderSentAt: null,
+                }
             );
         });
     });

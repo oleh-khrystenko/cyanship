@@ -1,11 +1,16 @@
 'use client';
 
-import { FormEvent, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { CheckEmailSchema } from '@cyanship/types';
+import type { MagicLinkPurpose } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiInput from '@/shared/ui/UiInput';
@@ -13,7 +18,6 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
-import type { MagicLinkPurpose } from '@cyanship/types';
 import {
     checkEmail,
     loginWithPassword,
@@ -24,6 +28,14 @@ import {
 } from '@/shared/api';
 import { saveRedirect, consumeRedirect } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
+
+const EmailFormSchema = CheckEmailSchema;
+type EmailFormValues = z.input<typeof EmailFormSchema>;
+
+const PasswordFormSchema = z.object({
+    password: z.string().min(1),
+});
+type PasswordFormValues = z.input<typeof PasswordFormSchema>;
 
 type SigninState =
     | 'email'
@@ -48,9 +60,20 @@ function SigninContent() {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const setUser = useAuthStore((s) => s.setUser);
 
+    const emailForm = useForm<EmailFormValues>({
+        resolver: zodResolver(EmailFormSchema),
+        mode: 'onTouched',
+        defaultValues: { email: startWithPassword ? initialEmail! : '' },
+    });
+
+    const passwordForm = useForm<PasswordFormValues>({
+        resolver: zodResolver(PasswordFormSchema),
+        mode: 'onTouched',
+        defaultValues: { password: '' },
+    });
+
     const [state, setState] = useState<SigninState>(startWithPassword ? 'password' : 'email');
     const [email, setEmail] = useState(startWithPassword ? initialEmail : '');
-    const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showMagicLinkSuggestion, setShowMagicLinkSuggestion] =
@@ -143,24 +166,24 @@ function SigninContent() {
         window.location.href = `${ENV.NEXT_PUBLIC_API_URL}/auth/google`;
     };
 
-    const handleEmailSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const onEmailSubmit = async (data: EmailFormValues) => {
         if (!agreedToTerms) {
             setTermsError(t('terms_required'));
             return;
         }
+        setEmail(data.email);
         setState('loading');
         setErrorMessage('');
 
         try {
-            const { hasPassword, isNewUser } = await checkEmail(email);
+            const { hasPassword, isNewUser } = await checkEmail(data.email);
 
             if (hasPassword) {
                 setState('password');
             } else {
                 const purpose = isNewUser ? 'register' : 'login';
                 lastPurposeRef.current = purpose;
-                await sendMagicLink(email, locale, purpose, redirect ?? undefined);
+                await sendMagicLink(data.email, locale, purpose, redirect ?? undefined);
                 startResendTimer();
                 setState('magic-link-sent');
             }
@@ -170,13 +193,12 @@ function SigninContent() {
         }
     };
 
-    const handlePasswordSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        setSubmitting(true);
-        setErrorMessage('');
+    const onPasswordSubmit = async (data: PasswordFormValues) => {
+        passwordForm.clearErrors('root');
+        setShowMagicLinkSuggestion(false);
 
         try {
-            const result = await loginWithPassword(email, password);
+            const result = await loginWithPassword(email, data.password);
 
             if (result.accountDeleted) {
                 const deleted = result.user.deletedAt
@@ -195,7 +217,6 @@ function SigninContent() {
                 setDeletedAt(deleted.toLocaleDateString(locale));
                 setDeletedDaysLeft(daysLeft);
                 document.cookie = 'bid_account_deleted=true; path=/';
-                setSubmitting(false);
                 setState('recovery');
             } else {
                 const me = await getMe();
@@ -203,7 +224,6 @@ function SigninContent() {
                 router.push(consumeRedirect(`/${locale}/profile`));
             }
         } catch (err) {
-            setSubmitting(false);
             const code =
                 err instanceof AxiosError
                     ? err.response?.data?.error?.code
@@ -211,11 +231,25 @@ function SigninContent() {
 
             if (code === 'RATE_LIMIT_EXCEEDED') {
                 setShowMagicLinkSuggestion(true);
-                handleError(err);
+                const retryAfter =
+                    err instanceof AxiosError
+                        ? err.response?.headers?.['retry-after']
+                        : undefined;
+                const minutes = retryAfter
+                    ? Math.ceil(Number(retryAfter) / 60)
+                    : 15;
+                passwordForm.setError('root.serverError', {
+                    message: t('too_many_attempts', { minutes }),
+                });
             } else if (code === 'UNAUTHORIZED') {
-                setErrorMessage(t('invalid_credentials'));
+                passwordForm.setError('root.serverError', {
+                    message: t('invalid_credentials'),
+                });
             } else {
-                handleError(err);
+                const message = code
+                    ? tErrors(getApiMessageKey(code, 'auth'))
+                    : t('error_generic');
+                passwordForm.setError('root.serverError', { message });
             }
         }
     };
@@ -270,7 +304,7 @@ function SigninContent() {
 
     const goBackToEmail = () => {
         setState('email');
-        setPassword('');
+        passwordForm.reset();
         setErrorMessage('');
         setTermsError('');
         setSubmitting(false);
@@ -346,12 +380,12 @@ function SigninContent() {
                 <div className="h-px flex-1 bg-border" />
             </div>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
                 <UiInput
+                    {...emailForm.register('email')}
                     type="email"
                     placeholder={t('email_placeholder')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    error={emailForm.formState.errors.email && t('validation_email')}
                     required
                     IconLeft={<Mail />}
                     size="lg"
@@ -362,7 +396,7 @@ function SigninContent() {
                     variant="filled"
                     size="lg"
                     className="w-full justify-center"
-                    disabled={!email}
+                    disabled={emailForm.formState.isSubmitting}
                 >
                     {t('continue_button')}
                 </UiButton>
@@ -378,8 +412,10 @@ function SigninContent() {
     );
 
     // --- State: password ---
+    const isPasswordBusy = passwordForm.formState.isSubmitting || submitting;
+
     const renderPasswordState = () => (
-        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
             <div className="relative">
                 <UiInput
                     type="email"
@@ -400,10 +436,15 @@ function SigninContent() {
             </div>
 
             <UiPasswordInput
+                {...passwordForm.register('password', {
+                    onChange: () => passwordForm.clearErrors('root'),
+                })}
                 placeholder={t('password_placeholder')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                error={errorMessage || undefined}
+                error={
+                    passwordForm.formState.errors.password
+                        ? t('validation_password')
+                        : passwordForm.formState.errors.root?.serverError?.message
+                }
                 required
                 size="lg"
                 autoFocus
@@ -414,7 +455,7 @@ function SigninContent() {
                     variant="text"
                     size="sm"
                     onClick={handleForgotPassword}
-                    disabled={submitting}
+                    disabled={isPasswordBusy}
                     className="text-primary text-sm font-medium hover:underline"
                 >
                     {t('forgot_password')}
@@ -426,12 +467,12 @@ function SigninContent() {
                 variant="filled"
                 size="lg"
                 className="relative w-full justify-center"
-                disabled={submitting || !password}
+                disabled={isPasswordBusy}
             >
-                <span className={submitting ? 'invisible' : ''}>
+                <span className={passwordForm.formState.isSubmitting ? 'invisible' : ''}>
                     {t('signin_button')}
                 </span>
-                {submitting && (
+                {passwordForm.formState.isSubmitting && (
                     <span className="absolute inset-0 flex items-center justify-center">
                         <UiSpinner size="sm" />
                     </span>
@@ -444,7 +485,7 @@ function SigninContent() {
                     variant="filled"
                     size="lg"
                     className="w-full justify-center border border-border bg-card text-foreground hover:bg-secondary"
-                    disabled={submitting}
+                    disabled={isPasswordBusy}
                     onClick={handleSendMagicLinkFromPassword}
                     IconLeft={<Mail />}
                 >

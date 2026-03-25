@@ -196,6 +196,10 @@ export class UsersService {
         return free !== null;
     }
 
+    async updateTimezone(userId: string, timezone: string): Promise<void> {
+        await this.userModel.findByIdAndUpdate(userId, { timezone }).exec();
+    }
+
     async updateLang(userId: string, lang: string): Promise<void> {
         await this.userModel
             .findByIdAndUpdate(userId, { preferredLang: lang })
@@ -223,6 +227,7 @@ export class UsersService {
         await this.userModel.findByIdAndUpdate(userId, {
             deletedAt: null,
             accountDeletionRequestedAt: null,
+            deletionReminderSentAt: null,
         });
     }
 

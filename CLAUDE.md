@@ -1,6 +1,6 @@
 # CyanShip
 
-> Monorepo-monolith на Next.js 16 + NestJS 11: API володіє auth/session lifecycle, billing, а shared Zod/TypeScript контракти використовуються обома застосунками.
+> Monorepo-monolith на Next.js 16 + NestJS 11: API володіє auth/session lifecycle, billing, executions та agency brief submission, а shared Zod/TypeScript контракти використовуються обома застосунками.
 
 ## Tech Stack
 
@@ -12,11 +12,12 @@
 | Validation | Zod (shared contracts) | Zod 4.3 |
 | Payments | Stripe | 20.4 |
 | Email | Resend | 6.9 |
+| CAPTCHA | Cloudflare Turnstile | — |
 | Тести | Jest, Supertest, MongoMemoryServer, @testing-library/react | Jest 30.2 |
 
 ## Architecture Overview
 
-Monorepo з трьома workspace: `apps/api`, `apps/web`, `packages/types`. API — system of record для auth, session lifecycle, billing та webhook processing; web залишається тонким клієнтом і спілкується з API через shared Zod контракти. Frontend використовує Feature-Sliced Design. Модульний моноліт зі строгим Core/Agency розділенням — agency код живе в ізольованих шляхах, core не може імпортувати agency (ESLint `no-restricted-imports`). Модулі `reports`, `storage` (API) — scaffold/placeholder без бізнес-логіки; `agency` (API) — порожня директорія.
+Monorepo з трьома workspace: `apps/api`, `apps/web`, `packages/types`. API — system of record для auth, session lifecycle, billing, executions та webhook processing; web залишається тонким клієнтом і спілкується з API через shared Zod контракти. Frontend використовує Feature-Sliced Design. Модульний моноліт зі строгим Core/Agency розділенням — agency код живе в ізольованих шляхах, core не може імпортувати agency (ESLint `no-restricted-imports`). Модулі `reports`, `storage` (API) — scaffold/placeholder без бізнес-логіки. Модуль `agency` — brief submission з Turnstile CAPTCHA.
 
 ## Project Structure
 
@@ -29,13 +30,14 @@ apps/
 │   └── modules/         # auth, email, users, payments, agency, reports, storage
 ├── web/src/
 │   ├── app/[locale]/    # pages: auth, (protected), (agency)
-│   ├── features/        # auth, change-lang, change-theme, profile, billing, agency
+│   ├── entities/        # agency, brand
+│   ├── features/        # auth, billing, agency, profile, change-lang, change-theme
 │   ├── widgets/         # header, agency/landing
-│   ├── shared/          # api, ui, config, styles, icons, seo, lib, types
-│   ├── stores/          # auth, headerNav (Zustand)
+│   ├── stores/          # auth, headerNav, briefDialog, deleteAccountDialog, billingResetDialog, termsReacceptDialog, mobileMenuSheet, dogfoodingSheet
+│   ├── shared/          # api, ui, config, styles, icons, seo, lib, fonts, types
 │   └── i18n/            # routing, request config
 packages/
-└── types/src/           # contracts, entities, enums, constants, validation, utils
+└── types/src/           # contracts, entities, enums, constants, validation, utils, agency
 docs/
 ├── architecture/        # auth-flow, payments-flow
 └── conventions/         # source-of-truth правила
@@ -45,10 +47,15 @@ docs/
 
 ### User
 Файл: `apps/api/src/modules/users/schemas/user.schema.ts` | Zod: `packages/types/src/entities/user.ts`
-- Soft-delete через `deletedAt` + `accountDeletionRequestedAt` (grace period, щоденний cron hard-delete)
+- Soft-delete через `deletedAt` + `accountDeletionRequestedAt` (grace period, cron hard-delete)
 - Embedded `billing` subdocument (nullable, створюється лише при першій billing-події) з `lastProviderEventAt` для out-of-order webhook protection
 - Embedded `executions` subdocument (`balance`, `freeReportUsed`) з atomic `$inc` операціями
 - Sparse indexes: `provider.id`, `billing.providerCustomerId`, `billing.providerSubscriptionId`
+
+### ExecutionTransaction
+Файл: `apps/api/src/modules/users/schemas/execution-transaction.schema.ts`
+- Ledger для credit/debit операцій з executions (type, action, amount, balanceAfter)
+- Compound index `(userId, createdAt desc)` для швидких запитів останніх транзакцій
 
 ### ProcessedWebhookEvent
 Файл: `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts`
@@ -58,17 +65,23 @@ docs/
 ### OrphanedProviderCustomer
 Файл: `apps/api/src/modules/payments/schemas/orphaned-provider-customer.schema.ts`
 - Unique `(provider, providerCustomerId)` — черга невдалих видалень Stripe customers
-- Retry з лічильником `attempts` (max 5), щоденний cron `PaymentsCleanupService`
+- Retry з лічильником `attempts` (max 5), cron `PaymentsCleanupService`
+
+### Brief
+Файл: `apps/api/src/modules/agency/schemas/brief.schema.ts`
+- Заявка від клієнта (name, email, description, budget, deadline, status)
+- Status index; статуси визначені в `packages/types/src/agency/brief.ts`
 
 ## Module Dependency Map
 
-- `AppModule` → `AuthModule`, `EmailModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`
+- `AppModule` → `AuthModule`, `EmailModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`, `AgencyModule`
 - `AppModule` global providers: `ThrottlerGuard` (APP_GUARD), `OnboardingInterceptor` (APP_INTERCEPTOR)
 - `AuthModule` ↔ `UsersModule` (`forwardRef`, circular)
 - `EmailModule` — `@Global()`, доступний всім модулям
 - `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` injection token + `CatalogService` + `REDIS_CLIENT`
 - `CatalogService` → own Stripe SDK instance + `REDIS_CLIENT` (no dependency on `IPaymentProvider`)
-- `CleanupService` (cron, 3 AM) → `AuthService` + `UserModel`
+- `AgencyModule` → `EmailModule` (global) + `TurnstileService` + `BriefService`
+- `CleanupService` (cron, every 6h) → `AuthService` + `UserModel`
 - `PaymentsCleanupService` (cron, 4 AM) → `PAYMENT_PROVIDER` + `OrphanedProviderCustomerModel`
 - Web: `shared/api/client.ts` → axios interceptors → refresh dedupe → `authStore`
 - Web: protected routes → `AuthGuard` компонент → auth store → `shared/api/auth.ts`
@@ -98,16 +111,22 @@ Access JWT в пам'яті (web), refresh JWT в `bid_refresh` httpOnly cookie,
 Provider abstraction (`PAYMENT_PROVIDER` → `StripeService`), two-phase idempotency через `ProcessedWebhookEvent`, atomic out-of-order guard через `lastProviderEventAt` в MongoDB query. Feature flags контролюють subscription/one-off. Orphaned customer cleanup через `OrphanedProviderCustomer` + daily cron. Повна документація: `docs/architecture/payments-flow/README.md`
 
 ### Billing catalog (Stripe as single source of truth)
-`CatalogService` (`apps/api/src/modules/payments/catalog.service.ts`) fetches Products/Prices from Stripe API, caches in Redis (TTL 5 min). Has own Stripe SDK instance (not via `IPaymentProvider`) to avoid circular DI. Warms cache on startup (fail-fast). Public endpoint `GET /payments/catalog` — no auth, applies feature flags. Plan/pack codes remain as TypeScript union types (`SubscriptionPlanCode`, `ExecutionPackCode`) — structural identifiers for i18n keys, images, DB records. Business data (prices, executions, display order, featured) comes exclusively from Stripe Product metadata (`code`, `purchase_type`, `executions`, `display_order`, `featured`).
+`CatalogService` (`apps/api/src/modules/payments/catalog.service.ts`) fetches Products/Prices from Stripe API, caches in Redis (TTL 5 min). Has own Stripe SDK instance (not via `IPaymentProvider`) to avoid circular DI. Warms cache on startup (fail-fast). Public endpoint `GET /payments/catalog` — no auth, applies feature flags. Plan/pack codes remain as TypeScript union types (`SubscriptionPlanCode`, `ExecutionPackCode`) — structural identifiers for i18n keys, images, DB records. Business data (prices, executions, display order, featured) comes exclusively from Stripe Product metadata.
 
 ### Error handling та i18n mapping
 API повертає machine-readable `code` через `AllExceptionsFilter`; web маппить codes на locale keys через `shared/api/mapApiCode.ts`. Конвенція: `docs/conventions/i18n.md`
 
 ### Soft-delete lifecycle
-Запит на видалення → `accountDeletionRequestedAt` + `deletedAt` → grace period (configurable) → `CleanupService` cron щоночі о 3:00 hard-delete + revoke tokens. Файл: `apps/api/src/modules/users/cleanup.service.ts`
+Запит на видалення → `accountDeletionRequestedAt` + `deletedAt` → grace period (configurable) → `CleanupService` cron кожні 6 годин hard-delete + revoke tokens. Файл: `apps/api/src/modules/users/cleanup.service.ts`
 
 ### Frontend auth flow
 `AuthInitializer` (client effect) → `refreshToken()` → `getMe()` → hydrate `authStore`. Перевіряє terms version, показує modal при outdated. `AuthGuard` компонент в protected layout перевіряє auth + onboarding completion. Middleware (`middleware.ts`) перевіряє `bid_refresh` cookie для server-side redirects.
+
+### Overlay management
+Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (dynamic imports). Конвенція: `docs/conventions/overlays.md`
+
+### Execution ledger
+Atomic `$inc` на `user.executions.balance` + створення `ExecutionTransaction` запису. Spend-ендпоінт перевіряє достатність балансу. Файл: `apps/api/src/modules/users/users.service.ts`
 
 ## API Overview
 
@@ -142,6 +161,8 @@ Global prefix: `/api`. Rate limiting: `ThrottlerModule` (60 req/min global). Glo
 | PATCH | `/users/me` | `JwtActiveGuard` | Оновлення профілю |
 | PATCH | `/users/me/lang` | `JwtActiveGuard` | Зміна мови |
 | POST | `/users/me/accept-terms` | `JwtActiveGuard` | Прийняття ToS версії |
+| POST | `/users/me/executions/spend` | `JwtActiveGuard` | Витрата executions |
+| GET | `/users/me/executions/transactions` | `JwtActiveGuard` | Історія транзакцій executions |
 | POST | `/users/account/delete` | `JwtActiveGuard` | Запит на видалення |
 | POST | `/users/account/delete/confirm` | `JwtActiveGuard` | Підтвердження видалення паролем |
 | POST | `/users/account/restore` | `JwtAuthGuard` | Відновлення акаунту |
@@ -154,6 +175,11 @@ Global prefix: `/api`. Rate limiting: `ThrottlerModule` (60 req/min global). Glo
 | POST | `/payments/portal-session` | `JwtActiveGuard` | Створення billing portal URL |
 | POST | `/payments/reset` | `JwtActiveGuard` | Скидання billing (видалення Stripe customer) |
 | POST | `/payments/webhook/:provider` | — + `@SkipThrottle()` | Stripe webhook ingestion |
+
+### BriefController (`apps/api/src/modules/agency/brief.controller.ts`)
+| Метод | Шлях | Guard | Опис |
+|-------|------|-------|------|
+| POST | `/agency/brief` | — + `@SkipOnboarding()` | Подача brief (Turnstile CAPTCHA) |
 
 ### Reports / Storage
 Scaffold без ендпоінтів.
@@ -173,12 +199,14 @@ Scaffold без ендпоінтів.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+- `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`
 - `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED` (хоча б один `true`)
 - Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
 
 **Web — ALL required (crash if missing)**
 - `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED`, `NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 
 **Web — optional**
 - `API_INTERNAL_URL` — server-side reverse proxy target (rewrites в `next.config.ts`)
@@ -233,7 +261,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 ## Rules & Conventions
 
 - Source of truth для repo-wide правил: `docs/conventions/README.md`
-- Читай перед роботою з відповідними зонами: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`
+- Читай перед роботою з відповідними зонами: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `ui-primitives.md`, `design-tokens.md`, `overlays.md`
 - Повна документація auth та billing flow: `docs/architecture/auth-flow/README.md`, `docs/architecture/payments-flow/README.md`
 
 ## Known Complexities

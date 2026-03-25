@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { ENV } from '@/shared/config';
+import { getTimezone } from '@/shared/lib';
 
 // In-memory token storage (more secure than localStorage)
 let accessToken: string | null = null;
@@ -62,7 +63,7 @@ apiClient.interceptors.response.use(
             refreshPromise = axios
                 .post<{ data: { accessToken: string } }>(
                     `${ENV.NEXT_PUBLIC_API_URL}/auth/refresh`,
-                    null,
+                    { timezone: getTimezone() },
                     { withCredentials: true }
                 )
                 .then((res) => {

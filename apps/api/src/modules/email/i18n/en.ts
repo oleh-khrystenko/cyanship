@@ -5,36 +5,52 @@ import type { EmailTranslations } from './types';
 export const en = {
     magicLink: {
         [MAGIC_LINK_PURPOSE.LOGIN]: {
-            subject: 'Sign in to CyanShip',
-            body: 'Click the button below to sign in to your account.',
+            subject: 'Your sign-in link for CyanShip',
+            body: 'We received a sign-in request for your account. Use the button below to continue.',
             cta: 'Sign In',
-            footer: "This link expires in 15 minutes. If you didn't request this — ignore this email.",
+            footer: "This link expires in 15 minutes. If you didn't request this, you can safely ignore this email.",
         },
         [MAGIC_LINK_PURPOSE.REGISTER]: {
             subject: 'Welcome to CyanShip',
-            body: 'Click the button below to complete your registration.',
+            body: 'Thank you for signing up. Use the button below to complete your registration.',
             cta: 'Complete Registration',
-            footer: "This link expires in 15 minutes. If you didn't sign up — ignore this email.",
+            footer: "This link expires in 15 minutes. If you didn't create an account, you can safely ignore this email.",
         },
         [MAGIC_LINK_PURPOSE.RESET_PASSWORD]: {
-            subject: 'Reset Your Password',
-            body: 'Click the button below to reset your password.',
+            subject: 'Reset your CyanShip password',
+            body: 'We received a password reset request for your account. Use the button below to set a new password.',
             cta: 'Reset Password',
-            footer: "This link expires in 15 minutes. If you didn't request a reset — ignore this email.",
+            footer: "This link expires in 15 minutes. If you didn't request this, your password remains unchanged — no action needed.",
         },
         [MAGIC_LINK_PURPOSE.DELETE_ACCOUNT]: {
-            subject: 'Confirm Account Deletion',
-            body: 'Click the button below to confirm account deletion. After confirmation, you will have 30 days to recover your account — just sign in during that time.',
+            subject: 'Confirm account deletion',
+            body: 'We received a request to delete your CyanShip account. Use the button below to confirm.',
             cta: 'Confirm Deletion',
-            footer: "This link expires in 15 minutes. If you didn't request deletion — ignore this email.",
+            footer: "This link expires in 15 minutes. If you didn't request this, you can safely ignore this email — your account will not be affected.",
         },
     },
     deletionConfirmation: {
-        subject: 'Your account has been deactivated',
+        subject: 'Your CyanShip account has been deactivated',
         body: (formattedDate: string) =>
-            `Your CyanShip account has been deactivated. All data will be permanently deleted on ${formattedDate}.`,
-        instruction: 'To restore your account, simply sign in within 30 days.',
+            `Your account has been deactivated as requested. All data will be permanently deleted on ${formattedDate}.`,
+        instruction: (graceDays: number) =>
+            `Changed your mind? Simply sign in within ${graceDays} ${graceDays === 1 ? 'day' : 'days'} to restore your account.`,
         cta: 'Sign In',
-        footer: "If you didn't request deletion — sign in to your account as soon as possible.",
+        footer: "If you didn't request this, please sign in immediately to secure your account.",
+    },
+    deletionReminder: {
+        subject: 'Reminder: your account will be deleted tomorrow',
+        body: (formattedDate: string) =>
+            `We wanted to remind you that your CyanShip account is scheduled for permanent deletion on ${formattedDate}.`,
+        instruction:
+            "If you'd like to keep your account, simply sign in before then.",
+        cta: 'Sign In',
+        footer: "If you didn't request deletion, please sign in immediately to secure your account.",
+    },
+    briefConfirmation: {
+        subject: 'We received your project request',
+        body: (name: string) =>
+            `Thank you, ${name}. We have received your project brief and will review it within 24 hours. You will receive a detailed response to this email address.`,
+        footer: 'If you did not submit this request, you can safely ignore this email.',
     },
 } satisfies EmailTranslations;

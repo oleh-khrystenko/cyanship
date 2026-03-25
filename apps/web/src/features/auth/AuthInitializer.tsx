@@ -6,7 +6,7 @@ import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 
 import { getMe, refreshToken } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
-import { TermsReacceptModal } from './TermsReacceptModal';
+import { useTermsReacceptDialogStore } from '@/stores/termsReacceptDialog';
 
 // Auth pages that handle their own refresh/verify flow
 const SELF_AUTH_PATHS = ['/auth/callback', '/auth/verify', '/auth/reset-password'];
@@ -14,8 +14,6 @@ const SELF_AUTH_PATHS = ['/auth/callback', '/auth/verify', '/auth/reset-password
 const AuthInitializer = () => {
     const setUser = useAuthStore((s) => s.setUser);
     const clearUser = useAuthStore((s) => s.clearUser);
-    const setTermsOutdated = useAuthStore((s) => s.setTermsOutdated);
-    const termsOutdated = useAuthStore((s) => s.termsOutdated);
     const pathname = usePathname();
     const triedRef = useRef(false);
 
@@ -39,7 +37,7 @@ const AuthInitializer = () => {
                 setUser(user);
 
                 if (user.termsVersion !== CURRENT_TERMS_VERSION) {
-                    setTermsOutdated(true);
+                    useTermsReacceptDialogStore.getState().open();
                 }
             } catch {
                 clearUser();
@@ -47,14 +45,9 @@ const AuthInitializer = () => {
         };
 
         void init();
-    }, [setUser, clearUser, setTermsOutdated, pathname]);
+    }, [setUser, clearUser, pathname]);
 
-    return (
-        <TermsReacceptModal
-            open={termsOutdated}
-            onAccepted={() => setTermsOutdated(false)}
-        />
-    );
+    return null;
 };
 
 export default AuthInitializer;

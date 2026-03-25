@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from 'react';
+import { type FC, type ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { Sun, Moon, SunMoon } from 'lucide-react';
@@ -9,7 +9,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import type { UiDropdownMenuItem } from '@/shared/ui/UiDropdownMenu';
 
-const THEME_ICONS: Record<Theme, typeof Sun> = {
+export const THEME_ICONS: Record<Theme, typeof Sun> = {
     [THEME.LIGHT]: Sun,
     [THEME.SYSTEM]: SunMoon,
     [THEME.DARK]: Moon,
@@ -21,7 +21,15 @@ const THEME_KEYS: { value: Theme; key: string }[] = [
     { value: THEME.DARK, key: 'dark' },
 ];
 
-const ChangeTheme: FC = () => {
+interface ChangeThemeProps {
+    trigger?: ReactNode;
+    align?: 'start' | 'end';
+}
+
+const ChangeTheme: FC<ChangeThemeProps> = ({
+    trigger: customTrigger,
+    align = 'end',
+}) => {
     const { theme, setTheme } = useTheme();
     const t = useTranslations('components.change_theme');
 
@@ -36,22 +44,24 @@ const ChangeTheme: FC = () => {
         };
     });
 
+    const defaultTrigger = (
+        <UiButton
+            variant="icon"
+            size="sm"
+            aria-label={t('label')}
+            className="size-9"
+            IconLeft={<TriggerIcon />}
+        />
+    );
+
     return (
         <UiDropdownMenu
             items={items}
             onSelect={setTheme}
             activeValue={theme}
-            align="end"
+            align={align}
             size="sm"
-            trigger={
-                <UiButton
-                    variant="icon"
-                    size="sm"
-                    aria-label={t('label')}
-                    className="size-9"
-                    IconLeft={<TriggerIcon />}
-                />
-            }
+            trigger={customTrigger ?? defaultTrigger}
         />
     );
 };

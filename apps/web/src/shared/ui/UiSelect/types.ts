@@ -21,4 +21,6 @@ export interface UiSelectProps {
     disabled?: boolean;
     placeholder?: string;
     label?: string;
+    required?: boolean;
+    error?: ReactNode;
 }
