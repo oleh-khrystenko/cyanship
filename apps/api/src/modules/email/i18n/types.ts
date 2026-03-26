@@ -25,7 +25,9 @@ export interface DeletionReminderTranslations {
 
 export interface BriefConfirmationTranslations {
     subject: string;
-    body: (name: string) => string;
+    heading: string;
+    body: string;
+    instruction: string;
     footer: string;
 }
 
