@@ -84,16 +84,19 @@ export default function SubscriptionStatus() {
                             : t('renews_on', {
                                   date: formatLocalDate(billing.currentPeriodEnd, locale),
                               })}
-                        {activePlan &&
-                            ` · ${t('executions_per_period', {
+                    </p>
+                    {activePlan && (
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                            {t('executions_per_period', {
                                 count: activePlan.executions.toLocaleString(
                                     toIntlLocale(locale)
                                 ),
-                            })}`}
-                    </p>
+                            })}
+                        </p>
+                    )}
                     {billing.scheduledPlanCode && (
-                        <p className="mt-1 text-sm text-primary">
-                            {t('scheduled_change', {
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                            {t.rich('scheduled_change', {
                                 plan: tPlans(
                                     `${billing.scheduledPlanCode}.name`,
                                     {
@@ -104,6 +107,11 @@ export default function SubscriptionStatus() {
                                 date: formatLocalDate(
                                     billing.scheduledChangeDate ?? null,
                                     locale
+                                ),
+                                accent: (chunks) => (
+                                    <span className="font-semibold text-foreground">
+                                        {chunks}
+                                    </span>
                                 ),
                             })}
                         </p>

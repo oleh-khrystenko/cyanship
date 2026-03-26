@@ -332,7 +332,7 @@
             "renews_on": "Renews on {date}",
             "cancels_on": "Cancels on {date}",
             "executions_per_period": "{count} executions per period",
-            "scheduled_change": "Switching to {plan} on {date}",
+            "scheduled_change": "Switching to <accent>{plan}</accent> on {date}",
             "manage": "Manage",
             "view_plans": "View plans"
         }

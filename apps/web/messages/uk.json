@@ -332,7 +332,7 @@
             "renews_on": "Поновлення {date}",
             "cancels_on": "Діє до {date}",
             "executions_per_period": "{count} виконань за період",
-            "scheduled_change": "Перехід на {plan} з {date}",
+            "scheduled_change": "Перехід на <accent>{plan}</accent> з {date}",
             "manage": "Керувати",
             "view_plans": "Переглянути плани"
         }
