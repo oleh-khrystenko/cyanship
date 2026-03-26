@@ -57,7 +57,6 @@ function SigninContent() {
     const initialStep = searchParams.get('step');
     const startWithPassword = !!(initialEmail && initialStep === 'password');
 
-    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const setUser = useAuthStore((s) => s.setUser);
 
     const emailForm = useForm<EmailFormValues>({
@@ -90,12 +89,6 @@ function SigninContent() {
     useEffect(() => {
         if (redirect) saveRedirect(redirect);
     }, [redirect]);
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            router.replace(consumeRedirect(`/${locale}/profile`));
-        }
-    }, [isAuthenticated, locale, router]);
 
     const startResendTimer = useCallback(() => {
         setResendCountdown(60);
