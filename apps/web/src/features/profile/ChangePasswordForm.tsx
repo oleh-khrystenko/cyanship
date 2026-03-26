@@ -10,6 +10,7 @@ import { passwordSchema } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
+import { getFieldError } from '@/shared/lib';
 import { changePassword, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -119,9 +120,14 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     error={
                         errors.newPassword?.type === 'same_as_current'
                             ? errors.newPassword.message
-                            : errors.newPassword
-                              ? (!newPwd ? t('password_required') : t('password_too_short'))
-                              : undefined
+                            : getFieldError(
+                                  errors.newPassword,
+                                  {
+                                      required: t('password_required'),
+                                      too_small: t('password_too_short'),
+                                  },
+                                  newPwd,
+                              )
                     }
                     required
                     size="lg"

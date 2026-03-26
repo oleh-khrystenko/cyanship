@@ -19,7 +19,7 @@ import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar'
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
 import { checkEmail, sendMagicLink, logout } from '@/shared/api';
-import { saveRedirect } from '@/shared/lib';
+import { saveRedirect, getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
 const EmailFormSchema = CheckEmailSchema;
@@ -354,11 +354,13 @@ const ProofAuth = () => {
                     error={
                         emailErrors.email?.type === 'server'
                             ? emailErrors.email.message
-                            : emailErrors.email
-                              ? (emailErrors.email.type === 'invalid_string'
-                                  ? t('validation_email_format')
-                                  : t('validation_email_required'))
-                              : undefined
+                            : getFieldError(
+                                  emailErrors.email,
+                                  {
+                                      required: t('validation_email_required'),
+                                      invalid_string: t('validation_email_format'),
+                                  },
+                              )
                     }
                     required
                     size="lg"

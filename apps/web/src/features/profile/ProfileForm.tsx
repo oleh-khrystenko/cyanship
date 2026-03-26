@@ -10,6 +10,7 @@ import type { UserProfile } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
+import { getFieldError } from '@/shared/lib';
 import { updateProfile, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -44,7 +45,10 @@ const ProfileForm = ({
     });
 
     const { errors, isSubmitting, isDirty } = form.formState;
-    const watchedValues = form.watch();
+    const [firstNameValue, lastNameValue] = form.watch([
+        'firstName',
+        'lastName',
+    ]);
 
     const onSubmit = async (data: ProfileFormValues) => {
         const firstName = data.firstName.trim();
@@ -72,24 +76,12 @@ const ProfileForm = ({
         form.reset();
     };
 
-    const getFieldError = (
-        field: 'firstName' | 'lastName'
-    ): string | undefined => {
-        const error = errors[field];
-        if (!error) return undefined;
-
-        if (error.type === 'too_big') return t('name_too_long');
-        if (error.type === 'invalid_string' || error.type === 'invalid_format')
-            return t('name_invalid_chars');
-        if (error.type === 'too_small') {
-            if (field === 'firstName' && !watchedValues[field]?.trim())
-                return t('name_required');
-            return t('name_too_short');
-        }
-
-        return field === 'firstName'
-            ? t('name_required')
-            : t('name_invalid_chars');
+    const nameMessages = {
+        required: t('name_required'),
+        too_small: t('name_too_short'),
+        too_big: t('name_too_long'),
+        invalid_string: t('name_invalid_chars'),
+        invalid_format: t('name_invalid_chars'),
     };
 
     return (
@@ -117,7 +109,7 @@ const ProfileForm = ({
                         {...form.register('firstName')}
                         type="text"
                         placeholder={t('name_placeholder')}
-                        error={getFieldError('firstName')}
+                        error={getFieldError(errors.firstName, nameMessages, firstNameValue)}
                         disabled={!editable}
                         size="lg"
                     />
@@ -131,7 +123,7 @@ const ProfileForm = ({
                         {...form.register('lastName')}
                         type="text"
                         placeholder={t('last_name_placeholder')}
-                        error={getFieldError('lastName')}
+                        error={getFieldError(errors.lastName, nameMessages, lastNameValue)}
                         disabled={!editable}
                         size="lg"
                     />

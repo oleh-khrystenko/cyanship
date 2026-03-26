@@ -14,6 +14,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
+import { getFieldError } from '@/shared/lib';
 import { resetPassword } from '@/shared/api';
 
 const ResetPasswordFormSchema = z.object({
@@ -120,10 +121,14 @@ function ResetPasswordContent() {
                             },
                         })}
                         placeholder={t('new_password_placeholder')}
-                        error={
-                            errors.newPassword &&
-                            (!newPwd ? t('password_required') : t('password_too_short'))
-                        }
+                        error={getFieldError(
+                            errors.newPassword,
+                            {
+                                required: t('password_required'),
+                                too_small: t('password_too_short'),
+                            },
+                            newPwd,
+                        )}
                         disabled={isSubmitting}
                         autoFocus
                         size="lg"
@@ -141,9 +146,14 @@ function ResetPasswordContent() {
                         error={
                             errors.confirmPassword?.type === 'mismatch'
                                 ? errors.confirmPassword.message
-                                : errors.confirmPassword
-                                  ? (!confirmPwd ? t('password_required') : t('password_too_short'))
-                                  : undefined
+                                : getFieldError(
+                                      errors.confirmPassword,
+                                      {
+                                          required: t('password_required'),
+                                          too_small: t('password_too_short'),
+                                      },
+                                      confirmPwd,
+                                  )
                         }
                         disabled={isSubmitting}
                         size="lg"

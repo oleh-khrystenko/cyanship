@@ -26,7 +26,7 @@ import {
     getMe,
     getApiMessageKey,
 } from '@/shared/api';
-import { saveRedirect, consumeRedirect } from '@/shared/lib';
+import { saveRedirect, consumeRedirect, getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
 const EmailFormSchema = CheckEmailSchema;
@@ -385,12 +385,13 @@ function SigninContent() {
                     {...emailForm.register('email')}
                     type="email"
                     placeholder={t('email_placeholder')}
-                    error={
-                        emailForm.formState.errors.email &&
-                        (emailForm.formState.errors.email.type === 'invalid_string'
-                            ? t('validation_email_format')
-                            : t('validation_email_required'))
-                    }
+                    error={getFieldError(
+                        emailForm.formState.errors.email,
+                        {
+                            required: t('validation_email_required'),
+                            invalid_string: t('validation_email_format'),
+                        },
+                    )}
                     required
                     IconLeft={<Mail />}
                     size="lg"
