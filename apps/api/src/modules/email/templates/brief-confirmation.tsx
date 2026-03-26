@@ -15,17 +15,11 @@ export function BriefConfirmationEmail({
     translations: t,
     lang,
 }: BriefConfirmationEmailProps) {
-    const [before, after] = t.body.split('{{name}}');
-
     return (
         <BaseLayout lang={lang}>
             <Text style={heading}>{t.heading}</Text>
             <Hr style={divider} />
-            <Text style={bodyText}>
-                {before}
-                <strong>{name}</strong>
-                {after}
-            </Text>
+            <Text style={bodyText}>{t.body(name)}</Text>
             <Text style={instructionText}>{t.instruction}</Text>
             <Text style={footer}>{t.footer}</Text>
         </BaseLayout>
