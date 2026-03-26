@@ -322,7 +322,20 @@
     "dashboard_page": {
         "greeting": "Вітаємо, {name}",
         "heading": "Дашборд",
-        "balance_label": "Баланс виконань"
+        "balance_label": "Баланс виконань",
+        "subscription": {
+            "label": "Підписка",
+            "no_active": "Немає активної підписки",
+            "plan_name": "План {plan}",
+            "status_active": "Активна",
+            "status_canceling": "Скасовується",
+            "renews_on": "Поновлення {date}",
+            "cancels_on": "Діє до {date}",
+            "executions_per_period": "{count} виконань за період",
+            "scheduled_change": "Перехід на {plan} з {date}",
+            "manage": "Керувати",
+            "view_plans": "Переглянути плани"
+        }
     },
     "profile_page": {
         "heading": "Профіль",

@@ -9,6 +9,8 @@ import {
     UiAvatarImage,
     UiAvatarFallback,
 } from '@/shared/ui/UiAvatar';
+import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
+import SubscriptionStatus from './SubscriptionStatus';
 
 export default function DashboardPage() {
     const t = useTranslations('dashboard_page');
@@ -61,6 +63,9 @@ export default function DashboardPage() {
                     {formattedBalance}
                 </p>
             </section>
+
+            {/* ── Subscription Status ── */}
+            {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}
         </main>
     );
 }

@@ -322,7 +322,20 @@
     "dashboard_page": {
         "greeting": "Welcome, {name}",
         "heading": "Dashboard",
-        "balance_label": "Execution balance"
+        "balance_label": "Execution balance",
+        "subscription": {
+            "label": "Subscription",
+            "no_active": "No active subscription",
+            "plan_name": "{plan} Plan",
+            "status_active": "Active",
+            "status_canceling": "Canceling",
+            "renews_on": "Renews on {date}",
+            "cancels_on": "Cancels on {date}",
+            "executions_per_period": "{count} executions per period",
+            "scheduled_change": "Switching to {plan} on {date}",
+            "manage": "Manage",
+            "view_plans": "View plans"
+        }
     },
     "profile_page": {
         "heading": "Profile",
