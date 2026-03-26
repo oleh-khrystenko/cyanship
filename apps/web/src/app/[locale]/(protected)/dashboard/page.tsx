@@ -53,7 +53,7 @@ export default function DashboardPage() {
             <section className="rounded-xl border border-border bg-card p-6 md:p-8">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Zap className="size-4" />
-                    <span className="text-sm font-medium">
+                    <span className="font-medium">
                         {t('balance_label')}
                     </span>
                 </div>
