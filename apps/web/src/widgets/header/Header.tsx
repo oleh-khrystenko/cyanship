@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -19,6 +19,7 @@ import { getFullName } from '@cyanship/types';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
 import { useUserMenu } from './useUserMenu';
+import { useActiveSection } from './useActiveSection';
 
 function useScrolled(threshold: number) {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -36,46 +37,6 @@ function useScrolled(threshold: number) {
     return isScrolled;
 }
 
-function useActiveSection(sectionIds: string[]) {
-    const [activeId, setActiveId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (sectionIds.length === 0) return;
-
-        const visibleIds = new Set<string>();
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((e) => {
-                    if (e.isIntersecting) {
-                        visibleIds.add(e.target.id);
-                    } else {
-                        visibleIds.delete(e.target.id);
-                    }
-                });
-
-                if (visibleIds.size === 0) {
-                    setActiveId(null);
-                } else {
-                    const first = sectionIds.find((id) => visibleIds.has(id));
-                    setActiveId(first ?? null);
-                }
-            },
-            { rootMargin: '-20% 0px -60% 0px' }
-        );
-
-        const elements = sectionIds
-            .map((id) => document.getElementById(id))
-            .filter(Boolean) as HTMLElement[];
-
-        elements.forEach((el) => observer.observe(el));
-
-        return () => observer.disconnect();
-    }, [sectionIds]);
-
-    return activeId;
-}
-
 const Header = () => {
     const t = useTranslations('components.header');
     const locale = useLocale();
@@ -89,11 +50,8 @@ const Header = () => {
     const pathname = usePathname();
     const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
-    const sectionIds = useMemo(
-        () => navItems.map((item) => item.href.replace('#', '')),
-        [navItems]
-    );
-    const activeSection = useActiveSection(sectionIds);
+    const activeSection = useHeaderNavStore((s) => s.activeSection);
+    useActiveSection();
     const isScrolled = useScrolled(32);
     const showGlass = !hasNav || isScrolled;
     const [canAnimate, setCanAnimate] = useState(false);

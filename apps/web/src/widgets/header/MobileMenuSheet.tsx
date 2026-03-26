@@ -52,6 +52,7 @@ export default function MobileMenuSheet() {
 
     const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
+    const activeSection = useHeaderNavStore((s) => s.activeSection);
 
     const { visibleItems, handleSelect, initials } = useUserMenu({
         profile: <User />,
@@ -75,16 +76,21 @@ export default function MobileMenuSheet() {
                     {/* Navigation */}
                     {hasNav && (
                         <nav className="flex flex-col gap-1">
-                            {navItems.map(({ href, label }) => (
-                                <a
-                                    key={href}
-                                    href={href}
-                                    className={menuItemStyles}
-                                    onClick={close}
-                                >
-                                    {label}
-                                </a>
-                            ))}
+                            {navItems.map(({ href, label }) => {
+                                const isActive =
+                                    activeSection ===
+                                    href.replace('#', '');
+                                return (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        className={`${menuItemStyles} ${isActive ? 'text-foreground bg-muted/50' : ''}`}
+                                        onClick={close}
+                                    >
+                                        {label}
+                                    </a>
+                                );
+                            })}
                         </nav>
                     )}
 
