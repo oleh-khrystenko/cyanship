@@ -354,7 +354,11 @@ const ProofAuth = () => {
                     error={
                         emailErrors.email?.type === 'server'
                             ? emailErrors.email.message
-                            : emailErrors.email && t('validation_email')
+                            : emailErrors.email
+                              ? (emailErrors.email.type === 'invalid_string'
+                                  ? t('validation_email_format')
+                                  : t('validation_email_required'))
+                              : undefined
                     }
                     required
                     size="lg"

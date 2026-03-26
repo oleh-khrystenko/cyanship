@@ -44,6 +44,7 @@ const ProfileForm = ({
     });
 
     const { errors, isSubmitting, isDirty } = form.formState;
+    const watchedValues = form.watch();
 
     const onSubmit = async (data: ProfileFormValues) => {
         const firstName = data.firstName.trim();
@@ -77,10 +78,14 @@ const ProfileForm = ({
         const error = errors[field];
         if (!error) return undefined;
 
-        if (error.type === 'too_small') return t('name_too_short');
         if (error.type === 'too_big') return t('name_too_long');
         if (error.type === 'invalid_string' || error.type === 'invalid_format')
             return t('name_invalid_chars');
+        if (error.type === 'too_small') {
+            if (field === 'firstName' && !watchedValues[field]?.trim())
+                return t('name_required');
+            return t('name_too_short');
+        }
 
         return field === 'firstName'
             ? t('name_required')

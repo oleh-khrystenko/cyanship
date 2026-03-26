@@ -96,6 +96,7 @@ function ResetPasswordContent() {
     }
 
     const { errors, isSubmitting } = form.formState;
+    const [newPwd, confirmPwd] = form.watch(['newPassword', 'confirmPassword']);
 
     return (
         <main className="flex min-h-screen items-center justify-center px-4">
@@ -119,7 +120,10 @@ function ResetPasswordContent() {
                             },
                         })}
                         placeholder={t('new_password_placeholder')}
-                        error={errors.newPassword && t('password_too_short')}
+                        error={
+                            errors.newPassword &&
+                            (!newPwd ? t('password_required') : t('password_too_short'))
+                        }
                         disabled={isSubmitting}
                         autoFocus
                         size="lg"
@@ -137,7 +141,9 @@ function ResetPasswordContent() {
                         error={
                             errors.confirmPassword?.type === 'mismatch'
                                 ? errors.confirmPassword.message
-                                : errors.confirmPassword && t('password_too_short')
+                                : errors.confirmPassword
+                                  ? (!confirmPwd ? t('password_required') : t('password_too_short'))
+                                  : undefined
                         }
                         disabled={isSubmitting}
                         size="lg"

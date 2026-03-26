@@ -385,7 +385,12 @@ function SigninContent() {
                     {...emailForm.register('email')}
                     type="email"
                     placeholder={t('email_placeholder')}
-                    error={emailForm.formState.errors.email && t('validation_email')}
+                    error={
+                        emailForm.formState.errors.email &&
+                        (emailForm.formState.errors.email.type === 'invalid_string'
+                            ? t('validation_email_format')
+                            : t('validation_email_required'))
+                    }
                     required
                     IconLeft={<Mail />}
                     size="lg"

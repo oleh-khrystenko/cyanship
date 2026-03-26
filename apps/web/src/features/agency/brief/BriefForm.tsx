@@ -150,7 +150,14 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 label={t('email_label')}
                 type="email"
                 placeholder={t('email_placeholder')}
-                error={errors.email && t('validation_email')}
+                error={
+                    errors.email &&
+                    (errors.email.type === 'too_big'
+                        ? t('validation_email_max')
+                        : errors.email.type === 'invalid_string'
+                          ? t('validation_email_format')
+                          : t('validation_email_required'))
+                }
                 disabled={isSubmitting}
                 required
             />
@@ -159,7 +166,14 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 label={t('description_label')}
                 placeholder={t('description_placeholder')}
                 rows={4}
-                error={errors.description && t('validation_description')}
+                error={
+                    errors.description &&
+                    (errors.description.type === 'too_big'
+                        ? t('validation_description_max')
+                        : !watch('description')?.trim()
+                          ? t('validation_description_required')
+                          : t('validation_description_min'))
+                }
                 disabled={isSubmitting}
                 required
             />
