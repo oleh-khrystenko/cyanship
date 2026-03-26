@@ -322,7 +322,8 @@
     "dashboard_page": {
         "greeting": "Вітаємо, {name}",
         "heading": "Дашборд",
-        "balance_label": "Баланс виконань",
+        "balance_label": "Баланс",
+        "balance_unit": "виконань",
         "subscription": {
             "label": "Підписка",
             "no_active": "Немає активної підписки",
@@ -456,7 +457,7 @@
             "status_canceling": "Активна до {date}",
             "next_billing_executions": "Наступне списання {date} · {executions} виконань",
             "cancel_notice": "Підписку буде скасовано після завершення поточного періоду.",
-            "scheduled_change": "Перехід на {plan} з {date}",
+            "scheduled_change": "Перехід на <accent>{plan}</accent> з {date}",
             "manage_button": "Керувати підпискою",
             "manage_error": "Не вдалося відкрити портал керування"
         },

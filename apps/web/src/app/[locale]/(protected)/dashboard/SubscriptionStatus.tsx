@@ -109,7 +109,7 @@ export default function SubscriptionStatus() {
                                     locale
                                 ),
                                 accent: (chunks) => (
-                                    <span className="font-semibold text-foreground">
+                                    <span className="font-bold">
                                         {chunks}
                                     </span>
                                 ),

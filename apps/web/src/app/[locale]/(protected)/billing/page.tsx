@@ -293,12 +293,23 @@ export default function BillingPage() {
                                     {billing?.scheduledPlanCode && (
                                         <span className="text-info">
                                             {' · '}
-                                            {t('active.scheduled_change', {
-                                                plan: billing.scheduledPlanCode,
+                                            {t.rich('active.scheduled_change', {
+                                                plan: t(
+                                                    `plans.${billing.scheduledPlanCode}.name`,
+                                                    {
+                                                        defaultValue:
+                                                            billing.scheduledPlanCode,
+                                                    }
+                                                ),
                                                 date: formatLocalDate(
                                                     billing.scheduledChangeDate ??
                                                         null,
                                                     locale
+                                                ),
+                                                accent: (chunks) => (
+                                                    <span className="font-bold">
+                                                        {chunks}
+                                                    </span>
                                                 ),
                                             })}
                                         </span>
