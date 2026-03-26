@@ -42,18 +42,23 @@ function useActiveSection(sectionIds: string[]) {
     useEffect(() => {
         if (sectionIds.length === 0) return;
 
+        const visibleIds = new Set<string>();
+
         const observer = new IntersectionObserver(
             (entries) => {
-                const visible = entries
-                    .filter((e) => e.isIntersecting)
-                    .sort(
-                        (a, b) =>
-                            a.boundingClientRect.top -
-                            b.boundingClientRect.top
-                    );
+                entries.forEach((e) => {
+                    if (e.isIntersecting) {
+                        visibleIds.add(e.target.id);
+                    } else {
+                        visibleIds.delete(e.target.id);
+                    }
+                });
 
-                if (visible.length > 0) {
-                    setActiveId(visible[0].target.id);
+                if (visibleIds.size === 0) {
+                    setActiveId(null);
+                } else {
+                    const first = sectionIds.find((id) => visibleIds.has(id));
+                    setActiveId(first ?? null);
                 }
             },
             { rootMargin: '-20% 0px -60% 0px' }
