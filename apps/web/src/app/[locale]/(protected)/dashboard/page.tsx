@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getFullName, getInitials } from '@cyanship/types';
 import { Zap } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
+import { toIntlLocale } from '@/shared/lib';
 import {
     UiAvatar,
     UiAvatarImage,
@@ -22,9 +23,7 @@ export default function DashboardPage() {
     const fullName = getFullName(user.profile.firstName, user.profile.lastName);
     const initials = getInitials(fullName, user.email);
     const balance = user.executions.balance;
-    const formattedBalance = balance.toLocaleString(
-        locale === 'uk' ? 'uk-UA' : 'en-US'
-    );
+    const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
 
     return (
         <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 md:py-16">

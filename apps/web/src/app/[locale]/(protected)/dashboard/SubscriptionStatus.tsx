@@ -7,6 +7,7 @@ import { CreditCard } from 'lucide-react';
 import type { PaymentsCatalog } from '@cyanship/types';
 import { getCatalog } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
+import { formatLocalDate, toIntlLocale } from '@/shared/lib';
 
 export default function SubscriptionStatus() {
     const t = useTranslations('dashboard_page.subscription');
@@ -24,15 +25,6 @@ export default function SubscriptionStatus() {
             .then(setCatalog)
             .catch(() => {});
     }, [hasActive]);
-
-    const formatDate = (date: Date | string | null) => {
-        if (!date) return '';
-        return new Intl.DateTimeFormat(locale === 'uk' ? 'uk-UA' : 'en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        }).format(date instanceof Date ? date : new Date(date));
-    };
 
     const activePlan =
         hasActive && catalog
@@ -87,15 +79,15 @@ export default function SubscriptionStatus() {
                     <p className="mt-1 text-sm text-muted-foreground">
                         {billing.cancelAtPeriodEnd
                             ? t('cancels_on', {
-                                  date: formatDate(billing.currentPeriodEnd),
+                                  date: formatLocalDate(billing.currentPeriodEnd, locale),
                               })
                             : t('renews_on', {
-                                  date: formatDate(billing.currentPeriodEnd),
+                                  date: formatLocalDate(billing.currentPeriodEnd, locale),
                               })}
                         {activePlan &&
                             ` · ${t('executions_per_period', {
                                 count: activePlan.executions.toLocaleString(
-                                    locale === 'uk' ? 'uk-UA' : 'en-US'
+                                    toIntlLocale(locale)
                                 ),
                             })}`}
                     </p>
@@ -109,8 +101,9 @@ export default function SubscriptionStatus() {
                                             billing.scheduledPlanCode,
                                     }
                                 ),
-                                date: formatDate(
-                                    billing.scheduledChangeDate ?? null
+                                date: formatLocalDate(
+                                    billing.scheduledChangeDate ?? null,
+                                    locale
                                 ),
                             })}
                         </p>
