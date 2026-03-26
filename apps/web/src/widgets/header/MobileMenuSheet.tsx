@@ -32,8 +32,9 @@ import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
 import { useUserMenu } from './useUserMenu';
 
-const menuItemStyles =
-    '-mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground';
+const menuItemBase =
+    '-mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors';
+const menuItemStyles = `${menuItemBase} text-muted-foreground hover:bg-muted/50 hover:text-foreground`;
 
 export default function MobileMenuSheet() {
     const t = useTranslations('components.header');
@@ -84,7 +85,11 @@ export default function MobileMenuSheet() {
                                     <a
                                         key={href}
                                         href={href}
-                                        className={`${menuItemStyles} ${isActive ? 'text-foreground bg-muted/50' : ''}`}
+                                        className={`${menuItemBase} ${
+                                            isActive
+                                                ? 'text-foreground bg-muted/50'
+                                                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                                        }`}
                                         onClick={close}
                                     >
                                         {label}
