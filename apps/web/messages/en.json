@@ -96,6 +96,8 @@
                 "actions": {
                     "standard_report": "Report generated",
                     "ai_analysis": "AI analysis completed",
+                    "deep_analysis": "Deep analysis completed",
+                    "full_audit": "Full audit completed",
                     "subscription_activation": "Subscription activated",
                     "pack_purchase": "Execution pack purchased",
                     "plan_change": "Plan changed",

@@ -6,6 +6,8 @@ export const EXECUTION_ACTION = {
     // Debit (user-initiated)
     STANDARD_REPORT: 'standard_report',
     AI_ANALYSIS: 'ai_analysis',
+    DEEP_ANALYSIS: 'deep_analysis',
+    FULL_AUDIT: 'full_audit',
     // Credit (system, via webhooks)
     SUBSCRIPTION_ACTIVATION: 'subscription_activation',
     PACK_PURCHASE: 'pack_purchase',
@@ -32,6 +34,8 @@ export type ExecutionTransactionType =
 export const SPENDABLE_ACTIONS = [
     EXECUTION_ACTION.STANDARD_REPORT,
     EXECUTION_ACTION.AI_ANALYSIS,
+    EXECUTION_ACTION.DEEP_ANALYSIS,
+    EXECUTION_ACTION.FULL_AUDIT,
 ] as const;
 
 export type SpendableAction = (typeof SPENDABLE_ACTIONS)[number];
@@ -39,6 +43,8 @@ export type SpendableAction = (typeof SPENDABLE_ACTIONS)[number];
 export const EXECUTION_ACTION_COST: Record<SpendableAction, number> = {
     [EXECUTION_ACTION.STANDARD_REPORT]: 100,
     [EXECUTION_ACTION.AI_ANALYSIS]: 500,
+    [EXECUTION_ACTION.DEEP_ANALYSIS]: 1_000,
+    [EXECUTION_ACTION.FULL_AUDIT]: 2_000,
 } as const;
 
 // --- Schemas ---

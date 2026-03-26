@@ -96,6 +96,8 @@
                 "actions": {
                     "standard_report": "Звіт згенеровано",
                     "ai_analysis": "AI аналіз завершено",
+                    "deep_analysis": "Глибокий аналіз завершено",
+                    "full_audit": "Повний аудит завершено",
                     "subscription_activation": "Підписку активовано",
                     "pack_purchase": "Пакет виконань придбано",
                     "plan_change": "План змінено",
