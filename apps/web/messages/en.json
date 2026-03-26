@@ -320,7 +320,8 @@
         "validation_budget": "Please select a budget range"
     },
     "dashboard_page": {
-        "greeting": "Welcome, {name}"
+        "greeting": "Welcome, {name}",
+        "heading": "Dashboard"
     },
     "profile_page": {
         "heading": "Profile",

@@ -320,7 +320,8 @@
         "validation_budget": "Оберіть діапазон бюджету"
     },
     "dashboard_page": {
-        "greeting": "Вітаємо, {name}"
+        "greeting": "Вітаємо, {name}",
+        "heading": "Дашборд"
     },
     "profile_page": {
         "heading": "Профіль",
