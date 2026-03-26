@@ -26,6 +26,7 @@ export function getInitials(name: string | undefined, email: string): string {
 }
 
 export function useUserMenu(icons: {
+    dashboard: ReactNode;
     profile: ReactNode;
     billing: ReactNode;
     logout: ReactNode;
@@ -40,6 +41,12 @@ export function useUserMenu(icons: {
     const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
 
     const allItems: UserMenuItem[] = [
+        {
+            value: 'dashboard',
+            label: t('dashboard'),
+            icon: icons.dashboard,
+            route: `/${locale}/dashboard`,
+        },
         {
             value: 'profile',
             label: t('profile'),

@@ -39,7 +39,7 @@ export default function CallbackPage() {
                 // (sign-in page checkbox was checked before redirect)
                 await acceptTerms().catch(() => {});
 
-                router.replace(consumeRedirect(`/${locale}/profile`));
+                router.replace(consumeRedirect(`/${locale}/dashboard`));
             } catch {
                 // getMe failed → user is soft-deleted (JwtActiveGuard blocks)
                 if (isAccountDeleted) {
@@ -64,7 +64,7 @@ export default function CallbackPage() {
             toast.success(tRecovery('restored'));
             const user = await getMe();
             useAuthStore.getState().setUser(user);
-            router.replace(consumeRedirect(`/${locale}/profile`));
+            router.replace(consumeRedirect(`/${locale}/dashboard`));
         } catch {
             setSubmitting(false);
             router.replace(`/${locale}/auth/signin`);

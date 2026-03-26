@@ -317,6 +317,9 @@
         "validation_description_max": "Опис не може перевищувати 5 000 символів",
         "validation_budget": "Оберіть діапазон бюджету"
     },
+    "dashboard_page": {
+        "greeting": "Вітаємо, {name}"
+    },
     "profile_page": {
         "heading": "Профіль",
         "new_heading": "Заповніть профіль",
@@ -483,6 +486,7 @@
             "signin": "Увійти",
             "get_started": "Почати",
             "logout": "Вийти",
+            "dashboard": "Дашборд",
             "profile": "Профіль",
             "billing": "Білінг",
             "settings": "Налаштування",

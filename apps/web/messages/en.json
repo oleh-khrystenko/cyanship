@@ -317,6 +317,9 @@
         "validation_description_max": "Description must not exceed 5,000 characters",
         "validation_budget": "Please select a budget range"
     },
+    "dashboard_page": {
+        "greeting": "Welcome, {name}"
+    },
     "profile_page": {
         "heading": "Profile",
         "new_heading": "Complete your profile",
@@ -483,6 +486,7 @@
             "signin": "Sign in",
             "get_started": "Get Started",
             "logout": "Log out",
+            "dashboard": "Dashboard",
             "profile": "Profile",
             "billing": "Billing",
             "settings": "Settings",
