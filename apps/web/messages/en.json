@@ -321,7 +321,9 @@
     },
     "dashboard_page": {
         "greeting": "Welcome, {name}",
-        "heading": "Dashboard"
+        "heading": "Dashboard",
+        "balance_label": "Execution balance",
+        "balance_unit": "executions available"
     },
     "profile_page": {
         "heading": "Profile",

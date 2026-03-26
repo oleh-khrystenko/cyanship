@@ -1,7 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getFullName, getInitials } from '@cyanship/types';
+import { Zap } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import {
     UiAvatar,
@@ -11,15 +12,21 @@ import {
 
 export default function DashboardPage() {
     const t = useTranslations('dashboard_page');
+    const locale = useLocale();
     const user = useAuthStore((s) => s.user);
 
     if (!user) return null;
 
     const fullName = getFullName(user.profile.firstName, user.profile.lastName);
     const initials = getInitials(fullName, user.email);
+    const balance = user.executions.balance;
+    const formattedBalance = balance.toLocaleString(
+        locale === 'uk' ? 'uk-UA' : 'en-US'
+    );
 
     return (
-        <main className="mx-auto max-w-3xl px-4 py-12 md:py-16">
+        <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 md:py-16">
+            {/* ── Greeting ── */}
             <div className="flex items-center gap-4">
                 <UiAvatar size="xl">
                     <UiAvatarImage
@@ -41,6 +48,22 @@ export default function DashboardPage() {
                     </p>
                 </div>
             </div>
+
+            {/* ── Execution Balance ── */}
+            <section className="rounded-xl border border-border bg-card p-6 md:p-8">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Zap className="size-4" />
+                    <span className="text-sm font-medium">
+                        {t('balance_label')}
+                    </span>
+                </div>
+                <p className="mt-2 text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+                    {formattedBalance}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    {t('balance_unit')}
+                </p>
+            </section>
         </main>
     );
 }
