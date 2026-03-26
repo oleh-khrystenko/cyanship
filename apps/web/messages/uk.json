@@ -322,8 +322,7 @@
     "dashboard_page": {
         "greeting": "Вітаємо, {name}",
         "heading": "Дашборд",
-        "balance_label": "Баланс виконань",
-        "balance_unit": "виконань доступно"
+        "balance_label": "Баланс виконань"
     },
     "profile_page": {
         "heading": "Профіль",

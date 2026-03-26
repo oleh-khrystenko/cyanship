@@ -57,11 +57,8 @@ export default function DashboardPage() {
                         {t('balance_label')}
                     </span>
                 </div>
-                <p className="mt-2 text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+                <p className="mt-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
                     {formattedBalance}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    {t('balance_unit')}
                 </p>
             </section>
         </main>
