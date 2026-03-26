@@ -46,6 +46,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         register,
         control,
         handleSubmit,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm<BriefFormValues>({
         resolver: zodResolver(BriefFormSchema),
@@ -131,7 +132,16 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 {...register('name')}
                 label={t('name_label')}
                 placeholder={t('name_placeholder')}
-                error={errors.name && t('validation_name')}
+                error={
+                    errors.name &&
+                    (errors.name.type === 'too_big'
+                        ? t('validation_name_max')
+                        : errors.name.type === 'invalid_string'
+                          ? t('validation_name_format')
+                          : !watch('name')?.trim()
+                            ? t('validation_name_required')
+                            : t('validation_name_min'))
+                }
                 disabled={isSubmitting}
                 required
             />

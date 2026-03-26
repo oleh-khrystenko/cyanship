@@ -302,7 +302,10 @@
         "submit": "Submit Brief",
         "submitting": "Submitting...",
         "captcha_not_ready": "Security verification in progress. Please try again in a moment.",
-        "validation_name": "Name is required",
+        "validation_name_required": "Please enter your name",
+        "validation_name_min": "Name must be at least 2 characters",
+        "validation_name_max": "Name must not exceed 100 characters",
+        "validation_name_format": "Name can only contain letters, spaces, apostrophes, and hyphens",
         "validation_email": "Please enter a valid email address",
         "validation_description": "Please describe your project (at least 10 characters)",
         "validation_budget": "Please select a budget range"
