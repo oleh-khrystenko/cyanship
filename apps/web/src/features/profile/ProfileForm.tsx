@@ -5,17 +5,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { nameSchema } from '@cyanship/types';
+import { firstNameSchema, lastNameSchema } from '@cyanship/types';
 import type { UserProfile } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
+import { getFieldError } from '@/shared/lib';
 import { updateProfile, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
 const ProfileFormSchema = z.object({
-    firstName: z.string().trim().min(1),
-    lastName: z.string().trim(),
+    firstName: firstNameSchema,
+    lastName: z.union([lastNameSchema, z.literal('')]),
 });
 
 type ProfileFormValues = z.input<typeof ProfileFormSchema>;
@@ -26,19 +27,6 @@ interface ProfileFormProps {
     onSaved?: () => void;
 }
 
-function parseName(fullName?: string): { firstName: string; lastName: string } {
-    if (!fullName) return { firstName: '', lastName: '' };
-    const parts = fullName.trim().split(/\s+/);
-    return {
-        firstName: parts[0] ?? '',
-        lastName: parts.slice(1).join(' '),
-    };
-}
-
-function combineName(firstName: string, lastName: string): string {
-    return [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
-}
-
 const ProfileForm = ({
     user,
     editable,
@@ -47,46 +35,35 @@ const ProfileForm = ({
     const t = useTranslations('profile_page.form');
     const setUser = useAuthStore((s) => s.setUser);
 
-    const parsed = parseName(user.profile.name);
-
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(ProfileFormSchema),
         mode: 'onTouched',
         defaultValues: {
-            firstName: parsed.firstName,
-            lastName: parsed.lastName,
+            firstName: user.profile.firstName ?? '',
+            lastName: user.profile.lastName ?? '',
         },
     });
 
     const { errors, isSubmitting, isDirty } = form.formState;
-
-    const clearNameValidationError = () => {
-        if (errors.firstName?.type === 'validate') {
-            form.clearErrors('firstName');
-        }
-    };
+    const [firstNameValue, lastNameValue] = form.watch([
+        'firstName',
+        'lastName',
+    ]);
 
     const onSubmit = async (data: ProfileFormValues) => {
-        const fullName = combineName(data.firstName, data.lastName);
-        const nameResult = nameSchema.safeParse(fullName);
-
-        if (!nameResult.success) {
-            const code = nameResult.error.issues[0]?.code;
-            const message = code === 'too_small'
-                ? t('name_too_short')
-                : t('name_invalid_chars');
-            form.setError('firstName', { type: 'validate', message });
-            return;
-        }
+        const firstName = data.firstName.trim();
+        const lastName = data.lastName.trim();
 
         try {
-            await updateProfile({ name: fullName });
+            await updateProfile({
+                firstName,
+                ...(lastName ? { lastName } : { lastName: '' }),
+            });
             const me = await getMe();
             setUser(me);
-            const newParsed = parseName(me.profile.name);
             form.reset({
-                firstName: newParsed.firstName,
-                lastName: newParsed.lastName,
+                firstName: me.profile.firstName ?? '',
+                lastName: me.profile.lastName ?? '',
             });
             toast.success(t('saved'));
             onSaved?.();
@@ -97,6 +74,14 @@ const ProfileForm = ({
 
     const handleCancel = () => {
         form.reset();
+    };
+
+    const nameMessages = {
+        required: t('name_required'),
+        too_small: t('name_too_short'),
+        too_big: t('name_too_long'),
+        invalid_string: t('name_invalid_chars'),
+        invalid_format: t('name_invalid_chars'),
     };
 
     return (
@@ -121,18 +106,10 @@ const ProfileForm = ({
                         <span className="text-destructive ml-1">*</span>
                     </label>
                     <UiInput
-                        {...form.register('firstName', {
-                            onChange: clearNameValidationError,
-                        })}
+                        {...form.register('firstName')}
                         type="text"
                         placeholder={t('name_placeholder')}
-                        error={
-                            errors.firstName?.type === 'validate'
-                                ? errors.firstName.message
-                                : errors.firstName
-                                    ? t('name_required')
-                                    : undefined
-                        }
+                        error={getFieldError(errors.firstName, nameMessages, firstNameValue)}
                         disabled={!editable}
                         size="lg"
                     />
@@ -143,11 +120,10 @@ const ProfileForm = ({
                         {t('last_name_label')}
                     </label>
                     <UiInput
-                        {...form.register('lastName', {
-                            onChange: clearNameValidationError,
-                        })}
+                        {...form.register('lastName')}
                         type="text"
                         placeholder={t('last_name_placeholder')}
+                        error={getFieldError(errors.lastName, nameMessages, lastNameValue)}
                         disabled={!editable}
                         size="lg"
                     />

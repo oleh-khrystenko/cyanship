@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { z } from 'zod';
-import { CheckEmailSchema } from '@cyanship/types';
+import { CheckEmailSchema, getFullName } from '@cyanship/types';
 import type { MagicLinkPurpose } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
@@ -19,7 +19,7 @@ import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar'
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
 import { checkEmail, sendMagicLink, logout } from '@/shared/api';
-import { saveRedirect } from '@/shared/lib';
+import { saveRedirect, getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
 const EmailFormSchema = CheckEmailSchema;
@@ -177,8 +177,9 @@ const ProofAuth = () => {
 
     // Authenticated view
     if (isAuthenticated && user) {
-        const initials = user.profile.name
-            ? user.profile.name
+        const fullName = getFullName(user.profile.firstName, user.profile.lastName);
+        const initials = fullName
+            ? fullName
                   .split(' ')
                   .filter(Boolean)
                   .map((w) => w[0])
@@ -194,16 +195,16 @@ const ProofAuth = () => {
                         {user.profile.avatar && (
                             <UiAvatarImage
                                 src={user.profile.avatar}
-                                alt={user.profile.name || user.email}
+                                alt={fullName || user.email}
                             />
                         )}
                         <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
                     </UiAvatar>
 
                     <div className="space-y-1 text-center">
-                        {user.profile.name && (
+                        {fullName && (
                             <p className="text-xl font-semibold text-foreground">
-                                {user.profile.name}
+                                {fullName}
                             </p>
                         )}
                         <p className="text-base text-muted-foreground">{user.email}</p>
@@ -353,7 +354,13 @@ const ProofAuth = () => {
                     error={
                         emailErrors.email?.type === 'server'
                             ? emailErrors.email.message
-                            : emailErrors.email && t('validation_email')
+                            : getFieldError(
+                                  emailErrors.email,
+                                  {
+                                      required: t('validation_email_required'),
+                                      invalid_string: t('validation_email_format'),
+                                  },
+                              )
                     }
                     required
                     size="lg"

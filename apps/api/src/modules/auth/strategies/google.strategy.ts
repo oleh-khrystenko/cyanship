@@ -6,7 +6,8 @@ import { ENV } from '../../../config/env';
 
 export interface GoogleValidatedUser {
     email: string;
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: string;
     providerId: string;
 }
@@ -30,6 +31,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             id: string;
             emails?: { value: string; verified?: boolean }[];
             displayName?: string;
+            name?: { givenName?: string; familyName?: string };
             photos?: { value: string }[];
         },
         done: VerifyCallback
@@ -56,7 +58,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
         const user: GoogleValidatedUser = {
             email: emailEntry.value,
-            name: profile.displayName,
+            firstName:
+                profile.name?.givenName ?? profile.displayName ?? undefined,
+            lastName: profile.name?.familyName ?? undefined,
             avatar: profile.photos?.[0]?.value,
             providerId: profile.id,
         };

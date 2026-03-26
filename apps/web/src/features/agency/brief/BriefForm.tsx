@@ -20,6 +20,7 @@ import UiSelect from '@/shared/ui/UiSelect';
 import UiChipGroup from '@/shared/ui/UiChipGroup';
 import { submitBrief } from '@/shared/api/agency';
 import { getApiMessageKey } from '@/shared/api/mapApiCode';
+import { getFieldError } from '@/shared/lib';
 import { getSource } from './lib/source';
 import { useTurnstile } from './lib/useTurnstile';
 
@@ -46,6 +47,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         register,
         control,
         handleSubmit,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm<BriefFormValues>({
         resolver: zodResolver(BriefFormSchema),
@@ -56,6 +58,12 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             description: '',
         },
     });
+
+    const [nameValue, emailValue, descriptionValue] = watch([
+        'name',
+        'email',
+        'description',
+    ]);
 
     const { containerRef, execute: executeTurnstile, reset: resetTurnstile } = useTurnstile();
 
@@ -131,7 +139,16 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 {...register('name')}
                 label={t('name_label')}
                 placeholder={t('name_placeholder')}
-                error={errors.name && t('validation_name')}
+                error={getFieldError(
+                    errors.name,
+                    {
+                        required: t('validation_name_required'),
+                        too_small: t('validation_name_min'),
+                        too_big: t('validation_name_max'),
+                        invalid_string: t('validation_name_format'),
+                    },
+                    nameValue,
+                )}
                 disabled={isSubmitting}
                 required
             />
@@ -140,7 +157,15 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 label={t('email_label')}
                 type="email"
                 placeholder={t('email_placeholder')}
-                error={errors.email && t('validation_email')}
+                error={getFieldError(
+                    errors.email,
+                    {
+                        required: t('validation_email_required'),
+                        too_big: t('validation_email_max'),
+                        invalid_string: t('validation_email_format'),
+                    },
+                    emailValue,
+                )}
                 disabled={isSubmitting}
                 required
             />
@@ -149,7 +174,15 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 label={t('description_label')}
                 placeholder={t('description_placeholder')}
                 rows={4}
-                error={errors.description && t('validation_description')}
+                error={getFieldError(
+                    errors.description,
+                    {
+                        required: t('validation_description_required'),
+                        too_small: t('validation_description_min'),
+                        too_big: t('validation_description_max'),
+                    },
+                    descriptionValue,
+                )}
                 disabled={isSubmitting}
                 required
             />

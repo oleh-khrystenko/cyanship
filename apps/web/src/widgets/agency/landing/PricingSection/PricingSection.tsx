@@ -71,7 +71,7 @@ const PricingSection = () => {
 
                     {/* FAQ — lg:pt offsets label+heading height so FAQ aligns with the card */}
                     <div className="lg:pt-[7.5rem]">
-                        <h3 className="mb-6 text-lg font-semibold">
+                        <h3 className="mb-6 text-2xl font-bold tracking-tight">
                             {t('faq_heading')}
                         </h3>
                         <div className="space-y-6">

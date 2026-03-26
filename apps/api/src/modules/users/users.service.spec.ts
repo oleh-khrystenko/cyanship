@@ -9,7 +9,11 @@ const mockUserDoc = (overrides = {}) => ({
     id: '507f1f77bcf86cd799439011',
     email: 'test@gmail.com',
     provider: { name: 'google', id: 'google-123' },
-    profile: { name: 'John Doe', avatar: 'https://photo.url' },
+    profile: {
+        firstName: 'John',
+        lastName: 'Doe',
+        avatar: 'https://photo.url',
+    },
     executions: { balance: 0, freeReportUsed: false },
     preferredLang: 'uk',
     lastLoginAt: null as Date | null,
@@ -96,7 +100,8 @@ describe('UsersService', () => {
     describe('findOrCreateByGoogle', () => {
         const googleProfile = {
             email: 'Test@Gmail.com',
-            name: 'John Doe',
+            firstName: 'John',
+            lastName: 'Doe',
             avatar: 'https://photo.url',
             providerId: 'google-123',
         };
@@ -113,7 +118,11 @@ describe('UsersService', () => {
             expect(mockModel.create).toHaveBeenCalledWith({
                 email: 'test@gmail.com',
                 provider: { name: 'google', id: 'google-123' },
-                profile: { name: 'John Doe', avatar: 'https://photo.url' },
+                profile: {
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    avatar: 'https://photo.url',
+                },
                 lastLoginAt: expect.any(Date),
             });
             expect(result).toBe(created);
@@ -137,7 +146,11 @@ describe('UsersService', () => {
         it('should set provider if missing on existing user', async () => {
             const existing = mockUserDoc({
                 provider: undefined,
-                profile: { name: 'John Doe', avatar: 'https://photo.url' },
+                profile: {
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    avatar: 'https://photo.url',
+                },
             });
             existing.save.mockResolvedValue(existing);
             mockModel.findOne.mockReturnValue({
@@ -154,7 +167,11 @@ describe('UsersService', () => {
 
         it('should enrich missing name from Google profile', async () => {
             const existing = mockUserDoc({
-                profile: { name: undefined, avatar: 'https://existing.url' },
+                profile: {
+                    firstName: undefined,
+                    lastName: undefined,
+                    avatar: 'https://existing.url',
+                },
             });
             existing.save.mockResolvedValue(existing);
             mockModel.findOne.mockReturnValue({
@@ -163,12 +180,17 @@ describe('UsersService', () => {
 
             await service.findOrCreateByGoogle(googleProfile);
 
-            expect(existing.profile.name).toBe('John Doe');
+            expect(existing.profile.firstName).toBe('John');
+            expect(existing.profile.lastName).toBe('Doe');
         });
 
         it('should enrich missing avatar from Google profile', async () => {
             const existing = mockUserDoc({
-                profile: { name: 'Existing Name', avatar: undefined },
+                profile: {
+                    firstName: 'Existing',
+                    lastName: 'Name',
+                    avatar: undefined,
+                },
             });
             existing.save.mockResolvedValue(existing);
             mockModel.findOne.mockReturnValue({
@@ -183,7 +205,8 @@ describe('UsersService', () => {
         it('should NOT overwrite existing name with Google data', async () => {
             const existing = mockUserDoc({
                 profile: {
-                    name: 'Existing Name',
+                    firstName: 'Existing',
+                    lastName: 'Name',
                     avatar: 'https://existing.url',
                 },
             });
@@ -194,7 +217,8 @@ describe('UsersService', () => {
 
             await service.findOrCreateByGoogle(googleProfile);
 
-            expect(existing.profile.name).toBe('Existing Name');
+            expect(existing.profile.firstName).toBe('Existing');
+            expect(existing.profile.lastName).toBe('Name');
             expect(existing.profile.avatar).toBe('https://existing.url');
         });
     });
@@ -459,21 +483,30 @@ describe('UsersService', () => {
     });
 
     describe('updateProfile', () => {
-        it('should update name and avatar', async () => {
+        it('should update firstName, lastName and avatar', async () => {
             const updated = mockUserDoc({
-                profile: { name: 'New Name', avatar: 'https://new.url' },
+                profile: {
+                    firstName: 'New',
+                    lastName: 'Name',
+                    avatar: 'https://new.url',
+                },
             });
             mockModel.findByIdAndUpdate.mockResolvedValue(updated);
 
             const result = await service.updateProfile(
                 '507f1f77bcf86cd799439011',
-                { name: 'New Name', avatar: 'https://new.url' }
+                {
+                    firstName: 'New',
+                    lastName: 'Name',
+                    avatar: 'https://new.url',
+                }
             );
 
             expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 '507f1f77bcf86cd799439011',
                 {
-                    'profile.name': 'New Name',
+                    'profile.firstName': 'New',
+                    'profile.lastName': 'Name',
                     'profile.avatar': 'https://new.url',
                 },
                 { new: true }
@@ -500,11 +533,12 @@ describe('UsersService', () => {
             mockModel.findByIdAndUpdate.mockResolvedValue(mockUserDoc());
 
             await service.updateProfile('507f1f77bcf86cd799439011', {
-                name: 'Only Name',
+                firstName: 'Only',
             });
 
             const updateArg = mockModel.findByIdAndUpdate.mock.calls[0][1];
-            expect(updateArg).toEqual({ 'profile.name': 'Only Name' });
+            expect(updateArg).toEqual({ 'profile.firstName': 'Only' });
+            expect(updateArg).not.toHaveProperty('profile.lastName');
             expect(updateArg).not.toHaveProperty('profile.avatar');
             expect(updateArg).not.toHaveProperty('preferredLang');
         });

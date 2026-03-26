@@ -27,12 +27,14 @@ import {
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
 import { useAuthStore } from '@/stores/auth';
+import { getFullName } from '@cyanship/types';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
 import { useUserMenu } from './useUserMenu';
 
-const menuItemStyles =
-    '-mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground';
+const menuItemBase =
+    '-mx-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors';
+const menuItemStyles = `${menuItemBase} text-muted-foreground hover:bg-muted/50 hover:text-foreground`;
 
 export default function MobileMenuSheet() {
     const t = useTranslations('components.header');
@@ -51,6 +53,7 @@ export default function MobileMenuSheet() {
 
     const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
+    const activeSection = useHeaderNavStore((s) => s.activeSection);
 
     const { visibleItems, handleSelect, initials } = useUserMenu({
         profile: <User />,
@@ -74,16 +77,25 @@ export default function MobileMenuSheet() {
                     {/* Navigation */}
                     {hasNav && (
                         <nav className="flex flex-col gap-1">
-                            {navItems.map(({ href, label }) => (
-                                <a
-                                    key={href}
-                                    href={href}
-                                    className={menuItemStyles}
-                                    onClick={close}
-                                >
-                                    {label}
-                                </a>
-                            ))}
+                            {navItems.map(({ href, label }) => {
+                                const isActive =
+                                    activeSection ===
+                                    href.replace('#', '');
+                                return (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        className={`${menuItemBase} ${
+                                            isActive
+                                                ? 'text-foreground bg-muted/50'
+                                                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                                        }`}
+                                        onClick={close}
+                                    >
+                                        {label}
+                                    </a>
+                                );
+                            })}
                         </nav>
                     )}
 
@@ -104,7 +116,7 @@ export default function MobileMenuSheet() {
                                 <UiAvatar size="md">
                                     <UiAvatarImage
                                         src={user.profile.avatar ?? undefined}
-                                        alt={user.profile.name ?? ''}
+                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
                                     />
                                     <UiAvatarFallback size="md">
                                         {initials}
@@ -112,7 +124,7 @@ export default function MobileMenuSheet() {
                                 </UiAvatar>
                                 <div className="flex min-w-0 flex-col">
                                     <span className="truncate text-sm font-medium">
-                                        {user.profile.name}
+                                        {getFullName(user.profile.firstName, user.profile.lastName)}
                                     </span>
                                     <span className="text-muted-foreground truncate text-xs">
                                         {user.email}

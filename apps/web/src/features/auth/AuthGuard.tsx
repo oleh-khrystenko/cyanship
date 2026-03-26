@@ -2,6 +2,8 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { isOnboardingComplete } from '@cyanship/types';
 
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
@@ -15,12 +17,14 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const { locale } = useParams<{ locale: string }>();
+    const t = useTranslations('notifications.users');
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
     const user = useAuthStore((s) => s.user);
 
     const onboardingDone = user ? isOnboardingComplete(user.profile) : true;
     const isProfilePage = pathname.includes('/profile');
+    const onboardingMessage = t('onboarding_required');
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -30,9 +34,10 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
     useEffect(() => {
         if (isAuthenticated && !onboardingDone && !isProfilePage) {
+            toast.info(onboardingMessage);
             router.replace(`/${locale}/profile?mode=new`);
         }
-    }, [isAuthenticated, onboardingDone, isProfilePage, router, locale]);
+    }, [isAuthenticated, onboardingDone, isProfilePage, router, locale, onboardingMessage]);
 
     if (isLoading) {
         return <UiFullPageLoader />;

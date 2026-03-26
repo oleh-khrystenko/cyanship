@@ -72,7 +72,8 @@
                 "logout_button": "Вийти",
                 "error_generic": "Щось пішло не так. Спробуйте ще раз",
                 "error_rate_limit": "Забагато спроб. Спробуйте пізніше",
-                "validation_email": "Введіть коректну email-адресу"
+                "validation_email_required": "Введіть вашу електронну адресу",
+                "validation_email_format": "Введіть коректну email-адресу"
             },
             "proof_billing": {
                 "plans_tab": "Плани",
@@ -204,7 +205,8 @@
             "error_generic": "Щось пішло не так. Спробуйте ще раз",
             "terms_agree": "Я погоджуюсь з <terms>Умовами використання</terms> та <privacy>Політикою конфіденційності</privacy>",
             "terms_required": "Для продовження прийміть Умови використання та Політику конфіденційності",
-            "validation_email": "Введіть коректну email-адресу",
+            "validation_email_required": "Введіть вашу електронну адресу",
+            "validation_email_format": "Введіть коректну email-адресу",
             "validation_password": "Введіть пароль"
         },
         "recovery": {
@@ -238,6 +240,7 @@
             "submit_button": "Скинути пароль",
             "success_toast": "Пароль змінено. Увійдіть із новим паролем.",
             "passwords_mismatch": "Паролі не збігаються",
+            "password_required": "Введіть пароль",
             "password_too_short": "Пароль повинен містити мінімум 8 символів",
             "error_invalid_token": "Посилання для скидання недійсне або прострочене. Запросіть нове.",
             "error_generic": "Щось пішло не так. Спробуйте ще раз.",
@@ -252,7 +255,8 @@
             "password_reset": "Пароль успішно змінено"
         },
         "users": {
-            "terms_accepted": "Умови прийнято."
+            "terms_accepted": "Умови прийнято.",
+            "onboarding_required": "Будь ласка, заповніть профіль для продовження"
         },
         "agency": {
             "brief_submitted": "Запит надіслано. Ми відповімо протягом 24 годин."
@@ -301,9 +305,16 @@
         "submit": "Надіслати бриф",
         "submitting": "Надсилаємо...",
         "captcha_not_ready": "Перевірка безпеки в процесі. Спробуйте через мить.",
-        "validation_name": "Введіть ваше ім'я",
-        "validation_email": "Введіть коректну електронну адресу",
-        "validation_description": "Опишіть ваш проєкт (мінімум 10 символів)",
+        "validation_name_required": "Введіть ваше ім'я",
+        "validation_name_min": "Ім'я має містити щонайменше 2 символи",
+        "validation_name_max": "Ім'я не може перевищувати 100 символів",
+        "validation_name_format": "Ім'я може містити лише літери, пробіли, апострофи та дефіси",
+        "validation_email_required": "Введіть вашу електронну адресу",
+        "validation_email_format": "Введіть коректну електронну адресу",
+        "validation_email_max": "Email не може перевищувати 254 символи",
+        "validation_description_required": "Опишіть ваш проєкт",
+        "validation_description_min": "Опис має містити щонайменше 10 символів",
+        "validation_description_max": "Опис не може перевищувати 5 000 символів",
         "validation_budget": "Оберіть діапазон бюджету"
     },
     "profile_page": {
@@ -316,6 +327,7 @@
             "name_placeholder": "Ваше ім'я",
             "name_required": "Ім'я обов'язкове",
             "name_too_short": "Ім'я має містити щонайменше 2 символи",
+            "name_too_long": "Має містити не більше 50 символів",
             "name_invalid_chars": "Ім'я може містити лише літери, пробіли, дефіси та апострофи",
             "last_name_label": "Прізвище",
             "last_name_placeholder": "Ваше прізвище",
@@ -340,6 +352,7 @@
             "current_password_label": "Поточний пароль",
             "new_password_label": "Новий пароль",
             "password_placeholder": "Мінімум 8 символів",
+            "password_required": "Введіть пароль",
             "password_too_short": "Пароль повинен містити мінімум 8 символів",
             "password_same_as_current": "Новий пароль має відрізнятися від поточного",
             "show_password": "Показати пароль",

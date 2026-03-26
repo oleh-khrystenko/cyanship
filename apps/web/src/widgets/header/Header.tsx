@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -15,9 +15,11 @@ import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
 import { useAuthStore } from '@/stores/auth';
+import { getFullName } from '@cyanship/types';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
 import { useUserMenu } from './useUserMenu';
+import { useActiveSection } from './useActiveSection';
 
 function useScrolled(threshold: number) {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -35,41 +37,6 @@ function useScrolled(threshold: number) {
     return isScrolled;
 }
 
-function useActiveSection(sectionIds: string[]) {
-    const [activeId, setActiveId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (sectionIds.length === 0) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const visible = entries
-                    .filter((e) => e.isIntersecting)
-                    .sort(
-                        (a, b) =>
-                            a.boundingClientRect.top -
-                            b.boundingClientRect.top
-                    );
-
-                if (visible.length > 0) {
-                    setActiveId(visible[0].target.id);
-                }
-            },
-            { rootMargin: '-20% 0px -60% 0px' }
-        );
-
-        const elements = sectionIds
-            .map((id) => document.getElementById(id))
-            .filter(Boolean) as HTMLElement[];
-
-        elements.forEach((el) => observer.observe(el));
-
-        return () => observer.disconnect();
-    }, [sectionIds]);
-
-    return activeId;
-}
-
 const Header = () => {
     const t = useTranslations('components.header');
     const locale = useLocale();
@@ -83,11 +50,8 @@ const Header = () => {
     const pathname = usePathname();
     const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
-    const sectionIds = useMemo(
-        () => navItems.map((item) => item.href.replace('#', '')),
-        [navItems]
-    );
-    const activeSection = useActiveSection(sectionIds);
+    const activeSection = useHeaderNavStore((s) => s.activeSection);
+    useActiveSection();
     const isScrolled = useScrolled(32);
     const showGlass = !hasNav || isScrolled;
     const [canAnimate, setCanAnimate] = useState(false);
@@ -191,7 +155,7 @@ const Header = () => {
                                             src={
                                                 user.profile.avatar ?? undefined
                                             }
-                                            alt={user.profile.name ?? ''}
+                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
                                             {initials}
@@ -199,7 +163,7 @@ const Header = () => {
                                     </UiAvatar>
                                     <div className="flex flex-col">
                                         <span className="text-foreground text-sm font-medium">
-                                            {user.profile.name}
+                                            {getFullName(user.profile.firstName, user.profile.lastName)}
                                         </span>
                                         <span className="text-muted-foreground text-xs">
                                             {user.email}
@@ -217,7 +181,7 @@ const Header = () => {
                                             src={
                                                 user.profile.avatar ?? undefined
                                             }
-                                            alt={user.profile.name ?? ''}
+                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
                                             {initials}

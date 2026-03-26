@@ -26,7 +26,7 @@ import {
     getMe,
     getApiMessageKey,
 } from '@/shared/api';
-import { saveRedirect, consumeRedirect } from '@/shared/lib';
+import { saveRedirect, consumeRedirect, getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
 
 const EmailFormSchema = CheckEmailSchema;
@@ -57,7 +57,6 @@ function SigninContent() {
     const initialStep = searchParams.get('step');
     const startWithPassword = !!(initialEmail && initialStep === 'password');
 
-    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const setUser = useAuthStore((s) => s.setUser);
 
     const emailForm = useForm<EmailFormValues>({
@@ -90,12 +89,6 @@ function SigninContent() {
     useEffect(() => {
         if (redirect) saveRedirect(redirect);
     }, [redirect]);
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            router.replace(consumeRedirect(`/${locale}/profile`));
-        }
-    }, [isAuthenticated, locale, router]);
 
     const startResendTimer = useCallback(() => {
         setResendCountdown(60);
@@ -385,7 +378,13 @@ function SigninContent() {
                     {...emailForm.register('email')}
                     type="email"
                     placeholder={t('email_placeholder')}
-                    error={emailForm.formState.errors.email && t('validation_email')}
+                    error={getFieldError(
+                        emailForm.formState.errors.email,
+                        {
+                            required: t('validation_email_required'),
+                            invalid_string: t('validation_email_format'),
+                        },
+                    )}
                     required
                     IconLeft={<Mail />}
                     size="lg"
