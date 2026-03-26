@@ -72,7 +72,8 @@
                 "logout_button": "Log out",
                 "error_generic": "Something went wrong. Please try again",
                 "error_rate_limit": "Too many attempts. Please try again later",
-                "validation_email": "Enter a valid email address"
+                "validation_email_required": "Please enter your email address",
+                "validation_email_format": "Enter a valid email address"
             },
             "proof_billing": {
                 "plans_tab": "Plans",
@@ -204,7 +205,8 @@
             "error_generic": "Something went wrong. Please try again",
             "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
             "terms_required": "Please accept the Terms of Service and Privacy Policy to continue",
-            "validation_email": "Enter a valid email address",
+            "validation_email_required": "Please enter your email address",
+            "validation_email_format": "Enter a valid email address",
             "validation_password": "Enter your password"
         },
         "recovery": {
@@ -238,6 +240,7 @@
             "submit_button": "Reset password",
             "success_toast": "Password changed. Sign in with your new password.",
             "passwords_mismatch": "Passwords do not match",
+            "password_required": "Please enter a password",
             "password_too_short": "Password must be at least 8 characters",
             "error_invalid_token": "This reset link is invalid or has expired. Please request a new one.",
             "error_generic": "Something went wrong. Please try again.",
@@ -252,7 +255,8 @@
             "password_reset": "Password reset successfully"
         },
         "users": {
-            "terms_accepted": "Terms accepted."
+            "terms_accepted": "Terms accepted.",
+            "onboarding_required": "Please complete your profile to continue"
         },
         "agency": {
             "brief_submitted": "Request submitted. We will respond within 24 hours."
@@ -301,9 +305,16 @@
         "submit": "Submit Brief",
         "submitting": "Submitting...",
         "captcha_not_ready": "Security verification in progress. Please try again in a moment.",
-        "validation_name": "Name is required",
-        "validation_email": "Please enter a valid email address",
-        "validation_description": "Please describe your project (at least 10 characters)",
+        "validation_name_required": "Please enter your name",
+        "validation_name_min": "Name must be at least 2 characters",
+        "validation_name_max": "Name must not exceed 100 characters",
+        "validation_name_format": "Name can only contain letters, spaces, apostrophes, and hyphens",
+        "validation_email_required": "Please enter your email address",
+        "validation_email_format": "Please enter a valid email address",
+        "validation_email_max": "Email must not exceed 254 characters",
+        "validation_description_required": "Please describe your project",
+        "validation_description_min": "Description must be at least 10 characters",
+        "validation_description_max": "Description must not exceed 5,000 characters",
         "validation_budget": "Please select a budget range"
     },
     "profile_page": {
@@ -316,6 +327,7 @@
             "name_placeholder": "Your name",
             "name_required": "Name is required",
             "name_too_short": "Name must be at least 2 characters",
+            "name_too_long": "Name must be no more than 50 characters",
             "name_invalid_chars": "Name can only contain letters, spaces, hyphens, and apostrophes",
             "last_name_label": "Last name",
             "last_name_placeholder": "Your last name",
@@ -340,6 +352,7 @@
             "current_password_label": "Current password",
             "new_password_label": "New password",
             "password_placeholder": "Minimum 8 characters",
+            "password_required": "Please enter a password",
             "password_too_short": "Password must be at least 8 characters",
             "password_same_as_current": "New password must be different from the current one",
             "show_password": "Show password",

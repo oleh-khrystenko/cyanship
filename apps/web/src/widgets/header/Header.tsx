@@ -15,6 +15,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
 import { useAuthStore } from '@/stores/auth';
+import { getFullName } from '@cyanship/types';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
 import { useUserMenu } from './useUserMenu';
@@ -191,7 +192,7 @@ const Header = () => {
                                             src={
                                                 user.profile.avatar ?? undefined
                                             }
-                                            alt={user.profile.name ?? ''}
+                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
                                             {initials}
@@ -199,7 +200,7 @@ const Header = () => {
                                     </UiAvatar>
                                     <div className="flex flex-col">
                                         <span className="text-foreground text-sm font-medium">
-                                            {user.profile.name}
+                                            {getFullName(user.profile.firstName, user.profile.lastName)}
                                         </span>
                                         <span className="text-muted-foreground text-xs">
                                             {user.email}
@@ -217,7 +218,7 @@ const Header = () => {
                                             src={
                                                 user.profile.avatar ?? undefined
                                             }
-                                            alt={user.profile.name ?? ''}
+                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
                                         />
                                         <UiAvatarFallback size="sm">
                                             {initials}

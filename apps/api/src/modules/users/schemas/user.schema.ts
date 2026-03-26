@@ -16,7 +16,10 @@ class UserProvider {
 @Schema({ _id: false })
 class UserProfileData {
     @Prop()
-    name?: string;
+    firstName?: string;
+
+    @Prop()
+    lastName?: string;
 
     @Prop()
     avatar?: string;

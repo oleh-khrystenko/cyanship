@@ -7,7 +7,7 @@ import type { UserProfile } from '../entities/user';
  * 2. Add field name to this array
  * 3. Add input to ProfileForm on frontend
  */
-export const ONBOARDING_REQUIRED_FIELDS = ['name'] as const;
+export const ONBOARDING_REQUIRED_FIELDS = ['firstName'] as const;
 
 export type OnboardingField = (typeof ONBOARDING_REQUIRED_FIELDS)[number];
 

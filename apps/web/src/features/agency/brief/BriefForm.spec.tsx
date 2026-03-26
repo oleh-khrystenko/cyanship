@@ -10,6 +10,7 @@ global.ResizeObserver = class {
 // Mock next-intl — return key as translation
 jest.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
+    useLocale: () => 'en',
 }));
 
 // Mock API
@@ -24,12 +25,12 @@ jest.mock('@/shared/api/mapApiCode', () => ({
 }));
 
 // Mock Turnstile hook
-let mockToken: string | null = null;
+const mockExecute = jest.fn();
 const mockReset = jest.fn();
 jest.mock('./lib/useTurnstile', () => ({
     useTurnstile: () => ({
         containerRef: { current: null },
-        token: mockToken,
+        execute: (...args: unknown[]) => mockExecute(...args),
         reset: mockReset,
     }),
 }));
@@ -56,7 +57,7 @@ describe('BriefForm', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockToken = 'test-captcha-token';
+        mockExecute.mockResolvedValue('test-captcha-token');
         mockSubmitBrief.mockResolvedValue({ code: 'BRIEF_SUBMITTED' });
     });
 
@@ -76,7 +77,7 @@ describe('BriefForm', () => {
     });
 
     it('shows error toast when captcha token is not ready', async () => {
-        mockToken = null;
+        mockExecute.mockRejectedValue(new Error('Turnstile not ready'));
 
         render(<BriefForm onSuccess={mockOnSuccess} />);
 
@@ -115,7 +116,7 @@ describe('BriefForm', () => {
 
         // Zod validation should catch empty name, email, description, budget
         await waitFor(() => {
-            expect(screen.getByText('validation_name')).toBeInTheDocument();
+            expect(screen.getByText('validation_name_required')).toBeInTheDocument();
         });
 
         expect(mockSubmitBrief).not.toHaveBeenCalled();

@@ -270,7 +270,7 @@ describe('Auth E2E', () => {
         return userModel.create({
             email: email.toLowerCase(),
             passwordHash: hash,
-            profile: { name: 'Test User' },
+            profile: { firstName: 'Test', lastName: 'User' },
             credits: { balance: 0, freeReportUsed: false },
         });
     }
@@ -280,7 +280,7 @@ describe('Auth E2E', () => {
     ): Promise<UserDocument> {
         return userModel.create({
             email: email.toLowerCase(),
-            profile: { name: 'Test User' },
+            profile: { firstName: 'Test', lastName: 'User' },
             credits: { balance: 0, freeReportUsed: false },
         });
     }
@@ -878,19 +878,20 @@ describe('Auth E2E', () => {
             const res = await supertest(app.getHttpServer())
                 .patch('/api/users/me')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({ name: 'Updated Name' })
+                .send({ firstName: 'Updated', lastName: 'Name' })
                 .expect(200);
 
             const body = res.body as {
-                data: { profile: { name: string } };
+                data: { profile: { firstName: string; lastName: string } };
             };
-            expect(body.data.profile.name).toBe('Updated Name');
+            expect(body.data.profile.firstName).toBe('Updated');
+            expect(body.data.profile.lastName).toBe('Name');
         });
 
         it('PATCH /api/users/me should return 401 without auth', async () => {
             await supertest(app.getHttpServer())
                 .patch('/api/users/me')
-                .send({ name: 'Test' })
+                .send({ firstName: 'Test' })
                 .expect(401);
         });
 
