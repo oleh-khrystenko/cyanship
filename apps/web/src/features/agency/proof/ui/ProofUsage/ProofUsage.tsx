@@ -192,7 +192,7 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
                             return (
                                 <li
                                     key={tx.id}
-                                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted/50"
+                                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
                                 >
                                     <span
                                         className={`flex size-6 shrink-0 items-center justify-center rounded-full ${
