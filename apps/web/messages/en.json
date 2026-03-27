@@ -349,6 +349,13 @@
             "cost_label": "{cost} exec.",
             "insufficient_balance": "Insufficient balance"
         },
+        "empty_state": {
+            "title": "Your dashboard is empty",
+            "description_both": "Activate a subscription or purchase an execution pack to get started.",
+            "description_subscribe": "Activate a subscription to get your first executions.",
+            "description_purchase": "Purchase an execution pack to get started.",
+            "cta": "Go to Billing"
+        },
         "transactions": {
             "heading": "Transaction history",
             "empty": "No transaction history yet. Try features above.",
