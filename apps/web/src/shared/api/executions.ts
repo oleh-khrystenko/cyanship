@@ -1,5 +1,9 @@
 import { apiClient } from './client';
-import type { ExecutionTransactionItem, SpendableAction } from '@cyanship/types';
+import type {
+    ExecutionTransactionItem,
+    PaginatedTransactions,
+    SpendableAction,
+} from '@cyanship/types';
 
 export async function spendExecutions(
     action: SpendableAction,
@@ -12,9 +16,11 @@ export async function spendExecutions(
 
 export async function getExecutionTransactions(
     limit: number = 10,
-): Promise<ExecutionTransactionItem[]> {
-    const { data } = await apiClient.get<{
-        data: ExecutionTransactionItem[];
-    }>('/users/me/executions/transactions', { params: { limit } });
+    before?: string,
+): Promise<PaginatedTransactions> {
+    const { data } = await apiClient.get<{ data: PaginatedTransactions }>(
+        '/users/me/executions/transactions',
+        { params: { limit, ...(before && { before }) } },
+    );
     return data.data;
 }

@@ -96,6 +96,8 @@
                 "actions": {
                     "standard_report": "Report generated",
                     "ai_analysis": "AI analysis completed",
+                    "deep_analysis": "Deep analysis completed",
+                    "full_audit": "Full audit completed",
                     "subscription_activation": "Subscription activated",
                     "pack_purchase": "Execution pack purchased",
                     "plan_change": "Plan changed",
@@ -175,7 +177,7 @@
             "email": "oleg@cyanship.com",
             "social_linkedin": "LinkedIn",
             "social_x": "X",
-            "copyright": "© {year} CyanShip. Built by Oleg Khrystenko."
+            "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
         }
     },
     "auth_page": {
@@ -272,11 +274,14 @@
             "subscription_required": "An active subscription is required for access.",
             "no_billing_account": "No billing account found. Please subscribe first."
         },
+        "users": {
+            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription."
+        },
         "generic": {
             "validation_error": "Please check the entered data",
-            "rate_limit_exceeded": "Too many requests. Please try again in 15 minutes",
+            "rate_limit_exceeded": "Too many requests. Please try again in {minutes} minutes",
             "email_send_failed": "Failed to send the email. Please try again later",
-            "internal_error": "Something went wrong. Please try again later",
+            "internal_error": "Server error occurred. Please try again later",
             "unknown": "Something went wrong. Please try again later"
         },
         "agency": {
@@ -316,6 +321,53 @@
         "validation_description_min": "Description must be at least 10 characters",
         "validation_description_max": "Description must not exceed 5,000 characters",
         "validation_budget": "Please select a budget range"
+    },
+    "dashboard_page": {
+        "greeting": "Welcome, {name}",
+        "heading": "Dashboard",
+        "balance_label": "Balance",
+        "balance_unit": "executions",
+        "balance_top_up": "Top up",
+        "subscription": {
+            "label": "Subscription",
+            "no_active": "No active subscription",
+            "plan_name": "{plan} Plan",
+            "status_active": "Active",
+            "status_canceling": "Canceling",
+            "renews_on": "Renews on {date}",
+            "cancels_on": "Cancels on {date}",
+            "executions_per_period": "{count} executions per period",
+            "scheduled_change": "Switching to <accent>{plan}</accent> on {date}",
+            "manage": "Manage",
+            "view_plans": "View plans"
+        },
+        "spend": {
+            "heading": "Try features",
+            "standard_report": "Standard Report",
+            "ai_analysis": "AI Analysis",
+            "deep_analysis": "Deep Analysis",
+            "full_audit": "Full Audit",
+            "cost_label": "{cost} exec.",
+            "insufficient_balance": "Insufficient balance"
+        },
+        "transactions": {
+            "heading": "Transaction history",
+            "empty": "No transaction history yet. Try features above.",
+            "actions": {
+                "standard_report": "Standard Report",
+                "ai_analysis": "AI Analysis",
+                "deep_analysis": "Deep Analysis",
+                "full_audit": "Full Audit",
+                "subscription_activation": "Subscription activated",
+                "pack_purchase": "Execution pack purchased",
+                "plan_change": "Plan changed",
+                "billing_reset": "Billing reset"
+            },
+            "load_more": "Load more",
+            "time_just_now": "Just now",
+            "time_minutes_ago": "{count} min ago",
+            "time_hours_ago": "{count} hrs ago"
+        }
     },
     "profile_page": {
         "heading": "Profile",
@@ -434,9 +486,10 @@
             "plan_name": "{plan} Plan",
             "status_active": "Active",
             "status_canceling": "Active until {date}",
-            "next_billing_executions": "Next billing on {date} · {executions} executions",
+            "next_billing": "Next billing on {date}",
+            "executions_per_period": "{count} executions per period",
             "cancel_notice": "Your subscription will end at the current period's close.",
-            "scheduled_change": "Switching to {plan} on {date}",
+            "scheduled_change": "Switching to <accent>{plan}</accent> on {date}",
             "manage_button": "Manage Subscription",
             "manage_error": "Failed to open management portal"
         },
@@ -483,6 +536,7 @@
             "signin": "Sign in",
             "get_started": "Get Started",
             "logout": "Log out",
+            "dashboard": "Dashboard",
             "profile": "Profile",
             "billing": "Billing",
             "settings": "Settings",

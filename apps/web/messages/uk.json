@@ -96,6 +96,8 @@
                 "actions": {
                     "standard_report": "Звіт згенеровано",
                     "ai_analysis": "AI аналіз завершено",
+                    "deep_analysis": "Глибокий аналіз завершено",
+                    "full_audit": "Повний аудит завершено",
                     "subscription_activation": "Підписку активовано",
                     "pack_purchase": "Пакет виконань придбано",
                     "plan_change": "План змінено",
@@ -175,7 +177,7 @@
             "email": "oleg@cyanship.com",
             "social_linkedin": "LinkedIn",
             "social_x": "X",
-            "copyright": "© {year} CyanShip. Створено Олегом Христенком."
+            "copyright": "© {year} CyanShip. Розробник — Олег Христенко."
         }
     },
     "auth_page": {
@@ -272,11 +274,14 @@
             "subscription_required": "Для доступу потрібна активна підписка.",
             "no_billing_account": "Платіжний акаунт не знайдено. Оформіть підписку."
         },
+        "users": {
+            "insufficient_executions": "Недостатньо виконань для цієї операції. Придбайте більше або оновіть підписку."
+        },
         "generic": {
             "validation_error": "Перевірте введені дані",
-            "rate_limit_exceeded": "Забагато запитів. Спробуйте через 15 хвилин",
+            "rate_limit_exceeded": "Забагато запитів. Спробуйте через {minutes} хвилин",
             "email_send_failed": "Не вдалося надіслати лист. Спробуйте пізніше",
-            "internal_error": "Сталася помилка. Спробуйте пізніше",
+            "internal_error": "Сталася помилка на сервері. Спробуйте пізніше",
             "unknown": "Сталася помилка. Спробуйте пізніше"
         },
         "agency": {
@@ -316,6 +321,53 @@
         "validation_description_min": "Опис має містити щонайменше 10 символів",
         "validation_description_max": "Опис не може перевищувати 5 000 символів",
         "validation_budget": "Оберіть діапазон бюджету"
+    },
+    "dashboard_page": {
+        "greeting": "Вітаємо, {name}",
+        "heading": "Дашборд",
+        "balance_label": "Баланс",
+        "balance_unit": "виконань",
+        "balance_top_up": "Поповнити",
+        "subscription": {
+            "label": "Підписка",
+            "no_active": "Немає активної підписки",
+            "plan_name": "План {plan}",
+            "status_active": "Активна",
+            "status_canceling": "Скасовується",
+            "renews_on": "Поновлення {date}",
+            "cancels_on": "Діє до {date}",
+            "executions_per_period": "{count} виконань за період",
+            "scheduled_change": "Перехід на <accent>{plan}</accent> з {date}",
+            "manage": "Керувати",
+            "view_plans": "Переглянути плани"
+        },
+        "spend": {
+            "heading": "Спробуйте функції",
+            "standard_report": "Простий звіт",
+            "ai_analysis": "AI аналіз",
+            "deep_analysis": "Глибокий аналіз",
+            "full_audit": "Повний аудит",
+            "cost_label": "{cost} вик.",
+            "insufficient_balance": "Недостатньо виконань"
+        },
+        "transactions": {
+            "heading": "Історія операцій",
+            "empty": "Історії операцій ще немає. Спробуйте функції вище.",
+            "actions": {
+                "standard_report": "Простий звіт",
+                "ai_analysis": "AI аналіз",
+                "deep_analysis": "Глибокий аналіз",
+                "full_audit": "Повний аудит",
+                "subscription_activation": "Підписку активовано",
+                "pack_purchase": "Пакет виконань придбано",
+                "plan_change": "План змінено",
+                "billing_reset": "Білінг скинуто"
+            },
+            "load_more": "Завантажити ще",
+            "time_just_now": "Щойно",
+            "time_minutes_ago": "{count} хв тому",
+            "time_hours_ago": "{count} год тому"
+        }
     },
     "profile_page": {
         "heading": "Профіль",
@@ -434,9 +486,10 @@
             "plan_name": "План {plan}",
             "status_active": "Активна",
             "status_canceling": "Активна до {date}",
-            "next_billing_executions": "Наступне списання {date} · {executions} виконань",
+            "next_billing": "Наступне списання {date}",
+            "executions_per_period": "{count} виконань за період",
             "cancel_notice": "Підписку буде скасовано після завершення поточного періоду.",
-            "scheduled_change": "Перехід на {plan} з {date}",
+            "scheduled_change": "Перехід на <accent>{plan}</accent> з {date}",
             "manage_button": "Керувати підпискою",
             "manage_error": "Не вдалося відкрити портал керування"
         },
@@ -483,6 +536,7 @@
             "signin": "Увійти",
             "get_started": "Почати",
             "logout": "Вийти",
+            "dashboard": "Дашборд",
             "profile": "Профіль",
             "billing": "Білінг",
             "settings": "Налаштування",

@@ -65,6 +65,7 @@ describe('auth API functions', () => {
             expect(mockPost).toHaveBeenCalledWith('/auth/login/password', {
                 email: 'test@example.com',
                 password: 'password123',
+                termsVersion: expect.any(String),
             });
             expect(mockSetAccessToken).toHaveBeenCalledWith('token-abc');
             expect(result).toEqual(response);
@@ -161,13 +162,13 @@ describe('auth API functions', () => {
 
     describe('updateProfile', () => {
         it('sends PATCH to /users/me and returns data.data', async () => {
-            const profile = { name: 'John' };
+            const profile = { firstName: 'John' };
             mockPatch.mockResolvedValue({ data: { data: profile } });
 
-            const result = await updateProfile({ name: 'John' });
+            const result = await updateProfile({ firstName: 'John' });
 
             expect(mockPatch).toHaveBeenCalledWith('/users/me', {
-                name: 'John',
+                firstName: 'John',
             });
             expect(result).toEqual(profile);
         });
@@ -216,7 +217,9 @@ describe('auth API functions', () => {
 
             const result = await refreshToken();
 
-            expect(mockPost).toHaveBeenCalledWith('/auth/refresh');
+            expect(mockPost).toHaveBeenCalledWith('/auth/refresh', {
+                timezone: expect.any(String),
+            });
             expect(mockSetAccessToken).toHaveBeenCalledWith('refreshed-token');
             expect(result).toBe('refreshed-token');
         });

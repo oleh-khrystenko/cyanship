@@ -16,6 +16,7 @@ import {
     createPortalSession,
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
+import { formatLocalDate } from '@/shared/lib';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -112,14 +113,6 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
         }
     };
 
-    const formatDate = (date: Date | string | null) => {
-        if (!date) return '';
-        return new Intl.DateTimeFormat(
-            locale === 'uk' ? 'uk-UA' : 'en-US',
-            { year: 'numeric', month: 'long', day: 'numeric' },
-        ).format(date instanceof Date ? date : new Date(date));
-    };
-
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -203,7 +196,7 @@ const ProofBilling = ({ onRequestAuth }: ProofBillingProps) => {
                                 <span className="rounded-full bg-success/15 px-2.5 py-0.5 text-[10px] font-medium text-success">
                                     {billing?.cancelAtPeriodEnd
                                         ? tBilling('active.status_canceling', {
-                                              date: formatDate(billing.currentPeriodEnd),
+                                              date: formatLocalDate(billing.currentPeriodEnd, locale),
                                           })
                                         : tBilling('active.status_active')}
                                 </span>

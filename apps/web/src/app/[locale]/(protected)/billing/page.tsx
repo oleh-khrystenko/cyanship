@@ -16,6 +16,7 @@ import {
     createPortalSession,
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
+import { formatLocalDate, toIntlLocale } from '@/shared/lib';
 import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
@@ -43,14 +44,6 @@ export default function BillingPage() {
     const billing = user.billing;
     const hasActive = billing?.hasActiveSubscription === true;
     const hasBillingData = billing != null || user.executions.balance > 0;
-
-    const formatDate = (date: Date | string | null) => {
-        if (!date) return '';
-        return new Intl.DateTimeFormat(
-            locale === 'uk' ? 'uk-UA' : 'en-US',
-            { year: 'numeric', month: 'long', day: 'numeric' },
-        ).format(date instanceof Date ? date : new Date(date));
-    };
 
     const handleSubscriptionCheckout = async (planCode: string) => {
         setLoadingAction(`subscribe_${planCode}`);
@@ -270,9 +263,10 @@ export default function BillingPage() {
                                     <span className="bg-success/15 text-success rounded-full px-2.5 py-0.5 text-xs font-medium">
                                         {billing?.cancelAtPeriodEnd
                                             ? t('active.status_canceling', {
-                                                  date: formatDate(
+                                                  date: formatLocalDate(
                                                       billing?.currentPeriodEnd ??
-                                                          null
+                                                          null,
+                                                      locale
                                                   ),
                                               })
                                             : t('active.status_active')}
@@ -283,31 +277,46 @@ export default function BillingPage() {
                                     {billing?.cancelAtPeriodEnd
                                         ? t('active.cancel_notice')
                                         : billing?.currentPeriodEnd
-                                          ? t('active.next_billing_executions', {
-                                                date: formatDate(
-                                                    billing.currentPeriodEnd
+                                          ? t('active.next_billing', {
+                                                date: formatLocalDate(
+                                                    billing.currentPeriodEnd,
+                                                    locale
                                                 ),
-                                                executions:
-                                                    activePlan
-                                                        ? activePlan.executions.toLocaleString(
-                                                              'en-US'
-                                                          )
-                                                        : '',
                                             })
                                           : null}
-                                    {billing?.scheduledPlanCode && (
-                                        <span className="text-info">
-                                            {' · '}
-                                            {t('active.scheduled_change', {
-                                                plan: billing.scheduledPlanCode,
-                                                date: formatDate(
-                                                    billing.scheduledChangeDate ??
-                                                        null
-                                                ),
-                                            })}
-                                        </span>
-                                    )}
                                 </p>
+                                {!billing?.cancelAtPeriodEnd && activePlan && (
+                                    <p className="text-muted-foreground mt-0.5 text-sm">
+                                        {t('active.executions_per_period', {
+                                            count: activePlan.executions.toLocaleString(
+                                                toIntlLocale(locale)
+                                            ),
+                                        })}
+                                    </p>
+                                )}
+                                {billing?.scheduledPlanCode && (
+                                    <p className="text-muted-foreground mt-0.5 text-sm">
+                                        {t.rich('active.scheduled_change', {
+                                            plan: t(
+                                                `plans.${billing.scheduledPlanCode}.name`,
+                                                {
+                                                    defaultValue:
+                                                        billing.scheduledPlanCode,
+                                                }
+                                            ),
+                                            date: formatLocalDate(
+                                                billing.scheduledChangeDate ??
+                                                    null,
+                                                locale
+                                            ),
+                                            accent: (chunks) => (
+                                                <span className="font-bold">
+                                                    {chunks}
+                                                </span>
+                                            ),
+                                        })}
+                                    </p>
+                                )}
                             </div>
 
                             <UiButton

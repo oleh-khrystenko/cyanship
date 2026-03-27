@@ -214,7 +214,7 @@ function SigninContent() {
             } else {
                 const me = await getMe();
                 setUser(me);
-                router.push(consumeRedirect(`/${locale}/profile`));
+                router.push(consumeRedirect(`/${locale}/dashboard`));
             }
         } catch (err) {
             const code =
@@ -271,7 +271,7 @@ function SigninContent() {
             toast.success(tRecovery('restored'));
             const me = await getMe();
             setUser(me);
-            router.push(consumeRedirect(`/${locale}/profile`));
+            router.push(consumeRedirect(`/${locale}/dashboard`));
         } catch (err) {
             setSubmitting(false);
             handleError(err);

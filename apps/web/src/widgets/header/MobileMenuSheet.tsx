@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { LogOut, User, CreditCard, LogIn, Globe } from 'lucide-react';
+import { LogOut, User, CreditCard, LogIn, Globe, LayoutDashboard } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 import { THEME_ICONS } from '@/features/change-theme/ChangeTheme';
 import type { Theme } from '@/shared/types/settings';
@@ -56,6 +56,7 @@ export default function MobileMenuSheet() {
     const activeSection = useHeaderNavStore((s) => s.activeSection);
 
     const { visibleItems, handleSelect, initials } = useUserMenu({
+        dashboard: <LayoutDashboard />,
         profile: <User />,
         billing: <CreditCard />,
         logout: <LogOut />,
