@@ -1235,8 +1235,8 @@ export const useBriefDialogStore = create<BriefDialogState>((set) => ({
 - Read `requestAiBonus` from brief dialog store
 - Read `user` from auth store
 - If `requestAiBonus && user`:
-  - Set name field value to `getFullName(user)`, make it readonly/disabled
-  - Set email field value to `user.email`, make it readonly/disabled (user sees their contact point)
+  - Replace name and email **input fields** with **plain text** displaying `getFullName(user)` and `user.email`. These are not disabled inputs — they are rendered as `<p>` or `<span>` elements, visually consistent with the form but clearly non-editable. The user sees their identity and contact point.
+  - Pass `name` and `email` to the submit payload from auth store, not from form fields
 - Include `requestAiBonus: true` in the submit payload
 - On success when `requestAiBonus`: update auth store with new AI limits, close dialog
 
