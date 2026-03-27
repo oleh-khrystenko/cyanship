@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
-import { getFullName } from '@cyanship/types';
+import { getFullName, getInitials } from '@cyanship/types';
 import { logout } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -13,19 +13,8 @@ interface UserMenuItem {
     badge?: string;
 }
 
-export function getInitials(name: string | undefined, email: string): string {
-    if (name) {
-        return name
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    }
-    return email[0]?.toUpperCase() ?? '';
-}
-
 export function useUserMenu(icons: {
+    dashboard: ReactNode;
     profile: ReactNode;
     billing: ReactNode;
     logout: ReactNode;
@@ -40,6 +29,12 @@ export function useUserMenu(icons: {
     const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
 
     const allItems: UserMenuItem[] = [
+        {
+            value: 'dashboard',
+            label: t('dashboard'),
+            icon: icons.dashboard,
+            route: `/${locale}/dashboard`,
+        },
         {
             value: 'profile',
             label: t('profile'),

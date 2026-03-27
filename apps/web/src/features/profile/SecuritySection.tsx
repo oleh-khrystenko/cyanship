@@ -12,6 +12,7 @@ import type { UserProfile } from '@cyanship/types';
 import { passwordSchema } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { setPassword, getMe } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
@@ -93,12 +94,10 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
     };
 
     return (
-        <section className="rounded-lg border border-border bg-card p-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-lg font-semibold">
-                    {t('heading')}
-                </h2>
-                {isViewMode && (
+        <UiSectionCard
+            title={t('heading')}
+            headerRight={
+                isViewMode ? (
                     <UiButton
                         variant="text"
                         size="sm"
@@ -107,8 +106,9 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     >
                         {t('edit_button')}
                     </UiButton>
-                )}
-            </div>
+                ) : undefined
+            }
+        >
             {isSetMode && (
                 <p className="text-muted-foreground mt-1 text-sm">
                     {isPasswordOptional
@@ -183,7 +183,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                     onCancel={() => setEditing(false)}
                 />
             )}
-        </section>
+        </UiSectionCard>
     );
 };
 

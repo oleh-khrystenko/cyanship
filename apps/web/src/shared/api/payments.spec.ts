@@ -14,9 +14,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mockPost = apiClient.post as jest.MockedFunction<typeof apiClient.post>;
-const mockGet = (apiClient as { get: jest.Mock }).get as jest.MockedFunction<
-    typeof apiClient.get
->;
+const mockGet = apiClient.get as jest.MockedFunction<typeof apiClient.get>;
 
 const PLAN_CODES = ['starter', 'pro'] as const;
 const PACK_CODES = ['basic', 'max'] as const;

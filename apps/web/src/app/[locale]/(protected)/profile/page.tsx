@@ -28,7 +28,7 @@ function ProfileContent() {
 
     const handleProfileSaved = () => {
         if (mode === 'new') {
-            router.push(`/${locale}/profile`);
+            router.push(`/${locale}/dashboard`);
         }
     };
 
