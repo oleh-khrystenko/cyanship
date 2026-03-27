@@ -10,14 +10,20 @@ import UiSpinner from '@/shared/ui/UiSpinner';
 
 const TRANSACTION_LIMIT = 10;
 
-export default function TransactionHistory() {
+interface TransactionHistoryProps {
+    refreshTrigger?: number;
+}
+
+export default function TransactionHistory({
+    refreshTrigger = 0,
+}: TransactionHistoryProps) {
     const t = useTranslations('dashboard_page.transactions');
     const locale = useLocale();
 
     const [transactions, setTransactions] = useState<ExecutionTransactionItem[]>(
         []
     );
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const formatRelativeTime = useCallback(
         (dateStr: string | Date): string => {
@@ -54,7 +60,7 @@ export default function TransactionHistory() {
         };
 
         void fetchTransactions();
-    }, []);
+    }, [refreshTrigger]);
 
     return (
         <section className="rounded-xl border border-border bg-card p-6 md:p-8">

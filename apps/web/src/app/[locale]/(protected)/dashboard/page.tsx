@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getFullName, getInitials } from '@cyanship/types';
 import { Zap } from 'lucide-react';
@@ -19,6 +20,11 @@ export default function DashboardPage() {
     const t = useTranslations('dashboard_page');
     const locale = useLocale();
     const user = useAuthStore((s) => s.user);
+    const [txVersion, setTxVersion] = useState(0);
+    const handleSpendSuccess = useCallback(
+        () => setTxVersion((v) => v + 1),
+        [],
+    );
 
     if (!user) return null;
 
@@ -74,10 +80,10 @@ export default function DashboardPage() {
             {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}
 
             {/* ── Spend Execution Buttons ── */}
-            <SpendExecutionButtons />
+            <SpendExecutionButtons onSpendSuccess={handleSpendSuccess} />
 
             {/* ── Transaction History ── */}
-            <TransactionHistory />
+            <TransactionHistory refreshTrigger={txVersion} />
         </main>
     );
 }

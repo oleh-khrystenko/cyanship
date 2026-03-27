@@ -27,7 +27,13 @@ const ACTION_BUTTONS: ActionButtonConfig[] = [
     { action: EXECUTION_ACTION.FULL_AUDIT, labelKey: 'full_audit' },
 ];
 
-export default function SpendExecutionButtons() {
+interface SpendExecutionButtonsProps {
+    onSpendSuccess?: () => void;
+}
+
+export default function SpendExecutionButtons({
+    onSpendSuccess,
+}: SpendExecutionButtonsProps) {
     const t = useTranslations('dashboard_page.spend');
     const tGlobal = useTranslations();
     const locale = useLocale();
@@ -56,6 +62,8 @@ export default function SpendExecutionButtons() {
                         },
                     });
                 }
+
+                onSpendSuccess?.();
             } catch (error) {
                 const code =
                     error instanceof AxiosError
@@ -70,13 +78,17 @@ export default function SpendExecutionButtons() {
                     const minutes = retryAfter
                         ? Math.ceil(Number(retryAfter) / 60)
                         : 15;
-                    const messageKey = getApiMessageKey(code, 'generic');
                     toast.error(
-                        tGlobal(messageKey, { minutes })
+                        tGlobal(getApiMessageKey(code, 'generic'), { minutes })
+                    );
+                } else if (code === 'INSUFFICIENT_EXECUTIONS') {
+                    toast.error(
+                        tGlobal(getApiMessageKey(code, 'users'))
                     );
                 } else if (code) {
-                    const messageKey = getApiMessageKey(code, 'users');
-                    toast.error(tGlobal(messageKey));
+                    toast.error(
+                        tGlobal(getApiMessageKey(code))
+                    );
                 } else {
                     toast.error(
                         tGlobal('errors.generic.unknown')
@@ -86,7 +98,7 @@ export default function SpendExecutionButtons() {
                 setSpendingAction(null);
             }
         },
-        [user, setUser, tGlobal]
+        [user, setUser, tGlobal, onSpendSuccess]
     );
 
     const isActionInProgress = spendingAction !== null;
