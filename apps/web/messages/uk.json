@@ -327,6 +327,7 @@
         "heading": "Дашборд",
         "balance_label": "Баланс",
         "balance_unit": "виконань",
+        "balance_top_up": "Поповнити",
         "subscription": {
             "label": "Підписка",
             "no_active": "Немає активної підписки",

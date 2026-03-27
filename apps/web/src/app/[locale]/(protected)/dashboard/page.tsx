@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { getFullName, getInitials } from '@cyanship/types';
 import { useAuthStore } from '@/stores/auth';
 import { toIntlLocale } from '@/shared/lib';
@@ -59,7 +60,19 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Execution Balance ── */}
-            <UiSectionCard title={t('balance_label')}>
+            <UiSectionCard
+                title={t('balance_label')}
+                headerRight={
+                    balance === 0 ? (
+                        <Link
+                            href={`/${locale}/billing`}
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
+                            {t('balance_top_up')}
+                        </Link>
+                    ) : undefined
+                }
+            >
                 <p className="mt-2">
                     <span className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
                         {formattedBalance}

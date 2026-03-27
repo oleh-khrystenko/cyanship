@@ -327,6 +327,7 @@
         "heading": "Dashboard",
         "balance_label": "Balance",
         "balance_unit": "executions",
+        "balance_top_up": "Top up",
         "subscription": {
             "label": "Subscription",
             "no_active": "No active subscription",
