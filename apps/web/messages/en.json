@@ -336,6 +336,15 @@
             "scheduled_change": "Switching to <accent>{plan}</accent> on {date}",
             "manage": "Manage",
             "view_plans": "View plans"
+        },
+        "spend": {
+            "heading": "Try features",
+            "standard_report": "Standard Report",
+            "ai_analysis": "AI Analysis",
+            "deep_analysis": "Deep Analysis",
+            "full_audit": "Full Audit",
+            "cost_label": "{cost} exec.",
+            "insufficient_balance": "Insufficient balance"
         }
     },
     "profile_page": {

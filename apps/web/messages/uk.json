@@ -336,6 +336,15 @@
             "scheduled_change": "Перехід на <accent>{plan}</accent> з {date}",
             "manage": "Керувати",
             "view_plans": "Переглянути плани"
+        },
+        "spend": {
+            "heading": "Спробуйте функції",
+            "standard_report": "Простий звіт",
+            "ai_analysis": "AI аналіз",
+            "deep_analysis": "Глибокий аналіз",
+            "full_audit": "Повний аудит",
+            "cost_label": "{cost} вик.",
+            "insufficient_balance": "Недостатньо виконань"
         }
     },
     "profile_page": {

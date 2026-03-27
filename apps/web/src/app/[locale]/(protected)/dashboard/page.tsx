@@ -12,6 +12,7 @@ import {
 } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
 import SubscriptionStatus from './SubscriptionStatus';
+import SpendExecutionButtons from './SpendExecutionButtons';
 
 export default function DashboardPage() {
     const t = useTranslations('dashboard_page');
@@ -70,6 +71,9 @@ export default function DashboardPage() {
 
             {/* ── Subscription Status ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}
+
+            {/* ── Spend Execution Buttons ── */}
+            <SpendExecutionButtons />
         </main>
     );
 }

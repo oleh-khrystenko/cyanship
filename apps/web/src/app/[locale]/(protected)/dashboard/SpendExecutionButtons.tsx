@@ -1,0 +1,117 @@
+'use client';
+
+import { useCallback, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import {
+    EXECUTION_ACTION,
+    EXECUTION_ACTION_COST,
+    type SpendableAction,
+} from '@cyanship/types';
+import { spendExecutions } from '@/shared/api';
+import { useAuthStore } from '@/stores/auth';
+import { toIntlLocale } from '@/shared/lib';
+import UiButton from '@/shared/ui/UiButton';
+import UiSpinner from '@/shared/ui/UiSpinner';
+
+interface ActionButtonConfig {
+    action: SpendableAction;
+    labelKey: string;
+}
+
+const ACTION_BUTTONS: ActionButtonConfig[] = [
+    { action: EXECUTION_ACTION.STANDARD_REPORT, labelKey: 'standard_report' },
+    { action: EXECUTION_ACTION.AI_ANALYSIS, labelKey: 'ai_analysis' },
+    { action: EXECUTION_ACTION.DEEP_ANALYSIS, labelKey: 'deep_analysis' },
+    { action: EXECUTION_ACTION.FULL_AUDIT, labelKey: 'full_audit' },
+];
+
+export default function SpendExecutionButtons() {
+    const t = useTranslations('dashboard_page.spend');
+    const locale = useLocale();
+
+    const user = useAuthStore((s) => s.user);
+    const setUser = useAuthStore((s) => s.setUser);
+
+    const balance = user?.executions.balance ?? 0;
+
+    const [spendingAction, setSpendingAction] = useState<SpendableAction | null>(
+        null
+    );
+
+    const handleSpend = useCallback(
+        async (action: SpendableAction) => {
+            setSpendingAction(action);
+            try {
+                const result = await spendExecutions(action);
+
+                if (user) {
+                    setUser({
+                        ...user,
+                        executions: {
+                            ...user.executions,
+                            balance: result.balance,
+                        },
+                    });
+                }
+            } catch {
+                toast.error(t('insufficient_balance'));
+            } finally {
+                setSpendingAction(null);
+            }
+        },
+        [user, setUser, t]
+    );
+
+    const isActionInProgress = spendingAction !== null;
+
+    return (
+        <section className="rounded-xl border border-border bg-card p-6 md:p-8">
+            <h2 className="mb-4 text-lg font-semibold text-foreground">
+                {t('heading')}
+            </h2>
+
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {ACTION_BUTTONS.map(({ action, labelKey }) => {
+                    const cost = EXECUTION_ACTION_COST[action];
+                    const isBusy = spendingAction === action;
+                    const canAfford = balance >= cost;
+
+                    return (
+                        <UiButton
+                            key={action}
+                            variant={canAfford ? 'filled' : 'outline'}
+                            size="sm"
+                            className="relative w-full justify-center"
+                            disabled={isActionInProgress || !canAfford}
+                            onClick={() => handleSpend(action)}
+                        >
+                            <span
+                                className={`flex flex-col items-center justify-center gap-1 text-center ${
+                                    isBusy ? 'invisible' : ''
+                                }`}
+                            >
+                                <span className="text-xs font-medium">
+                                    {t(labelKey)}
+                                </span>
+                                <span className="text-xs opacity-70">
+                                    {t('cost_label', {
+                                        cost: cost.toLocaleString(
+                                            toIntlLocale(locale)
+                                        ),
+                                    })}
+                                </span>
+                            </span>
+                            {isBusy && (
+                                <UiSpinner
+                                    size="sm"
+                                    className="absolute inset-0 m-auto"
+                                />
+                            )}
+                        </UiButton>
+                    );
+                })}
+            </div>
+        </section>
+    );
+}
