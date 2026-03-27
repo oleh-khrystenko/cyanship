@@ -3,7 +3,7 @@ import { useAuthStore } from './authStore';
 const mockUser = {
     id: '507f1f77bcf86cd799439011',
     email: 'test@gmail.com',
-    profile: { name: 'John Doe' },
+    profile: { firstName: 'John', lastName: 'Doe' },
     executions: { balance: 0, freeReportUsed: false },
     hasPassword: true,
     deletedAt: null,
