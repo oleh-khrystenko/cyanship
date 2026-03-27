@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import {
@@ -32,6 +32,8 @@ export default function TransactionHistory({
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+    const generationRef = useRef(0);
+
     const formatRelativeTime = useCallback(
         (dateStr: string | Date): string => {
             const date =
@@ -54,37 +56,49 @@ export default function TransactionHistory({
 
     // Initial fetch — resets on refreshTrigger (e.g. after spend action)
     useEffect(() => {
-        const fetch = async () => {
+        generationRef.current += 1;
+        const generation = generationRef.current;
+
+        const fetchInitial = async () => {
             setIsLoading(true);
+            setIsLoadingMore(false);
             try {
                 const result = await getExecutionTransactions(PAGE_SIZE);
+                if (generation !== generationRef.current) return;
                 setTransactions(result.items);
                 setHasMore(result.hasMore);
             } catch {
+                if (generation !== generationRef.current) return;
                 setTransactions([]);
                 setHasMore(false);
             } finally {
-                setIsLoading(false);
+                if (generation === generationRef.current) {
+                    setIsLoading(false);
+                }
             }
         };
 
-        void fetch();
+        void fetchInitial();
     }, [refreshTrigger]);
 
     const handleLoadMore = async () => {
         const lastItem = transactions[transactions.length - 1];
         if (!lastItem) return;
 
+        const generation = generationRef.current;
         setIsLoadingMore(true);
         try {
             const cursor = new Date(lastItem.createdAt).toISOString();
             const result = await getExecutionTransactions(PAGE_SIZE, cursor);
+            if (generation !== generationRef.current) return;
             setTransactions((prev) => [...prev, ...result.items]);
             setHasMore(result.hasMore);
         } catch {
             // Silent fail — keep existing data
         } finally {
-            setIsLoadingMore(false);
+            if (generation === generationRef.current) {
+                setIsLoadingMore(false);
+            }
         }
     };
 
