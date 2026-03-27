@@ -16,7 +16,7 @@ import {
     createPortalSession,
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
-import { formatLocalDate } from '@/shared/lib';
+import { formatLocalDate, toIntlLocale } from '@/shared/lib';
 import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
@@ -277,44 +277,46 @@ export default function BillingPage() {
                                     {billing?.cancelAtPeriodEnd
                                         ? t('active.cancel_notice')
                                         : billing?.currentPeriodEnd
-                                          ? t('active.next_billing_executions', {
+                                          ? t('active.next_billing', {
                                                 date: formatLocalDate(
                                                     billing.currentPeriodEnd,
                                                     locale
                                                 ),
-                                                executions:
-                                                    activePlan
-                                                        ? activePlan.executions.toLocaleString(
-                                                              'en-US'
-                                                          )
-                                                        : '',
                                             })
                                           : null}
-                                    {billing?.scheduledPlanCode && (
-                                        <span className="text-info">
-                                            {' · '}
-                                            {t.rich('active.scheduled_change', {
-                                                plan: t(
-                                                    `plans.${billing.scheduledPlanCode}.name`,
-                                                    {
-                                                        defaultValue:
-                                                            billing.scheduledPlanCode,
-                                                    }
-                                                ),
-                                                date: formatLocalDate(
-                                                    billing.scheduledChangeDate ??
-                                                        null,
-                                                    locale
-                                                ),
-                                                accent: (chunks) => (
-                                                    <span className="font-bold">
-                                                        {chunks}
-                                                    </span>
-                                                ),
-                                            })}
-                                        </span>
-                                    )}
                                 </p>
+                                {!billing?.cancelAtPeriodEnd && activePlan && (
+                                    <p className="text-muted-foreground mt-0.5 text-sm">
+                                        {t('active.executions_per_period', {
+                                            count: activePlan.executions.toLocaleString(
+                                                toIntlLocale(locale)
+                                            ),
+                                        })}
+                                    </p>
+                                )}
+                                {billing?.scheduledPlanCode && (
+                                    <p className="text-muted-foreground mt-0.5 text-sm">
+                                        {t.rich('active.scheduled_change', {
+                                            plan: t(
+                                                `plans.${billing.scheduledPlanCode}.name`,
+                                                {
+                                                    defaultValue:
+                                                        billing.scheduledPlanCode,
+                                                }
+                                            ),
+                                            date: formatLocalDate(
+                                                billing.scheduledChangeDate ??
+                                                    null,
+                                                locale
+                                            ),
+                                            accent: (chunks) => (
+                                                <span className="font-bold">
+                                                    {chunks}
+                                                </span>
+                                            ),
+                                        })}
+                                    </p>
+                                )}
                             </div>
 
                             <UiButton
