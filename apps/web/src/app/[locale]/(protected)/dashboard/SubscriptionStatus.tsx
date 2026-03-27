@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { CreditCard } from 'lucide-react';
 import type { PaymentsCatalog } from '@cyanship/types';
 import { getCatalog } from '@/shared/api/payments';
 import { useAuthStore } from '@/stores/auth';
 import { formatLocalDate, toIntlLocale } from '@/shared/lib';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 
 export default function SubscriptionStatus() {
     const t = useTranslations('dashboard_page.subscription');
@@ -39,21 +39,17 @@ export default function SubscriptionStatus() {
           })
         : '';
 
-    return (
-        <section className="rounded-xl border border-border bg-card p-6 md:p-8">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <CreditCard className="size-4" />
-                    <span className="font-medium">{t('label')}</span>
-                </div>
-                <Link
-                    href={`/${locale}/billing`}
-                    className="text-sm font-medium text-primary hover:underline"
-                >
-                    {hasActive ? t('manage') : t('view_plans')}
-                </Link>
-            </div>
+    const billingLink = (
+        <Link
+            href={`/${locale}/billing`}
+            className="text-sm font-medium text-primary hover:underline"
+        >
+            {hasActive ? t('manage') : t('view_plans')}
+        </Link>
+    );
 
+    return (
+        <UiSectionCard title={t('label')} headerRight={billingLink}>
             {!hasActive ? (
                 <p className="mt-3 text-sm text-muted-foreground">
                     {t('no_active')}
@@ -118,6 +114,6 @@ export default function SubscriptionStatus() {
                     )}
                 </div>
             )}
-        </section>
+        </UiSectionCard>
     );
 }

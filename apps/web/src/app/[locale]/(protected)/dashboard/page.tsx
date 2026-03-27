@@ -3,7 +3,6 @@
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getFullName, getInitials } from '@cyanship/types';
-import { Zap } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { toIntlLocale } from '@/shared/lib';
 import {
@@ -12,6 +11,7 @@ import {
     UiAvatarFallback,
 } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 import SubscriptionStatus from './SubscriptionStatus';
 import SpendExecutionButtons from './SpendExecutionButtons';
 import TransactionHistory from './TransactionHistory';
@@ -59,13 +59,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Execution Balance ── */}
-            <section className="rounded-xl border border-border bg-card p-6 md:p-8">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Zap className="size-4" />
-                    <span className="font-medium">
-                        {t('balance_label')}
-                    </span>
-                </div>
+            <UiSectionCard title={t('balance_label')}>
                 <p className="mt-2">
                     <span className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
                         {formattedBalance}
@@ -74,7 +68,7 @@ export default function DashboardPage() {
                         {t('balance_unit')}
                     </span>
                 </p>
-            </section>
+            </UiSectionCard>
 
             {/* ── Subscription Status ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}

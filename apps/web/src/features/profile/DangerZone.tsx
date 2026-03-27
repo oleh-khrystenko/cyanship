@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 import { deleteAccount } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import { useDeleteAccountDialogStore } from '@/stores/deleteAccountDialog';
@@ -76,10 +77,7 @@ const DangerZone = () => {
     const resendDisabled = loading || cooldownSec > 0;
 
     return (
-        <section className="rounded-lg border border-destructive/30 bg-card p-6">
-            <h2 className="text-foreground text-lg font-semibold">
-                {t('heading')}
-            </h2>
+        <UiSectionCard title={t('heading')} variant="destructive">
 
             <div className="mt-5">
                 <h3 className="text-foreground text-sm font-medium">
@@ -116,7 +114,7 @@ const DangerZone = () => {
                         : t('delete_button')}
                 </UiButton>
             </div>
-        </section>
+        </UiSectionCard>
     );
 };
 

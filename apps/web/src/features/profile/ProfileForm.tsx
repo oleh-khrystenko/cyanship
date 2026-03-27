@@ -9,6 +9,7 @@ import { firstNameSchema, lastNameSchema } from '@cyanship/types';
 import type { UserProfile } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiInput from '@/shared/ui/UiInput';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { getFieldError } from '@/shared/lib';
 import { updateProfile, getMe } from '@/shared/api';
@@ -85,11 +86,7 @@ const ProfileForm = ({
     };
 
     return (
-        <section className="rounded-lg border border-border bg-card p-6">
-            <h2 className="text-foreground text-lg font-semibold">
-                {t('heading')}
-            </h2>
-
+        <UiSectionCard title={t('heading')}>
             <dl className="mt-5">
                 <dt className="text-muted-foreground text-sm">
                     {t('email_label')}
@@ -155,7 +152,7 @@ const ProfileForm = ({
                     </div>
                 )}
             </form>
-        </section>
+        </UiSectionCard>
     );
 };
 

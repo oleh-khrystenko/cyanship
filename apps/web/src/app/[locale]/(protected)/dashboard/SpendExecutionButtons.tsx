@@ -13,6 +13,7 @@ import { spendExecutions, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import { toIntlLocale } from '@/shared/lib';
 import UiButton from '@/shared/ui/UiButton';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 
 interface ActionButtonConfig {
@@ -104,12 +105,8 @@ export default function SpendExecutionButtons({
     const isActionInProgress = spendingAction !== null;
 
     return (
-        <section className="rounded-xl border border-border bg-card p-6 md:p-8">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">
-                {t('heading')}
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <UiSectionCard title={t('heading')}>
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 {ACTION_BUTTONS.map(({ action, labelKey }) => {
                     const cost = EXECUTION_ACTION_COST[action];
                     const isBusy = spendingAction === action;
@@ -150,6 +147,6 @@ export default function SpendExecutionButtons({
                     );
                 })}
             </div>
-        </section>
+        </UiSectionCard>
     );
 }

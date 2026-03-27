@@ -9,6 +9,7 @@ import {
 } from '@cyanship/types';
 import { getExecutionTransactions } from '@/shared/api';
 import { toIntlLocale } from '@/shared/lib';
+import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 
 const TRANSACTION_LIMIT = 10;
@@ -66,21 +67,17 @@ export default function TransactionHistory({
     }, [refreshTrigger]);
 
     return (
-        <section className="rounded-xl border border-border bg-card p-6 md:p-8">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">
-                {t('heading')}
-            </h2>
-
+        <UiSectionCard title={t('heading')}>
             {isLoading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="mt-4 flex items-center justify-center py-8">
                     <UiSpinner size="sm" />
                 </div>
             ) : transactions.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
+                <p className="mt-4 py-8 text-center text-sm text-muted-foreground">
                     {t('empty')}
                 </p>
             ) : (
-                <ul className="space-y-2">
+                <ul className="mt-4 space-y-2">
                     {transactions.map((transaction) => {
                         const isCredit = transaction.type === EXECUTION_TRANSACTION_TYPE.CREDIT;
                         const iconColor = isCredit
@@ -136,6 +133,6 @@ export default function TransactionHistory({
                     })}
                 </ul>
             )}
-        </section>
+        </UiSectionCard>
     );
 }
