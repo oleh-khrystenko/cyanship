@@ -1234,7 +1234,9 @@ export const useBriefDialogStore = create<BriefDialogState>((set) => ({
 
 - Read `requestAiBonus` from brief dialog store
 - Read `user` from auth store
-- If `requestAiBonus && user`: set name field value to `getFullName(user)`, make it readonly/disabled
+- If `requestAiBonus && user`:
+  - Set name field value to `getFullName(user)`, make it readonly/disabled
+  - Set email field value to `user.email`, make it readonly/disabled (user sees their contact point)
 - Include `requestAiBonus: true` in the submit payload
 - On success when `requestAiBonus`: update auth store with new AI limits, close dialog
 
