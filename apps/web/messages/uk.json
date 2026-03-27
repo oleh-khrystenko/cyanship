@@ -363,6 +363,7 @@
                 "plan_change": "План змінено",
                 "billing_reset": "Білінг скинуто"
             },
+            "load_more": "Завантажити ще",
             "time_just_now": "Щойно",
             "time_minutes_ago": "{count} хв тому",
             "time_hours_ago": "{count} год тому"

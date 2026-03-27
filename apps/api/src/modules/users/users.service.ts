@@ -169,13 +169,28 @@ export class UsersService {
 
     async getRecentTransactions(
         userId: string,
-        limit: number = 10
-    ): Promise<ExecutionTransactionLean[]> {
-        return this.executionTransactionModel
-            .find({ userId: new Types.ObjectId(userId) })
+        limit: number = 10,
+        before?: Date,
+    ): Promise<{ items: ExecutionTransactionLean[]; hasMore: boolean }> {
+        const filter: Record<string, unknown> = {
+            userId: new Types.ObjectId(userId),
+        };
+        if (before) {
+            filter.createdAt = { $lt: before };
+        }
+
+        const docs = await this.executionTransactionModel
+            .find(filter)
             .sort({ createdAt: -1 })
-            .limit(limit)
+            .limit(limit + 1)
             .lean();
+
+        const hasMore = docs.length > limit;
+
+        return {
+            items: hasMore ? docs.slice(0, limit) : docs,
+            hasMore,
+        };
     }
 
     async clearTransactions(userId: string): Promise<void> {

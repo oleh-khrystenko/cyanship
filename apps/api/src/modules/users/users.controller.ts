@@ -177,19 +177,29 @@ export class UsersController {
     @UseGuards(JwtActiveGuard)
     async getExecutionTransactions(
         @CurrentUser() user: UserDocument,
-        @Query('limit') limitParam?: string
-    ): Promise<{ data: ExecutionTransactionItem[] }> {
+        @Query('limit') limitParam?: string,
+        @Query('before') beforeParam?: string,
+    ): Promise<{
+        data: { items: ExecutionTransactionItem[]; hasMore: boolean };
+    }> {
         const limit = Math.min(
             Math.max(parseInt(limitParam || '10', 10) || 10, 1),
-            50
+            50,
         );
-        const transactions = await this.usersService.getRecentTransactions(
-            user._id.toString(),
-            limit
-        );
+        const before = beforeParam ? new Date(beforeParam) : undefined;
+
+        const { items, hasMore } =
+            await this.usersService.getRecentTransactions(
+                user._id.toString(),
+                limit,
+                before,
+            );
 
         return {
-            data: transactions.map((t) => this.mapTransaction(t)),
+            data: {
+                items: items.map((t) => this.mapTransaction(t)),
+                hasMore,
+            },
         };
     }
 

@@ -70,3 +70,12 @@ export const ExecutionTransactionItemSchema = z.object({
 export type ExecutionTransactionItem = z.infer<
     typeof ExecutionTransactionItemSchema
 >;
+
+export const PaginatedTransactionsSchema = z.object({
+    items: z.array(ExecutionTransactionItemSchema),
+    hasMore: z.boolean(),
+});
+
+export type PaginatedTransactions = z.infer<
+    typeof PaginatedTransactionsSchema
+>;

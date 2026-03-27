@@ -42,8 +42,8 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
     const fetchTransactions = useCallback(async () => {
         setIsLoadingTransactions(true);
         try {
-            const data = await getExecutionTransactions(10);
-            setTransactions(data);
+            const { items } = await getExecutionTransactions(10);
+            setTransactions(items);
         } catch {
             // Silent fail — transactions are supplementary
         } finally {

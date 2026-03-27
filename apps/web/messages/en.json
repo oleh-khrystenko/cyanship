@@ -363,6 +363,7 @@
                 "plan_change": "Plan changed",
                 "billing_reset": "Billing reset"
             },
+            "load_more": "Load more",
             "time_just_now": "Just now",
             "time_minutes_ago": "{count} min ago",
             "time_hours_ago": "{count} hrs ago"

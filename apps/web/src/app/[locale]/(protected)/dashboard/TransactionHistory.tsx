@@ -9,10 +9,11 @@ import {
 } from '@cyanship/types';
 import { getExecutionTransactions } from '@/shared/api';
 import { toIntlLocale } from '@/shared/lib';
+import UiButton from '@/shared/ui/UiButton';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 
-const TRANSACTION_LIMIT = 10;
+const PAGE_SIZE = 10;
 
 interface TransactionHistoryProps {
     refreshTrigger?: number;
@@ -24,10 +25,12 @@ export default function TransactionHistory({
     const t = useTranslations('dashboard_page.transactions');
     const locale = useLocale();
 
-    const [transactions, setTransactions] = useState<ExecutionTransactionItem[]>(
-        []
-    );
+    const [transactions, setTransactions] = useState<
+        ExecutionTransactionItem[]
+    >([]);
+    const [hasMore, setHasMore] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     const formatRelativeTime = useCallback(
         (dateStr: string | Date): string => {
@@ -46,25 +49,44 @@ export default function TransactionHistory({
 
             return date.toLocaleDateString(toIntlLocale(locale));
         },
-        [t, locale]
+        [t, locale],
     );
 
+    // Initial fetch — resets on refreshTrigger (e.g. after spend action)
     useEffect(() => {
-        const fetchTransactions = async () => {
+        const fetch = async () => {
             setIsLoading(true);
             try {
-                const data = await getExecutionTransactions(TRANSACTION_LIMIT);
-                setTransactions(data);
+                const result = await getExecutionTransactions(PAGE_SIZE);
+                setTransactions(result.items);
+                setHasMore(result.hasMore);
             } catch {
-                // Silent fail — transactions are supplementary info
                 setTransactions([]);
+                setHasMore(false);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        void fetchTransactions();
+        void fetch();
     }, [refreshTrigger]);
+
+    const handleLoadMore = async () => {
+        const lastItem = transactions[transactions.length - 1];
+        if (!lastItem) return;
+
+        setIsLoadingMore(true);
+        try {
+            const cursor = new Date(lastItem.createdAt).toISOString();
+            const result = await getExecutionTransactions(PAGE_SIZE, cursor);
+            setTransactions((prev) => [...prev, ...result.items]);
+            setHasMore(result.hasMore);
+        } catch {
+            // Silent fail — keep existing data
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     return (
         <UiSectionCard title={t('heading')}>
@@ -77,61 +99,81 @@ export default function TransactionHistory({
                     {t('empty')}
                 </p>
             ) : (
-                <ul className="mt-4 space-y-2">
-                    {transactions.map((transaction) => {
-                        const isCredit = transaction.type === EXECUTION_TRANSACTION_TYPE.CREDIT;
-                        const iconColor = isCredit
-                            ? 'bg-success/15 text-success'
-                            : 'bg-muted text-muted-foreground';
+                <>
+                    <ul className="mt-4 space-y-2">
+                        {transactions.map((transaction) => {
+                            const isCredit =
+                                transaction.type ===
+                                EXECUTION_TRANSACTION_TYPE.CREDIT;
+                            const iconColor = isCredit
+                                ? 'bg-success/15 text-success'
+                                : 'bg-muted text-muted-foreground';
 
-                        return (
-                            <li
-                                key={transaction.id}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2"
+                            return (
+                                <li
+                                    key={transaction.id}
+                                    className="flex items-center gap-3 rounded-lg px-3 py-2"
+                                >
+                                    <span
+                                        className={`flex size-6 shrink-0 items-center justify-center rounded-full ${iconColor}`}
+                                    >
+                                        {isCredit ? (
+                                            <ArrowUpRight className="size-3.5" />
+                                        ) : (
+                                            <ArrowDownRight className="size-3.5" />
+                                        )}
+                                    </span>
+
+                                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                                        {t(
+                                            `actions.${transaction.action}`,
+                                            {
+                                                defaultValue:
+                                                    transaction.action,
+                                            },
+                                        )}
+                                    </span>
+
+                                    <span
+                                        className={`shrink-0 text-xs font-medium ${
+                                            isCredit
+                                                ? 'text-success'
+                                                : 'text-muted-foreground'
+                                        }`}
+                                    >
+                                        {isCredit ? '+' : '−'}
+                                        {transaction.amount.toLocaleString(
+                                            toIntlLocale(locale),
+                                        )}
+                                    </span>
+
+                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                        {formatRelativeTime(
+                                            transaction.createdAt,
+                                        )}
+                                    </span>
+                                </li>
+                            );
+                        })}
+                    </ul>
+
+                    {hasMore && (
+                        <div className="mt-4 flex justify-center">
+                            <UiButton
+                                variant="outline"
+                                size="sm"
+                                disabled={isLoadingMore}
+                                onClick={() => void handleLoadMore()}
                             >
-                                {/* Icon */}
-                                <span
-                                    className={`flex size-6 shrink-0 items-center justify-center rounded-full ${iconColor}`}
-                                >
-                                    {isCredit ? (
-                                        <ArrowUpRight className="size-3.5" />
-                                    ) : (
-                                        <ArrowDownRight className="size-3.5" />
-                                    )}
-                                </span>
-
-                                {/* Action Name */}
-                                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                                    {t(
-                                        `actions.${transaction.action}`,
-                                        {
-                                            defaultValue: transaction.action,
-                                        }
-                                    )}
-                                </span>
-
-                                {/* Amount */}
-                                <span
-                                    className={`shrink-0 text-xs font-medium ${
-                                        isCredit
-                                            ? 'text-success'
-                                            : 'text-muted-foreground'
-                                    }`}
-                                >
-                                    {isCredit ? '+' : '−'}
-                                    {transaction.amount.toLocaleString(
-                                        toIntlLocale(locale)
-                                    )}
-                                </span>
-
-                                {/* Time */}
-                                <span className="shrink-0 text-xs text-muted-foreground">
-                                    {formatRelativeTime(transaction.createdAt)}
-                                </span>
-                            </li>
-                        );
-                    })}
-                </ul>
+                                {isLoadingMore ? (
+                                    <UiSpinner size="sm" />
+                                ) : (
+                                    t('load_more')
+                                )}
+                            </UiButton>
+                        </div>
+                    )}
+                </>
             )}
         </UiSectionCard>
     );
