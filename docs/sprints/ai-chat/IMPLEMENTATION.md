@@ -1,6 +1,6 @@
 # AI Chat — Technical Implementation Plan
 
-> **Goal:** Add a streaming AI chat to the dashboard, fully integrated with the existing executions billing system. Provider-agnostic architecture following the established `PAYMENT_PROVIDER` → `StripeService` pattern.
+> **Goal:** Add a streaming AI chat to the dashboard, fully integrated with the existing executions billing system. Provider-agnostic architecture following the established `PAYMENT_PROVIDER` → `StripeService` pattern. Lifetime per-account AI limit with brief-form lead-gen gate for bonus requests. Persistent chat history in MongoDB.
 
 ---
 
@@ -10,20 +10,33 @@
 POST /ai/chat (text/event-stream)
   → JwtActiveGuard (existing)
   → OnboardingInterceptor (existing, global)
-  → AiRateLimitGuard (new, Redis-based)
+  → AiRateLimitGuard (new — lifetime account limit + Redis IP limit)
   → AiController.chat()
       → UsersService.spendExecutions(userId, 200, 'ai_chat')  // existing method
-      → AiService.chat(message)
+      → AiService.chat(userId, message)
+          → Save user message to MongoDB
           → IAiProvider.streamChat(message, systemPrompt)  // injected provider
-      → SSE: {type:"token"} → {type:"token"} → {type:"done", balanceAfter}
+          → Save assistant message to MongoDB
+          → Increment user.ai.requestsUsed
+      → SSE: {type:"token"} → {type:"token"} → {type:"done", balanceAfter, aiRequestsRemaining}
+
+GET /ai/chat/history
+  → JwtActiveGuard
+  → Returns saved ChatMessage[] for user
+
+DELETE /ai/chat/history
+  → JwtActiveGuard
+  → Deletes all ChatMessage for user
 ```
 
 ### Module Dependency Map (new)
 
 ```
-AppModule → AiModule → UsersModule (forwardRef NOT needed — one-directional)
+AppModule → AiModule → UsersModule (one-directional, no forwardRef)
+                     → AgencyModule (for brief bonus integration)
                      → REDIS_CLIENT (existing provider)
                      → AI_PROVIDER injection token → AnthropicService
+                     → ChatMessage schema (new MongoDB collection)
 ```
 
 ---
@@ -76,22 +89,20 @@ export const AI_CHAT_EVENT = {
 
 export type AiChatEvent = (typeof AI_CHAT_EVENT)[keyof typeof AI_CHAT_EVENT];
 
-// Token event: partial text chunk
 export interface AiChatTokenEvent {
     type: typeof AI_CHAT_EVENT.TOKEN;
     content: string;
 }
 
-// Error event: something went wrong mid-stream
 export interface AiChatErrorEvent {
     type: typeof AI_CHAT_EVENT.ERROR;
     code: string;
 }
 
-// Done event: stream finished successfully
 export interface AiChatDoneEvent {
     type: typeof AI_CHAT_EVENT.DONE;
     balanceAfter: number;
+    aiRequestsRemaining: number;
 }
 
 export type AiChatSSEEvent =
@@ -99,25 +110,59 @@ export type AiChatSSEEvent =
     | AiChatErrorEvent
     | AiChatDoneEvent;
 
-// --- Rate Limit Config ---
+// --- Chat Message (persisted) ---
 
-export const AI_CHAT_DEFAULTS = {
-    MAX_TOKENS: 150,
-    IP_LIMIT: 5,
-    USER_LIMIT: 5,
-    LIMIT_WINDOW_SEC: 86_400, // 24 hours
-    EXECUTION_COST: 200,
-} as const;
+export const ChatMessageSchema = z.object({
+    id: z.string(),
+    role: z.enum(['user', 'assistant']),
+    content: z.string(),
+    createdAt: z.coerce.date(),
+});
+
+export type ChatMessageItem = z.infer<typeof ChatMessageSchema>;
+
+export const ChatHistorySchema = z.object({
+    messages: z.array(ChatMessageSchema),
+});
+
+export type ChatHistory = z.infer<typeof ChatHistorySchema>;
+
+// --- AI Limits (user subdocument) ---
+
+export interface UserAi {
+    requestsUsed: number;
+    bonusRequests: number;
+}
 ```
 
-### 1.3 Update `packages/types/src/contracts/index.ts`
+### 1.3 Update `packages/types/src/agency/brief.ts`
+
+Add optional field to `SubmitBriefSchema`:
+
+```typescript
+// Add to SubmitBriefSchema:
+requestAiBonus: z.boolean().optional(),
+```
+
+### 1.4 Update `packages/types/src/entities/user.ts`
+
+Add `ai` subdocument to user entity schema:
+
+```typescript
+ai: z.object({
+    requestsUsed: z.number().int().min(0),
+    bonusRequests: z.number().int().min(0),
+}).nullable(),
+```
+
+### 1.5 Update `packages/types/src/contracts/index.ts`
 
 Add export:
 ```typescript
 export * from './ai-chat';
 ```
 
-### 1.4 Rebuild types
+### 1.6 Rebuild types
 
 ```bash
 pnpm --filter @cyanship/types build
@@ -141,6 +186,8 @@ apps/api/src/modules/ai/
 │   └── anthropic.service.ts
 ├── guards/
 │   └── ai-rate-limit.guard.ts
+├── schemas/
+│   └── chat-message.schema.ts
 └── dto/
     └── ai-chat.dto.ts
 ```
@@ -244,7 +291,58 @@ export const aiProviderProvider: Provider = {
 
 **Swap provider**: To switch to OpenAI — create `OpenAiService implements IAiProvider`, change `useClass` here. Zero changes elsewhere.
 
-### 2.4 AI Rate Limit Guard
+### 2.4 Chat Message Schema
+
+**File**: `apps/api/src/modules/ai/schemas/chat-message.schema.ts`
+
+```typescript
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+
+@Schema({ timestamps: true, collection: 'chat_messages' })
+export class ChatMessage extends Document {
+    @Prop({ type: Types.ObjectId, required: true, index: true })
+    userId: Types.ObjectId;
+
+    @Prop({ type: String, required: true, enum: ['user', 'assistant'] })
+    role: 'user' | 'assistant';
+
+    @Prop({ type: String, required: true })
+    content: string;
+
+    createdAt: Date;
+}
+
+export const ChatMessageSchema = SchemaFactory.createForClass(ChatMessage);
+
+// Compound index for efficient history queries
+ChatMessageSchema.index({ userId: 1, createdAt: 1 });
+```
+
+### 2.5 Update User Schema
+
+**File**: `apps/api/src/modules/users/schemas/user.schema.ts`
+
+Add embedded `ai` subdocument (same pattern as `billing` and `executions`):
+
+```typescript
+@Prop({
+    type: {
+        requestsUsed: { type: Number, default: 0, min: 0 },
+        bonusRequests: { type: Number, default: 0, min: 0 },
+    },
+    default: () => ({ requestsUsed: 0, bonusRequests: 0 }),
+    _id: false,
+})
+ai: {
+    requestsUsed: number;
+    bonusRequests: number;
+};
+```
+
+**Note**: Unlike `billing` (nullable, created on first event), `ai` has a default — every user starts with `{ requestsUsed: 0, bonusRequests: 0 }`. This avoids null checks everywhere.
+
+### 2.6 AI Rate Limit Guard
 
 **File**: `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts`
 
@@ -258,13 +356,17 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { Redis } from 'ioredis';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { REDIS_CLIENT } from '../../payments/providers/redis.provider';
+import { User } from '../../users/schemas/user.schema';
 import { ENV } from '../../../config/env';
 
 @Injectable()
 export class AiRateLimitGuard implements CanActivate {
     constructor(
         @Inject(REDIS_CLIENT) private readonly redis: Redis,
+        @InjectModel(User.name) private readonly userModel: Model<User>,
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -279,13 +381,33 @@ export class AiRateLimitGuard implements CanActivate {
             );
         }
 
-        // Check both limits in parallel
-        const [ipAllowed, userAllowed] = await Promise.all([
-            this.checkLimit(`ai:ip:${ip}`, ENV.AI_CHAT_IP_LIMIT),
-            this.checkLimit(`ai:user:${userId}`, ENV.AI_CHAT_USER_LIMIT),
-        ]);
+        // 1. Check lifetime account limit (MongoDB)
+        const user = await this.userModel.findById(userId).select('ai').lean();
+        if (!user) {
+            throw new HttpException(
+                { error: { code: 'USER_NOT_FOUND' } },
+                HttpStatus.NOT_FOUND,
+            );
+        }
 
-        if (!ipAllowed || !userAllowed) {
+        const { requestsUsed, bonusRequests } = user.ai ?? { requestsUsed: 0, bonusRequests: 0 };
+        const totalLimit = ENV.AI_CHAT_FREE_LIMIT + bonusRequests;
+
+        if (requestsUsed >= totalLimit) {
+            throw new HttpException(
+                { error: { code: 'AI_LIMIT_EXHAUSTED' } },
+                HttpStatus.FORBIDDEN,
+            );
+        }
+
+        // 2. Check IP rate limit (Redis, 24h TTL)
+        const ipKey = `ai:ip:${ip}`;
+        const ipCount = await this.redis.incr(ipKey);
+        if (ipCount === 1) {
+            await this.redis.expire(ipKey, 86_400); // 24 hours
+        }
+
+        if (ipCount > ENV.AI_CHAT_IP_LIMIT) {
             throw new HttpException(
                 { error: { code: 'AI_RATE_LIMIT_EXCEEDED' } },
                 HttpStatus.TOO_MANY_REQUESTS,
@@ -294,32 +416,15 @@ export class AiRateLimitGuard implements CanActivate {
 
         return true;
     }
-
-    /**
-     * Atomic increment + TTL set via Redis MULTI.
-     * Returns false if limit exceeded.
-     *
-     * Pattern: INCR key → if result === 1, EXPIRE key TTL
-     * This ensures TTL is set exactly once (on first request).
-     */
-    private async checkLimit(key: string, limit: number): Promise<boolean> {
-        const current = await this.redis.incr(key);
-
-        // First request — set TTL
-        if (current === 1) {
-            await this.redis.expire(key, ENV.AI_CHAT_LIMIT_WINDOW_SEC);
-        }
-
-        return current <= limit;
-    }
 }
 ```
 
-**Fail-closed behavior**: If Redis throws — exception propagates → 500 → request blocked. No silent pass-through.
+**Key changes from v1**:
+- **Account limit is lifetime** (MongoDB `ai.requestsUsed` vs `AI_CHAT_FREE_LIMIT + bonusRequests`), not Redis TTL
+- **Two distinct error codes**: `AI_LIMIT_EXHAUSTED` (show brief form) vs `AI_RATE_LIMIT_EXCEEDED` (IP spam, retry later)
+- User model injected for account limit check; Redis only for IP abuse prevention
 
-**Why not `@SkipThrottle()`**: This guard is separate from the global `ThrottlerGuard`. Global throttler (60/min) still applies. AI guard adds per-feature limits on top.
-
-### 2.5 DTO
+### 2.7 DTO
 
 **File**: `apps/api/src/modules/ai/dto/ai-chat.dto.ts`
 
@@ -330,18 +435,23 @@ import { AiChatRequestSchema } from '@cyanship/types';
 export class AiChatDto extends createZodDto(AiChatRequestSchema) {}
 ```
 
-### 2.6 AI Service
+### 2.8 AI Service
 
 **File**: `apps/api/src/modules/ai/ai.service.ts`
 
 ```typescript
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import { Readable } from 'stream';
 import {
     AI_PROVIDER,
     type IAiProvider,
 } from './interfaces/ai-provider.interface';
+import { ChatMessage } from './schemas/chat-message.schema';
+import { User } from '../users/schemas/user.schema';
 import { ENV } from '../../config/env';
+import type { ChatMessageItem } from '@cyanship/types';
 
 const SYSTEM_PROMPT = `You are a helpful AI assistant integrated into a SaaS platform demo.
 Keep responses concise: 2-3 sentences maximum.
@@ -354,23 +464,96 @@ export class AiService {
     constructor(
         @Inject(AI_PROVIDER)
         private readonly aiProvider: IAiProvider,
+        @InjectModel(ChatMessage.name)
+        private readonly chatMessageModel: Model<ChatMessage>,
+        @InjectModel(User.name)
+        private readonly userModel: Model<User>,
     ) {}
 
-    async streamChat(message: string): Promise<Readable> {
-        this.logger.debug(`Streaming chat response for message: "${message.slice(0, 50)}..."`);
+    /**
+     * Save user message, stream AI response, save assistant message,
+     * increment requestsUsed.
+     * Returns: { stream, userMessageId } — caller handles SSE writing.
+     */
+    async processChat(
+        userId: string,
+        message: string,
+    ): Promise<{ stream: Readable; userMessageId: string }> {
+        // Save user message
+        const userMsg = await this.chatMessageModel.create({
+            userId: new Types.ObjectId(userId),
+            role: 'user',
+            content: message,
+        });
 
-        return this.aiProvider.streamChat(
+        const stream = await this.aiProvider.streamChat(
             message,
             SYSTEM_PROMPT,
             ENV.AI_CHAT_MAX_TOKENS,
         );
+
+        return { stream, userMessageId: userMsg._id.toString() };
+    }
+
+    /**
+     * Called after stream completes successfully.
+     * Saves assistant response and increments user's AI request counter.
+     */
+    async finalizeChat(
+        userId: string,
+        assistantContent: string,
+    ): Promise<{ aiRequestsRemaining: number }> {
+        // Save assistant message
+        await this.chatMessageModel.create({
+            userId: new Types.ObjectId(userId),
+            role: 'assistant',
+            content: assistantContent,
+        });
+
+        // Increment requestsUsed atomically
+        const user = await this.userModel.findByIdAndUpdate(
+            userId,
+            { $inc: { 'ai.requestsUsed': 1 } },
+            { new: true },
+        );
+
+        const totalLimit = ENV.AI_CHAT_FREE_LIMIT + (user?.ai?.bonusRequests ?? 0);
+        const remaining = Math.max(0, totalLimit - (user?.ai?.requestsUsed ?? 0));
+
+        return { aiRequestsRemaining: remaining };
+    }
+
+    /**
+     * Load chat history for user.
+     */
+    async getHistory(userId: string): Promise<ChatMessageItem[]> {
+        const messages = await this.chatMessageModel
+            .find({ userId: new Types.ObjectId(userId) })
+            .sort({ createdAt: 1 })
+            .lean();
+
+        return messages.map((m) => ({
+            id: m._id.toString(),
+            role: m.role,
+            content: m.content,
+            createdAt: m.createdAt,
+        }));
+    }
+
+    /**
+     * Clear chat history for user.
+     */
+    async clearHistory(userId: string): Promise<void> {
+        await this.chatMessageModel.deleteMany({
+            userId: new Types.ObjectId(userId),
+        });
     }
 }
 ```
 
-**Why service wraps provider**: Single place for system prompt, logging, future middleware (e.g., content moderation). Controller stays thin.
+**Why `processChat` + `finalizeChat` split**: Controller needs to stream tokens via `res.write()` between these two calls. Service saves user message before streaming (so it persists even if stream fails), and saves assistant message + increments counter only after stream completes successfully. If AI fails mid-stream, `requestsUsed` is NOT incremented — user doesn't lose a try.
 
-### 2.7 AI Controller
+### 2.9 AI Controller
 
 **File**: `apps/api/src/modules/ai/ai.controller.ts`
 
@@ -378,6 +561,8 @@ export class AiService {
 import {
     Body,
     Controller,
+    Delete,
+    Get,
     HttpException,
     HttpStatus,
     Logger,
@@ -437,28 +622,40 @@ export class AiController {
         res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
         res.flushHeaders();
 
-        try {
-            // 3. Stream AI response
-            const stream = await this.aiService.streamChat(dto.message);
+        let assistantContent = '';
 
+        try {
+            // 3. Save user message + start AI stream
+            const { stream } = await this.aiService.processChat(userId, dto.message);
+
+            // 4. Stream AI response via SSE
             for await (const chunk of stream) {
+                const text = chunk.toString();
+                assistantContent += text;
+
                 const event = {
                     type: AI_CHAT_EVENT.TOKEN,
-                    content: chunk.toString(),
+                    content: text,
                 };
                 res.write(`data: ${JSON.stringify(event)}\n\n`);
             }
 
-            // 4. Send done event with updated balance
+            // 5. Save assistant message + increment requestsUsed
+            const { aiRequestsRemaining } = await this.aiService.finalizeChat(
+                userId,
+                assistantContent,
+            );
+
+            // 6. Send done event with updated balance and remaining AI requests
             const doneEvent = {
                 type: AI_CHAT_EVENT.DONE,
                 balanceAfter: spendResult.balanceAfter,
+                aiRequestsRemaining,
             };
             res.write(`data: ${JSON.stringify(doneEvent)}\n\n`);
         } catch (error) {
             this.logger.error('AI stream error', error);
 
-            // Send error event through SSE (connection already open)
             const errorEvent = {
                 type: AI_CHAT_EVENT.ERROR,
                 code: 'AI_PROVIDER_ERROR',
@@ -468,33 +665,58 @@ export class AiController {
             res.end();
         }
     }
+
+    @Get('chat/history')
+    @UseGuards(JwtActiveGuard)
+    async getHistory(@CurrentUser('id') userId: string) {
+        const messages = await this.aiService.getHistory(userId);
+        return { data: { messages } };
+    }
+
+    @Delete('chat/history')
+    @UseGuards(JwtActiveGuard)
+    async clearHistory(@CurrentUser('id') userId: string) {
+        await this.aiService.clearHistory(userId);
+        return { data: { cleared: true } };
+    }
 }
 ```
 
 **Key design decisions**:
 
-1. **Executions deducted BEFORE AI call**: If AI fails after deduction, user loses executions. This is intentional for demo — keeps billing logic simple and atomic. In production, you'd consider refund logic. For a boilerplate demo with $0.0004 per request, acceptable trade-off.
+1. **Executions deducted BEFORE AI call**: If AI fails after deduction, user loses executions but `requestsUsed` is NOT incremented (the try in `finalizeChat` only runs on success). Trade-off: user may lose 200 executions on provider failure, but keeps their AI request count. Acceptable for demo.
 
-2. **`@Res()` manual response**: NestJS SSE decorator (`@Sse()`) works with GET + Observables. For POST + streaming, manual `res.write()` is standard pattern. Bypasses NestJS response interceptors — `AllExceptionsFilter` won't catch errors after headers are sent, hence try/catch with SSE error event.
+2. **`@Res()` manual response for SSE**: NestJS SSE decorator (`@Sse()`) works with GET + Observables. For POST + streaming, manual `res.write()` is standard. Bypasses `AllExceptionsFilter` after headers sent — hence try/catch with SSE error event.
 
-3. **Error mid-stream**: If AI provider fails after streaming starts, we send an `error` event via SSE (not HTTP error, since headers already sent). Frontend handles this gracefully.
+3. **`assistantContent` accumulated in controller**: Controller collects full response text from stream, then passes to `finalizeChat()` for persistence. Alternative: collect in service — but service doesn't know about SSE, keeping it transport-agnostic.
 
-### 2.8 AI Module
+4. **History endpoints are simple CRUD**: No pagination needed — chat history is short (max 5-10 messages per user). If needed later, add cursor-based pagination.
+
+### 2.10 AI Module
 
 **File**: `apps/api/src/modules/ai/ai.module.ts`
 
 ```typescript
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from '../users/users.module';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AnthropicService } from './providers/anthropic.service';
 import { aiProviderProvider } from './providers/ai-provider.provider';
 import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
+import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 import { redisProvider } from '../payments/providers/redis.provider';
 
 @Module({
-    imports: [UsersModule],
+    imports: [
+        UsersModule,
+        MongooseModule.forFeature([
+            { name: ChatMessage.name, schema: ChatMessageSchema },
+            { name: User.name, schema: UserSchema },
+        ]),
+    ],
     controllers: [AiController],
     providers: [
         AiService,
@@ -503,13 +725,14 @@ import { redisProvider } from '../payments/providers/redis.provider';
         AiRateLimitGuard,
         redisProvider,
     ],
+    exports: [AiService],
 })
 export class AiModule {}
 ```
 
-**Note**: `redisProvider` is re-registered here (same pattern as PaymentsModule). Each module gets its own Redis instance via factory. Alternative: make Redis global. Current approach matches existing codebase pattern.
+**Note**: `User` schema registered here for guard's `@InjectModel(User.name)`. `redisProvider` re-registered (same pattern as PaymentsModule).
 
-### 2.9 Register in AppModule
+### 2.11 Register in AppModule
 
 **File**: `apps/api/src/app.module.ts`
 
@@ -527,34 +750,97 @@ import { AiModule } from './modules/ai/ai.module';
 
 ---
 
-## Phase 3 — Frontend: Chat UI
+## Phase 3 — Backend: Brief-form AI Bonus
 
-### 3.1 AI API Function
+### 3.1 Update Brief Schema
+
+**File**: `apps/api/src/modules/agency/schemas/brief.schema.ts`
+
+Add field:
+```typescript
+@Prop({ type: Boolean, default: false })
+requestAiBonus: boolean;
+```
+
+### 3.2 Update Brief Service
+
+**File**: `apps/api/src/modules/agency/brief.service.ts`
+
+After successful brief creation, if `requestAiBonus === true`:
+
+```typescript
+async submit(dto: SubmitBriefDto): Promise<{ code: string; aiBonusGranted?: boolean }> {
+    const brief = await this.briefModel.create(dto);
+
+    // Grant AI bonus if requested and user is authenticated
+    let aiBonusGranted = false;
+    if (dto.requestAiBonus && dto.userId) {
+        await this.userModel.findByIdAndUpdate(dto.userId, {
+            $inc: { 'ai.bonusRequests': ENV.AI_CHAT_BONUS_AMOUNT },
+        });
+        aiBonusGranted = true;
+    }
+
+    // Fire-and-forget emails (existing logic)
+    this.sendEmails(brief);
+
+    return { code: 'BRIEF_SUBMITTED', aiBonusGranted };
+}
+```
+
+**Note**: `userId` is optional — brief form works for anonymous users on landing too. Only authenticated users get the bonus. The controller passes `userId` from `@CurrentUser()` if available.
+
+### 3.3 Update Brief Controller
+
+Add optional `@CurrentUser()` to pass userId when authenticated:
+
+```typescript
+@Post()
+@SkipOnboarding()
+async submit(
+    @Body() dto: SubmitBriefDto,
+    @Req() req: Request,
+) {
+    // userId is available if user is authenticated (optional)
+    const userId = req.user?.id ?? null;
+    const result = await this.briefService.submit({ ...dto, userId });
+    return { data: result };
+}
+```
+
+**Important**: Brief endpoint has `@SkipOnboarding()` and no auth guard — it works for anonymous users. When called from authenticated context (dashboard), the cookie/token is still sent, so `req.user` is populated by passport middleware. No auth guard added — backwards compatible.
+
+---
+
+## Phase 4 — Frontend: Chat UI
+
+### 4.1 AI API Functions
 
 **File**: `apps/web/src/shared/api/ai.ts`
 
 ```typescript
 import { ENV } from '@/shared/config/env';
-import type { AiChatSSEEvent } from '@cyanship/types';
+import { apiClient } from './client';
+import { getAccessToken } from './client';
+import type { AiChatSSEEvent, ChatMessageItem } from '@cyanship/types';
 
 /**
- * Send a chat message and stream the AI response via SSE.
- *
- * Uses native fetch (not Axios) because Axios doesn't support
- * ReadableStream for response body parsing.
- *
- * @param message - User message text
- * @param onEvent - Callback for each SSE event
- * @param signal - AbortController signal for cancellation
+ * Stream AI chat response via SSE.
+ * Uses native fetch (not Axios) — Axios doesn't support ReadableStream.
  */
 export async function streamAiChat(
     message: string,
     onEvent: (event: AiChatSSEEvent) => void,
     signal?: AbortSignal,
 ): Promise<void> {
+    const token = getAccessToken();
+
     const response = await fetch(`${ENV.NEXT_PUBLIC_API_URL}/ai/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({ message }),
         credentials: 'include',
         signal,
@@ -594,6 +880,23 @@ export async function streamAiChat(
     }
 }
 
+/**
+ * Load saved chat history.
+ */
+export async function getChatHistory(): Promise<ChatMessageItem[]> {
+    const { data } = await apiClient.get<{ data: { messages: ChatMessageItem[] } }>(
+        '/ai/chat/history',
+    );
+    return data.data.messages;
+}
+
+/**
+ * Clear chat history.
+ */
+export async function clearChatHistory(): Promise<void> {
+    await apiClient.delete('/ai/chat/history');
+}
+
 export class AiChatError extends Error {
     constructor(
         public readonly code: string,
@@ -605,42 +908,46 @@ export class AiChatError extends Error {
 }
 ```
 
-**Why fetch, not Axios**: Axios doesn't support `response.body.getReader()` for streaming. Native fetch with `ReadableStream` is the standard approach for SSE consumption from POST endpoints.
+### 4.2 Export `getAccessToken`
 
-**Auth token**: Uses `credentials: 'include'` to send cookies. However, the API uses Bearer token in memory. Need to attach token manually:
+**File**: `apps/web/src/shared/api/client.ts`
 
-```typescript
-// In the fetch call, add Authorization header:
-headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${getAccessToken()}`,
-},
-```
-
-This requires exposing `getAccessToken()` from the API client module. Check existing `client.ts` — the token is stored in module scope. Add a getter export:
+Add getter for the in-memory access token:
 
 ```typescript
-// In shared/api/client.ts — add:
 export function getAccessToken(): string | null {
     return accessToken;
 }
 ```
 
-### 3.2 Chat Component
+Update `apps/web/src/shared/api/index.ts` to export it and ai module.
+
+### 4.3 Chat Component
 
 **File**: `apps/web/src/app/[locale]/(protected)/dashboard/components/AiChat.tsx`
 
 ```typescript
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { AI_CHAT_EVENT, AI_CHAT_MESSAGE_MAX_LENGTH } from '@cyanship/types';
-import type { AiChatSSEEvent } from '@cyanship/types';
-import { streamAiChat, AiChatError } from '@/shared/api/ai';
+import {
+    AI_CHAT_EVENT,
+    AI_CHAT_MESSAGE_MAX_LENGTH,
+    EXECUTION_ACTION_COST,
+    EXECUTION_ACTION,
+} from '@cyanship/types';
+import type { AiChatSSEEvent, ChatMessageItem } from '@cyanship/types';
+import {
+    streamAiChat,
+    getChatHistory,
+    clearChatHistory,
+    AiChatError,
+} from '@/shared/api/ai';
 import { getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
+import { useBriefDialogStore } from '@/stores/briefDialog';
 import UiButton from '@/shared/ui/UiButton';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 
@@ -660,15 +967,44 @@ export default function AiChat({ onSpendSuccess }: AiChatProps) {
 
     const user = useAuthStore((s) => s.user);
     const setUser = useAuthStore((s) => s.setUser);
+    const openBrief = useBriefDialogStore((s) => s.open);
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
+    const [isLimitExhausted, setIsLimitExhausted] = useState(false);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
     const abortRef = useRef<AbortController | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const cost = EXECUTION_ACTION_COST[EXECUTION_ACTION.AI_CHAT];
+    const canAfford = (user?.executions.balance ?? 0) >= cost;
+
+    // Load saved history on mount
+    useEffect(() => {
+        getChatHistory()
+            .then((history) => {
+                setMessages(
+                    history.map((m) => ({
+                        id: m.id,
+                        role: m.role,
+                        content: m.content,
+                    })),
+                );
+            })
+            .catch(() => {
+                // Silent fail — empty chat is acceptable
+            })
+            .finally(() => setIsLoadingHistory(false));
+    }, []);
+
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, []);
+
+    const handleClearHistory = useCallback(async () => {
+        await clearChatHistory();
+        setMessages([]);
     }, []);
 
     const handleSubmit = useCallback(async () => {
@@ -720,6 +1056,9 @@ export default function AiChat({ onSpendSuccess }: AiChatProps) {
                                     },
                                 });
                             }
+                            if (event.aiRequestsRemaining <= 0) {
+                                setIsLimitExhausted(true);
+                            }
                             onSpendSuccess?.();
                             break;
 
@@ -734,7 +1073,9 @@ export default function AiChat({ onSpendSuccess }: AiChatProps) {
             );
         } catch (error) {
             if (error instanceof AiChatError) {
-                if (error.code === 'AI_RATE_LIMIT_EXCEEDED') {
+                if (error.code === 'AI_LIMIT_EXHAUSTED') {
+                    setIsLimitExhausted(true);
+                } else if (error.code === 'AI_RATE_LIMIT_EXCEEDED') {
                     toast.error(t('error_rate_limit'));
                 } else if (error.code === 'INSUFFICIENT_EXECUTIONS') {
                     toast.error(
@@ -751,7 +1092,6 @@ export default function AiChat({ onSpendSuccess }: AiChatProps) {
                     prev.filter((m) => m.id !== assistantMsg.id),
                 );
             }
-            // AbortError is expected on unmount — ignore
         } finally {
             setIsStreaming(false);
             abortRef.current = null;
@@ -769,14 +1109,28 @@ export default function AiChat({ onSpendSuccess }: AiChatProps) {
     );
 
     return (
-        <UiSectionCard title={t('heading')}>
+        <UiSectionCard
+            title={t('heading')}
+            headerRight={
+                messages.length > 0 ? (
+                    <button
+                        onClick={handleClearHistory}
+                        className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                        {t('clear_history')}
+                    </button>
+                ) : undefined
+            }
+        >
             {/* Messages area */}
             <div className="mt-4 flex max-h-80 flex-col gap-3 overflow-y-auto rounded-lg border border-border bg-background p-4">
-                {messages.length === 0 && (
+                {isLoadingHistory ? (
+                    <p className="text-center text-sm text-muted-foreground">...</p>
+                ) : messages.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground">
                         {t('empty_state')}
                     </p>
-                )}
+                ) : null}
 
                 {messages.map((msg) => (
                     <div
@@ -800,77 +1154,112 @@ export default function AiChat({ onSpendSuccess }: AiChatProps) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input area */}
-            <div className="mt-3 flex gap-2">
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    maxLength={AI_CHAT_MESSAGE_MAX_LENGTH}
-                    placeholder={t('placeholder')}
-                    disabled={isStreaming}
-                    className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                />
-                <UiButton
-                    variant="filled"
-                    size="sm"
-                    disabled={isStreaming || !input.trim()}
-                    onClick={handleSubmit}
-                >
-                    {t('send')}
-                </UiButton>
-            </div>
+            {/* Input area OR brief-gate */}
+            {isLimitExhausted ? (
+                <div className="mt-3 rounded-lg border border-border bg-muted/50 p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                        {t('limit_exhausted')}
+                    </p>
+                    <UiButton
+                        variant="filled"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => openBrief({ requestAiBonus: true })}
+                    >
+                        {t('request_bonus')}
+                    </UiButton>
+                </div>
+            ) : (
+                <div className="mt-3 flex gap-2">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        maxLength={AI_CHAT_MESSAGE_MAX_LENGTH}
+                        placeholder={t('placeholder')}
+                        disabled={isStreaming || !canAfford}
+                        className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                    />
+                    <UiButton
+                        variant="filled"
+                        size="sm"
+                        disabled={isStreaming || !input.trim() || !canAfford}
+                        onClick={handleSubmit}
+                    >
+                        {t('send')}
+                    </UiButton>
+                </div>
+            )}
 
             {/* Cost info */}
-            <p className="mt-2 text-xs text-muted-foreground">
-                {t('cost_info', { cost: '200' })}
-            </p>
+            {!isLimitExhausted && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                    {t('cost_info', { cost: String(cost) })}
+                </p>
+            )}
         </UiSectionCard>
     );
 }
 ```
 
-**Component design notes**:
-- Stateless chat — messages live in `useState`, lost on navigation (by design for demo)
-- `AbortController` for cleanup on unmount (prevents memory leaks, state updates on unmounted component)
-- Empty assistant message appears immediately with pulse animation → fills as tokens arrive
-- Existing `UiSectionCard` and `UiButton` — no new UI primitives needed
-- `onSpendSuccess` callback triggers `TransactionHistory` refresh (same pattern as `SpendExecutionButtons`)
+**Key changes from v1**:
+- **History loading**: `useEffect` on mount fetches saved messages from API
+- **Clear history button**: In `headerRight` of `UiSectionCard`
+- **`isLimitExhausted` state**: Switches input area to brief-gate CTA
+- **`aiRequestsRemaining` from done event**: Updates limit state
+- **Brief dialog integration**: `openBrief({ requestAiBonus: true })` — passes flag to brief form
 
-### 3.3 Dashboard Integration
+### 4.4 Brief Dialog Modifications
+
+**Store update** (`apps/web/src/stores/briefDialog/briefDialogStore.ts`):
+
+```typescript
+interface BriefDialogState {
+    isOpen: boolean;
+    requestAiBonus: boolean;  // NEW
+    open: (opts?: { requestAiBonus?: boolean }) => void;
+    close: () => void;
+}
+
+export const useBriefDialogStore = create<BriefDialogState>((set) => ({
+    isOpen: false,
+    requestAiBonus: false,
+    open: (opts) => set({ isOpen: true, requestAiBonus: opts?.requestAiBonus ?? false }),
+    close: () => set({ isOpen: false, requestAiBonus: false }),
+}));
+```
+
+**BriefForm modifications** (`apps/web/src/features/agency/brief/BriefForm.tsx`):
+
+- Read `requestAiBonus` from brief dialog store
+- Read `user` from auth store
+- If `requestAiBonus && user`: set name field value to `getFullName(user)`, make it readonly/disabled
+- Include `requestAiBonus: true` in the submit payload
+- On success when `requestAiBonus`: update auth store with new AI limits, close dialog
+
+### 4.5 Dashboard Integration
 
 **File**: `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx`
 
-Add import and render between `SpendExecutionButtons` and `TransactionHistory`:
+Add import and render **above** `SpendExecutionButtons`:
 
 ```typescript
 import AiChat from './components/AiChat';
 
-// In JSX, between SpendExecutionButtons and TransactionHistory:
+// In JSX, ABOVE SpendExecutionButtons:
 {/* ── AI Chat ── */}
 <AiChat onSpendSuccess={handleSpendSuccess} />
+
+{/* ── Spend Execution Buttons ── */}
+<SpendExecutionButtons onSpendSuccess={handleSpendSuccess} />
 ```
-
-### 3.4 Export `getAccessToken`
-
-**File**: `apps/web/src/shared/api/client.ts`
-
-Add getter for the in-memory access token:
-
-```typescript
-export function getAccessToken(): string | null {
-    return accessToken;
-}
-```
-
-Update `apps/web/src/shared/api/index.ts` to export it.
 
 ---
 
-## Phase 4 — Translations (i18n)
+## Phase 5 — Translations (i18n)
 
-### 4.1 English (`apps/web/messages/en.json`)
+### 5.1 English (`apps/web/messages/en.json`)
 
 Add to `dashboard_page`:
 
@@ -879,9 +1268,12 @@ Add to `dashboard_page`:
     "heading": "AI Chat",
     "placeholder": "Ask AI anything...",
     "send": "Send",
+    "clear_history": "Clear history",
     "empty_state": "Send a message to start a conversation with AI",
     "cost_info": "Each message costs {cost} executions",
-    "error_rate_limit": "AI chat limit reached. Try again in 24 hours."
+    "error_rate_limit": "Too many requests. Try again later.",
+    "limit_exhausted": "You've used all free AI requests. Fill out the form to get 5 more.",
+    "request_bonus": "Get more AI requests"
 }
 ```
 
@@ -889,18 +1281,19 @@ Add to `errors`:
 
 ```json
 "ai": {
-    "ai_rate_limit_exceeded": "AI chat limit reached. Try again in 24 hours.",
+    "ai_limit_exhausted": "AI request limit reached.",
+    "ai_rate_limit_exceeded": "Too many requests. Try again later.",
     "ai_provider_error": "AI is temporarily unavailable. Please try again later."
 }
 ```
 
-Add to transactions action display (if exists, for transaction history labels):
+Add to transactions action display:
 
 ```json
 "ai_chat": "AI Chat"
 ```
 
-### 4.2 Ukrainian (`apps/web/messages/uk.json`)
+### 5.2 Ukrainian (`apps/web/messages/uk.json`)
 
 Mirror structure:
 
@@ -909,24 +1302,28 @@ Mirror structure:
     "heading": "AI Чат",
     "placeholder": "Запитайте щось у AI...",
     "send": "Надіслати",
+    "clear_history": "Очистити історію",
     "empty_state": "Напишіть повідомлення щоб розпочати розмову з AI",
     "cost_info": "Кожне повідомлення коштує {cost} executions",
-    "error_rate_limit": "Ліміт AI чату вичерпано. Спробуйте через 24 години."
+    "error_rate_limit": "Забагато запитів. Спробуйте пізніше.",
+    "limit_exhausted": "Безкоштовні AI-запити вичерпано. Заповніть форму щоб отримати ще 5.",
+    "request_bonus": "Отримати більше AI-запитів"
 }
 ```
 
 ```json
 "ai": {
-    "ai_rate_limit_exceeded": "Ліміт AI чату вичерпано. Спробуйте через 24 години.",
+    "ai_limit_exhausted": "Ліміт AI-запитів вичерпано.",
+    "ai_rate_limit_exceeded": "Забагато запитів. Спробуйте пізніше.",
     "ai_provider_error": "AI тимчасово недоступний. Спробуйте пізніше."
 }
 ```
 
 ---
 
-## Phase 5 — Environment & Configuration
+## Phase 6 — Environment & Configuration
 
-### 5.1 Update `apps/api/src/config/env.ts`
+### 6.1 Update `apps/api/src/config/env.ts`
 
 Add new env vars:
 
@@ -935,24 +1332,24 @@ Add new env vars:
 ANTHROPIC_API_KEY: getEnvVar('ANTHROPIC_API_KEY'),
 AI_CHAT_MAX_TOKENS: parseInt(process.env.AI_CHAT_MAX_TOKENS ?? '150', 10),
 AI_CHAT_IP_LIMIT: parseInt(process.env.AI_CHAT_IP_LIMIT ?? '5', 10),
-AI_CHAT_USER_LIMIT: parseInt(process.env.AI_CHAT_USER_LIMIT ?? '5', 10),
-AI_CHAT_LIMIT_WINDOW_SEC: parseInt(process.env.AI_CHAT_LIMIT_WINDOW_SEC ?? '86400', 10),
+AI_CHAT_FREE_LIMIT: parseInt(process.env.AI_CHAT_FREE_LIMIT ?? '5', 10),
+AI_CHAT_BONUS_AMOUNT: parseInt(process.env.AI_CHAT_BONUS_AMOUNT ?? '5', 10),
 ```
 
 **Note**: `ANTHROPIC_API_KEY` uses `getEnvVar()` (required, fail-fast). Tuning vars use `??` defaults — they have sane defaults and don't need to crash on missing.
 
-### 5.2 Update `.env.example`
+### 6.2 Update `.env.example`
 
 ```env
 # AI
 ANTHROPIC_API_KEY=sk-ant-...
-AI_CHAT_MAX_TOKENS=150        # optional, default 150
-AI_CHAT_IP_LIMIT=5            # optional, max requests per IP per window
-AI_CHAT_USER_LIMIT=5          # optional, max requests per user per window
-AI_CHAT_LIMIT_WINDOW_SEC=86400 # optional, rate limit window (24h)
+AI_CHAT_MAX_TOKENS=150        # optional, max tokens per AI response
+AI_CHAT_IP_LIMIT=5            # optional, max requests per IP per 24h
+AI_CHAT_FREE_LIMIT=5          # optional, free lifetime AI requests per account
+AI_CHAT_BONUS_AMOUNT=5        # optional, bonus requests granted after brief form
 ```
 
-### 5.3 Update `apps/api/src/test-setup.ts`
+### 6.3 Update `apps/api/src/test-setup.ts`
 
 Add fallback for tests:
 
@@ -960,7 +1357,7 @@ Add fallback for tests:
 process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key';
 ```
 
-### 5.4 Install Anthropic SDK
+### 6.4 Install Anthropic SDK
 
 ```bash
 pnpm --filter api add @anthropic-ai/sdk
@@ -968,22 +1365,27 @@ pnpm --filter api add @anthropic-ai/sdk
 
 ---
 
-## Phase 6 — Testing
+## Phase 7 — Testing
 
-### 6.1 Unit Tests
+### 7.1 Unit Tests
 
 **File**: `apps/api/src/modules/ai/ai.service.spec.ts`
 
 - Mock `AI_PROVIDER` with a fake `streamChat` that returns a Readable with known content
-- Verify `streamChat` is called with correct system prompt and max_tokens
+- Mock `ChatMessage` model
+- Verify `processChat` saves user message and returns stream
+- Verify `finalizeChat` saves assistant message and increments `ai.requestsUsed`
+- Verify `getHistory` returns messages sorted by createdAt
+- Verify `clearHistory` deletes all messages for user
 
 **File**: `apps/api/src/modules/ai/guards/ai-rate-limit.guard.spec.ts`
 
-- Mock `REDIS_CLIENT`
-- Test: first 5 requests pass, 6th returns 429
+- Mock `REDIS_CLIENT` and `User` model
+- Test: first 5 requests pass (lifetime), 6th returns 403 `AI_LIMIT_EXHAUSTED`
+- Test: user with `bonusRequests: 5` gets 10 total requests
+- Test: IP limit (Redis) returns 429 after 5 requests from same IP
 - Test: different IPs have separate counters
-- Test: different users have separate counters
-- Test: both IP and user limits enforced independently
+- Test: account limit and IP limit are independent
 
 **File**: `apps/api/src/modules/ai/providers/anthropic.service.spec.ts`
 
@@ -991,28 +1393,63 @@ pnpm --filter api add @anthropic-ai/sdk
 - Verify `messages.stream()` called with correct model and params
 - Verify Readable emits correct chunks and ends
 
-### 6.2 E2E Test
+### 7.2 E2E Test
 
 **File**: `apps/api/test/ai-chat.e2e-spec.ts`
 
 - Override `AI_PROVIDER` with mock provider
-- Test full flow: POST /ai/chat → auth → rate limit → spend → SSE stream
+- Test full flow: POST /ai/chat → auth → rate limit → spend → SSE stream → done event with `aiRequestsRemaining`
 - Test: insufficient balance → 402
-- Test: rate limit exceeded → 429
+- Test: lifetime limit exceeded → 403 `AI_LIMIT_EXHAUSTED`
+- Test: IP rate limit exceeded → 429
 - Test: invalid message (empty, too long) → 400
-- Test: SSE response format is correct (`data: {...}\n\n`)
+- Test: SSE response format correct (`data: {...}\n\n`)
+- Test: GET /ai/chat/history returns saved messages
+- Test: DELETE /ai/chat/history clears messages
+- Test: brief with `requestAiBonus: true` increments `ai.bonusRequests`
 
-### 6.3 Frontend Tests
+### 7.3 Frontend Tests
 
 **File**: `apps/web/src/app/[locale]/(protected)/dashboard/components/AiChat.test.tsx`
 
-- Mock `streamAiChat` function
+- Mock `streamAiChat`, `getChatHistory`, `clearChatHistory`
 - Test: renders empty state
+- Test: loads history on mount
 - Test: submitting message adds user + assistant messages
 - Test: streaming tokens update assistant message
 - Test: done event updates balance in auth store
+- Test: done event with `aiRequestsRemaining: 0` shows brief-gate
 - Test: error shows toast
 - Test: input disabled during streaming
+- Test: clear history button works
+
+---
+
+## MongoDB Collections (new)
+
+### `chat_messages`
+
+| Field | Type | Index | Description |
+|-------|------|-------|-------------|
+| `userId` | ObjectId | yes | Owner |
+| `role` | String (enum) | — | `'user'` or `'assistant'` |
+| `content` | String | — | Message text |
+| `createdAt` | Date | compound with userId | Auto-managed |
+
+**Compound index**: `{ userId: 1, createdAt: 1 }`
+
+### User Schema Changes
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `ai.requestsUsed` | Number | 0 | Lifetime AI request counter |
+| `ai.bonusRequests` | Number | 0 | Bonus from brief forms |
+
+### Brief Schema Changes
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `requestAiBonus` | Boolean | false | AI bonus request flag |
 
 ---
 
@@ -1020,18 +1457,30 @@ pnpm --filter api add @anthropic-ai/sdk
 
 | Key Pattern | Type | TTL | Purpose |
 |-------------|------|-----|---------|
-| `ai:ip:{ip}` | Integer (counter) | 86,400s (24h) | Per-IP request count |
-| `ai:user:{userId}` | Integer (counter) | 86,400s (24h) | Per-user request count |
+| `ai:ip:{ip}` | Integer (counter) | 86,400s (24h) | Per-IP request count (spam protection) |
+
+**Removed from v1**: `ai:user:{userId}` — replaced by MongoDB `ai.requestsUsed` (lifetime, not TTL-based).
 
 ---
 
 ## New Response Codes
 
-| Code | HTTP | When |
-|------|------|------|
-| `AI_RATE_LIMIT_EXCEEDED` | 429 | IP or user limit exceeded |
-| `INSUFFICIENT_EXECUTIONS` | 402 | Not enough balance (existing) |
-| `AI_PROVIDER_ERROR` | SSE event | AI provider failed mid-stream |
+| Code | HTTP | When | Frontend action |
+|------|------|------|-----------------|
+| `AI_LIMIT_EXHAUSTED` | 403 | Lifetime account limit reached | Show brief-gate CTA |
+| `AI_RATE_LIMIT_EXCEEDED` | 429 | IP limit exceeded | Toast "try again later" |
+| `INSUFFICIENT_EXECUTIONS` | 402 | Not enough balance (existing) | Toast "insufficient executions" |
+| `AI_PROVIDER_ERROR` | SSE event | AI provider failed mid-stream | Toast "AI unavailable" |
+
+---
+
+## API Endpoints (new)
+
+| Method | Path | Guard | Description |
+|--------|------|-------|-------------|
+| POST | `/ai/chat` | `JwtActiveGuard`, `AiRateLimitGuard` | Send message, stream SSE response |
+| GET | `/ai/chat/history` | `JwtActiveGuard` | Load saved chat messages |
+| DELETE | `/ai/chat/history` | `JwtActiveGuard` | Clear chat history |
 
 ---
 
@@ -1040,17 +1489,17 @@ pnpm --filter api add @anthropic-ai/sdk
 ```
 Phase 1 (types)  ─── must be first, everything imports from @cyanship/types
     │
-    ├── Phase 5 (env/config) ─── can be parallel with Phase 2
+    ├── Phase 6 (env/config) ─── can be parallel with Phase 2
     │
-    ├── Phase 2 (backend) ─── needs types for DTO + cost map
+    ├── Phase 2 (backend: AI module) ─── needs types for DTO + cost map
     │       │
-    │       └── Phase 6.1-6.2 (API tests) ─── after backend code
+    │       └── Phase 3 (backend: brief bonus) ─── needs AI module
     │
-    ├── Phase 4 (i18n) ─── can be parallel with Phase 2
+    ├── Phase 5 (i18n) ─── can be parallel with Phase 2
     │
-    └── Phase 3 (frontend) ─── needs working API endpoint for integration testing
+    └── Phase 4 (frontend) ─── needs working API endpoints
             │
-            └── Phase 6.3 (frontend tests) ─── after frontend code
+            └── Phase 7 (testing) ─── after all code
 ```
 
 ---
@@ -1058,36 +1507,48 @@ Phase 1 (types)  ─── must be first, everything imports from @cyanship/type
 ## Files Changed (Summary)
 
 ### New Files
+
 | File | Purpose |
 |------|---------|
 | `apps/api/src/modules/ai/ai.module.ts` | Module registration |
-| `apps/api/src/modules/ai/ai.controller.ts` | POST /ai/chat SSE endpoint |
-| `apps/api/src/modules/ai/ai.service.ts` | Chat orchestration |
+| `apps/api/src/modules/ai/ai.controller.ts` | POST /ai/chat (SSE) + GET/DELETE history |
+| `apps/api/src/modules/ai/ai.service.ts` | Chat orchestration + history CRUD |
 | `apps/api/src/modules/ai/interfaces/ai-provider.interface.ts` | Provider contract + DI token |
 | `apps/api/src/modules/ai/providers/ai-provider.provider.ts` | Provider factory |
 | `apps/api/src/modules/ai/providers/anthropic.service.ts` | Anthropic SDK adapter |
-| `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts` | Redis rate limiter |
+| `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts` | Lifetime account + Redis IP limiter |
+| `apps/api/src/modules/ai/schemas/chat-message.schema.ts` | Chat message MongoDB schema |
 | `apps/api/src/modules/ai/dto/ai-chat.dto.ts` | Zod DTO |
-| `packages/types/src/contracts/ai-chat.ts` | Shared contracts |
-| `apps/web/src/shared/api/ai.ts` | Frontend SSE client |
+| `packages/types/src/contracts/ai-chat.ts` | Shared contracts + message types |
+| `apps/web/src/shared/api/ai.ts` | Frontend SSE client + history API |
 | `apps/web/src/app/[locale]/(protected)/dashboard/components/AiChat.tsx` | Chat UI component |
 
 ### Modified Files
+
 | File | Change |
 |------|--------|
 | `packages/types/src/contracts/executions.ts` | Add `AI_CHAT` action + cost |
 | `packages/types/src/contracts/index.ts` | Export ai-chat |
+| `packages/types/src/agency/brief.ts` | Add `requestAiBonus` field |
+| `packages/types/src/entities/user.ts` | Add `ai` subdocument |
 | `apps/api/src/app.module.ts` | Import `AiModule` |
 | `apps/api/src/config/env.ts` | Add AI env vars |
 | `apps/api/src/test-setup.ts` | Add AI env fallback |
+| `apps/api/src/modules/users/schemas/user.schema.ts` | Add `ai` embedded subdocument |
+| `apps/api/src/modules/agency/schemas/brief.schema.ts` | Add `requestAiBonus` field |
+| `apps/api/src/modules/agency/brief.service.ts` | Grant AI bonus on brief submit |
+| `apps/api/src/modules/agency/brief.controller.ts` | Pass userId to brief service |
 | `apps/web/src/shared/api/client.ts` | Export `getAccessToken()` |
 | `apps/web/src/shared/api/index.ts` | Export ai module |
-| `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChat section |
-| `apps/web/messages/en.json` | AI chat translations |
-| `apps/web/messages/uk.json` | AI chat translations |
+| `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChat section above spend buttons |
+| `apps/web/src/stores/briefDialog/briefDialogStore.ts` | Add `requestAiBonus` state |
+| `apps/web/src/features/agency/brief/BriefForm.tsx` | Readonly name + AI bonus flag |
+| `apps/web/messages/en.json` | AI chat + brief-gate translations |
+| `apps/web/messages/uk.json` | AI chat + brief-gate translations |
 | `.env.example` | AI env vars |
 
 ### New Dependencies
+
 | Package | Workspace | Purpose |
 |---------|-----------|---------|
 | `@anthropic-ai/sdk` | `apps/api` | Anthropic API client |
