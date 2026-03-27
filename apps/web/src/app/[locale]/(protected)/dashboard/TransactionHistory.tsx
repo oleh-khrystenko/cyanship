@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import type { ExecutionTransactionItem } from '@cyanship/types';
+import {
+    EXECUTION_TRANSACTION_TYPE,
+    type ExecutionTransactionItem,
+} from '@cyanship/types';
 import { getExecutionTransactions } from '@/shared/api';
 import { toIntlLocale } from '@/shared/lib';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -79,7 +82,7 @@ export default function TransactionHistory({
             ) : (
                 <ul className="space-y-2">
                     {transactions.map((transaction) => {
-                        const isCredit = transaction.type === 'credit';
+                        const isCredit = transaction.type === EXECUTION_TRANSACTION_TYPE.CREDIT;
                         const iconColor = isCredit
                             ? 'bg-success/15 text-success'
                             : 'bg-muted text-muted-foreground';
