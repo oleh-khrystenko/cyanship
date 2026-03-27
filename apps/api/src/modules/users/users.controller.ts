@@ -187,6 +187,9 @@ export class UsersController {
             50,
         );
         const before = beforeParam ? new Date(beforeParam) : undefined;
+        if (before && isNaN(before.getTime())) {
+            return { data: { items: [], hasMore: false } };
+        }
 
         const { items, hasMore } =
             await this.usersService.getRecentTransactions(
