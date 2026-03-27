@@ -32,8 +32,7 @@ export default function DashboardPage() {
     const fullName = getFullName(user.profile.firstName, user.profile.lastName);
     const initials = getInitials(fullName, user.email);
     const balance = user.executions.balance;
-    const hasSubscription = user.billing?.hasActiveSubscription === true;
-    const isEmpty = balance === 0 && !hasSubscription;
+    const isEmpty = balance === 0 && user.billing == null;
     const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
 
     return (
