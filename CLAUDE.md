@@ -30,7 +30,7 @@ apps/
 │   ├── common/          # decorators, filters, guards, interceptors, providers
 │   └── modules/         # auth, email, users, payments, agency, reports, storage
 ├── web/src/
-│   ├── app/[locale]/    # pages: auth, (protected), (agency)
+│   ├── app/[locale]/    # pages: auth, (protected), (agency), banner-export
 │   ├── entities/        # agency, brand
 │   ├── features/        # auth, billing, agency, profile, change-lang, change-theme
 │   ├── widgets/         # header, agency/landing
