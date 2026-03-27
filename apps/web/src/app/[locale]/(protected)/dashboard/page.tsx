@@ -12,7 +12,6 @@ import {
     UiAvatarFallback,
 } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
-import DashboardEmptyState from './DashboardEmptyState';
 import SubscriptionStatus from './SubscriptionStatus';
 import SpendExecutionButtons from './SpendExecutionButtons';
 import TransactionHistory from './TransactionHistory';
@@ -32,7 +31,6 @@ export default function DashboardPage() {
     const fullName = getFullName(user.profile.firstName, user.profile.lastName);
     const initials = getInitials(fullName, user.email);
     const balance = user.executions.balance;
-    const isEmpty = balance === 0 && user.billing == null;
     const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
 
     return (
@@ -77,9 +75,6 @@ export default function DashboardPage() {
                     </span>
                 </p>
             </section>
-
-            {/* ── Empty State ── */}
-            {isEmpty && <DashboardEmptyState />}
 
             {/* ── Subscription Status ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}
