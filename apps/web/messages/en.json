@@ -348,6 +348,23 @@
             "full_audit": "Full Audit",
             "cost_label": "{cost} exec.",
             "insufficient_balance": "Insufficient balance"
+        },
+        "transactions": {
+            "heading": "Transaction history",
+            "empty": "No transaction history yet. Try features above.",
+            "actions": {
+                "standard_report": "Standard Report",
+                "ai_analysis": "AI Analysis",
+                "deep_analysis": "Deep Analysis",
+                "full_audit": "Full Audit",
+                "subscription_activation": "Subscription activated",
+                "pack_purchase": "Execution pack purchased",
+                "plan_change": "Plan changed",
+                "billing_reset": "Billing reset"
+            },
+            "time_just_now": "Just now",
+            "time_minutes_ago": "{count} min ago",
+            "time_hours_ago": "{count} hrs ago"
         }
     },
     "profile_page": {

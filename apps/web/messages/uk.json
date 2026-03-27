@@ -348,6 +348,23 @@
             "full_audit": "Повний аудит",
             "cost_label": "{cost} вик.",
             "insufficient_balance": "Недостатньо виконань"
+        },
+        "transactions": {
+            "heading": "Історія операцій",
+            "empty": "Історії операцій ще немає. Спробуйте функції вище.",
+            "actions": {
+                "standard_report": "Простий звіт",
+                "ai_analysis": "AI аналіз",
+                "deep_analysis": "Глибокий аналіз",
+                "full_audit": "Повний аудит",
+                "subscription_activation": "Підписку активовано",
+                "pack_purchase": "Пакет виконань придбано",
+                "plan_change": "План змінено",
+                "billing_reset": "Білінг скинуто"
+            },
+            "time_just_now": "Щойно",
+            "time_minutes_ago": "{count} хв тому",
+            "time_hours_ago": "{count} год тому"
         }
     },
     "profile_page": {

@@ -13,6 +13,7 @@ import {
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
 import SubscriptionStatus from './SubscriptionStatus';
 import SpendExecutionButtons from './SpendExecutionButtons';
+import TransactionHistory from './TransactionHistory';
 
 export default function DashboardPage() {
     const t = useTranslations('dashboard_page');
@@ -74,6 +75,9 @@ export default function DashboardPage() {
 
             {/* ── Spend Execution Buttons ── */}
             <SpendExecutionButtons />
+
+            {/* ── Transaction History ── */}
+            <TransactionHistory />
         </main>
     );
 }
