@@ -21,9 +21,9 @@ const itemSizeStyles: Record<UiDropdownMenuSize, string> = {
 };
 
 const iconSizeStyles: Record<UiDropdownMenuSize, string> = {
-    sm: '[&>svg]:size-4',
-    md: '[&>svg]:size-5',
-    lg: '[&>svg]:size-6',
+    sm: '[&_svg]:size-4',
+    md: '[&_svg]:size-5',
+    lg: '[&_svg]:size-6',
 };
 
 const alignStyles: Record<UiDropdownMenuAlign, string> = {
