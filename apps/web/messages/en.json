@@ -274,11 +274,14 @@
             "subscription_required": "An active subscription is required for access.",
             "no_billing_account": "No billing account found. Please subscribe first."
         },
+        "users": {
+            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription."
+        },
         "generic": {
             "validation_error": "Please check the entered data",
-            "rate_limit_exceeded": "Too many requests. Please try again in 15 minutes",
+            "rate_limit_exceeded": "Too many requests. Please try again in {minutes} minutes",
             "email_send_failed": "Failed to send the email. Please try again later",
-            "internal_error": "Something went wrong. Please try again later",
+            "internal_error": "Server error occurred. Please try again later",
             "unknown": "Something went wrong. Please try again later"
         },
         "agency": {

@@ -2,13 +2,14 @@
 
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import {
     EXECUTION_ACTION,
     EXECUTION_ACTION_COST,
     type SpendableAction,
 } from '@cyanship/types';
-import { spendExecutions } from '@/shared/api';
+import { spendExecutions, getApiMessageKey } from '@/shared/api';
 import { useAuthStore } from '@/stores/auth';
 import { toIntlLocale } from '@/shared/lib';
 import UiButton from '@/shared/ui/UiButton';
@@ -28,6 +29,7 @@ const ACTION_BUTTONS: ActionButtonConfig[] = [
 
 export default function SpendExecutionButtons() {
     const t = useTranslations('dashboard_page.spend');
+    const tGlobal = useTranslations();
     const locale = useLocale();
 
     const user = useAuthStore((s) => s.user);
@@ -54,13 +56,37 @@ export default function SpendExecutionButtons() {
                         },
                     });
                 }
-            } catch {
-                toast.error(t('insufficient_balance'));
+            } catch (error) {
+                const code =
+                    error instanceof AxiosError
+                        ? error.response?.data?.error?.code
+                        : undefined;
+
+                if (code === 'RATE_LIMIT_EXCEEDED') {
+                    const retryAfter =
+                        error instanceof AxiosError
+                            ? error.response?.headers?.['retry-after']
+                            : undefined;
+                    const minutes = retryAfter
+                        ? Math.ceil(Number(retryAfter) / 60)
+                        : 15;
+                    const messageKey = getApiMessageKey(code, 'generic');
+                    toast.error(
+                        tGlobal(messageKey, { minutes })
+                    );
+                } else if (code) {
+                    const messageKey = getApiMessageKey(code, 'users');
+                    toast.error(tGlobal(messageKey));
+                } else {
+                    toast.error(
+                        tGlobal('errors.generic.unknown')
+                    );
+                }
             } finally {
                 setSpendingAction(null);
             }
         },
-        [user, setUser, t]
+        [user, setUser, tGlobal]
     );
 
     const isActionInProgress = spendingAction !== null;
