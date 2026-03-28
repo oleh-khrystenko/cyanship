@@ -15,17 +15,15 @@ POST /ai/chat (text/event-stream)
   → AiRateLimitGuard (new — lifetime account limit from MongoDB + Redis IP limit)
   → AiController.chat()
       → Check executions balance (sufficient? don't deduct yet)
-      → Save user message to MongoDB
       → IAiProvider.streamChat(message, systemPrompt)  // injected provider
       → SSE stream: {type:"token"} → {type:"token"} → ...
       → On success:
-          → Save assistant message to MongoDB
-          → UsersService.spendExecutions(userId, 200, 'ai_chat')  // atomic deduction
-          → Increment user.ai.requestsUsed
+          → Save both user + assistant messages to MongoDB
+          → Single atomic MongoDB update: $inc executions.balance -200 AND $inc ai.requestsUsed +1 (with balance $gte guard)
           → SSE: {type:"done", balanceAfter, aiRequestsRemaining}
       → On AI failure:
           → SSE: {type:"error", code:"AI_PROVIDER_ERROR"}
-          → Nothing deducted, no try spent
+          → Nothing saved, nothing deducted, no try spent
 
 GET /ai/chat/history → JwtActiveGuard → Returns ChatMessage[] for user
 DELETE /ai/chat/history → JwtActiveGuard → Deletes all ChatMessage for user
@@ -35,7 +33,7 @@ DELETE /ai/chat/history → JwtActiveGuard → Deletes all ChatMessage for user
 
 ```
 AppModule → AiModule → UsersModule (one-directional, no forwardRef needed)
-                     → REDIS_CLIENT (existing provider, imported from payments path*)
+                     → REDIS_CLIENT (existing provider from `common/providers/redis.provider.ts`)
                      → AI_PROVIDER injection token → AnthropicService
                      → ChatMessage schema (new MongoDB collection)
                      → User schema (for guard + ai.requestsUsed increment)
@@ -43,7 +41,7 @@ AppModule → AiModule → UsersModule (one-directional, no forwardRef needed)
 AppModule → AgencyModule (existing) → User schema (for ai.bonusRequests increment)
 ```
 
-*`redisProvider` lives in `payments/providers/` — existing codebase pattern. Moving to `common/providers/` is a separate refactor (see Tech Debt).
+`redisProvider` already lives in `apps/api/src/common/providers/redis.provider.ts` — shared infrastructure, imported by PaymentsModule and AuthModule.
 
 ---
 
@@ -52,13 +50,12 @@ AppModule → AgencyModule (existing) → User schema (for ai.bonusRequests incr
 ### 1.1 Update `packages/types/src/contracts/executions.ts`
 
 - Add `AI_CHAT: 'ai_chat'` to `EXECUTION_ACTION` (Debit section)
-- Add `EXECUTION_ACTION.AI_CHAT` to `SPENDABLE_ACTIONS` array
-- Add `[EXECUTION_ACTION.AI_CHAT]: 200` to `EXECUTION_ACTION_COST`
-- `SpendableAction` type updates automatically (`SPENDABLE_ACTIONS` is `as const`)
+- Do NOT add to `SPENDABLE_ACTIONS` — `ai_chat` is an internal action used only by the AI module, not exposed through the general `POST /users/me/executions/spend` endpoint. This prevents users from calling the spend endpoint with `action: 'ai_chat'` directly (bypassing AI guards, creating fake transactions)
 
 ### 1.2 Create `packages/types/src/contracts/ai-chat.ts`
 
 Define and export:
+- `AI_CHAT_COST = 200` — single source of truth for AI chat execution cost (used by AI module for deduction, frontend for display)
 - `AI_CHAT_MESSAGE_MAX_LENGTH = 500`
 - `AiChatRequestSchema` — Zod schema: `{ message: string, trimmed, min 1, max 500 }`
 - `AiChatRequest` — inferred type
@@ -71,9 +68,9 @@ Define and export:
 
 ### 1.3 Update `packages/types/src/agency/brief.ts`
 
-Add optional fields to `SubmitBriefSchema`:
+Add optional field to `SubmitBriefSchema`:
 - `requestAiBonus: z.boolean().optional()`
-- `userId: z.string().optional()`
+- `userId` is NOT in the schema — it's set server-side from JWT `req.user`, never trusted from client body
 
 ### 1.4 Update `packages/types/src/entities/user.ts`
 
@@ -160,11 +157,11 @@ apps/api/src/modules/ai/
 
 - Injects: `AI_PROVIDER`, `ChatMessage` model, `User` model
 - System prompt constant: "You are a helpful AI assistant... Keep responses concise: 2-3 sentences maximum. Answer in the same language as the user's message."
-- `processChat(userId, message)`: saves user message to DB → calls `aiProvider.streamChat()` → returns `{ stream, userMessageId }`
-- `finalizeChat(userId, assistantContent, executionCost)`: saves assistant message to DB → calls `usersService.spendExecutions()` → increments `ai.requestsUsed` atomically → returns `{ balanceAfter, aiRequestsRemaining }`
+- `processChat(userId, message)`: calls `aiProvider.streamChat()` → returns `{ stream }` (user message is NOT saved yet — saved only on success to avoid orphaned messages)
+- `finalizeChat(userId, userMessage, assistantContent)`: saves both user + assistant messages to DB → single atomic `findOneAndUpdate` with `{ $inc: { 'executions.balance': -AI_CHAT_COST, 'ai.requestsUsed': 1 } }` and guard `'executions.balance': { $gte: AI_CHAT_COST }` → returns `{ balanceAfter, aiRequestsRemaining }`
 - `getHistory(userId)`: find messages sorted by `createdAt: 1`, map to `ChatMessageItem[]`
 - `clearHistory(userId)`: `deleteMany({ userId })`
-- **Critical**: `finalizeChat` only called on successful stream completion. If AI fails mid-stream — nothing is persisted (except the user message), nothing deducted
+- **Critical**: `finalizeChat` only called on successful stream completion. If AI fails mid-stream — nothing is persisted, nothing deducted (both messages saved only on success)
 
 ### 2.9 AI Controller (`ai.controller.ts`)
 
@@ -172,11 +169,11 @@ apps/api/src/modules/ai/
 - `POST /chat` — `@UseGuards(JwtActiveGuard, AiRateLimitGuard)`:
   1. Check executions balance sufficient (read-only check, no deduction)
   2. Set SSE headers: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no`
-  3. Call `aiService.processChat()` — saves user message, starts stream
+  3. Call `aiService.processChat()` — starts stream (messages NOT saved yet)
   4. Loop `for await (chunk of stream)` → `res.write(JSON.stringify(tokenEvent))`
   5. Accumulate `assistantContent` from chunks
-  6. On stream end: call `aiService.finalizeChat()` → send done event with `balanceAfter` and `aiRequestsRemaining`
-  7. On stream error: send error SSE event, do NOT call `finalizeChat` (nothing deducted)
+  6. On stream end: call `aiService.finalizeChat(userId, userMessage, assistantContent)` → saves both messages + atomic deduction → send done event with `balanceAfter` and `aiRequestsRemaining`
+  7. On stream error: send error SSE event, do NOT call `finalizeChat` (nothing saved, nothing deducted)
   8. `res.end()` in finally block
 - `GET /chat/history` — `@UseGuards(JwtActiveGuard)`: returns `{ data: { messages } }`
 - `DELETE /chat/history` — `@UseGuards(JwtActiveGuard)`: clears history, returns `{ data: { cleared: true } }`
@@ -202,19 +199,19 @@ Modifies existing `AgencyModule` — no new module created.
 ### 3.1 Update Brief Schema (`apps/api/src/modules/agency/schemas/brief.schema.ts`)
 
 - Add `requestAiBonus: Boolean, default false`
-- Add `userId: String, default null` (optional — null for anonymous brief from landing)
+- Add `userId: String, default null` (optional — set server-side from JWT, null for anonymous brief from landing)
 
-### 3.2 Update Brief Service (`apps/api/src/modules/agency/brief.service.ts`)
+### 3.2 Update Brief Service (`apps/api/src/modules/agency/services/brief.service.ts`)
 
-- After successful brief creation: if `dto.requestAiBonus === true && dto.userId` → `userModel.findByIdAndUpdate(dto.userId, { $inc: { 'ai.bonusRequests': ENV.AI_CHAT_BONUS_AMOUNT } })`
+- After successful brief creation: if `requestAiBonus === true && userId` (from controller) → `userModel.findByIdAndUpdate(userId, { $inc: { 'ai.bonusRequests': ENV.AI_CHAT_BONUS_AMOUNT } })`
 - Return `aiBonusGranted: boolean` in response so frontend knows to refresh AI limits
 - AgencyModule needs User model access: add `MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])` to AgencyModule imports if not already present
 
-### 3.3 Brief Controller
+### 3.3 Brief Controller (`apps/api/src/modules/agency/brief.controller.ts`)
 
-- No changes needed to auth/guards — brief endpoint stays public (`@SkipOnboarding()`, no auth guard)
-- `userId` comes from the request body (sent by frontend from auth store), not from `req.user`
-- Existing landing page brief form continues working unchanged (no userId, no requestAiBonus)
+- When `requestAiBonus === true`: require valid JWT. Use optional JWT extraction — if JWT present and valid, take `userId` from `req.user._id`; if no JWT, ignore `requestAiBonus` (treat as regular anonymous brief). This prevents spoofing: only authenticated user can grant themselves bonus
+- `userId` NEVER comes from request body — always from `req.user` (JWT)
+- Existing landing page brief form continues working unchanged (no JWT → no bonus, no userId)
 
 ---
 
@@ -226,7 +223,7 @@ Modifies existing `AgencyModule` — no new module created.
 - `getChatHistory()`: standard Axios GET `/ai/chat/history` → returns `ChatMessageItem[]`
 - `clearChatHistory()`: Axios DELETE `/ai/chat/history`
 - `AiChatError` class with `code` and `status` for pre-stream HTTP errors
-- Export `getAccessToken()` from `apps/web/src/shared/api/client.ts` (add getter for the in-memory token variable)
+- Uses existing `getAccessToken()` already exported from `apps/web/src/shared/api/client.ts`
 
 ### 4.2 Chat Component (`apps/web/src/app/[locale]/(protected)/dashboard/components/AiChat.tsx`)
 
@@ -265,7 +262,7 @@ Brief dialog store modifications (`apps/web/src/stores/briefDialog/briefDialogSt
 
 BriefForm modifications (`apps/web/src/features/agency/brief/BriefForm.tsx`):
 - Read `requestAiBonus` from brief dialog store, `user` from auth store
-- If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields). Pass `userId` and `requestAiBonus: true` in submit payload. Name and email NOT sent to server — server knows them by userId
+- If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields). Pass `requestAiBonus: true` in submit payload (no `userId` — server gets it from JWT). Name and email NOT sent to server — server knows them by userId from JWT
 - On success when `requestAiBonus`: refresh auth store (getMe), close dialog — this rehydrates AI limits
 
 ### 4.4 Dashboard Integration (`apps/web/src/app/[locale]/(protected)/dashboard/page.tsx`)
@@ -325,8 +322,8 @@ Add: `process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key'`
 
 `ai.service.spec.ts`:
 - Mock `AI_PROVIDER`, `ChatMessage` model, `User` model
-- `processChat`: saves user message, returns stream
-- `finalizeChat`: saves assistant message, deducts executions, increments `requestsUsed`
+- `processChat`: calls AI provider, returns stream (no DB writes yet)
+- `finalizeChat`: saves both user + assistant messages, single atomic update: deducts executions + increments `requestsUsed`
 - `getHistory`: returns sorted messages
 - `clearHistory`: deletes all messages for user
 
@@ -351,7 +348,7 @@ Add: `process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key'`
 - Lifetime limit exceeded → 403 `AI_LIMIT_EXHAUSTED`
 - AI provider failure → error SSE event, nothing deducted
 - GET history returns saved messages, DELETE clears them
-- Brief with `requestAiBonus: true` + `userId` increments `ai.bonusRequests`
+- Brief with `requestAiBonus: true` + JWT auth increments `ai.bonusRequests` (userId from req.user)
 
 ### Frontend Tests
 
@@ -389,7 +386,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `requestAiBonus` | Boolean | false | AI bonus request flag |
-| `userId` | String | null | Authenticated user ID (optional) |
+| `userId` | String | null | Authenticated user ID (set server-side from JWT, never from client) |
 
 ---
 
@@ -445,18 +442,18 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 
 | File | Change |
 |------|--------|
-| `packages/types/src/contracts/executions.ts` | Add `AI_CHAT` action + cost |
+| `packages/types/src/contracts/executions.ts` | Add `AI_CHAT` action (debit only, NOT in SPENDABLE_ACTIONS) |
 | `packages/types/src/contracts/index.ts` | Export ai-chat |
-| `packages/types/src/agency/brief.ts` | Add `requestAiBonus` + `userId` fields |
+| `packages/types/src/agency/brief.ts` | Add `requestAiBonus` field (no `userId` — server-side from JWT) |
 | `packages/types/src/entities/user.ts` | Add `ai` subdocument |
 | `apps/api/src/app.module.ts` | Import `AiModule` |
 | `apps/api/src/config/env.ts` | Add AI env vars |
 | `apps/api/src/test-setup.ts` | Add AI env fallback |
 | `apps/api/src/modules/users/schemas/user.schema.ts` | Add `ai` embedded subdocument |
 | `apps/api/src/modules/agency/schemas/brief.schema.ts` | Add `requestAiBonus` + `userId` fields |
-| `apps/api/src/modules/agency/brief.service.ts` | Grant AI bonus on brief submit |
+| `apps/api/src/modules/agency/services/brief.service.ts` | Grant AI bonus on brief submit |
 | `apps/api/src/modules/agency/agency.module.ts` | Add User schema to imports (if not present) |
-| `apps/web/src/shared/api/client.ts` | Export `getAccessToken()` |
+| `apps/web/src/shared/api/client.ts` | No changes needed — `getAccessToken()` already exported |
 | `apps/web/src/shared/api/index.ts` | Export ai module |
 | `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChat section above spend buttons |
 | `apps/web/src/stores/briefDialog/briefDialogStore.ts` | Add `requestAiBonus` state |
@@ -475,7 +472,6 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 
 ## Tech Debt (out of scope)
 
-- **Redis provider location**: `redisProvider` lives in `apps/api/src/modules/payments/providers/redis.provider.ts` but is shared infrastructure. Should be moved to `common/providers/`. Existing pattern — not introduced by this sprint.
 - **Turnstile on auth**: CAPTCHA only on brief form, not on registration. Separate sprint: `docs/sprints/auth-turnstile-sprint.md`.
 
 ---
