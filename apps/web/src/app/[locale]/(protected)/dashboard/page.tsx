@@ -13,6 +13,7 @@ import {
 } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
+import AiChatTeaser from './AiChatTeaser';
 import SubscriptionStatus from './SubscriptionStatus';
 import SpendExecutionButtons from './SpendExecutionButtons';
 import TransactionHistory from './TransactionHistory';
@@ -82,6 +83,9 @@ export default function DashboardPage() {
                     </span>
                 </p>
             </UiSectionCard>
+
+            {/* ── AI Chat Teaser ── */}
+            <AiChatTeaser />
 
             {/* ── Subscription Status ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}

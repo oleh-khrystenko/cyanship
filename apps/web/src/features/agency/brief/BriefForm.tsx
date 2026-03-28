@@ -18,9 +18,11 @@ import UiInput from '@/shared/ui/UiInput';
 import UiTextarea from '@/shared/ui/UiTextarea';
 import UiSelect from '@/shared/ui/UiSelect';
 import UiChipGroup from '@/shared/ui/UiChipGroup';
-import { submitBrief } from '@/shared/api/agency';
+import { submitBrief, submitAuthenticatedBrief } from '@/shared/api/agency';
 import { getApiMessageKey } from '@/shared/api/mapApiCode';
 import { getFieldError } from '@/shared/lib';
+import { useAuthStore } from '@/stores/auth';
+import { useBriefDialogStore } from '@/stores/briefDialog';
 import { getSource } from './lib/source';
 import { useTurnstile } from './lib/useTurnstile';
 
@@ -43,6 +45,10 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
     const tGlobal = useTranslations();
     const locale = useLocale();
 
+    const user = useAuthStore((s) => s.user);
+    const requestAiBonus = useBriefDialogStore((s) => s.requestAiBonus);
+    const isAuthenticated = requestAiBonus && !!user;
+
     const {
         register,
         control,
@@ -53,8 +59,12 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         resolver: zodResolver(BriefFormSchema),
         mode: 'onTouched',
         defaultValues: {
-            name: '',
-            email: '',
+            name: isAuthenticated
+                ? [user.profile.firstName, user.profile.lastName]
+                      .filter(Boolean)
+                      .join(' ')
+                : '',
+            email: isAuthenticated ? user.email : '',
             description: '',
         },
     });
@@ -114,9 +124,21 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         };
 
         try {
-            const { code } = await submitBrief(payload);
-            const messageKey = getApiMessageKey(code, 'agency');
-            toast.success(tGlobal(messageKey));
+            if (isAuthenticated) {
+                const { code } = await submitAuthenticatedBrief(payload);
+                const messageKey = getApiMessageKey(code, 'agency');
+                toast.success(tGlobal(messageKey));
+
+                // Refresh auth store to get updated AI bonus state
+                const { getMe } = await import('@/shared/api/auth');
+                const profile = await getMe();
+                useAuthStore.getState().setUser(profile);
+            } else {
+                const { code } = await submitBrief(payload);
+                const messageKey = getApiMessageKey(code, 'agency');
+                toast.success(tGlobal(messageKey));
+            }
+
             onSuccess();
         } catch (err) {
             resetTurnstile();
@@ -135,40 +157,63 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <UiInput
-                {...register('name')}
-                label={t('name_label')}
-                placeholder={t('name_placeholder')}
-                error={getFieldError(
-                    errors.name,
-                    {
-                        required: t('validation_name_required'),
-                        too_small: t('validation_name_min'),
-                        too_big: t('validation_name_max'),
-                        invalid_string: t('validation_name_format'),
-                    },
-                    nameValue,
-                )}
-                disabled={isSubmitting}
-                required
-            />
-            <UiInput
-                {...register('email')}
-                label={t('email_label')}
-                type="email"
-                placeholder={t('email_placeholder')}
-                error={getFieldError(
-                    errors.email,
-                    {
-                        required: t('validation_email_required'),
-                        too_big: t('validation_email_max'),
-                        invalid_string: t('validation_email_format'),
-                    },
-                    emailValue,
-                )}
-                disabled={isSubmitting}
-                required
-            />
+            {isAuthenticated ? (
+                <>
+                    <div>
+                        <p className="text-sm font-medium text-foreground">
+                            {t('name_label')}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            {nameValue}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-foreground">
+                            {t('email_label')}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            {emailValue}
+                        </p>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <UiInput
+                        {...register('name')}
+                        label={t('name_label')}
+                        placeholder={t('name_placeholder')}
+                        error={getFieldError(
+                            errors.name,
+                            {
+                                required: t('validation_name_required'),
+                                too_small: t('validation_name_min'),
+                                too_big: t('validation_name_max'),
+                                invalid_string: t('validation_name_format'),
+                            },
+                            nameValue,
+                        )}
+                        disabled={isSubmitting}
+                        required
+                    />
+                    <UiInput
+                        {...register('email')}
+                        label={t('email_label')}
+                        type="email"
+                        placeholder={t('email_placeholder')}
+                        error={getFieldError(
+                            errors.email,
+                            {
+                                required: t('validation_email_required'),
+                                too_big: t('validation_email_max'),
+                                invalid_string: t('validation_email_format'),
+                            },
+                            emailValue,
+                        )}
+                        disabled={isSubmitting}
+                        required
+                    />
+                </>
+            )}
             <UiTextarea
                 {...register('description')}
                 label={t('description_label')}

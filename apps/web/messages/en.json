@@ -286,7 +286,24 @@
         },
         "agency": {
             "captcha_failed": "Security verification failed. Please try again."
+        },
+        "ai": {
+            "ai_limit_exhausted": "AI request limit has been reached.",
+            "ai_rate_limit_exceeded": "Too many AI requests. Please try again later.",
+            "ai_provider_error": "AI is temporarily unavailable. Please try again later."
         }
+    },
+    "ai_chat_page": {
+        "heading": "AI Chat",
+        "back": "Back to dashboard",
+        "placeholder": "Type your message...",
+        "send": "Send",
+        "clear_history": "Clear history",
+        "empty_state": "Send a message to start a conversation with AI.",
+        "cost_info": "{cost} executions per message",
+        "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
+        "all_tries_exhausted": "All AI tries have been used.",
+        "request_bonus": "Submit Brief"
     },
     "brief_form": {
         "title": "Submit Your Project Brief",
@@ -361,12 +378,20 @@
                 "subscription_activation": "Subscription activated",
                 "pack_purchase": "Execution pack purchased",
                 "plan_change": "Plan changed",
-                "billing_reset": "Billing reset"
+                "billing_reset": "Billing reset",
+                "ai_chat": "AI Chat"
             },
             "load_more": "Load more",
             "time_just_now": "Just now",
             "time_minutes_ago": "{count} min ago",
             "time_hours_ago": "{count} hrs ago"
+        },
+        "ai_chat_teaser": {
+            "heading": "AI Chat",
+            "description": "Try real AI integration — send a message and see how executions billing works live.",
+            "cta_button": "Try AI Chat",
+            "tries_remaining": "{count} free tries remaining",
+            "limit_exhausted": "Free tries exhausted"
         }
     },
     "profile_page": {

@@ -8,6 +8,12 @@ export const AI_CHAT_COST = 200;
 /** Maximum length of user message */
 export const AI_CHAT_MESSAGE_MAX_LENGTH = 500;
 
+/** Free AI requests per account (lifetime) */
+export const AI_CHAT_FREE_LIMIT = 5;
+
+/** One-time bonus AI requests granted via brief form */
+export const AI_CHAT_BONUS_AMOUNT = 5;
+
 // --- Request Schema ---
 
 export const AiChatRequestSchema = z.object({

@@ -286,7 +286,24 @@
         },
         "agency": {
             "captcha_failed": "Перевірка безпеки не пройдена. Спробуйте ще раз."
+        },
+        "ai": {
+            "ai_limit_exhausted": "Ліміт AI-запитів вичерпано.",
+            "ai_rate_limit_exceeded": "Забагато AI-запитів. Спробуйте пізніше.",
+            "ai_provider_error": "AI тимчасово недоступний. Спробуйте пізніше."
         }
+    },
+    "ai_chat_page": {
+        "heading": "AI Чат",
+        "back": "Назад до дашборду",
+        "placeholder": "Напишіть повідомлення...",
+        "send": "Надіслати",
+        "clear_history": "Очистити історію",
+        "empty_state": "Надішліть повідомлення, щоб почати розмову з AI.",
+        "cost_info": "{cost} виконань за повідомлення",
+        "limit_exhausted": "Безкоштовні спроби вичерпано. Заповніть бриф, щоб отримати ще 5.",
+        "all_tries_exhausted": "Всі спроби AI використано.",
+        "request_bonus": "Заповнити бриф"
     },
     "brief_form": {
         "title": "Відправити бриф проєкту",
@@ -361,12 +378,20 @@
                 "subscription_activation": "Підписку активовано",
                 "pack_purchase": "Пакет виконань придбано",
                 "plan_change": "План змінено",
-                "billing_reset": "Білінг скинуто"
+                "billing_reset": "Білінг скинуто",
+                "ai_chat": "AI Чат"
             },
             "load_more": "Завантажити ще",
             "time_just_now": "Щойно",
             "time_minutes_ago": "{count} хв тому",
             "time_hours_ago": "{count} год тому"
+        },
+        "ai_chat_teaser": {
+            "heading": "AI Чат",
+            "description": "Спробуйте інтеграцію з AI — надішліть повідомлення та подивіться, як працює білінг виконань у реальному часі.",
+            "cta_button": "Спробувати AI",
+            "tries_remaining": "Залишилось безкоштовних спроб: {count}",
+            "limit_exhausted": "Безкоштовні спроби вичерпано"
         }
     },
     "profile_page": {
