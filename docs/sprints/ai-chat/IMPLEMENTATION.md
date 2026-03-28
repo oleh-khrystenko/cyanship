@@ -297,7 +297,7 @@ Mirror all keys above with Ukrainian translations.
 ### `apps/api/src/config/env.ts`
 
 - `ANTHROPIC_API_KEY`: `getEnvVar()` — required, fail-fast
-- `AI_CHAT_MAX_TOKENS`: `parseInt(process.env.AI_CHAT_MAX_TOKENS ?? '150', 10)` — optional with default
+- `AI_CHAT_MAX_TOKENS`: `parseInt(process.env.AI_CHAT_MAX_TOKENS ?? '300', 10)` — optional with default (300 tokens ≈ 150–200 words)
 - `AI_CHAT_IP_LIMIT`: default 5
 - `AI_CHAT_FREE_LIMIT`: default 5
 - `AI_CHAT_BONUS_AMOUNT`: default 5
