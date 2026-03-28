@@ -9,26 +9,29 @@ import {
     InternalServerErrorException,
     Logger,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import Redis from 'ioredis';
 import { Request } from 'express';
 import { RESPONSE_CODE } from '@cyanship/types';
 
 import { REDIS_CLIENT } from '../../../common/providers/redis.provider';
 import { ENV } from '../../../config/env';
-import { User, UserDocument } from '../../users/schemas/user.schema';
+import { UserDocument } from '../../users/schemas/user.schema';
 
 const AI_IP_KEY_PREFIX = 'ai:ip:';
 const AI_IP_TTL_SECONDS = 86_400; // 24 hours
+
+// Atomic INCR + conditional EXPIRE to prevent TTL-less keys on process crash
+const INCR_WITH_EXPIRE_SCRIPT = `
+local c = redis.call('INCR', KEYS[1])
+if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+return c
+`;
 
 @Injectable()
 export class AiRateLimitGuard implements CanActivate {
     private readonly logger = new Logger(AiRateLimitGuard.name);
 
     constructor(
-        @InjectModel(User.name)
-        private readonly userModel: Model<UserDocument>,
         @Inject(REDIS_CLIENT)
         private readonly redis: Redis,
     ) {}
@@ -66,11 +69,12 @@ export class AiRateLimitGuard implements CanActivate {
         const key = `${AI_IP_KEY_PREFIX}${ip}`;
 
         try {
-            const count = await this.redis.incr(key);
-
-            if (count === 1) {
-                await this.redis.expire(key, AI_IP_TTL_SECONDS);
-            }
+            const count = (await this.redis.eval(
+                INCR_WITH_EXPIRE_SCRIPT,
+                1,
+                key,
+                AI_IP_TTL_SECONDS,
+            )) as number;
 
             if (count > ENV.AI_CHAT_IP_LIMIT) {
                 throw new HttpException(
