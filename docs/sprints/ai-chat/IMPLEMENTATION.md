@@ -1,6 +1,6 @@
 # AI Chat — Technical Implementation Plan
 
-> **Goal:** Add a streaming AI chat to the dashboard, fully integrated with the existing executions billing system. Provider-agnostic architecture following the established `PAYMENT_PROVIDER` → `StripeService` pattern. Lifetime per-account AI limit with brief-form lead-gen gate for bonus requests. Persistent chat history in MongoDB. Executions deducted only after successful AI response.
+> **Goal:** Add a streaming AI chat to the dashboard, fully integrated with the existing executions billing system. Provider-agnostic architecture following the established `PAYMENT_PROVIDER` → `StripeService` pattern. Lifetime per-account AI limit with brief-form lead-gen gate for one-time bonus. Persistent chat history in MongoDB. Executions deducted only after successful AI response.
 
 ---
 
@@ -41,7 +41,7 @@ AppModule → AiModule → UsersModule (one-directional, no forwardRef needed �
                      → ChatMessage schema (new MongoDB collection)
                      → User schema (for guard + ai.requestsUsed increment)
 
-AppModule → AgencyModule (existing) → User schema (for ai.bonusRequests increment)
+AppModule → AgencyModule (existing) → User schema (for ai.bonusGranted one-time flag)
 ```
 
 `redisProvider` already lives in `apps/api/src/common/providers/redis.provider.ts` — shared infrastructure, imported by PaymentsModule and AuthModule.
@@ -78,7 +78,7 @@ Add optional field to `SubmitBriefSchema`:
 ### 1.4 Update `packages/types/src/entities/user.ts`
 
 Add `ai` subdocument to user entity Zod schema:
-- `ai: z.object({ requestsUsed: z.number().int().min(0), bonusRequests: z.number().int().min(0) }).nullable()`
+- `ai: z.object({ requestsUsed: z.number().int().min(0), bonusGranted: z.boolean() }).nullable()`
 - Nullable because existing users won't have this field until first AI interaction (Mongoose default handles new users)
 
 ### 1.5 Update `packages/types/src/contracts/index.ts`
@@ -138,16 +138,16 @@ apps/api/src/modules/ai/
 
 ### 2.5 Update User Schema (`apps/api/src/modules/users/schemas/user.schema.ts`)
 
-- Add embedded `ai` subdocument: `{ requestsUsed: Number (default 0, min 0), bonusRequests: Number (default 0, min 0) }`
-- `default: () => ({ requestsUsed: 0, bonusRequests: 0 })`, `_id: false`
+- Add embedded `ai` subdocument: `{ requestsUsed: Number (default 0, min 0), bonusGranted: Boolean (default false) }`
+- `default: () => ({ requestsUsed: 0, bonusGranted: false })`, `_id: false`
 - Same pattern as existing `executions` subdocument
-- Existing users without this field: guard uses `?? { requestsUsed: 0, bonusRequests: 0 }` fallback
+- Existing users without this field: guard uses `?? { requestsUsed: 0, bonusGranted: false }` fallback
 
 ### 2.6 AI Rate Limit Guard (`guards/ai-rate-limit.guard.ts`)
 
 - Implements `CanActivate`
 - Injects: `REDIS_CLIENT` (Redis), `User` model (Mongoose)
-- Check 1 — Lifetime account limit (MongoDB): load `user.ai`, check `requestsUsed < ENV.AI_CHAT_FREE_LIMIT + bonusRequests`. If exceeded → throw 403 `AI_LIMIT_EXHAUSTED`
+- Check 1 — Lifetime account limit (MongoDB): load `user.ai`, check `requestsUsed < ENV.AI_CHAT_FREE_LIMIT + (bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0)`. If exceeded → throw 403 `AI_LIMIT_EXHAUSTED`
 - Check 2 — IP rate limit (Redis): `INCR ai:ip:{ip}`, set TTL 86400 on first request, check against `ENV.AI_CHAT_IP_LIMIT`. If exceeded → throw 429 `AI_RATE_LIMIT_EXCEEDED`
 - Two distinct error codes so frontend knows: `AI_LIMIT_EXHAUSTED` → show brief-gate, `AI_RATE_LIMIT_EXCEEDED` → toast "try later"
 - Fail-closed: Redis error propagates as 500 → request blocked
@@ -208,12 +208,12 @@ Modifies existing `AgencyModule` — no new module created.
 ### 3.1 Update Brief Schema (`apps/api/src/modules/agency/schemas/brief.schema.ts`)
 
 - Add `requestAiBonus: Boolean, default false`
-- Add `userId: String, default null` (optional — set server-side from JWT, null for anonymous brief from landing)
+- Add `userId: ObjectId, default null` (optional — set server-side from JWT, null for anonymous brief from landing)
 
 ### 3.2 Update Brief Service (`apps/api/src/modules/agency/services/brief.service.ts`)
 
-- After successful brief creation: if `requestAiBonus === true && userId` (from controller) → `userModel.findByIdAndUpdate(userId, { $inc: { 'ai.bonusRequests': ENV.AI_CHAT_BONUS_AMOUNT } })`
-- Return `aiBonusGranted: boolean` in response so frontend knows to refresh AI limits
+- After successful brief creation: if `requestAiBonus === true && userId` (from controller) → `userModel.findOneAndUpdate({ _id: userId, 'ai.bonusGranted': { $ne: true } }, { $set: { 'ai.bonusGranted': true } })` — atomic guard prevents duplicate bonus grants
+- Return `aiBonusGranted: boolean` in response so frontend knows to refresh AI limits (false if bonus was already granted previously)
 - AgencyModule needs User model access: add `MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])` to AgencyModule imports if not already present
 
 ### 3.3 Brief Controller (`apps/api/src/modules/agency/brief.controller.ts`)
@@ -260,9 +260,9 @@ UI structure (uses existing `UiSectionCard`, `UiButton`):
 
 ### 4.3 Brief-gate (limit exhausted)
 
-When `isLimitExhausted`:
-- Replace input area with message + CTA button
-- Button calls `useBriefDialogStore.open({ requestAiBonus: true })`
+When `isLimitExhausted` — two states based on `user.ai.bonusGranted` from auth store:
+- **`bonusGranted === false`**: replace input area with message "Free tries exhausted" + CTA button → `useBriefDialogStore.open({ requestAiBonus: true })`
+- **`bonusGranted === true`**: replace input area with message "All tries exhausted" (no CTA, chat permanently closed)
 
 Brief dialog store modifications (`apps/web/src/stores/briefDialog/briefDialogStore.ts`):
 - Add `requestAiBonus: boolean` to state (default false)
@@ -346,7 +346,7 @@ process.env.AI_CHAT_BONUS_AMOUNT ??= '5';
 `ai-rate-limit.guard.spec.ts`:
 - Mock `REDIS_CLIENT`, `User` model
 - First 5 requests pass (lifetime), 6th returns 403 `AI_LIMIT_EXHAUSTED`
-- User with `bonusRequests: 5` gets 10 total
+- User with `bonusGranted: true` gets `FREE_LIMIT + BONUS_AMOUNT` total
 - IP limit returns 429 after exceeding
 - Account and IP limits are independent
 
@@ -364,7 +364,7 @@ process.env.AI_CHAT_BONUS_AMOUNT ??= '5';
 - Lifetime limit exceeded → 403 `AI_LIMIT_EXHAUSTED`
 - AI provider failure → error SSE event, nothing deducted
 - GET history returns saved messages, DELETE clears them
-- Brief with `requestAiBonus: true` + JWT auth increments `ai.bonusRequests` (userId from req.user)
+- Brief with `requestAiBonus: true` + JWT auth sets `ai.bonusGranted: true` (userId from req.user, idempotent — second call is no-op)
 
 ### Frontend Tests
 
@@ -372,7 +372,7 @@ process.env.AI_CHAT_BONUS_AMOUNT ??= '5';
 - Mock `streamAiChat`, `getChatHistory`, `clearChatHistory`
 - Renders empty state, loads history on mount
 - Submit adds messages, streaming updates assistant
-- Done event updates balance, `aiRequestsRemaining: 0` shows brief-gate
+- Done event updates balance, `aiRequestsRemaining: 0` shows brief-gate (if `bonusGranted: false`) or permanent exhaustion (if `bonusGranted: true`)
 - Error shows toast, input disabled during streaming
 
 ---
@@ -395,14 +395,14 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `ai.requestsUsed` | Number | 0 | Lifetime AI request counter |
-| `ai.bonusRequests` | Number | 0 | Bonus granted via brief forms |
+| `ai.bonusGranted` | Boolean | false | One-time bonus granted via brief form |
 
 ### Brief Schema: new fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `requestAiBonus` | Boolean | false | AI bonus request flag |
-| `userId` | String | null | Authenticated user ID (set server-side from JWT, never from client) |
+| `userId` | ObjectId | null | Authenticated user ID (set server-side from JWT, never from client) |
 
 ---
 
