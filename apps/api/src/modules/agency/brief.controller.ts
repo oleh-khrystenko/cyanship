@@ -33,7 +33,6 @@ export class BriefController {
 
     @Post('brief/authenticated')
     @UseGuards(JwtActiveGuard)
-    @SkipOnboarding()
     async submitAuthenticatedBrief(
         @Body() dto: SubmitBriefDto,
         @Ip() ip: string,
