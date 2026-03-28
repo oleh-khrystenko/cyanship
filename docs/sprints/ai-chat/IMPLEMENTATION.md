@@ -71,15 +71,17 @@ Define and export:
 
 ### 1.3 Update `packages/types/src/agency/brief.ts`
 
-Add optional field to `SubmitBriefSchema`:
-- `requestAiBonus: z.boolean().optional()`
-- `userId` is NOT in the schema — it's set server-side from JWT `req.user`, never trusted from client body
+No changes to `SubmitBriefSchema` — `requestAiBonus` and `userId` are both set server-side by the authenticated endpoint controller, never sent from client. The Brief MongoDB schema (Phase 3.1) stores these fields, but the client-facing Zod validation schema stays unchanged.
 
 ### 1.4 Update `packages/types/src/entities/user.ts`
 
 Add `ai` subdocument to user entity Zod schema:
 - `ai: z.object({ requestsUsed: z.number().int().min(0), bonusGranted: z.boolean() }).nullable()`
 - Nullable because existing users won't have this field until first AI interaction (Mongoose default handles new users)
+
+### 1.4.1 Update `UserProfileSchema` pick set
+
+Add `ai` to `UserProfileSchema` pick — without this, `getMe()` won't return AI limits to the frontend, and brief-gate can't determine `bonusGranted` state.
 
 ### 1.5 Update `packages/types/src/contracts/index.ts`
 
@@ -218,9 +220,12 @@ Modifies existing `AgencyModule` — no new module created.
 
 ### 3.3 Brief Controller (`apps/api/src/modules/agency/brief.controller.ts`)
 
-- When `requestAiBonus === true`: require valid JWT. Use optional JWT extraction — if JWT present and valid, take `userId` from `req.user._id`; if no JWT, ignore `requestAiBonus` (treat as regular anonymous brief). This prevents spoofing: only authenticated user can grant themselves bonus
-- `userId` NEVER comes from request body — always from `req.user` (JWT)
-- Existing landing page brief form continues working unchanged (no JWT → no bonus, no userId)
+Two separate endpoints with clear contracts — no conditional auth logic in a single handler:
+
+- `POST /agency/brief` — **existing, unchanged**. Public, no JWT, Turnstile CAPTCHA. Used by landing page anonymous form
+- `POST /agency/brief/authenticated` — **new**, `@UseGuards(JwtActiveGuard)` + Turnstile. Used by AI chat brief-gate. `userId` taken from `req.user._id` (JWT), `requestAiBonus: true` set automatically by controller. `userId` NEVER comes from request body
+
+Both endpoints call the same `BriefService.submit()` — one service, two entry points. Each endpoint has a clear, unconditional contract
 
 ---
 
@@ -271,7 +276,7 @@ Brief dialog store modifications (`apps/web/src/stores/briefDialog/briefDialogSt
 
 BriefForm modifications (`apps/web/src/features/agency/brief/BriefForm.tsx`):
 - Read `requestAiBonus` from brief dialog store, `user` from auth store
-- If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields) — values from auth store, not editable. Pass `requestAiBonus: true` + name + email in submit payload (no `userId` — server gets it from JWT). Standard brief schema validation works unchanged for both anonymous and authenticated forms
+- If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields) — values from auth store, not editable. Submit to `POST /agency/brief/authenticated` (not the public endpoint). Pass name + email in payload (no `userId` — server gets it from JWT, `requestAiBonus` set by server). Standard brief schema validation works unchanged for both forms
 - On success when `requestAiBonus`: refresh auth store (getMe), close dialog — this rehydrates AI limits
 
 ### 4.4 Dashboard Integration (`apps/web/src/app/[locale]/(protected)/dashboard/page.tsx`)
@@ -432,6 +437,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | POST | `/ai/chat` | `JwtActiveGuard`, `AiRateLimitGuard` | Send message, stream SSE response |
 | GET | `/ai/chat/history` | `JwtActiveGuard` | Load saved chat messages |
 | DELETE | `/ai/chat/history` | `JwtActiveGuard` | Clear chat history |
+| POST | `/agency/brief/authenticated` | `JwtActiveGuard` + Turnstile | Authenticated brief submit with AI bonus |
 
 ---
 
@@ -460,13 +466,14 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 |------|--------|
 | `packages/types/src/contracts/executions.ts` | Add `AI_CHAT` action (debit only, NOT in SPENDABLE_ACTIONS) |
 | `packages/types/src/contracts/index.ts` | Export ai-chat |
-| `packages/types/src/agency/brief.ts` | Add `requestAiBonus` field (no `userId` — server-side from JWT) |
+| `packages/types/src/agency/brief.ts` | No changes — `requestAiBonus` and `userId` are server-side only (Brief MongoDB schema, not client Zod schema) |
 | `packages/types/src/entities/user.ts` | Add `ai` subdocument |
 | `apps/api/src/app.module.ts` | Import `AiModule` |
 | `apps/api/src/config/env.ts` | Add AI env vars |
 | `apps/api/src/test-setup.ts` | Add AI env fallback |
 | `apps/api/src/modules/users/schemas/user.schema.ts` | Add `ai` embedded subdocument |
 | `apps/api/src/modules/agency/schemas/brief.schema.ts` | Add `requestAiBonus` + `userId` fields |
+| `apps/api/src/modules/agency/brief.controller.ts` | Add `POST /agency/brief/authenticated` endpoint with `JwtActiveGuard` |
 | `apps/api/src/modules/agency/services/brief.service.ts` | Grant AI bonus on brief submit |
 | `apps/api/src/modules/agency/agency.module.ts` | Add User schema to imports (if not present) |
 | `apps/web/src/shared/api/client.ts` | No changes needed — `getAccessToken()` already exported |
