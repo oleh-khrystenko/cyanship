@@ -18,9 +18,12 @@ POST /ai/chat (text/event-stream)
       → IAiProvider.streamChat(message, systemPrompt)  // injected provider
       → SSE stream: {type:"token"} → {type:"token"} → ...
       → On success:
-          → Save both user + assistant messages to MongoDB
           → Single atomic MongoDB update: $inc executions.balance -200 AND $inc ai.requestsUsed +1 (with balance $gte guard)
+          → Record ExecutionTransaction (type: debit, action: ai_chat, amount: 200, balanceAfter)
+          → Save both user + assistant messages to MongoDB
           → SSE: {type:"done", balanceAfter, aiRequestsRemaining}
+      → On client disconnect (request close):
+          → Abort AI provider stream, skip finalization — nothing saved, nothing deducted
       → On AI failure:
           → SSE: {type:"error", code:"AI_PROVIDER_ERROR"}
           → Nothing saved, nothing deducted, no try spent
@@ -32,7 +35,7 @@ DELETE /ai/chat/history → JwtActiveGuard → Deletes all ChatMessage for user
 ### Module Dependency Map
 
 ```
-AppModule → AiModule → UsersModule (one-directional, no forwardRef needed)
+AppModule → AiModule → UsersModule (one-directional, no forwardRef needed — for UsersService.recordTransaction)
                      → REDIS_CLIENT (existing provider from `common/providers/redis.provider.ts`)
                      → AI_PROVIDER injection token → AnthropicService
                      → ChatMessage schema (new MongoDB collection)
@@ -155,10 +158,15 @@ apps/api/src/modules/ai/
 
 ### 2.8 AI Service (`ai.service.ts`)
 
-- Injects: `AI_PROVIDER`, `ChatMessage` model, `User` model
+- Injects: `AI_PROVIDER`, `ChatMessage` model, `User` model, `UsersService` (for `recordTransaction`)
 - System prompt constant: "You are a helpful AI assistant... Keep responses concise: 2-3 sentences maximum. Answer in the same language as the user's message."
 - `processChat(userId, message)`: calls `aiProvider.streamChat()` → returns `{ stream }` (user message is NOT saved yet — saved only on success to avoid orphaned messages)
-- `finalizeChat(userId, userMessage, assistantContent)`: saves both user + assistant messages to DB → single atomic `findOneAndUpdate` with `{ $inc: { 'executions.balance': -AI_CHAT_COST, 'ai.requestsUsed': 1 } }` and guard `'executions.balance': { $gte: AI_CHAT_COST }` → returns `{ balanceAfter, aiRequestsRemaining }`
+- `finalizeChat(userId, userMessage, assistantContent)`:
+  1. Atomic `findOneAndUpdate` on User: `{ $inc: { 'executions.balance': -AI_CHAT_COST, 'ai.requestsUsed': 1 } }` with guard `'executions.balance': { $gte: AI_CHAT_COST }` — if null → throw (race condition, balance went insufficient between check and finalize)
+  2. `usersService.recordTransaction()`: type debit, action `ai_chat`, amount `AI_CHAT_COST`, balanceAfter — creates ExecutionTransaction record (transaction appears in dashboard history)
+  3. Save both user + assistant messages to `chat_messages` collection via `insertMany`
+  → Returns `{ balanceAfter, aiRequestsRemaining }`
+  → Order is critical: deduction first (irreversible business operation) → audit trail → messages (cosmetic). If step 2 or 3 fails after step 1, balance is deducted but worst case is missing history — same resilience model as existing `spendExecutions` pattern
 - `getHistory(userId)`: find messages sorted by `createdAt: 1`, map to `ChatMessageItem[]`
 - `clearHistory(userId)`: `deleteMany({ userId })`
 - **Critical**: `finalizeChat` only called on successful stream completion. If AI fails mid-stream — nothing is persisted, nothing deducted (both messages saved only on success)
@@ -174,7 +182,8 @@ apps/api/src/modules/ai/
   5. Accumulate `assistantContent` from chunks
   6. On stream end: call `aiService.finalizeChat(userId, userMessage, assistantContent)` → saves both messages + atomic deduction → send done event with `balanceAfter` and `aiRequestsRemaining`
   7. On stream error: send error SSE event, do NOT call `finalizeChat` (nothing saved, nothing deducted)
-  8. `res.end()` in finally block
+  8. On client disconnect (`req.on('close')`): abort AI provider stream (via AbortController), skip `finalizeChat` — nothing saved, nothing deducted, AI generation stops immediately
+  9. `res.end()` in finally block
 - `GET /chat/history` — `@UseGuards(JwtActiveGuard)`: returns `{ data: { messages } }`
 - `DELETE /chat/history` — `@UseGuards(JwtActiveGuard)`: clears history, returns `{ data: { cleared: true } }`
 - Uses `@Res()` manual response for SSE (NestJS `@Sse()` is for GET + Observables, not POST + streaming)
@@ -262,7 +271,7 @@ Brief dialog store modifications (`apps/web/src/stores/briefDialog/briefDialogSt
 
 BriefForm modifications (`apps/web/src/features/agency/brief/BriefForm.tsx`):
 - Read `requestAiBonus` from brief dialog store, `user` from auth store
-- If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields). Pass `requestAiBonus: true` in submit payload (no `userId` — server gets it from JWT). Name and email NOT sent to server — server knows them by userId from JWT
+- If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields) — values from auth store, not editable. Pass `requestAiBonus: true` + name + email in submit payload (no `userId` — server gets it from JWT). Standard brief schema validation works unchanged for both anonymous and authenticated forms
 - On success when `requestAiBonus`: refresh auth store (getMe), close dialog — this rehydrates AI limits
 
 ### 4.4 Dashboard Integration (`apps/web/src/app/[locale]/(protected)/dashboard/page.tsx`)
@@ -296,11 +305,11 @@ Mirror all keys above with Ukrainian translations.
 
 ### `apps/api/src/config/env.ts`
 
-- `ANTHROPIC_API_KEY`: `getEnvVar()` — required, fail-fast
-- `AI_CHAT_MAX_TOKENS`: `parseInt(process.env.AI_CHAT_MAX_TOKENS ?? '300', 10)` — optional with default (300 tokens ≈ 150–200 words)
-- `AI_CHAT_IP_LIMIT`: default 5
-- `AI_CHAT_FREE_LIMIT`: default 5
-- `AI_CHAT_BONUS_AMOUNT`: default 5
+- `ANTHROPIC_API_KEY`: `getEnvVar('ANTHROPIC_API_KEY')` — required, fail-fast
+- `AI_CHAT_MAX_TOKENS`: `parseInt(getEnvVar('AI_CHAT_MAX_TOKENS'), 10)` — required, fail-fast (recommended: 300, ≈ 150–200 words)
+- `AI_CHAT_IP_LIMIT`: `parseInt(getEnvVar('AI_CHAT_IP_LIMIT'), 10)` — required, fail-fast (recommended: 5)
+- `AI_CHAT_FREE_LIMIT`: `parseInt(getEnvVar('AI_CHAT_FREE_LIMIT'), 10)` — required, fail-fast (recommended: 5)
+- `AI_CHAT_BONUS_AMOUNT`: `parseInt(getEnvVar('AI_CHAT_BONUS_AMOUNT'), 10)` — required, fail-fast (recommended: 5)
 
 ### `.env.example`
 
@@ -308,7 +317,14 @@ Add AI section with all vars and comments.
 
 ### `apps/api/src/test-setup.ts`
 
-Add: `process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key'`
+Add fallback values for all AI env vars:
+```
+process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key';
+process.env.AI_CHAT_MAX_TOKENS ??= '300';
+process.env.AI_CHAT_IP_LIMIT ??= '5';
+process.env.AI_CHAT_FREE_LIMIT ??= '5';
+process.env.AI_CHAT_BONUS_AMOUNT ??= '5';
+```
 
 ### Install SDK
 
@@ -321,9 +337,9 @@ Add: `process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key'`
 ### Unit Tests (API)
 
 `ai.service.spec.ts`:
-- Mock `AI_PROVIDER`, `ChatMessage` model, `User` model
+- Mock `AI_PROVIDER`, `ChatMessage` model, `User` model, `UsersService`
 - `processChat`: calls AI provider, returns stream (no DB writes yet)
-- `finalizeChat`: saves both user + assistant messages, single atomic update: deducts executions + increments `requestsUsed`
+- `finalizeChat`: atomic deduction (executions + requestsUsed) → records ExecutionTransaction via UsersService → saves both messages
 - `getHistory`: returns sorted messages
 - `clearHistory`: deletes all messages for user
 
@@ -343,7 +359,7 @@ Add: `process.env.ANTHROPIC_API_KEY ??= 'test-anthropic-key'`
 
 `test/ai-chat.e2e-spec.ts`:
 - Override `AI_PROVIDER` with mock
-- Full flow: POST → auth → rate limit → stream → deduct → done event
+- Full flow: POST → auth → rate limit → stream → deduct → transaction recorded → messages saved → done event
 - Insufficient balance → 402 (nothing deducted)
 - Lifetime limit exceeded → 403 `AI_LIMIT_EXHAUSTED`
 - AI provider failure → error SSE event, nothing deducted
@@ -457,7 +473,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/web/src/shared/api/index.ts` | Export ai module |
 | `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChat section above spend buttons |
 | `apps/web/src/stores/briefDialog/briefDialogStore.ts` | Add `requestAiBonus` state |
-| `apps/web/src/features/agency/brief/BriefForm.tsx` | Plain text name/email + AI bonus flag + userId |
+| `apps/web/src/features/agency/brief/BriefForm.tsx` | Plain text name/email (readonly from auth store) + AI bonus flag |
 | `apps/web/messages/en.json` | AI chat + brief-gate translations |
 | `apps/web/messages/uk.json` | AI chat + brief-gate translations |
 | `.env.example` | AI env vars |
@@ -473,6 +489,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 ## Tech Debt (out of scope)
 
 - **Turnstile on auth**: CAPTCHA only on brief form, not on registration. Separate sprint: `docs/sprints/auth-turnstile-sprint.md`.
+- **Chat history cap**: Currently max ~20 messages per user (10 requests × 2 messages). If limits grow, add hard cap or TTL-based cleanup on `chat_messages` collection.
 
 ---
 
