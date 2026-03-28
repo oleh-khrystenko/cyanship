@@ -1,7 +1,8 @@
 import type { ChatMessageItem, AiChatSSEEvent } from '@cyanship/types';
 
-import { apiClient, getAccessToken } from './client';
+import { apiClient, getAccessToken, setAccessToken } from './client';
 import { ENV } from '@/shared/config';
+import { getTimezone } from '@/shared/lib';
 
 export class AiChatError extends Error {
     constructor(
@@ -13,14 +14,13 @@ export class AiChatError extends Error {
     }
 }
 
-export async function streamAiChat(
+async function doStreamRequest(
     message: string,
-    onEvent: (event: AiChatSSEEvent) => void,
     signal?: AbortSignal,
-): Promise<void> {
+): Promise<Response> {
     const token = getAccessToken();
 
-    const response = await fetch(`${ENV.NEXT_PUBLIC_API_URL}/ai/chat`, {
+    return fetch(`${ENV.NEXT_PUBLIC_API_URL}/ai/chat`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -30,18 +30,46 @@ export async function streamAiChat(
         signal,
         credentials: 'include',
     });
+}
 
-    if (!response.ok) {
-        let code = 'INTERNAL_ERROR';
-        try {
-            const body = await response.json();
-            code = body?.error?.code ?? body?.code ?? code;
-        } catch {
-            // ignore parse errors
-        }
-        throw new AiChatError(code, response.status);
+async function tryRefreshToken(): Promise<boolean> {
+    try {
+        const response = await fetch(
+            `${ENV.NEXT_PUBLIC_API_URL}/auth/refresh`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ timezone: getTimezone() }),
+                credentials: 'include',
+            },
+        );
+
+        if (!response.ok) return false;
+
+        const body = await response.json();
+        const newToken = body?.data?.accessToken;
+        if (!newToken) return false;
+
+        setAccessToken(newToken);
+        return true;
+    } catch {
+        return false;
     }
+}
 
+async function parseErrorCode(response: Response): Promise<string> {
+    try {
+        const body = await response.json();
+        return body?.error?.code ?? body?.code ?? 'INTERNAL_ERROR';
+    } catch {
+        return 'INTERNAL_ERROR';
+    }
+}
+
+async function readSSEStream(
+    response: Response,
+    onEvent: (event: AiChatSSEEvent) => void,
+): Promise<void> {
     const reader = response.body?.getReader();
     if (!reader) return;
 
@@ -76,6 +104,30 @@ export async function streamAiChat(
     } finally {
         reader.releaseLock();
     }
+}
+
+export async function streamAiChat(
+    message: string,
+    onEvent: (event: AiChatSSEEvent) => void,
+    signal?: AbortSignal,
+): Promise<void> {
+    let response = await doStreamRequest(message, signal);
+
+    // Handle expired access token: refresh once and retry
+    if (response.status === 401) {
+        const refreshed = await tryRefreshToken();
+        if (!refreshed) {
+            throw new AiChatError('UNAUTHORIZED', 401);
+        }
+        response = await doStreamRequest(message, signal);
+    }
+
+    if (!response.ok) {
+        const code = await parseErrorCode(response);
+        throw new AiChatError(code, response.status);
+    }
+
+    await readSSEStream(response, onEvent);
 }
 
 export async function getChatHistory(): Promise<ChatMessageItem[]> {

@@ -32,34 +32,39 @@ interface ChatMessage {
     content: string;
 }
 
+function computeIsExhausted(
+    ai: { requestsUsed: number; bonusGranted: boolean } | null | undefined,
+): boolean {
+    if (!ai) return false;
+    const limit =
+        AI_CHAT_FREE_LIMIT + (ai.bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
+    return ai.requestsUsed >= limit;
+}
+
 export default function AiChatPage() {
     const t = useTranslations('ai_chat_page');
     const tGlobal = useTranslations();
     const locale = useLocale();
 
     const user = useAuthStore((s) => s.user);
-    const setUser = useAuthStore((s) => s.setUser);
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-    const [isLimitExhausted, setIsLimitExhausted] = useState(false);
+    const [isLimitExhausted, setIsLimitExhausted] = useState(() =>
+        computeIsExhausted(user?.ai),
+    );
     const [isClearing, setIsClearing] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    // Check if limit is already exhausted from user state
+    // Sync limit state with auth store (covers bonus grant, page revisit, etc.)
     useEffect(() => {
-        if (!user?.ai) return;
-        const limit =
-            AI_CHAT_FREE_LIMIT + (user.ai.bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
-        if (user.ai.requestsUsed >= limit) {
-            setIsLimitExhausted(true);
-        }
-    }, [user?.ai]);
+        setIsLimitExhausted(computeIsExhausted(user?.ai));
+    }, [user?.ai?.requestsUsed, user?.ai?.bonusGranted]);
 
     // Load history on mount
     useEffect(() => {
@@ -118,6 +123,14 @@ export default function AiChatPage() {
         const controller = new AbortController();
         abortRef.current = controller;
 
+        const removeOptimisticMessages = () => {
+            setMessages((prev) =>
+                prev.filter(
+                    (m) => m.id !== userMsgId && m.id !== assistantMsgId,
+                ),
+            );
+        };
+
         try {
             await streamAiChat(
                 trimmed,
@@ -133,19 +146,21 @@ export default function AiChatPage() {
                             );
                             break;
 
-                        case AI_CHAT_EVENT.DONE:
-                            if (user) {
-                                setUser({
-                                    ...user,
+                        case AI_CHAT_EVENT.DONE: {
+                            // Use current store state to avoid stale closure
+                            const currentUser = useAuthStore.getState().user;
+                            if (currentUser) {
+                                useAuthStore.getState().setUser({
+                                    ...currentUser,
                                     executions: {
-                                        ...user.executions,
+                                        ...currentUser.executions,
                                         balance: event.balanceAfter,
                                     },
-                                    ai: user.ai
+                                    ai: currentUser.ai
                                         ? {
-                                              ...user.ai,
+                                              ...currentUser.ai,
                                               requestsUsed:
-                                                  user.ai.requestsUsed + 1,
+                                                  currentUser.ai.requestsUsed + 1,
                                           }
                                         : null,
                                 });
@@ -154,15 +169,13 @@ export default function AiChatPage() {
                                 setIsLimitExhausted(true);
                             }
                             break;
+                        }
 
                         case AI_CHAT_EVENT.ERROR:
                             toast.error(
                                 tGlobal(getApiMessageKey(event.code, 'ai')),
                             );
-                            // Remove the empty assistant message on error
-                            setMessages((prev) =>
-                                prev.filter((m) => m.id !== assistantMsgId),
-                            );
+                            removeOptimisticMessages();
                             break;
                     }
                 },
@@ -179,26 +192,17 @@ export default function AiChatPage() {
                 } else {
                     toast.error(tGlobal(getApiMessageKey(err.code)));
                 }
-                // Remove both messages on pre-stream error
-                setMessages((prev) =>
-                    prev.filter(
-                        (m) => m.id !== userMsgId && m.id !== assistantMsgId,
-                    ),
-                );
+                removeOptimisticMessages();
             } else if (!(err instanceof DOMException && err.name === 'AbortError')) {
                 toast.error(tGlobal('errors.generic.unknown'));
-                setMessages((prev) =>
-                    prev.filter(
-                        (m) => m.id !== userMsgId && m.id !== assistantMsgId,
-                    ),
-                );
+                removeOptimisticMessages();
             }
         } finally {
             setIsStreaming(false);
             abortRef.current = null;
             inputRef.current?.focus();
         }
-    }, [input, isStreaming, user, setUser, tGlobal]);
+    }, [input, isStreaming, tGlobal]);
 
     const handleClear = useCallback(async () => {
         setIsClearing(true);

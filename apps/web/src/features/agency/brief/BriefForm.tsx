@@ -19,6 +19,7 @@ import UiTextarea from '@/shared/ui/UiTextarea';
 import UiSelect from '@/shared/ui/UiSelect';
 import UiChipGroup from '@/shared/ui/UiChipGroup';
 import { submitBrief, submitAuthenticatedBrief } from '@/shared/api/agency';
+import { getMe } from '@/shared/api/auth';
 import { getApiMessageKey } from '@/shared/api/mapApiCode';
 import { getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/stores/auth';
@@ -130,7 +131,6 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                 toast.success(tGlobal(messageKey));
 
                 // Refresh auth store to get updated AI bonus state
-                const { getMe } = await import('@/shared/api/auth');
                 const profile = await getMe();
                 useAuthStore.getState().setUser(profile);
             } else {
