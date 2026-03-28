@@ -239,7 +239,14 @@ Both endpoints call the same `BriefService.submit()` — one service, two entry 
 - `AiChatError` class with `code` and `status` for pre-stream HTTP errors
 - Uses existing `getAccessToken()` already exported from `apps/web/src/shared/api/client.ts`
 
-### 4.2 Chat Component (`apps/web/src/app/[locale]/(protected)/dashboard/components/AiChat.tsx`)
+### 4.2 Chat Page (`apps/web/src/app/[locale]/(protected)/dashboard/chat/page.tsx`)
+
+Separate full-page route under existing `(protected)/dashboard` layout — inherits `AuthGuard`, header, and auth store hydration.
+
+Layout: flex column, full viewport height (minus header). Standard AI chat UX:
+- Header bar: title + "Clear history" button (when messages exist) + back link to dashboard
+- Messages area: `flex-grow`, `overflow-y-auto`, auto-scroll to bottom. User messages right-aligned (primary bg), assistant left-aligned (muted bg), empty state text, loading pulse for streaming
+- Footer: input + send button, sticky bottom (or brief-gate when exhausted). Cost info text below input
 
 State:
 - `messages: ChatMessage[]` — local state, hydrated from API on mount
@@ -253,15 +260,9 @@ On submit:
 - Add user message + empty assistant message to state
 - Call `streamAiChat()` with callbacks:
   - `TOKEN` → append content to assistant message
-  - `DONE` → update `authStore.user.executions.balance`, check `aiRequestsRemaining`, call `onSpendSuccess()`
+  - `DONE` → update `authStore.user.executions.balance`, check `aiRequestsRemaining`
   - `ERROR` → toast via `getApiMessageKey()`
 - On `AiChatError` (pre-stream): handle `AI_LIMIT_EXHAUSTED` (set `isLimitExhausted`), `AI_RATE_LIMIT_EXCEEDED` (toast), `INSUFFICIENT_EXECUTIONS` (toast)
-
-UI structure (uses existing `UiSectionCard`, `UiButton`):
-- Header: title + "Clear history" button (when messages exist)
-- Messages area: scrollable container, user messages right-aligned (primary bg), assistant left-aligned (muted bg), empty state text, loading pulse for streaming
-- Footer: input + send button (or brief-gate when exhausted)
-- Cost info text below input
 
 ### 4.3 Brief-gate (limit exhausted)
 
@@ -279,11 +280,12 @@ BriefForm modifications (`apps/web/src/features/agency/brief/BriefForm.tsx`):
 - If `requestAiBonus && user`: render name and email as plain text (`<p>`/`<span>`, not input fields) — values from auth store, not editable. Submit to `POST /agency/brief/authenticated` (not the public endpoint). Pass name + email in payload (no `userId` — server gets it from JWT, `requestAiBonus` set by server). Standard brief schema validation works unchanged for both forms
 - On success when `requestAiBonus`: refresh auth store (getMe), close dialog — this rehydrates AI limits
 
-### 4.4 Dashboard Integration (`apps/web/src/app/[locale]/(protected)/dashboard/page.tsx`)
+### 4.4 Dashboard Teaser Card (`apps/web/src/app/[locale]/(protected)/dashboard/components/AiChatTeaser.tsx`)
 
-- Import `AiChat` component
-- Render **above** `SpendExecutionButtons`, after `SubscriptionStatus`
-- Pass `onSpendSuccess={handleSpendSuccess}` (same pattern as SpendExecutionButtons)
+- Compact card (uses `UiSectionCard`) rendered on dashboard **above** `SpendExecutionButtons`
+- Shows: short AI integration description + CTA button (link to `/dashboard/chat`)
+- Displays current state from auth store: remaining AI tries or "Limit exhausted"
+- No chat logic — purely navigational
 
 ---
 
@@ -291,9 +293,12 @@ BriefForm modifications (`apps/web/src/features/agency/brief/BriefForm.tsx`):
 
 ### English (`apps/web/messages/en.json`)
 
-Add `dashboard_page.ai_chat`:
+Add `ai_chat_page`:
 - `heading`, `placeholder`, `send`, `clear_history`, `empty_state`, `cost_info` (with `{cost}` param)
 - `error_rate_limit`, `limit_exhausted`, `request_bonus`
+
+Add `dashboard_page.ai_chat_teaser`:
+- `heading`, `description`, `cta_button`, `tries_remaining` (with `{count}` param), `limit_exhausted`
 
 Add `errors.ai`:
 - `ai_limit_exhausted`, `ai_rate_limit_exceeded`, `ai_provider_error`
@@ -458,7 +463,8 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/api/src/modules/ai/dto/ai-chat.dto.ts` | Zod DTO |
 | `packages/types/src/contracts/ai-chat.ts` | Shared contracts + message types |
 | `apps/web/src/shared/api/ai.ts` | Frontend SSE client + history API |
-| `apps/web/src/app/[locale]/(protected)/dashboard/components/AiChat.tsx` | Chat UI component |
+| `apps/web/src/app/[locale]/(protected)/dashboard/chat/page.tsx` | Full-page AI chat (separate route) |
+| `apps/web/src/app/[locale]/(protected)/dashboard/components/AiChatTeaser.tsx` | Dashboard teaser card with CTA link to chat |
 
 ### Modified Files
 
@@ -478,7 +484,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/api/src/modules/agency/agency.module.ts` | Add User schema to imports (if not present) |
 | `apps/web/src/shared/api/client.ts` | No changes needed — `getAccessToken()` already exported |
 | `apps/web/src/shared/api/index.ts` | Export ai module |
-| `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChat section above spend buttons |
+| `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChatTeaser card above spend buttons |
 | `apps/web/src/stores/briefDialog/briefDialogStore.ts` | Add `requestAiBonus` state |
 | `apps/web/src/features/agency/brief/BriefForm.tsx` | Plain text name/email (readonly from auth store) + AI bonus flag |
 | `apps/web/messages/en.json` | AI chat + brief-gate translations |
