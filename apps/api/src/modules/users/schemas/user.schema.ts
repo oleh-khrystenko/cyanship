@@ -54,6 +54,19 @@ export class User {
     })
     executions!: UserExecutions;
 
+    @Prop({
+        type: {
+            requestsUsed: { type: Number, default: 0, min: 0 },
+            bonusGranted: { type: Boolean, default: false },
+        },
+        default: () => ({ requestsUsed: 0, bonusGranted: false }),
+        _id: false,
+    })
+    ai!: {
+        requestsUsed: number;
+        bonusGranted: boolean;
+    };
+
     @Prop({ type: String, default: null })
     passwordHash!: string | null;
 
