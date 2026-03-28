@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import {
     BRIEF_STATUS,
     type BriefStatus,
@@ -32,6 +32,12 @@ export class Brief extends Document {
 
     @Prop({ type: String, default: BRIEF_STATUS.NEW, index: true })
     status!: BriefStatus;
+
+    @Prop({ type: Boolean, default: false })
+    requestAiBonus!: boolean;
+
+    @Prop({ type: Types.ObjectId, default: null })
+    userId!: Types.ObjectId | null;
 
     // timestamps: true дає createdAt, updatedAt
     createdAt!: Date;
