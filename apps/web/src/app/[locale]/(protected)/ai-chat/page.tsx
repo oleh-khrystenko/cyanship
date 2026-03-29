@@ -13,6 +13,7 @@ import {
 } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
+import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -68,6 +69,7 @@ export default function AiChatPage() {
         computeIsExhausted(user?.ai),
     );
     const [isClearing, setIsClearing] = useState(false);
+    const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
@@ -233,6 +235,7 @@ export default function AiChatPage() {
         try {
             await clearChatHistory();
             setMessages([]);
+            setIsClearDialogOpen(false);
         } catch {
             toast.error(tGlobal('errors.generic.unknown'));
         } finally {
@@ -263,10 +266,11 @@ export default function AiChatPage() {
                     <UiButton
                         variant="text"
                         size="sm"
-                        onClick={handleClear}
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setIsClearDialogOpen(true)}
                         disabled={isClearing}
+                        IconLeft={<Trash2 />}
                     >
-                        <Trash2 className="mr-1.5 h-4 w-4" />
                         {t('clear_history')}
                     </UiButton>
                 )}
@@ -418,6 +422,17 @@ export default function AiChatPage() {
                     </>
                 )}
             </div>
+            <UiConfirmDialog
+                open={isClearDialogOpen}
+                onOpenChange={setIsClearDialogOpen}
+                title={t('clear_dialog.title')}
+                description={t('clear_dialog.description')}
+                confirmLabel={t('clear_dialog.confirm')}
+                cancelLabel={t('clear_dialog.cancel')}
+                variant="destructive"
+                loading={isClearing}
+                onConfirm={handleClear}
+            />
         </UiPageContainer>
     );
 }

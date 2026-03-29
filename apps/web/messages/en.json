@@ -306,7 +306,13 @@
         "disclaimer": "AI can make mistakes. Please double-check responses.",
         "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
         "all_tries_exhausted": "All AI tries have been used.",
-        "request_bonus": "Submit Brief"
+        "request_bonus": "Submit Brief",
+        "clear_dialog": {
+            "title": "Clear chat history?",
+            "description": "All messages will be permanently deleted. This action cannot be undone.",
+            "confirm": "Clear history",
+            "cancel": "Cancel"
+        }
     },
     "brief_form": {
         "title": "Submit Your Project Brief",
