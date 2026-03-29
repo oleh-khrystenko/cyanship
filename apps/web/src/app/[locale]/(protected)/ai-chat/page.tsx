@@ -50,6 +50,16 @@ export default function AiChatPage() {
 
     const user = useAuthStore((s) => s.user);
 
+    const balance = user?.executions.balance ?? 0;
+    const canAfford = balance >= AI_CHAT_COST;
+    const ai = user?.ai ?? { requestsUsed: 0, bonusGranted: false };
+    const bonusGranted = ai.bonusGranted;
+    const totalLimit =
+        AI_CHAT_FREE_LIMIT + (bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
+    const triesRemaining = Math.max(0, totalLimit - ai.requestsUsed);
+    const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
+    const formattedCost = AI_CHAT_COST.toLocaleString(toIntlLocale(locale));
+
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
@@ -115,6 +125,13 @@ export default function AiChatPage() {
             trimmed.length > AI_CHAT_MESSAGE_MAX_LENGTH
         )
             return;
+
+        if (!canAfford) {
+            toast.error(
+                tGlobal(getApiMessageKey('INSUFFICIENT_EXECUTIONS', 'users')),
+            );
+            return;
+        }
 
         setInput('');
         const userMsgId = `user-${Date.now()}`;
@@ -209,7 +226,7 @@ export default function AiChatPage() {
             abortRef.current = null;
             inputRef.current?.focus();
         }
-    }, [input, isStreaming, tGlobal]);
+    }, [input, isStreaming, canAfford, tGlobal]);
 
     const handleClear = useCallback(async () => {
         setIsClearing(true);
@@ -236,16 +253,6 @@ export default function AiChatPage() {
     const handleOpenBriefDialog = useCallback(() => {
         useBriefDialogStore.getState().open({ requestAiBonus: true });
     }, []);
-
-    const balance = user?.executions.balance ?? 0;
-    const canAfford = balance >= AI_CHAT_COST;
-    const ai = user?.ai ?? { requestsUsed: 0, bonusGranted: false };
-    const bonusGranted = ai.bonusGranted;
-    const totalLimit =
-        AI_CHAT_FREE_LIMIT + (bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
-    const triesRemaining = Math.max(0, totalLimit - ai.requestsUsed);
-    const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
-    const formattedCost = AI_CHAT_COST.toLocaleString(toIntlLocale(locale));
 
     return (
         <UiPageContainer fixed>
@@ -369,6 +376,9 @@ export default function AiChatPage() {
                                         >
                                             {input.length}/
                                             {AI_CHAT_MESSAGE_MAX_LENGTH}
+                                            {input.length >
+                                                AI_CHAT_MESSAGE_MAX_LENGTH &&
+                                                ` (-${input.length - AI_CHAT_MESSAGE_MAX_LENGTH})`}
                                         </span>
                                     ) : (
                                         <span />
@@ -380,7 +390,6 @@ export default function AiChatPage() {
                                         disabled={
                                             isStreaming ||
                                             !input.trim() ||
-                                            !canAfford ||
                                             input.length >
                                                 AI_CHAT_MESSAGE_MAX_LENGTH
                                         }
