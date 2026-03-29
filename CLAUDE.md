@@ -1,6 +1,6 @@
 # CyanShip
 
-> Monorepo-monolith на Next.js 16 + NestJS 11: API володіє auth/session lifecycle, billing, executions та agency brief submission, а shared Zod/TypeScript контракти використовуються обома застосунками.
+> Monorepo-monolith на Next.js 16 + NestJS 11: API володіє auth/session lifecycle, billing, executions, AI chat та agency brief submission, а shared Zod/TypeScript контракти використовуються обома застосунками.
 
 ## Tech Stack
 
@@ -11,6 +11,7 @@
 | Forms | React Hook Form + @hookform/resolvers (Zod) | RHF 7.72 |
 | Backend | NestJS, Mongoose, ioredis, Passport | NestJS 11.1, Mongoose 8 |
 | Validation | Zod (shared contracts) | Zod 4.3 |
+| AI | Anthropic SDK (Claude Haiku) | — |
 | Payments | Stripe | 20.4 |
 | Email | Resend | 6.9 |
 | CAPTCHA | Cloudflare Turnstile | — |
@@ -18,7 +19,7 @@
 
 ## Architecture Overview
 
-Monorepo з трьома workspace: `apps/api`, `apps/web`, `packages/types`. API — system of record для auth, session lifecycle, billing, executions та webhook processing; web залишається тонким клієнтом і спілкується з API через shared Zod контракти. Frontend використовує Feature-Sliced Design. Модульний моноліт зі строгим Core/Agency розділенням — agency код живе в ізольованих шляхах, core не може імпортувати agency (ESLint `no-restricted-imports`). Модулі `reports`, `storage` (API) — scaffold/placeholder без бізнес-логіки. Модуль `agency` — brief submission з Turnstile CAPTCHA.
+Monorepo з трьома workspace: `apps/api`, `apps/web`, `packages/types`. API — system of record для auth, session lifecycle, billing, executions, AI chat та webhook processing; web залишається тонким клієнтом і спілкується з API через shared Zod контракти. Frontend використовує Feature-Sliced Design. Модульний моноліт зі строгим Core/Agency розділенням — agency код живе в ізольованих шляхах, core не може імпортувати agency (ESLint `no-restricted-imports`). Модулі `reports`, `storage` (API) — scaffold/placeholder без бізнес-логіки. Модуль `agency` — brief submission з Turnstile CAPTCHA + authenticated brief для AI bonus grant. Модуль `ai` — streaming chat з Anthropic через SSE, з execution-based billing та rate limiting.
 
 ## Project Structure
 
@@ -28,7 +29,7 @@ apps/
 │   ├── main.ts, app.module.ts
 │   ├── config/          # fail-fast env loader
 │   ├── common/          # decorators, filters, guards, interceptors, providers
-│   └── modules/         # auth, email, users, payments, agency, reports, storage
+│   └── modules/         # auth, email, users, payments, agency, ai, reports, storage
 ├── web/src/
 │   ├── app/[locale]/    # pages: auth, (protected), (agency), banner-export
 │   ├── entities/        # agency, brand
@@ -41,7 +42,8 @@ packages/
 └── types/src/           # contracts, entities, enums, constants, validation, utils, agency
 docs/
 ├── architecture/        # auth-flow, payments-flow
-└── conventions/         # source-of-truth правила
+├── conventions/         # source-of-truth правила
+└── sprints/             # ai-chat, brief-submission, auth-turnstile
 ```
 
 ## Domain Model
@@ -51,12 +53,18 @@ docs/
 - Soft-delete через `deletedAt` + `accountDeletionRequestedAt` (grace period, cron hard-delete)
 - Embedded `billing` subdocument (nullable, створюється лише при першій billing-події) з `lastProviderEventAt` для out-of-order webhook protection
 - Embedded `executions` subdocument (`balance`, `freeReportUsed`) з atomic `$inc` операціями
+- Embedded `ai` subdocument (`requestsUsed`, `bonusGranted`) — lifetime AI chat usage tracking
 - Sparse indexes: `provider.id`, `billing.providerCustomerId`, `billing.providerSubscriptionId`
 
 ### ExecutionTransaction
 Файл: `apps/api/src/modules/users/schemas/execution-transaction.schema.ts`
 - Ledger для credit/debit операцій з executions (type, action, amount, balanceAfter)
 - Compound index `(userId, createdAt desc)` для швидких запитів останніх транзакцій
+
+### ChatMessage
+Файл: `apps/api/src/modules/ai/schemas/chat-message.schema.ts`
+- Повідомлення AI чату (userId, role: user|assistant, content)
+- Compound index `(userId, createdAt)` для отримання історії по користувачу
 
 ### ProcessedWebhookEvent
 Файл: `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts`
@@ -75,13 +83,14 @@ docs/
 
 ## Module Dependency Map
 
-- `AppModule` → `AuthModule`, `EmailModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`, `AgencyModule`
+- `AppModule` → `AuthModule`, `EmailModule`, `UsersModule`, `PaymentsModule`, `ReportsModule`, `StorageModule`, `AgencyModule`, `AiModule`
 - `AppModule` global providers: `ThrottlerGuard` (APP_GUARD), `OnboardingInterceptor` (APP_INTERCEPTOR)
 - `AuthModule` ↔ `UsersModule` (`forwardRef`, circular)
 - `EmailModule` — `@Global()`, доступний всім модулям
 - `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` injection token + `CatalogService` + `REDIS_CLIENT`
 - `CatalogService` → own Stripe SDK instance + `REDIS_CLIENT` (no dependency on `IPaymentProvider`)
 - `AgencyModule` → `EmailModule` (global) + `TurnstileService` + `BriefService`
+- `AiModule` → `UsersModule` + `REDIS_CLIENT` + `AI_PROVIDER` injection token (AnthropicService)
 - `CleanupService` (cron, every 6h) → `AuthService` + `UserModel`
 - `PaymentsCleanupService` (cron, 4 AM) → `PAYMENT_PROVIDER` + `OrphanedProviderCustomerModel`
 - Web: `shared/api/client.ts` → axios interceptors → refresh dedupe → `authStore`
@@ -103,7 +112,8 @@ React Hook Form + Zod resolver для всіх форм. Приклад: `apps/w
 - `JwtActiveGuard` — **основний**, перевіряє JWT + блокує soft-deleted users
 - `JwtAuthGuard` — тільки JWT без перевірки soft-delete (використовується для restore)
 - `SubscriptionGuard` — перевіряє `hasActiveSubscription`
-- Файли: `apps/api/src/common/guards/`
+- `AiRateLimitGuard` — перевіряє lifetime account limit (MongoDB) + IP-based Redis rate limit (24h TTL)
+- Файли: `apps/api/src/common/guards/`, `apps/api/src/modules/ai/guards/`
 
 ### Onboarding enforcement
 Глобальний `OnboardingInterceptor` (APP_INTERCEPTOR) блокує роути з кодом `ONBOARDING_INCOMPLETE` поки профіль не заповнений. Пропускається через `@SkipOnboarding()` decorator. Файли: `apps/api/src/common/interceptors/onboarding.interceptor.ts`, `apps/api/src/common/decorators/skip-onboarding.decorator.ts`
@@ -116,6 +126,12 @@ Provider abstraction (`PAYMENT_PROVIDER` → `StripeService`), two-phase idempot
 
 ### Billing catalog (Stripe as single source of truth)
 `CatalogService` (`apps/api/src/modules/payments/catalog.service.ts`) fetches Products/Prices from Stripe API, caches in Redis (TTL 5 min). Has own Stripe SDK instance (not via `IPaymentProvider`) to avoid circular DI. Warms cache on startup (fail-fast). Public endpoint `GET /payments/catalog` — no auth, applies feature flags. Plan/pack codes remain as TypeScript union types (`SubscriptionPlanCode`, `ExecutionPackCode`) — structural identifiers for i18n keys, images, DB records. Business data (prices, executions, display order, featured) comes exclusively from Stripe Product metadata.
+
+### AI chat streaming
+Provider abstraction (`AI_PROVIDER` → `AnthropicService`), SSE streaming через `res.write()`. 3-layer protection: lifetime account limit (free + bonus), IP rate limit (Redis), execution balance check. Debit executions тільки після успішного стріму. Файл: `apps/api/src/modules/ai/ai.controller.ts`. Спринт-документація: `docs/sprints/ai-chat/`
+
+### AI bonus grant через brief
+Authenticated brief endpoint (`POST /agency/brief/authenticated`) дозволяє отримати AI bonus (5 додаткових запитів). Server-side sets `requestAiBonus: true` + `userId`. `BriefService` atomically sets `user.ai.bonusGranted: true`. Frontend brief dialog підтримує `requestAiBonus` mode через Zustand store.
 
 ### Error handling та i18n mapping
 API повертає machine-readable `code` через `AllExceptionsFilter`; web маппить codes на locale keys через `shared/api/mapApiCode.ts`. Конвенція: `docs/conventions/i18n.md`
@@ -130,7 +146,7 @@ API повертає machine-readable `code` через `AllExceptionsFilter`; w
 Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (dynamic imports). Конвенція: `docs/conventions/overlays.md`
 
 ### Execution ledger
-Atomic `$inc` на `user.executions.balance` + створення `ExecutionTransaction` запису. Spend-ендпоінт перевіряє достатність балансу. Файл: `apps/api/src/modules/users/users.service.ts`
+Atomic `$inc` на `user.executions.balance` + створення `ExecutionTransaction` запису. Spend-ендпоінт перевіряє достатність балансу. AI chat також створює transaction з action `AI_CHAT`. Файл: `apps/api/src/modules/users/users.service.ts`
 
 ## API Overview
 
@@ -180,10 +196,18 @@ Global prefix: `/api`. Rate limiting: `ThrottlerModule` (60 req/min global). Glo
 | POST | `/payments/reset` | `JwtActiveGuard` | Скидання billing (видалення Stripe customer) |
 | POST | `/payments/webhook/:provider` | — + `@SkipThrottle()` | Stripe webhook ingestion |
 
+### AiController (`apps/api/src/modules/ai/ai.controller.ts`)
+| Метод | Шлях | Guard | Опис |
+|-------|------|-------|------|
+| POST | `/ai/chat` | `JwtActiveGuard` + `AiRateLimitGuard` | SSE streaming chat (execution cost: 200) |
+| GET | `/ai/chat/history` | `JwtActiveGuard` | Історія повідомлень чату |
+| DELETE | `/ai/chat/history` | `JwtActiveGuard` | Очищення історії чату |
+
 ### BriefController (`apps/api/src/modules/agency/brief.controller.ts`)
 | Метод | Шлях | Guard | Опис |
 |-------|------|-------|------|
 | POST | `/agency/brief` | — + `@SkipOnboarding()` | Подача brief (Turnstile CAPTCHA) |
+| POST | `/agency/brief/authenticated` | `JwtActiveGuard` | Brief + AI bonus grant |
 
 ### Reports / Storage
 Scaffold без ендпоінтів.
@@ -206,6 +230,7 @@ Scaffold без ендпоінтів.
 - `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`
 - `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED` (хоча б один `true`)
 - Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
+- AI: `ANTHROPIC_API_KEY`, `AI_CHAT_MAX_TOKENS`, `AI_CHAT_IP_LIMIT`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`
 
 **Web — ALL required (crash if missing)**
 - `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`
@@ -283,3 +308,7 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 - **CatalogService own Stripe instance**: `CatalogService` створює власний `new Stripe(...)` для читання Products/Prices. Це зроблено щоб уникнути circular DI з `IPaymentProvider` → `StripeService`. Обидва інстанси використовують один `STRIPE_SECRET_KEY`.
 - **Catalog cache startup**: `CatalogService.onModuleInit()` робить warm fetch до Stripe. Якщо Stripe недоступний при старті — app crash (fail-fast). Після старту cache fallback працює через Redis TTL.
 - **Execution proration на plan change**: `calculatePlanChangeAdjustment()` в `PaymentsService` рахує пропорцію залишку періоду для коригування executions при upgrade/downgrade. Використовує `previousPriceId` з webhook event та `getPriceToExecutionsMap()` з CatalogService.
+- **AI chat SSE після headers**: Після `res.flushHeaders()` помилки більше не можуть бути HTTP errors — йдуть як SSE events з типом `ERROR`. Pre-stream balance check відбувається ДО встановлення SSE headers.
+- **AI chat debit only on success**: Executions списуються лише після завершення стріму (`finalizeChat()`). Якщо стрім перервано або помилка — баланс не змінюється.
+- **AI rate limit Redis atomic**: `INCR` + `EXPIRE` для IP rate limiting — `INCR` на неіснуючому ключі створює його зі значенням 1, `EXPIRE` встановлює TTL тільки якщо `INCR` повернув 1 (новий ключ).
+- **AI bonus grant one-time**: `BriefService` використовує MongoDB atomic guard (`ai.bonusGranted: false`) щоб запобігти повторному нарахуванню бонусу.
