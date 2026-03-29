@@ -273,14 +273,21 @@ export default function AiChatPage() {
             </div>
 
             {/* ── Info Bar ── */}
-            <div className="border-b border-border pb-3 text-xs text-muted-foreground">
-                <span>{t('balance_label', { balance: formattedBalance })}</span>
-                <span className="mx-2">·</span>
-                <span>
-                    {isLimitExhausted
-                        ? t('tries_exhausted')
-                        : t('tries_remaining', { count: triesRemaining })}
-                </span>
+            <div className="flex items-center justify-between border-b border-border pb-3 text-xs text-muted-foreground">
+                <div>
+                    <span className="font-medium text-foreground">{formattedBalance}</span>
+                    {' '}{t('balance_unit')}
+                    <span className="mx-2">·</span>
+                    {isLimitExhausted ? (
+                        t('tries_exhausted')
+                    ) : (
+                        <>
+                            <span className="font-medium text-foreground">{triesRemaining}</span>
+                            {' '}{t('tries_remaining_label')}
+                        </>
+                    )}
+                </div>
+                <span>{t('cost_info', { cost: formattedCost })}</span>
             </div>
 
             {/* ── Messages ── */}
@@ -406,7 +413,7 @@ export default function AiChatPage() {
                             }
                         />
                         <p className="mt-1.5 text-center text-xs text-muted-foreground">
-                            {t('cost_info', { cost: formattedCost })}
+                            {t('disclaimer')}
                         </p>
                     </>
                 )}

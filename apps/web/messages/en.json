@@ -299,10 +299,11 @@
         "send": "Send",
         "clear_history": "Clear history",
         "empty_state": "Send a message to start a conversation with AI.",
-        "balance_label": "{balance} executions",
-        "tries_remaining": "{count} free tries left",
+        "balance_unit": "executions",
+        "tries_remaining_label": "free tries left",
         "tries_exhausted": "No free tries left",
         "cost_info": "{cost} executions per message",
+        "disclaimer": "AI can make mistakes. Please double-check responses.",
         "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
         "all_tries_exhausted": "All AI tries have been used.",
         "request_bonus": "Submit Brief"
