@@ -237,7 +237,7 @@ export default function AiChatPage() {
     const formattedCost = AI_CHAT_COST.toLocaleString(toIntlLocale(locale));
 
     return (
-        <UiPageContainer>
+        <UiPageContainer fixed>
             {/* ── Header ── */}
             <div className="flex items-center justify-between py-6">
                 <UiPageHeading>{t('heading')}</UiPageHeading>
