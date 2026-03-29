@@ -149,12 +149,13 @@ export default function AiChatPage() {
         const controller = new AbortController();
         abortRef.current = controller;
 
-        const removeOptimisticMessages = () => {
+        const rollback = () => {
             setMessages((prev) =>
                 prev.filter(
                     (m) => m.id !== userMsgId && m.id !== assistantMsgId,
                 ),
             );
+            setInput(trimmed);
         };
 
         try {
@@ -201,7 +202,7 @@ export default function AiChatPage() {
                             toast.error(
                                 tGlobal(getApiMessageKey(event.code, 'ai')),
                             );
-                            removeOptimisticMessages();
+                            rollback();
                             break;
                     }
                 },
@@ -218,10 +219,10 @@ export default function AiChatPage() {
                 } else {
                     toast.error(tGlobal(getApiMessageKey(err.code)));
                 }
-                removeOptimisticMessages();
+                rollback();
             } else if (!(err instanceof DOMException && err.name === 'AbortError')) {
                 toast.error(tGlobal('errors.generic.unknown'));
-                removeOptimisticMessages();
+                rollback();
             }
         } finally {
             setIsStreaming(false);
