@@ -109,7 +109,12 @@ export default function AiChatPage() {
 
     const handleSubmit = useCallback(async () => {
         const trimmed = input.trim();
-        if (!trimmed || isStreaming) return;
+        if (
+            !trimmed ||
+            isStreaming ||
+            trimmed.length > AI_CHAT_MESSAGE_MAX_LENGTH
+        )
+            return;
 
         setInput('');
         const userMsgId = `user-${Date.now()}`;
@@ -345,21 +350,21 @@ export default function AiChatPage() {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={t('placeholder')}
-                            maxLength={AI_CHAT_MESSAGE_MAX_LENGTH}
                             rows={1}
                             disabled={isStreaming}
                             size="sm"
                             autoGrow
                             suffix={
                                 <div className="flex items-center justify-between">
-                                    {input.length >=
-                                    AI_CHAT_MESSAGE_MAX_LENGTH * 0.8 ? (
+                                    {input.length >= 400 ? (
                                         <span
                                             className={`text-xs ${
-                                                input.length >=
+                                                input.length >
                                                 AI_CHAT_MESSAGE_MAX_LENGTH
                                                     ? 'text-destructive'
-                                                    : 'text-muted-foreground'
+                                                    : input.length > 490
+                                                      ? 'text-warning'
+                                                      : 'text-muted-foreground'
                                             }`}
                                         >
                                             {input.length}/
@@ -375,7 +380,9 @@ export default function AiChatPage() {
                                         disabled={
                                             isStreaming ||
                                             !input.trim() ||
-                                            !canAfford
+                                            !canAfford ||
+                                            input.length >
+                                                AI_CHAT_MESSAGE_MAX_LENGTH
                                         }
                                         onClick={handleSubmit}
                                         aria-label={t('send')}
