@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useId } from 'react';
+import { forwardRef, useCallback, useId, useRef, useEffect } from 'react';
 import { composeClasses } from '@/shared/lib';
 import type {
     UiTextareaProps,
@@ -23,6 +23,8 @@ const variantStyles: Record<UiTextareaVariant, string> = {
 const errorStyles =
     'border-destructive hover:border-destructive focus-within:border-destructive';
 
+const DEFAULT_MAX_ROWS = 6;
+
 const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
     (props, ref) => {
         const {
@@ -31,15 +33,52 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
             label,
             error,
             suffix,
+            autoGrow = false,
+            maxRows = DEFAULT_MAX_ROWS,
             className,
             disabled,
             required,
             id: externalId,
+            onChange,
+            value,
             ...textareaProps
         } = props;
 
         const generatedId = useId();
         const textareaId = externalId ?? generatedId;
+        const internalRef = useRef<HTMLTextAreaElement | null>(null);
+
+        const adjustHeight = useCallback(() => {
+            const el = internalRef.current;
+            if (!el || !autoGrow) return;
+
+            el.style.height = 'auto';
+            const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+            const maxHeight = lineHeight * maxRows;
+            el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+            el.style.overflowY =
+                el.scrollHeight > maxHeight ? 'auto' : 'hidden';
+        }, [autoGrow, maxRows]);
+
+        useEffect(() => {
+            adjustHeight();
+        }, [value, adjustHeight]);
+
+        const setRefs = useCallback(
+            (el: HTMLTextAreaElement | null) => {
+                internalRef.current = el;
+                if (typeof ref === 'function') ref(el);
+                else if (ref) ref.current = el;
+            },
+            [ref],
+        );
+
+        const handleChange = useCallback(
+            (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                onChange?.(e);
+            },
+            [onChange],
+        );
 
         const wrapperClasses = composeClasses(
             'rounded-md transition-colors',
@@ -49,6 +88,8 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
             disabled && 'opacity-50 cursor-not-allowed',
             className,
         );
+
+        const noResize = autoGrow || !!suffix;
 
         return (
             <div>
@@ -71,10 +112,12 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
                     <textarea
                         {...textareaProps}
                         id={textareaId}
-                        ref={ref}
+                        ref={setRefs}
+                        value={value}
+                        onChange={handleChange}
                         disabled={disabled}
                         required={required}
-                        className={`w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed ${suffix ? 'resize-none' : 'resize-y'}`}
+                        className={`w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed ${noResize ? 'resize-none' : 'resize-y'}`}
                     />
                     {suffix}
                 </div>

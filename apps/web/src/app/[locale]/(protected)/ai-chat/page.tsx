@@ -349,6 +349,7 @@ export default function AiChatPage() {
                             rows={1}
                             disabled={isStreaming}
                             size="sm"
+                            autoGrow
                             suffix={
                                 <div className="flex justify-end">
                                     <UiButton
