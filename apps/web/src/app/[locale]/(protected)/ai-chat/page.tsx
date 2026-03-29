@@ -264,9 +264,8 @@ export default function AiChatPage() {
                 <UiPageHeading>{t('heading')}</UiPageHeading>
                 {messages.length > 0 && !isStreaming && (
                     <UiButton
-                        variant="text"
+                        variant="destructive-text"
                         size="sm"
-                        className="text-destructive hover:text-destructive"
                         onClick={() => setIsClearDialogOpen(true)}
                         disabled={isClearing}
                         IconLeft={<Trash2 />}
