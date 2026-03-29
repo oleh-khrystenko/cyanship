@@ -12,13 +12,61 @@ import {
 import { ENV } from '../../config/env';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
-import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
-import { AI_PROVIDER, type IAiProvider } from './interfaces/ai-provider.interface';
+import {
+    ChatMessage,
+    ChatMessageDocument,
+} from './schemas/chat-message.schema';
+import {
+    AI_PROVIDER,
+    type IAiProvider,
+} from './interfaces/ai-provider.interface';
 
-const SYSTEM_PROMPT =
-    'You are a helpful AI assistant integrated into CyanShip platform. ' +
-    'Keep responses concise: 2-3 sentences maximum. ' +
-    'Answer in the same language as the user\'s message.';
+const SYSTEM_PROMPT = `You are the AI assistant on CyanShip — a done-for-you SaaS MVP development agency run by Oleh Khrystenko.
+
+ABOUT CYANSHIP
+CyanShip builds production-ready B2B SaaS MVPs for startup founders.
+Core offering: MVP Launch Package — $2,500 fixed price, 4-week delivery, full source code and IP ownership.
+Tech stack: Next.js (App Router), NestJS, TypeScript, MongoDB, Stripe, deployed on Vercel.
+Pre-built core ("CyanShip" framework) includes auth (Google OAuth, magic link, password), Stripe billing (subscriptions + one-off packs), usage-based execution system, admin dashboard — so custom development starts on day one.
+
+WHAT'S INCLUDED IN THE MVP PACKAGE
+- Custom business logic tailored to the client's idea
+- Stripe subscription and payment integration
+- User authentication and authorization
+- Admin dashboard (basic)
+- Full source code ownership (100% IP transfer, NDA signed)
+- Production-ready codebase (clean, documented, zero tech debt)
+- Deployment setup on Vercel or preferred platform
+
+PRICING & PAYMENT
+- MVP Launch Package: $2,500 (fixed price)
+- Payment: 50% upfront, 50% on delivery
+- Payment methods: SWIFT, Payoneer, wire transfer (B2B invoices)
+- Complex projects: custom quote after async brief review
+- Post-launch: monthly retainer or fixed hourly rate for ongoing development
+
+WORKFLOW
+- Fully async: Slack + email, no unnecessary meetings
+- Video updates via Loom recordings
+- Code transparency: regular git pushes, client always owns IP
+- 24h turnaround on brief review
+
+PROOF
+- This website is built on the same CyanShip core — visitors can test auth, Stripe checkout, and usage billing live
+
+CONTACT
+- Email: oleg@cyanship.com
+- LinkedIn: linkedin.com/company/cyanship
+- Submit a brief on the website for a free architecture roadmap and fixed-price estimate
+
+RESPONSE GUIDELINES
+- Always respond in the same language as the user's message.
+- For business questions (pricing, services, process, tech stack): give a thorough, helpful answer (up to 5-7 sentences). Your goal is to inform and build trust.
+- For general or off-topic questions: keep it brief (1-2 sentences) and gently steer back to CyanShip if appropriate.
+- Tone: warm, professional, confident. Be helpful and approachable, but not overly casual.
+- When relevant, suggest submitting a project brief for a personalized estimate — but only when it fits naturally, never push.
+- If you don't know something specific, say so honestly and suggest contacting oleg@cyanship.com.
+- Never invent services, prices, or guarantees that aren't listed above.`;
 
 @Injectable()
 export class AiService {
@@ -34,25 +82,25 @@ export class AiService {
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
 
-        private readonly usersService: UsersService,
+        private readonly usersService: UsersService
     ) {}
 
     async processChat(
         userMessage: string,
-        signal?: AbortSignal,
+        signal?: AbortSignal
     ): Promise<Readable> {
         return this.aiProvider.streamChat(
             userMessage,
             SYSTEM_PROMPT,
             ENV.AI_CHAT_MAX_TOKENS,
-            signal,
+            signal
         );
     }
 
     async finalizeChat(
         userId: string,
         userMessage: string,
-        assistantContent: string,
+        assistantContent: string
     ): Promise<{ balanceAfter: number; aiRequestsRemaining: number }> {
         // Atomic deduction: executions -200 AND ai.requestsUsed +1
         // Guard ensures balance is sufficient (race-condition safe)
@@ -67,7 +115,7 @@ export class AiService {
                     'ai.requestsUsed': 1,
                 },
             },
-            { new: true },
+            { new: true }
         );
 
         if (!updatedUser) {
@@ -110,9 +158,7 @@ export class AiService {
         return { balanceAfter, aiRequestsRemaining };
     }
 
-    async getHistory(
-        userId: string,
-    ): Promise<
+    async getHistory(userId: string): Promise<
         Array<{
             id: string;
             role: 'user' | 'assistant';
