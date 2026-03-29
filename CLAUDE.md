@@ -6,14 +6,14 @@
 
 | Шар | Технологія | Версія |
 |-----|-----------|--------|
-| Core | TypeScript, Node.js, pnpm, Turborepo | TS 5.9, Node 20, pnpm 10 |
-| Frontend | Next.js (App Router), React, Zustand, TailwindCSS, next-intl | Next 16.0.1, React 19.2, Zustand 5, Tailwind 4, next-intl 4.4 |
+| Core | TypeScript, Node.js, pnpm, Turborepo | TS 5.9, Node 20, pnpm 10.30 |
+| Frontend | Next.js (App Router + Turbopack), React, Zustand, TailwindCSS, next-intl | Next 16.0.1, React 19.2, Zustand 5, Tailwind 4, next-intl 4.4 |
 | Forms | React Hook Form + @hookform/resolvers (Zod) | RHF 7.72 |
 | Backend | NestJS, Mongoose, ioredis, Passport | NestJS 11.1, Mongoose 8 |
 | Validation | Zod (shared contracts) | Zod 4.3 |
-| AI | Anthropic SDK (Claude Haiku) | — |
+| AI | Anthropic SDK (Claude Haiku 4.5) | SDK 0.80 |
 | Payments | Stripe | 20.4 |
-| Email | Resend | 6.9 |
+| Email | Resend + React Email | 6.9 |
 | CAPTCHA | Cloudflare Turnstile | — |
 | Тести | Jest, Supertest, MongoMemoryServer, @testing-library/react | Jest 30.2 |
 
@@ -31,7 +31,7 @@ apps/
 │   ├── common/          # decorators, filters, guards, interceptors, providers
 │   └── modules/         # auth, email, users, payments, agency, ai, reports, storage
 ├── web/src/
-│   ├── app/[locale]/    # pages: auth, (protected), (agency), banner-export
+│   ├── app/[locale]/    # pages: auth, (protected), (agency)
 │   ├── entities/        # agency, brand
 │   ├── features/        # auth, billing, agency, profile, change-lang, change-theme
 │   ├── widgets/         # header, agency/landing
@@ -270,6 +270,7 @@ docker compose up --build -d                          # prod-like
 - Web: Jest + jsdom, поруч з source файлами
 - Test env setup: `apps/api/src/test-setup.ts` — fallback env vars для unit тестів (placeholder values через `??=`, запобігає fail-fast crash)
 - CI: `.github/workflows/ci.yml` (lint → build → API tests з MongoDB service)
+- Deploy: `.github/workflows/deploy.yml` (SSH → Docker build → health checks → auto-rollback)
 
 <!-- MANUAL:START -->
 # Rules
@@ -297,8 +298,8 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 
 - **rawBody для Stripe**: `NestFactory.create(AppModule, { rawBody: true })` в `main.ts` — без цього signature verification ламається. Webhook endpoint використовує `RawBodyRequest`.
 - **AuthModule ↔ UsersModule circular**: обидва імпортують один одного через `forwardRef`. Порушення цього патерну = Nest DI crash.
-- **Refresh token rotation atomic**: `GETDEL` в Redis забезпечує single-use. Reuse detection (missing key) тригерить повний revoke всіх токенів користувача (security measure).
-- **Out-of-order webhooks**: Subscription billing updates використовують `lastProviderEventAt` guard в MongoDB atomic query. Старіші events тихо пропускаються. Це НЕ баг.
+- **Refresh token rotation atomic**: `GETDEL` в Redis забезпечує single-use. Reuse detection (missing key) тригерить повний revoke всіх токенів користувача (security measure). Grace period 10s для concurrent tabs.
+- **Out-of-order webhooks**: Subscription billing updates використовують `lastProviderEventAt` guard в MongoDB atomic query (`$lt`, не `$lte`). Старіші events тихо пропускаються. Це НЕ баг.
 - **Refresh cookie працює через proxy**: `next.config.ts` проксує `/api/*` на backend — тому `bid_refresh` cookie (httpOnly) видимий і в middleware, і в API (same origin).
 - **`test-setup.ts` fallback env**: Без цього файлу fail-fast policy крашить Jest ще до запуску тестів. Використовує `??=` оператор — не перезаписує реальні env vars.
 - **`packages/types` build order**: Має бути зібраний ДО `apps/api` та `apps/web`. Turborepo `dependsOn: ["^build"]` це забезпечує, але manual build без turbo зламається.
