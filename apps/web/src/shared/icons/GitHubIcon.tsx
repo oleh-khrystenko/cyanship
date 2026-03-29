@@ -4,7 +4,7 @@ const GitHubIcon = ({ className = 'h-5 w-5', ...props }: IconProps) => {
     return (
         <svg
             className={className}
-            viewBox="0 0 24 24"
+            viewBox="1 1 22 22"
             fill="currentColor"
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
