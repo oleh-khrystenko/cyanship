@@ -38,7 +38,7 @@ export default async function LocaleLayout({
     }
 
     return (
-        <html lang={locale} suppressHydrationWarning>
+        <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
             <head>
                 <meta name="darkreader-lock" />
                 <meta name="color-scheme" content="light dark" />

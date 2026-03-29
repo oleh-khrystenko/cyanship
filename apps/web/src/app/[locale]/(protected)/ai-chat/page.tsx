@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import Markdown from 'react-markdown';
 import { toast } from 'sonner';
 import { Send, Trash2 } from 'lucide-react';
 import {
@@ -320,14 +321,25 @@ export default function AiChatPage() {
                                             : 'bg-muted text-foreground'
                                     }`}
                                 >
-                                    {msg.content ||
-                                        (msg.role === 'assistant' && isStreaming && (
+                                    {msg.content ? (
+                                        msg.role === 'assistant' ? (
+                                            <div className="prose-chat">
+                                                <Markdown>
+                                                    {msg.content}
+                                                </Markdown>
+                                            </div>
+                                        ) : (
+                                            msg.content
+                                        )
+                                    ) : (
+                                        msg.role === 'assistant' && isStreaming && (
                                             <span className="inline-flex items-center gap-1">
                                                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
                                                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
                                                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:300ms]" />
                                             </span>
-                                        ))}
+                                        )
+                                    )}
                                 </div>
                             </div>
                         ))}

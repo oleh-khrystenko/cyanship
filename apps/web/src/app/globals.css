@@ -5,6 +5,3 @@
 @import '../shared/styles/animations.css';
 @import '../shared/styles/liquid-glass.css';
 
-html {
-    scroll-behavior: smooth;
-}
