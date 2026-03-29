@@ -351,7 +351,23 @@ export default function AiChatPage() {
                             size="sm"
                             autoGrow
                             suffix={
-                                <div className="flex justify-end">
+                                <div className="flex items-center justify-between">
+                                    {input.length >=
+                                    AI_CHAT_MESSAGE_MAX_LENGTH * 0.8 ? (
+                                        <span
+                                            className={`text-xs ${
+                                                input.length >=
+                                                AI_CHAT_MESSAGE_MAX_LENGTH
+                                                    ? 'text-destructive'
+                                                    : 'text-muted-foreground'
+                                            }`}
+                                        >
+                                            {input.length}/
+                                            {AI_CHAT_MESSAGE_MAX_LENGTH}
+                                        </span>
+                                    ) : (
+                                        <span />
+                                    )}
                                     <UiButton
                                         variant="filled"
                                         size="sm"
