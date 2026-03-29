@@ -30,6 +30,7 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
             size = 'md',
             label,
             error,
+            suffix,
             className,
             disabled,
             required,
@@ -73,8 +74,9 @@ const UiTextarea = forwardRef<HTMLTextAreaElement, UiTextareaProps>(
                         ref={ref}
                         disabled={disabled}
                         required={required}
-                        className="w-full resize-y bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+                        className={`w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed ${suffix ? 'resize-none' : 'resize-y'}`}
                     />
+                    {suffix}
                 </div>
                 {error && (
                     <p className="mt-1 text-sm text-destructive">{error}</p>

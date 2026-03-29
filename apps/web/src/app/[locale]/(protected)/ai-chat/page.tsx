@@ -16,6 +16,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
+import UiTextarea from '@/shared/ui/UiTextarea';
 import {
     streamAiChat,
     getChatHistory,
@@ -233,7 +234,12 @@ export default function AiChatPage() {
 
     const balance = user?.executions.balance ?? 0;
     const canAfford = balance >= AI_CHAT_COST;
-    const bonusGranted = user?.ai?.bonusGranted ?? false;
+    const ai = user?.ai ?? { requestsUsed: 0, bonusGranted: false };
+    const bonusGranted = ai.bonusGranted;
+    const totalLimit =
+        AI_CHAT_FREE_LIMIT + (bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
+    const triesRemaining = Math.max(0, totalLimit - ai.requestsUsed);
+    const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
     const formattedCost = AI_CHAT_COST.toLocaleString(toIntlLocale(locale));
 
     return (
@@ -252,6 +258,17 @@ export default function AiChatPage() {
                         {t('clear_history')}
                     </UiButton>
                 )}
+            </div>
+
+            {/* ── Info Bar ── */}
+            <div className="border-b border-border pb-3 text-xs text-muted-foreground">
+                <span>{t('balance_label', { balance: formattedBalance })}</span>
+                <span className="mx-2">·</span>
+                <span>
+                    {isLimitExhausted
+                        ? t('tries_exhausted')
+                        : t('tries_remaining', { count: triesRemaining })}
+                </span>
             </div>
 
             {/* ── Messages ── */}
@@ -322,37 +339,39 @@ export default function AiChatPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-end gap-2">
-                            <textarea
-                                ref={inputRef}
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={t('placeholder')}
-                                maxLength={AI_CHAT_MESSAGE_MAX_LENGTH}
-                                rows={1}
-                                disabled={isStreaming}
-                                className="flex-1 resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none disabled:opacity-50"
-                            />
-                            <UiButton
-                                variant="filled"
-                                size="sm"
-                                className="shrink-0"
-                                disabled={
-                                    isStreaming ||
-                                    !input.trim() ||
-                                    !canAfford
-                                }
-                                onClick={handleSubmit}
-                                aria-label={t('send')}
-                            >
-                                {isStreaming ? (
-                                    <UiSpinner size="sm" />
-                                ) : (
-                                    <Send className="h-4 w-4" />
-                                )}
-                            </UiButton>
-                        </div>
+                        <UiTextarea
+                            ref={inputRef}
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={t('placeholder')}
+                            maxLength={AI_CHAT_MESSAGE_MAX_LENGTH}
+                            rows={1}
+                            disabled={isStreaming}
+                            size="sm"
+                            suffix={
+                                <div className="flex justify-end">
+                                    <UiButton
+                                        variant="filled"
+                                        size="sm"
+                                        className="shrink-0"
+                                        disabled={
+                                            isStreaming ||
+                                            !input.trim() ||
+                                            !canAfford
+                                        }
+                                        onClick={handleSubmit}
+                                        aria-label={t('send')}
+                                    >
+                                        {isStreaming ? (
+                                            <UiSpinner size="sm" />
+                                        ) : (
+                                            <Send className="h-4 w-4" />
+                                        )}
+                                    </UiButton>
+                                </div>
+                            }
+                        />
                         <p className="mt-1.5 text-center text-xs text-muted-foreground">
                             {t('cost_info', { cost: formattedCost })}
                         </p>
