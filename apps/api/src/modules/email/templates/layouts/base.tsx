@@ -30,7 +30,7 @@ export function BaseLayout({ lang, children }: BaseLayoutProps) {
                     <Hr style={divider} />
                     <Section style={footerSection}>
                         <Link
-                            href="https://www.linkedin.com/company/cyanship"
+                            href="https://www.linkedin.com/in/oleh-khrystenko"
                             style={socialLink}
                         >
                             LinkedIn
@@ -41,6 +41,13 @@ export function BaseLayout({ lang, children }: BaseLayoutProps) {
                             style={socialLink}
                         >
                             X
+                        </Link>
+                        <span style={socialDot}>&middot;</span>
+                        <Link
+                            href="https://github.com/oleh-khrystenko"
+                            style={socialLink}
+                        >
+                            GitHub
                         </Link>
                     </Section>
                     <Text style={siteLink}>

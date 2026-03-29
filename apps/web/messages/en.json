@@ -177,6 +177,7 @@
             "email": "oleg@cyanship.com",
             "social_linkedin": "LinkedIn",
             "social_x": "X",
+            "social_github": "GitHub",
             "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
         }
     },
