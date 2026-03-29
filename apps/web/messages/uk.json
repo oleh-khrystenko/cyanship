@@ -305,7 +305,8 @@
         "cost_info": "{cost} виконань за повідомлення",
         "disclaimer": "AI може помилятися. Перевіряйте відповіді.",
         "limit_exhausted": "Безкоштовні спроби вичерпано. Заповніть бриф, щоб отримати ще 5.",
-        "all_tries_exhausted": "Всі спроби AI використано.",
+        "all_tries_exhausted_line1": "Всі спроби AI використано. Залишились питання?",
+        "all_tries_exhausted_line2": "Напишіть мені на <email>oleg@cyanship.com</email>",
         "request_bonus": "Заповнити бриф",
         "clear_dialog": {
             "title": "Очистити історію чату?",

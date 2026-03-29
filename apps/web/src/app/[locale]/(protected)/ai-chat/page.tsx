@@ -367,9 +367,21 @@ export default function AiChatPage() {
                                 </UiButton>
                             </>
                         ) : (
-                            <p className="text-sm text-muted-foreground">
-                                {t('all_tries_exhausted')}
-                            </p>
+                            <div className="flex flex-wrap justify-center gap-x-1 text-sm text-muted-foreground">
+                                <span>{t('all_tries_exhausted_line1')}</span>
+                                <span>
+                                    {t.rich('all_tries_exhausted_line2', {
+                                        email: (chunks) => (
+                                            <a
+                                                href="mailto:oleg@cyanship.com"
+                                                className="font-medium text-primary hover:underline"
+                                            >
+                                                {chunks}
+                                            </a>
+                                        ),
+                                    })}
+                                </span>
+                            </div>
                         )}
                     </div>
                 ) : (
