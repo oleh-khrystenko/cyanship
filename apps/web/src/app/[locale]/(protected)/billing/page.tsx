@@ -20,6 +20,7 @@ import { formatLocalDate, toIntlLocale } from '@/shared/lib';
 import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
+import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { DemoBanner } from '@/features/billing';
@@ -91,7 +92,7 @@ export default function BillingPage() {
 
 
     return (
-        <div className="mx-auto max-w-3xl space-y-10 px-4 py-12">
+        <UiPageContainer className="space-y-10 py-12">
             {/* ── Demo Banner ── */}
             <DemoBanner />
 
@@ -508,6 +509,6 @@ export default function BillingPage() {
                     ),
                 })}
             </p>
-        </div>
+        </UiPageContainer>
     );
 }

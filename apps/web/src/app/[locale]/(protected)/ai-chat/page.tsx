@@ -13,6 +13,7 @@ import {
 } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
+import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import {
@@ -236,7 +237,7 @@ export default function AiChatPage() {
     const formattedCost = AI_CHAT_COST.toLocaleString(toIntlLocale(locale));
 
     return (
-        <main className="mx-auto flex h-[calc(100dvh-var(--header-height,64px))] max-w-3xl flex-col px-4">
+        <UiPageContainer>
             {/* ── Header ── */}
             <div className="flex items-center justify-between py-6">
                 <UiPageHeading>{t('heading')}</UiPageHeading>
@@ -358,6 +359,6 @@ export default function AiChatPage() {
                     </>
                 )}
             </div>
-        </main>
+        </UiPageContainer>
     );
 }

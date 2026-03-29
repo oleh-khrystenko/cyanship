@@ -12,6 +12,7 @@ import {
     UiAvatarFallback,
 } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
+import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import AiChatTeaser from './AiChatTeaser';
 import SubscriptionStatus from './SubscriptionStatus';
@@ -36,7 +37,7 @@ export default function DashboardPage() {
     const formattedBalance = balance.toLocaleString(toIntlLocale(locale));
 
     return (
-        <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 md:py-16">
+        <UiPageContainer className="space-y-8 py-12 md:py-16">
             {/* ── Greeting ── */}
             <div className="flex items-center gap-4">
                 <UiAvatar size="xl">
@@ -95,6 +96,6 @@ export default function DashboardPage() {
 
             {/* ── Transaction History ── */}
             <TransactionHistory refreshTrigger={txVersion} />
-        </main>
+        </UiPageContainer>
     );
 }
