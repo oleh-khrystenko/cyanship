@@ -295,7 +295,6 @@
     },
     "ai_chat_page": {
         "heading": "AI Chat",
-        "back_to_dashboard": "Back to dashboard",
         "placeholder": "Type your message...",
         "send": "Send",
         "clear_history": "Clear history",

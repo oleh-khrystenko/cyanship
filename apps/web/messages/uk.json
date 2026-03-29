@@ -295,7 +295,6 @@
     },
     "ai_chat_page": {
         "heading": "AI Чат",
-        "back_to_dashboard": "Назад до дашборду",
         "placeholder": "Напишіть повідомлення...",
         "send": "Надіслати",
         "clear_history": "Очистити історію",

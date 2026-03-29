@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowLeft, Send, Trash2 } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
 import {
     AI_CHAT_COST,
     AI_CHAT_BONUS_AMOUNT,
@@ -14,6 +13,7 @@ import {
 } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
+import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import {
     streamAiChat,
@@ -238,19 +238,8 @@ export default function AiChatPage() {
     return (
         <main className="mx-auto flex h-[calc(100dvh-var(--header-height,64px))] max-w-3xl flex-col px-4">
             {/* ── Header ── */}
-            <div className="flex items-center justify-between border-b border-border py-3">
-                <div className="flex items-center gap-3">
-                    <Link
-                        href={`/${locale}/dashboard`}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={t('back_to_dashboard')}
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Link>
-                    <h1 className="text-lg font-semibold text-foreground">
-                        {t('heading')}
-                    </h1>
-                </div>
+            <div className="flex items-center justify-between py-6">
+                <UiPageHeading>{t('heading')}</UiPageHeading>
                 {messages.length > 0 && !isStreaming && (
                     <UiButton
                         variant="text"

@@ -20,6 +20,7 @@ import { formatLocalDate, toIntlLocale } from '@/shared/lib';
 import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
+import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { DemoBanner } from '@/features/billing';
 
@@ -96,9 +97,7 @@ export default function BillingPage() {
 
             {/* ── Page Header ── */}
             <div>
-                <h1 className="text-foreground text-3xl font-bold tracking-tight">
-                    {t('heading')}
-                </h1>
+                <UiPageHeading>{t('heading')}</UiPageHeading>
                 <p className="text-muted-foreground mt-2">{t('description')}</p>
             </div>
 
