@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
 import { Send, Trash2 } from 'lucide-react';
@@ -292,7 +293,16 @@ export default function AiChatPage() {
                         </>
                     )}
                 </div>
-                <span>{t('cost_info', { cost: formattedCost })}</span>
+                {canAfford ? (
+                    <span>{t('cost_info', { cost: formattedCost })}</span>
+                ) : (
+                    <Link
+                        href={`/${locale}/billing`}
+                        className="font-medium text-primary hover:underline"
+                    >
+                        {t('balance_top_up')}
+                    </Link>
+                )}
             </div>
 
             {/* ── Messages ── */}

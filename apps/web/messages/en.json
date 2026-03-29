@@ -303,6 +303,7 @@
         "tries_remaining_label": "free tries left",
         "tries_exhausted": "No free tries left",
         "cost_info": "{cost} executions per message",
+        "balance_top_up": "Top up balance",
         "disclaimer": "AI can make mistakes. Please double-check responses.",
         "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
         "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
