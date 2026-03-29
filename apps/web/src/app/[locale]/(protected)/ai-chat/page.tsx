@@ -296,7 +296,7 @@ export default function AiChatPage() {
             </div>
 
             {/* ── Messages ── */}
-            <div className="flex-1 overflow-y-auto py-4">
+            <div className="flex-1 overflow-y-auto pr-2 pt-4">
                 {isLoadingHistory ? (
                     <div className="flex h-full items-center justify-center">
                         <UiSpinner size="lg" />
