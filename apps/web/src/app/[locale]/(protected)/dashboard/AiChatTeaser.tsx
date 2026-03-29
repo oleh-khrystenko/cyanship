@@ -1,10 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { Bot } from 'lucide-react';
 import { AI_CHAT_FREE_LIMIT, AI_CHAT_BONUS_AMOUNT } from '@cyanship/types';
 
-import UiButton from '@/shared/ui/UiButton';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import { useAuthStore } from '@/stores/auth';
 
@@ -21,30 +20,25 @@ export default function AiChatTeaser() {
     const isExhausted = remaining === 0;
 
     return (
-        <UiSectionCard title={t('heading')}>
-            <div className="mt-2 flex items-start gap-4">
-                <div className="rounded-lg bg-primary/10 p-2.5">
-                    <Bot className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">
-                        {t('description')}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        {isExhausted
-                            ? t('limit_exhausted')
-                            : t('tries_remaining', { count: remaining })}
-                    </p>
-                </div>
-                <UiButton
-                    variant="filled"
-                    size="sm"
-                    as="link"
+        <UiSectionCard
+            title={t('heading')}
+            headerRight={
+                <Link
                     href={`/${locale}/ai-chat`}
+                    className="text-sm font-medium text-primary hover:underline"
                 >
-                    {t('cta_button')}
-                </UiButton>
-            </div>
+                    {t('cta_link')}
+                </Link>
+            }
+        >
+            <p className="mt-3 text-sm text-muted-foreground">
+                {t('description')}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+                {isExhausted
+                    ? t('limit_exhausted')
+                    : t('tries_remaining', { count: remaining })}
+            </p>
         </UiSectionCard>
     );
 }

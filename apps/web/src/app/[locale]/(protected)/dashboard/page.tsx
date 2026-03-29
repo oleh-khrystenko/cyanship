@@ -84,11 +84,11 @@ export default function DashboardPage() {
                 </p>
             </UiSectionCard>
 
-            {/* ── AI Chat Teaser ── */}
-            <AiChatTeaser />
-
             {/* ── Subscription Status ── */}
             {PAYMENTS_SUBSCRIPTION_ENABLED && <SubscriptionStatus />}
+
+            {/* ── AI Chat Teaser ── */}
+            <AiChatTeaser />
 
             {/* ── Spend Execution Buttons ── */}
             <SpendExecutionButtons onSpendSuccess={handleSpendSuccess} />

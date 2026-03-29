@@ -389,7 +389,7 @@
         "ai_chat_teaser": {
             "heading": "AI Chat",
             "description": "Try real AI integration — send a message and see how executions billing works live.",
-            "cta_button": "Try AI Chat",
+            "cta_link": "Open chat",
             "tries_remaining": "{count} free tries remaining",
             "limit_exhausted": "Free tries exhausted"
         }
