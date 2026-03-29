@@ -4,7 +4,7 @@ import { routing } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const PROTECTED_PATHS = ['/dashboard', '/profile', '/pay', '/billing'];
+const PROTECTED_PATHS = ['/dashboard', '/ai-chat', '/profile', '/pay', '/billing'];
 const AUTH_PATHS = ['/auth/signin'];
 const COOKIE_NAME = 'bid_refresh';
 const DELETED_COOKIE = 'bid_account_deleted';

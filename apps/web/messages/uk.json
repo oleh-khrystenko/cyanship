@@ -295,7 +295,7 @@
     },
     "ai_chat_page": {
         "heading": "AI Чат",
-        "back": "Назад до дашборду",
+        "back_to_dashboard": "Назад до дашборду",
         "placeholder": "Напишіть повідомлення...",
         "send": "Надіслати",
         "clear_history": "Очистити історію",
@@ -564,6 +564,7 @@
             "dashboard": "Дашборд",
             "profile": "Профіль",
             "billing": "Білінг",
+            "ai_chat": "AI Чат",
             "settings": "Налаштування",
             "menu": "Відкрити меню",
             "language": "Мова",

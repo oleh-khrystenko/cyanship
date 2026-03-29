@@ -239,9 +239,9 @@ Both endpoints call the same `BriefService.submit()` — one service, two entry 
 - `AiChatError` class with `code` and `status` for pre-stream HTTP errors
 - Uses existing `getAccessToken()` already exported from `apps/web/src/shared/api/client.ts`
 
-### 4.2 Chat Page (`apps/web/src/app/[locale]/(protected)/dashboard/chat/page.tsx`)
+### 4.2 Chat Page (`apps/web/src/app/[locale]/(protected)/ai-chat/page.tsx`)
 
-Separate full-page route under existing `(protected)/dashboard` layout — inherits `AuthGuard`, header, and auth store hydration.
+Separate full-page route under `(protected)` layout — inherits `AuthGuard`, header, and auth store hydration.
 
 Layout: flex column, full viewport height (minus header). Standard AI chat UX:
 - Header bar: title + "Clear history" button (when messages exist) + back link to dashboard
@@ -283,7 +283,7 @@ BriefForm modifications (`apps/web/src/features/agency/brief/BriefForm.tsx`):
 ### 4.4 Dashboard Teaser Card (`apps/web/src/app/[locale]/(protected)/dashboard/components/AiChatTeaser.tsx`)
 
 - Compact card (uses `UiSectionCard`) rendered on dashboard **above** `SpendExecutionButtons`
-- Shows: short AI integration description + CTA button (link to `/dashboard/chat`)
+- Shows: short AI integration description + CTA button (link to `/ai-chat`)
 - Displays current state from auth store: remaining AI tries or "Limit exhausted"
 - No chat logic — purely navigational
 
@@ -463,8 +463,8 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/api/src/modules/ai/dto/ai-chat.dto.ts` | Zod DTO |
 | `packages/types/src/contracts/ai-chat.ts` | Shared contracts + message types |
 | `apps/web/src/shared/api/ai.ts` | Frontend SSE client + history API |
-| `apps/web/src/app/[locale]/(protected)/dashboard/chat/page.tsx` | Full-page AI chat (separate route) |
-| `apps/web/src/app/[locale]/(protected)/dashboard/components/AiChatTeaser.tsx` | Dashboard teaser card with CTA link to chat |
+| `apps/web/src/app/[locale]/(protected)/ai-chat/page.tsx` | Full-page AI chat (standalone route) |
+| `apps/web/src/app/[locale]/(protected)/dashboard/AiChatTeaser.tsx` | Dashboard teaser card with CTA link to chat |
 
 ### Modified Files
 

@@ -15,6 +15,7 @@ interface UserMenuItem {
 
 export function useUserMenu(icons: {
     dashboard: ReactNode;
+    aiChat: ReactNode;
     profile: ReactNode;
     billing: ReactNode;
     logout: ReactNode;
@@ -34,6 +35,12 @@ export function useUserMenu(icons: {
             label: t('dashboard'),
             icon: icons.dashboard,
             route: `/${locale}/dashboard`,
+        },
+        {
+            value: 'ai-chat',
+            label: t('ai_chat'),
+            icon: icons.aiChat,
+            route: `/${locale}/ai-chat`,
         },
         {
             value: 'profile',

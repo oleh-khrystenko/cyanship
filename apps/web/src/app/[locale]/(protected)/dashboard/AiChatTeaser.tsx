@@ -40,7 +40,7 @@ export default function AiChatTeaser() {
                     variant="filled"
                     size="sm"
                     as="link"
-                    href={`/${locale}/dashboard/chat`}
+                    href={`/${locale}/ai-chat`}
                 >
                     {t('cta_button')}
                 </UiButton>
