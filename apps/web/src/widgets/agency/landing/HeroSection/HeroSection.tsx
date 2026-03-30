@@ -1,6 +1,8 @@
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
+import ambientGlow from '../../../../../public/images/ambient-glow.png';
 import StartBriefButton from '../StartBriefButton';
 
 const HeroSection = () => {
@@ -9,30 +11,24 @@ const HeroSection = () => {
 
     return (
         <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
-            {/* Ambient glow — radial gradient instead of blur for consistent cross-browser rendering */}
-            <div
-                className="pointer-events-none absolute inset-0"
-                aria-hidden="true"
-            >
-                <div className="absolute top-1/3 left-1/2 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 dark:hidden"
-                    style={{ background: 'radial-gradient(circle, oklch(0.65 0.16 195 / 0.04) 0%, transparent 70%)' }}
-                />
-                <div className="absolute top-1/3 left-1/2 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 hidden dark:block"
-                    style={{ background: 'radial-gradient(circle, oklch(0.70 0.18 195 / 0.07) 0%, transparent 70%)' }}
-                />
-                <div className="absolute top-1/3 left-1/2 size-[min(28rem,70vw)] -translate-x-1/2 -translate-y-1/2 dark:hidden"
-                    style={{ background: 'radial-gradient(circle, oklch(0.65 0.16 195 / 0.03) 0%, transparent 60%)' }}
-                />
-                <div className="absolute top-1/3 left-1/2 size-[min(28rem,70vw)] -translate-x-1/2 -translate-y-1/2 hidden dark:block"
-                    style={{ background: 'radial-gradient(circle, oklch(0.70 0.18 195 / 0.05) 0%, transparent 60%)' }}
-                />
-            </div>
-
             <div className="relative container px-6">
                 <div className="mx-auto max-w-3xl text-center">
-                    <p className="text-primary text-sm font-medium tracking-widest uppercase">
-                        {tBrand('slogan')}
-                    </p>
+                    <div className="relative">
+                        <p className="text-primary text-sm font-medium tracking-widest uppercase">
+                            {tBrand('slogan')}
+                        </p>
+
+                        {/* Ambient glow — pre-baked image for consistent cross-browser rendering */}
+                        <Image
+                            src={ambientGlow}
+                            alt=""
+                            aria-hidden="true"
+                            priority
+                            quality={100}
+                            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50 dark:opacity-100"
+                            sizes="1088px"
+                        />
+                    </div>
 
                     <h1 className="mt-6 text-3xl font-bold tracking-tight min-[412px]:text-4xl md:text-5xl lg:text-6xl">
                         {t('heading_line1')}
