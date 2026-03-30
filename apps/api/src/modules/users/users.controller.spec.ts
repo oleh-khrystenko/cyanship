@@ -69,6 +69,7 @@ describe('UsersController', () => {
                     preferredLang: 'en',
                     termsVersion: null,
                     billing: null,
+                    ai: null,
                 },
             });
         });

@@ -77,6 +77,12 @@ export const ENV = {
         getEnvVar('ACCOUNT_DELETION_GRACE_DAYS'),
         10
     ),
+
+    ANTHROPIC_API_KEY: getEnvVar('ANTHROPIC_API_KEY'),
+    AI_CHAT_MAX_TOKENS: parseInt(getEnvVar('AI_CHAT_MAX_TOKENS'), 10),
+    AI_CHAT_IP_LIMIT: parseInt(getEnvVar('AI_CHAT_IP_LIMIT'), 10),
+    AI_CHAT_FREE_LIMIT: parseInt(getEnvVar('AI_CHAT_FREE_LIMIT'), 10),
+    AI_CHAT_BONUS_AMOUNT: parseInt(getEnvVar('AI_CHAT_BONUS_AMOUNT'), 10),
 };
 
 // Validate payment toggles

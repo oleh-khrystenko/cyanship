@@ -10,8 +10,15 @@ import {
 } from '@cyanship/types';
 
 import { EmailService } from '../../email/email.service';
+import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Brief } from '../schemas/brief.schema';
 import type { SubmitBriefDto } from '../dto/submit-brief.dto';
+
+export interface SubmitBriefOptions {
+    dto: SubmitBriefDto;
+    userId?: string;
+    requestAiBonus?: boolean;
+}
 
 @Injectable()
 export class BriefService {
@@ -19,10 +26,16 @@ export class BriefService {
 
     constructor(
         @InjectModel(Brief.name) private readonly briefModel: Model<Brief>,
+        @InjectModel(User.name)
+        private readonly userModel: Model<UserDocument>,
         private readonly emailService: EmailService
     ) {}
 
-    async submit(dto: SubmitBriefDto): Promise<void> {
+    async submit(
+        options: SubmitBriefOptions
+    ): Promise<{ aiBonusGranted: boolean }> {
+        const { dto, userId, requestAiBonus } = options;
+
         const brief = await this.briefModel.create({
             name: dto.name,
             email: dto.email,
@@ -32,6 +45,8 @@ export class BriefService {
             source: dto.source ?? null,
             lang: dto.lang ?? null,
             status: BRIEF_STATUS.NEW,
+            ...(userId && { userId }),
+            ...(requestAiBonus && { requestAiBonus: true }),
         });
 
         this.logger.log(
@@ -68,5 +83,29 @@ export class BriefService {
                 }
             });
         });
+
+        // Grant one-time AI bonus if requested by authenticated user
+        let aiBonusGranted = false;
+
+        if (requestAiBonus && userId) {
+            const result = await this.userModel.findOneAndUpdate(
+                {
+                    _id: userId,
+                    'ai.bonusGranted': { $ne: true },
+                },
+                { $set: { 'ai.bonusGranted': true } },
+                { new: true }
+            );
+
+            aiBonusGranted = result !== null;
+
+            if (aiBonusGranted) {
+                this.logger.log(
+                    `AI bonus granted to user ${userId} via brief ${brief._id.toString()}`
+                );
+            }
+        }
+
+        return { aiBonusGranted };
     }
 }

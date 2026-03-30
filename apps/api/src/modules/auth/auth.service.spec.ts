@@ -7,7 +7,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 
-import { REDIS_CLIENT } from '../../common/providers/redis.provider';
+import { REDIS_CLIENT } from '../../common/modules/redis.module';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { EmailService } from '../email/email.service';

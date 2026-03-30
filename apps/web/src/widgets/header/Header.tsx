@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { LogOut, User, CreditCard, Menu, LayoutDashboard } from 'lucide-react';
+import { LogOut, User, CreditCard, Menu, LayoutDashboard, Bot } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
 const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
@@ -58,6 +58,7 @@ const Header = () => {
 
     const { visibleItems, handleSelect, initials } = useUserMenu({
         dashboard: <LayoutDashboard />,
+        aiChat: <Bot />,
         profile: <User />,
         billing: <CreditCard />,
         logout: <LogOut />,

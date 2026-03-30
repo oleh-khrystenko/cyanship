@@ -170,7 +170,7 @@ export class UsersService {
     async getRecentTransactions(
         userId: string,
         limit: number = 10,
-        before?: Date,
+        before?: Date
     ): Promise<{ items: ExecutionTransactionLean[]; hasMore: boolean }> {
         const filter: Record<string, unknown> = {
             userId: new Types.ObjectId(userId),

@@ -19,6 +19,11 @@ export const UserExecutionsSchema = z.object({
     freeReportUsed: z.boolean(),
 });
 
+export const UserAiSchema = z.object({
+    requestsUsed: z.number().int().min(0),
+    bonusGranted: z.boolean(),
+});
+
 export const UserSchema = z.object({
     id: z.string(),
     email: z.string().email(),
@@ -32,6 +37,7 @@ export const UserSchema = z.object({
     createdAt: z.coerce.date(),
     lastLoginAt: z.coerce.date().optional(),
     billing: UserBillingSchema.nullable().optional(),
+    ai: UserAiSchema.nullable().optional(),
     termsAcceptedAt: z.coerce.date().nullable().optional(),
     termsVersion: z.string().nullable().optional(),
 });
@@ -46,6 +52,7 @@ export const UserProfileSchema = UserSchema.pick({
     accountDeletionRequestedAt: true,
     preferredLang: true,
     billing: true,
+    ai: true,
     termsVersion: true,
 });
 
