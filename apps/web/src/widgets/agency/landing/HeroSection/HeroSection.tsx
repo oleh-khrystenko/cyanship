@@ -21,8 +21,10 @@ const HeroSection = () => {
                         {tBrand('slogan')}
                     </p>
 
-                    <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-                        {t('heading')}
+                    <h1 className="mt-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+                        {t('heading_line1')}
+                        <br />
+                        {t('heading_line2')}
                     </h1>
 
                     <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">

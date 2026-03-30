@@ -26,7 +26,8 @@
             "get_started": "Contact"
         },
         "hero": {
-            "heading": "From Idea to Revenue in 4 Weeks.",
+            "heading_line1": "From Idea to Revenue",
+            "heading_line2": "in 4 Weeks.",
             "description": "Production-ready B2B platforms — AI, payments, and auth baked in from day one. Built on a battle-tested Next.js & NestJS core. Zero agency overhead.",
             "cta_primary": "Request a Technical Estimate",
             "cta_secondary": "Try Live Demo"
