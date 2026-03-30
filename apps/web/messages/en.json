@@ -14,7 +14,7 @@
     },
     "landing_page": {
         "head": {
-            "title": "CyanShip – From Idea to Paying Customers in 4 Weeks",
+            "title": "CyanShip – From Idea to Revenue in 4 Weeks",
             "description": "B2B platform development with AI, payments, and auth built in. Next.js + NestJS. Fast time-to-market, zero agency overhead."
         },
         "nav": {
@@ -26,7 +26,7 @@
             "get_started": "Contact"
         },
         "hero": {
-            "heading": "From Idea to Paying Customers in 4 Weeks.",
+            "heading": "From Idea to Revenue in 4 Weeks.",
             "description": "Production-ready B2B platforms — AI, payments, and auth baked in from day one. Built on a battle-tested Next.js & NestJS core. Zero agency overhead.",
             "cta_primary": "Request a Technical Estimate",
             "cta_secondary": "Try Live Demo"
