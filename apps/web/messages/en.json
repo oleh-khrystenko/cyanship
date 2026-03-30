@@ -14,39 +14,40 @@
     },
     "landing_page": {
         "head": {
-            "title": "CyanShip – Launch Your SaaS MVP in 4 Weeks",
-            "description": "Production-ready B2B platform development on Next.js and NestJS. Fast time-to-market with zero agency overhead."
+            "title": "CyanShip – From Idea to Revenue in 4 Weeks",
+            "description": "B2B platform development with AI, payments, and auth built in. Next.js + NestJS. Fast time-to-market, zero agency overhead."
         },
         "nav": {
             "approach": "Approach",
             "proof": "Proof",
-            "portfolio": "Portfolio",
+            "demo": "Demo",
             "workflow": "Workflow",
             "pricing": "Pricing",
             "get_started": "Contact"
         },
         "hero": {
-            "heading": "Launch Your SaaS MVP in 4 Weeks.",
-            "description": "We build production-ready B2B platforms using a battle-tested Next.js & NestJS core. Fast time-to-market. Zero agency overhead.",
+            "heading_line1": "From Idea to Revenue",
+            "heading_line2": "in 4 Weeks.",
+            "description": "Production-ready B2B platforms — AI, payments, and auth baked in from day one. Built on a battle-tested Next.js & NestJS core. Zero agency overhead.",
             "cta_primary": "Request a Technical Estimate",
             "cta_secondary": "Try Live Demo"
         },
         "problem": {
             "label": "Approach",
             "heading": "Skip the Boilerplate. Focus on Business.",
-            "paragraph_1": "Most startup budgets are burned on rebuilding authentication, database models, and payment integrations. I've already built that.",
+            "paragraph_1": "Most startup budgets are burned on rebuilding authentication, payment integrations, and now — AI features. I've already built all of it.",
             "paragraph_2": "With \"CyanShip\" — my pre-built core — we bypass the setup phase and start building your custom logic on day one.",
             "feature_architecture_title": "Zero Tech Debt",
             "feature_architecture_description": "Built on industry standards. When you hire an in-house team, they can take over instantly without rewriting legacy code.",
             "feature_typed_title": "Built to Scale",
             "feature_typed_description": "Built for absolute reliability. Your product won't crash during critical investor demos or sudden traffic spikes.",
             "feature_scale_title": "Scale Without Rewrites",
-            "feature_scale_description": "A solid foundation with built-in Stripe billing. It handles your first 10 paying customers just as easily as your first 10,000."
+            "feature_scale_description": "A solid foundation with built-in Stripe billing and AI integration. Handles your first 10 paying customers just as easily as your first 10,000."
         },
         "dogfooding": {
             "label": "Proof",
             "heading": "You Are Looking at the Code Right Now",
-            "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
+            "description": "I don't just sell this architecture; I run my business on it. This site — including its AI chat, Stripe billing, and auth — is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow",
             "step_2": "Click the Stripe checkout to see the payment integration",
             "step_3": "Test the usage-based billing logic",
@@ -101,19 +102,19 @@
                     "subscription_activation": "Subscription activated",
                     "pack_purchase": "Execution pack purchased",
                     "plan_change": "Plan changed",
-                    "billing_reset": "Billing reset"
+                    "billing_reset": "Billing reset",
+                    "ai_chat": "AI Chat"
                 },
                 "time_just_now": "Just now",
                 "time_minutes_ago": "{count}m ago",
                 "time_hours_ago": "{count}h ago"
             }
         },
-        "portfolio": {
-            "label": "Portfolio",
-            "heading": "Product Thinking Over Just Coding",
-            "paragraph_1": "I respect client NDAs and never share proprietary code.",
-            "paragraph_2": "To see how I handle UI/UX, user flows, and complex business logic, check out Wish Hub — my independent SaaS project. It showcases my ability to take an idea and deliver a complete, user-centric product from scratch.",
-            "video_label": "Watch Loom Video"
+        "demo_video": {
+            "label": "Demo",
+            "heading": "See It Working. All of It.",
+            "description": "Two-minute walkthrough: auth, Stripe billing, AI chat, usage tracking — running on the same CyanShip core your product will use.",
+            "video_label": "Watch Demo"
         },
         "workflow": {
             "label": "Workflow",
@@ -136,7 +137,7 @@
             "include_1": "Custom business logic development",
             "include_2": "Stripe subscription/payment integration",
             "include_3": "User authentication & authorization",
-            "include_4": "Admin dashboard (basic)",
+            "include_4": "AI chat integration with usage-based billing",
             "include_5": "Full source code ownership",
             "cta": "Request a Technical Estimate",
             "faq_heading": "Frequently Asked Questions",
@@ -149,7 +150,9 @@
             "faq_4_q": "Can you help with hosting?",
             "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package.",
             "faq_5_q": "What happens after the MVP is launched?",
-            "faq_5_a": "You have full control. You can take the clean, documented Next.js/NestJS codebase to an in-house team, or retain me for ongoing feature development via a monthly retainer or fixed hourly rate."
+            "faq_5_a": "You have full control. You can take the clean, documented Next.js/NestJS codebase to an in-house team, or retain me for ongoing feature development via a monthly retainer or fixed hourly rate.",
+            "faq_6_q": "Does the MVP include AI features?",
+            "faq_6_a": "Yes. The CyanShip core ships with a production-ready AI chat module — streaming responses, per-message billing, rate limiting, and abuse protection. You can use it as-is for customer support or adapt it to your domain. No extra cost."
         },
         "footer_cta": {
             "label": "Contact",
@@ -170,13 +173,14 @@
             "col_legal": "Legal",
             "col_connect": "Connect",
             "nav_pricing": "Pricing",
-            "nav_portfolio": "Portfolio",
+            "nav_demo": "Demo",
             "nav_proof": "Proof",
             "legal_terms": "Terms of Service",
             "legal_privacy": "Privacy Policy",
             "email": "oleg@cyanship.com",
             "social_linkedin": "LinkedIn",
             "social_x": "X",
+            "social_github": "GitHub",
             "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
         }
     },
@@ -286,6 +290,34 @@
         },
         "agency": {
             "captcha_failed": "Security verification failed. Please try again."
+        },
+        "ai": {
+            "ai_limit_exhausted": "AI request limit has been reached.",
+            "ai_rate_limit_exceeded": "Too many AI requests. Please try again later.",
+            "ai_provider_error": "AI is temporarily unavailable. Please try again later."
+        }
+    },
+    "ai_chat_page": {
+        "heading": "AI Chat",
+        "placeholder": "Type your message...",
+        "send": "Send",
+        "clear_history": "Clear history",
+        "empty_state": "Send a message to start a conversation with AI.",
+        "balance_unit": "executions",
+        "tries_remaining_label": "free tries left",
+        "tries_exhausted": "No free tries left",
+        "cost_info": "{cost} executions per message",
+        "balance_top_up": "Top up balance",
+        "disclaimer": "AI can make mistakes. Please double-check responses.",
+        "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
+        "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
+        "all_tries_exhausted_line2": "Drop me a line at <email>oleg@cyanship.com</email>",
+        "request_bonus": "Submit Brief",
+        "clear_dialog": {
+            "title": "Clear chat history?",
+            "description": "All messages will be permanently deleted. This action cannot be undone.",
+            "confirm": "Clear history",
+            "cancel": "Cancel"
         }
     },
     "brief_form": {
@@ -361,12 +393,20 @@
                 "subscription_activation": "Subscription activated",
                 "pack_purchase": "Execution pack purchased",
                 "plan_change": "Plan changed",
-                "billing_reset": "Billing reset"
+                "billing_reset": "Billing reset",
+                "ai_chat": "AI Chat"
             },
             "load_more": "Load more",
             "time_just_now": "Just now",
             "time_minutes_ago": "{count} min ago",
             "time_hours_ago": "{count} hrs ago"
+        },
+        "ai_chat_teaser": {
+            "heading": "AI Chat",
+            "description": "Try real AI integration — send a message and see how executions billing works live.",
+            "cta_link": "Open chat",
+            "tries_remaining": "{count} free tries remaining",
+            "limit_exhausted": "Free tries exhausted"
         }
     },
     "profile_page": {
@@ -539,6 +579,7 @@
             "dashboard": "Dashboard",
             "profile": "Profile",
             "billing": "Billing",
+            "ai_chat": "AI Chat",
             "settings": "Settings",
             "menu": "Open menu",
             "language": "Language",

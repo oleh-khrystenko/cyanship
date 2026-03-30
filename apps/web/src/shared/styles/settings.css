@@ -33,3 +33,58 @@
         @apply text-foreground;
     }
 }
+
+.prose-chat {
+    & h3 {
+        @apply text-sm font-semibold mt-3 mb-1.5;
+    }
+
+    & h3:first-child {
+        @apply mt-0;
+    }
+
+    & p {
+        @apply my-1.5;
+    }
+
+    & p:first-child {
+        @apply mt-0;
+    }
+
+    & p:last-child {
+        @apply mb-0;
+    }
+
+    & ul,
+    & ol {
+        @apply my-1.5 pl-5;
+    }
+
+    & ul {
+        @apply list-disc;
+    }
+
+    & ol {
+        @apply list-decimal;
+    }
+
+    & li {
+        @apply my-0.5;
+    }
+
+    & strong {
+        @apply font-semibold;
+    }
+
+    & hr {
+        @apply my-3 border-current opacity-20;
+    }
+
+    & a {
+        @apply underline underline-offset-2;
+    }
+
+    & code {
+        @apply text-xs px-1 py-0.5 rounded bg-muted;
+    }
+}

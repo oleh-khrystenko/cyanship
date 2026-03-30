@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { isOnboardingComplete } from '@cyanship/types';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
+import UiPageContainer from '@/shared/ui/UiPageContainer';
+import UiPageHeading from '@/shared/ui/UiPageHeading';
 import { useAuthStore } from '@/stores/auth';
 import {
     ProfileForm,
@@ -33,10 +35,10 @@ function ProfileContent() {
     };
 
     return (
-        <main className="mx-auto max-w-2xl px-6 py-16">
-            <h1 className="text-foreground text-3xl font-bold tracking-tight">
+        <UiPageContainer className="py-16">
+            <UiPageHeading>
                 {mode === 'new' ? t('new_heading') : t('heading')}
-            </h1>
+            </UiPageHeading>
 
             <div className="mt-10 space-y-6">
                 <ProfileForm
@@ -51,7 +53,7 @@ function ProfileContent() {
 
                 {mode === null && <DangerZone />}
             </div>
-        </main>
+        </UiPageContainer>
     );
 }
 

@@ -1,10 +1,11 @@
 import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
-import { LinkedInIcon, XIcon } from '@/shared/icons';
+import { GitHubIcon, LinkedInIcon, XIcon } from '@/shared/icons';
 
 const navLinks = [
     { key: 'pricing', href: '#pricing' },
+    // { key: 'demo', href: '#demo' },
     { key: 'proof', href: '#dogfooding' },
 ] as const;
 
@@ -16,13 +17,18 @@ const legalLinks = [
 const socialLinks = [
     {
         key: 'linkedin',
-        href: 'https://www.linkedin.com/company/cyanship',
+        href: 'https://www.linkedin.com/in/oleh-khrystenko',
         icon: LinkedInIcon,
     },
     {
         key: 'x',
         href: 'https://x.com/cyanshiphq',
         icon: XIcon,
+    },
+    {
+        key: 'github',
+        href: 'https://github.com/oleh-khrystenko',
+        icon: GitHubIcon,
     },
 ] as const;
 
@@ -44,7 +50,7 @@ const LandingFooter = () => {
                     </div>
 
                     {/* 3 columns */}
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7">
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-3 lg:col-span-7">
                         {/* Product */}
                         <div>
                             <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">

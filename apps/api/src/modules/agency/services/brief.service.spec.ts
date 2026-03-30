@@ -8,6 +8,7 @@ import {
 
 import { BriefService } from './brief.service';
 import { Brief } from '../schemas/brief.schema';
+import { User } from '../../users/schemas/user.schema';
 import { EmailService } from '../../email/email.service';
 
 jest.mock('../../../config/env', () => ({
@@ -16,6 +17,10 @@ jest.mock('../../../config/env', () => ({
 
 const mockBriefModel = {
     create: jest.fn(),
+};
+
+const mockUserModel = {
+    findOneAndUpdate: jest.fn(),
 };
 
 const mockEmailService = {
@@ -54,6 +59,10 @@ describe('BriefService', () => {
                     useValue: mockBriefModel,
                 },
                 {
+                    provide: getModelToken(User.name),
+                    useValue: mockUserModel,
+                },
+                {
                     provide: EmailService,
                     useValue: mockEmailService,
                 },
@@ -64,7 +73,7 @@ describe('BriefService', () => {
     });
 
     it('saves brief with correct fields and status new', async () => {
-        await service.submit(testDto);
+        await service.submit({ dto: testDto });
 
         expect(mockBriefModel.create).toHaveBeenCalledWith({
             name: 'John Doe',
@@ -85,18 +94,18 @@ describe('BriefService', () => {
             source: undefined,
         };
 
-        await service.submit(dtoWithoutOptionals);
+        await service.submit({ dto: dtoWithoutOptionals });
 
         expect(mockBriefModel.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 deadline: null,
                 source: null,
-            })
+            }),
         );
     });
 
     it('calls sendBriefConfirmation with correct params', async () => {
-        await service.submit(testDto);
+        await service.submit({ dto: testDto });
 
         expect(mockEmailService.sendBriefConfirmation).toHaveBeenCalledWith({
             email: 'john@example.com',
@@ -106,7 +115,7 @@ describe('BriefService', () => {
     });
 
     it('calls sendBriefNotification with correct params including labels', async () => {
-        await service.submit(testDto);
+        await service.submit({ dto: testDto });
 
         expect(mockEmailService.sendBriefNotification).toHaveBeenCalledWith({
             name: 'John Doe',
@@ -121,25 +130,104 @@ describe('BriefService', () => {
     });
 
     it('sets deadlineLabel to null when deadline is not provided', async () => {
-        await service.submit({ ...testDto, deadline: undefined });
+        await service.submit({
+            dto: { ...testDto, deadline: undefined },
+        });
 
         expect(mockEmailService.sendBriefNotification).toHaveBeenCalledWith(
             expect.objectContaining({
                 deadline: null,
                 deadlineLabel: null,
-            })
+            }),
         );
     });
 
     it('saves brief even when emails fail (Promise.allSettled)', async () => {
         mockEmailService.sendBriefConfirmation.mockRejectedValue(
-            new Error('SMTP down')
+            new Error('SMTP down'),
         );
         mockEmailService.sendBriefNotification.mockRejectedValue(
-            new Error('SMTP down')
+            new Error('SMTP down'),
         );
 
-        await expect(service.submit(testDto)).resolves.toBeUndefined();
+        const result = await service.submit({ dto: testDto });
+        expect(result).toEqual({ aiBonusGranted: false });
         expect(mockBriefModel.create).toHaveBeenCalled();
+    });
+
+    describe('AI bonus', () => {
+        it('grants AI bonus when requestAiBonus and userId provided', async () => {
+            mockUserModel.findOneAndUpdate.mockResolvedValue({
+                _id: 'user-id',
+                ai: { requestsUsed: 5, bonusGranted: true },
+            });
+
+            const result = await service.submit({
+                dto: testDto,
+                userId: 'user-id',
+                requestAiBonus: true,
+            });
+
+            expect(result).toEqual({ aiBonusGranted: true });
+            expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+                {
+                    _id: 'user-id',
+                    'ai.bonusGranted': { $ne: true },
+                },
+                { $set: { 'ai.bonusGranted': true } },
+                { new: true },
+            );
+        });
+
+        it('does not grant AI bonus if already granted', async () => {
+            mockUserModel.findOneAndUpdate.mockResolvedValue(null);
+
+            const result = await service.submit({
+                dto: testDto,
+                userId: 'user-id',
+                requestAiBonus: true,
+            });
+
+            expect(result).toEqual({ aiBonusGranted: false });
+        });
+
+        it('does not attempt bonus grant without userId', async () => {
+            const result = await service.submit({
+                dto: testDto,
+                requestAiBonus: true,
+            });
+
+            expect(result).toEqual({ aiBonusGranted: false });
+            expect(mockUserModel.findOneAndUpdate).not.toHaveBeenCalled();
+        });
+
+        it('does not attempt bonus grant without requestAiBonus', async () => {
+            const result = await service.submit({
+                dto: testDto,
+                userId: 'user-id',
+            });
+
+            expect(result).toEqual({ aiBonusGranted: false });
+            expect(mockUserModel.findOneAndUpdate).not.toHaveBeenCalled();
+        });
+
+        it('saves brief with userId and requestAiBonus fields', async () => {
+            mockUserModel.findOneAndUpdate.mockResolvedValue({
+                _id: 'user-id',
+            });
+
+            await service.submit({
+                dto: testDto,
+                userId: 'user-id',
+                requestAiBonus: true,
+            });
+
+            expect(mockBriefModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: 'user-id',
+                    requestAiBonus: true,
+                }),
+            );
+        });
     });
 });

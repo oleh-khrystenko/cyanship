@@ -12,7 +12,7 @@ type StartBriefButtonProps = Omit<
 const StartBriefButton = (props: StartBriefButtonProps) => {
     const openBrief = useBriefDialogStore((s) => s.open);
 
-    return <UiButton onClick={openBrief} {...props} />;
+    return <UiButton onClick={() => openBrief()} {...props} />;
 };
 
 export default StartBriefButton;

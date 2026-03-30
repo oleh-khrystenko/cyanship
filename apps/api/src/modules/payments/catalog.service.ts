@@ -9,7 +9,7 @@ import {
     type ExecutionPackItem,
 } from '@cyanship/types';
 import { ENV } from '../../config/env';
-import { REDIS_CLIENT } from '../../common/providers/redis.provider';
+import { REDIS_CLIENT } from '../../common/modules/redis.module';
 
 const CACHE_KEY = 'payments:catalog';
 const CACHE_TTL_SEC = 300; // 5 minutes

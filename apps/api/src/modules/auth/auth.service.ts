@@ -19,7 +19,7 @@ import {
 } from '@cyanship/types';
 import Redis from 'ioredis';
 
-import { REDIS_CLIENT } from '../../common/providers/redis.provider';
+import { REDIS_CLIENT } from '../../common/modules/redis.module';
 import { ENV, parseLockoutThresholds } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';

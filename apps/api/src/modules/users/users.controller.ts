@@ -63,6 +63,7 @@ export class UsersController {
                     user.accountDeletionRequestedAt ?? null,
                 preferredLang: user.preferredLang,
                 termsVersion: user.termsVersion ?? null,
+                ai: user.ai ?? null,
                 billing: user.billing
                     ? {
                           hasActiveSubscription:

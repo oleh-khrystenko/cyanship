@@ -15,7 +15,6 @@ import {
     OrphanedProviderCustomerSchema,
 } from './schemas/orphaned-provider-customer.schema';
 import { UsersModule } from '../users/users.module';
-import { redisProvider } from '../../common/providers/redis.provider';
 
 @Module({
     imports: [
@@ -38,7 +37,6 @@ import { redisProvider } from '../../common/providers/redis.provider';
         CatalogService,
         StripeService,
         paymentProviderProvider,
-        redisProvider,
     ],
     exports: [PaymentsService, CatalogService],
 })
