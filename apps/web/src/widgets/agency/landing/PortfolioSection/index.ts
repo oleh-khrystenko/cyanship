@@ -1,1 +1,1 @@
-export { default as PortfolioSection } from './PortfolioSection';
+export { default as DemoVideoSection } from './PortfolioSection';

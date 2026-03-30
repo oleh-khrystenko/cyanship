@@ -20,7 +20,7 @@
         "nav": {
             "approach": "Approach",
             "proof": "Proof",
-            "portfolio": "Portfolio",
+            "demo": "Demo",
             "workflow": "Workflow",
             "pricing": "Pricing",
             "get_started": "Contact"
@@ -108,12 +108,11 @@
                 "time_hours_ago": "{count}h ago"
             }
         },
-        "portfolio": {
-            "label": "Portfolio",
-            "heading": "Product Thinking Over Just Coding",
-            "paragraph_1": "I respect client NDAs and never share proprietary code.",
-            "paragraph_2": "To see how I handle UI/UX, user flows, and complex business logic, check out Wish Hub — my independent SaaS project. It showcases my ability to take an idea and deliver a complete, user-centric product from scratch.",
-            "video_label": "Watch Loom Video"
+        "demo_video": {
+            "label": "Demo",
+            "heading": "See It Working. All of It.",
+            "description": "Two-minute walkthrough: auth, Stripe billing, AI chat, usage tracking — running on the same CyanShip core your product will use.",
+            "video_label": "Watch Demo"
         },
         "workflow": {
             "label": "Workflow",
@@ -172,7 +171,7 @@
             "col_legal": "Legal",
             "col_connect": "Connect",
             "nav_pricing": "Pricing",
-            "nav_portfolio": "Portfolio",
+            "nav_demo": "Demo",
             "nav_proof": "Proof",
             "legal_terms": "Terms of Service",
             "legal_privacy": "Privacy Policy",
