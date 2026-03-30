@@ -42,7 +42,7 @@ export class AiController {
         @CurrentUser() user: UserDocument,
         @Body() dto: AiChatDto,
         @Req() req: Request,
-        @Res() res: Response,
+        @Res() res: Response
     ): Promise<void> {
         const userId = user._id.toString();
 
@@ -74,7 +74,7 @@ export class AiController {
         try {
             const stream = await this.aiService.processChat(
                 dto.message,
-                abortController.signal,
+                abortController.signal
             );
 
             let assistantContent = '';
@@ -93,7 +93,7 @@ export class AiController {
                 const result = await this.aiService.finalizeChat(
                     userId,
                     dto.message,
-                    assistantContent,
+                    assistantContent
                 );
 
                 this.writeSSE<AiChatDoneEvent>(res, {
@@ -105,7 +105,7 @@ export class AiController {
         } catch (err) {
             if (!aborted) {
                 this.logger.error(
-                    `AI chat error for user ${userId}: ${(err as Error).message}`,
+                    `AI chat error for user ${userId}: ${(err as Error).message}`
                 );
                 this.writeSSE<AiChatErrorEvent>(res, {
                     type: AI_CHAT_EVENT.ERROR,
@@ -123,7 +123,7 @@ export class AiController {
     @Get('chat/history')
     @UseGuards(JwtActiveGuard)
     async getHistory(
-        @CurrentUser() user: UserDocument,
+        @CurrentUser() user: UserDocument
     ): Promise<{ data: { messages: ChatMessageItem[] } }> {
         const messages = await this.aiService.getHistory(user._id.toString());
         return { data: { messages } };
@@ -133,7 +133,7 @@ export class AiController {
     @UseGuards(JwtActiveGuard)
     @HttpCode(HttpStatus.OK)
     async clearHistory(
-        @CurrentUser() user: UserDocument,
+        @CurrentUser() user: UserDocument
     ): Promise<{ data: { cleared: boolean } }> {
         await this.aiService.clearHistory(user._id.toString());
         return { data: { cleared: true } };

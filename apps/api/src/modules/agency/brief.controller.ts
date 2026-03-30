@@ -13,14 +13,14 @@ import { TurnstileService } from './services/turnstile.service';
 export class BriefController {
     constructor(
         private readonly briefService: BriefService,
-        private readonly turnstileService: TurnstileService,
+        private readonly turnstileService: TurnstileService
     ) {}
 
     @Post('brief')
     @SkipOnboarding()
     async submitBrief(
         @Body() dto: SubmitBriefDto,
-        @Ip() ip: string,
+        @Ip() ip: string
     ): Promise<{ data: null; code: string }> {
         await this.turnstileService.verify(dto.captchaToken, ip);
         await this.briefService.submit({ dto });
@@ -36,7 +36,7 @@ export class BriefController {
     async submitAuthenticatedBrief(
         @Body() dto: SubmitBriefDto,
         @Ip() ip: string,
-        @CurrentUser() user: UserDocument,
+        @CurrentUser() user: UserDocument
     ): Promise<{ data: { aiBonusGranted: boolean }; code: string }> {
         await this.turnstileService.verify(dto.captchaToken, ip);
 

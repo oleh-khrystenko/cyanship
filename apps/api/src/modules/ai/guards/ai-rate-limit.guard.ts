@@ -33,20 +33,20 @@ export class AiRateLimitGuard implements CanActivate {
 
     constructor(
         @Inject(REDIS_CLIENT)
-        private readonly redis: Redis,
+        private readonly redis: Redis
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
         const user = request.user as UserDocument;
 
-        await this.checkAccountLimit(user);
+        this.checkAccountLimit(user);
         await this.checkIpLimit(request);
 
         return true;
     }
 
-    private async checkAccountLimit(user: UserDocument): Promise<void> {
+    private checkAccountLimit(user: UserDocument): void {
         const ai = user.ai ?? { requestsUsed: 0, bonusGranted: false };
         const limit =
             ENV.AI_CHAT_FREE_LIMIT +
@@ -62,7 +62,9 @@ export class AiRateLimitGuard implements CanActivate {
 
     private async checkIpLimit(request: Request): Promise<void> {
         const ip =
-            (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+            (request.headers['x-forwarded-for'] as string)
+                ?.split(',')[0]
+                ?.trim() ||
             request.ip ||
             'unknown';
 
@@ -73,7 +75,7 @@ export class AiRateLimitGuard implements CanActivate {
                 INCR_WITH_EXPIRE_SCRIPT,
                 1,
                 key,
-                AI_IP_TTL_SECONDS,
+                AI_IP_TTL_SECONDS
             )) as number;
 
             if (count > ENV.AI_CHAT_IP_LIMIT) {
@@ -82,17 +84,17 @@ export class AiRateLimitGuard implements CanActivate {
                         code: RESPONSE_CODE.AI_RATE_LIMIT_EXCEEDED,
                         message: 'AI rate limit exceeded',
                     },
-                    HttpStatus.TOO_MANY_REQUESTS,
+                    HttpStatus.TOO_MANY_REQUESTS
                 );
             }
         } catch (err) {
             if (err instanceof HttpException) throw err;
 
             this.logger.error(
-                `Redis error during AI IP rate limit check: ${(err as Error).message}`,
+                `Redis error during AI IP rate limit check: ${(err as Error).message}`
             );
             throw new InternalServerErrorException(
-                'AI service temporarily unavailable',
+                'AI service temporarily unavailable'
             );
         }
     }

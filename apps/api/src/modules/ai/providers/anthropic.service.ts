@@ -13,11 +13,11 @@ export class AnthropicService implements IAiProvider {
         this.client = new Anthropic({ apiKey: ENV.ANTHROPIC_API_KEY });
     }
 
-    async streamChat(
+    streamChat(
         userMessage: string,
         systemPrompt: string,
         maxTokens: number,
-        signal?: AbortSignal,
+        signal?: AbortSignal
     ): Promise<Readable> {
         const messageStream = this.client.messages.stream(
             {
@@ -26,7 +26,7 @@ export class AnthropicService implements IAiProvider {
                 system: systemPrompt,
                 messages: [{ role: 'user', content: userMessage }],
             },
-            { signal },
+            { signal }
         );
 
         const readable = new Readable({
@@ -46,6 +46,6 @@ export class AnthropicService implements IAiProvider {
             readable.destroy(err);
         });
 
-        return readable;
+        return Promise.resolve(readable);
     }
 }

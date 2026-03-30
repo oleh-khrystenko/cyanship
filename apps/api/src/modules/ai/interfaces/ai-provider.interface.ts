@@ -5,7 +5,7 @@ export interface IAiProvider {
         userMessage: string,
         systemPrompt: string,
         maxTokens: number,
-        signal?: AbortSignal,
+        signal?: AbortSignal
     ): Promise<Readable>;
 }
 

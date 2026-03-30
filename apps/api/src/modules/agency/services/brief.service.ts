@@ -28,11 +28,11 @@ export class BriefService {
         @InjectModel(Brief.name) private readonly briefModel: Model<Brief>,
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
-        private readonly emailService: EmailService,
+        private readonly emailService: EmailService
     ) {}
 
     async submit(
-        options: SubmitBriefOptions,
+        options: SubmitBriefOptions
     ): Promise<{ aiBonusGranted: boolean }> {
         const { dto, userId, requestAiBonus } = options;
 
@@ -94,14 +94,14 @@ export class BriefService {
                     'ai.bonusGranted': { $ne: true },
                 },
                 { $set: { 'ai.bonusGranted': true } },
-                { new: true },
+                { new: true }
             );
 
             aiBonusGranted = result !== null;
 
             if (aiBonusGranted) {
                 this.logger.log(
-                    `AI bonus granted to user ${userId} via brief ${brief._id.toString()}`,
+                    `AI bonus granted to user ${userId} via brief ${brief._id.toString()}`
                 );
             }
         }

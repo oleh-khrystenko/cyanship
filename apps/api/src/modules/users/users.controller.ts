@@ -179,13 +179,13 @@ export class UsersController {
     async getExecutionTransactions(
         @CurrentUser() user: UserDocument,
         @Query('limit') limitParam?: string,
-        @Query('before') beforeParam?: string,
+        @Query('before') beforeParam?: string
     ): Promise<{
         data: { items: ExecutionTransactionItem[]; hasMore: boolean };
     }> {
         const limit = Math.min(
             Math.max(parseInt(limitParam || '10', 10) || 10, 1),
-            50,
+            50
         );
         const before = beforeParam ? new Date(beforeParam) : undefined;
         if (before && isNaN(before.getTime())) {
@@ -196,7 +196,7 @@ export class UsersController {
             await this.usersService.getRecentTransactions(
                 user._id.toString(),
                 limit,
-                before,
+                before
             );
 
         return {

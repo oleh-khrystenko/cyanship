@@ -100,7 +100,7 @@ describe('BriefService', () => {
             expect.objectContaining({
                 deadline: null,
                 source: null,
-            }),
+            })
         );
     });
 
@@ -138,16 +138,16 @@ describe('BriefService', () => {
             expect.objectContaining({
                 deadline: null,
                 deadlineLabel: null,
-            }),
+            })
         );
     });
 
     it('saves brief even when emails fail (Promise.allSettled)', async () => {
         mockEmailService.sendBriefConfirmation.mockRejectedValue(
-            new Error('SMTP down'),
+            new Error('SMTP down')
         );
         mockEmailService.sendBriefNotification.mockRejectedValue(
-            new Error('SMTP down'),
+            new Error('SMTP down')
         );
 
         const result = await service.submit({ dto: testDto });
@@ -175,7 +175,7 @@ describe('BriefService', () => {
                     'ai.bonusGranted': { $ne: true },
                 },
                 { $set: { 'ai.bonusGranted': true } },
-                { new: true },
+                { new: true }
             );
         });
 
@@ -226,7 +226,7 @@ describe('BriefService', () => {
                 expect.objectContaining({
                     userId: 'user-id',
                     requestAiBonus: true,
-                }),
+                })
             );
         });
     });
