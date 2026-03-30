@@ -9,13 +9,23 @@ const HeroSection = () => {
 
     return (
         <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
-            {/* Ambient glow — backlighting effect */}
+            {/* Ambient glow — radial gradient instead of blur for consistent cross-browser rendering */}
             <div
                 className="pointer-events-none absolute inset-0"
                 aria-hidden="true"
             >
-                <div className="bg-primary/[0.04] dark:bg-primary/[0.07] absolute top-1/3 left-1/2 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[160px]" />
-                <div className="bg-primary/[0.03] dark:bg-primary/[0.05] absolute top-1/3 left-1/2 size-[min(28rem,70vw)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]" />
+                <div className="absolute top-1/3 left-1/2 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 dark:hidden"
+                    style={{ background: 'radial-gradient(circle, oklch(0.65 0.16 195 / 0.04) 0%, transparent 70%)' }}
+                />
+                <div className="absolute top-1/3 left-1/2 size-[min(48rem,100vw)] -translate-x-1/2 -translate-y-1/2 hidden dark:block"
+                    style={{ background: 'radial-gradient(circle, oklch(0.70 0.18 195 / 0.07) 0%, transparent 70%)' }}
+                />
+                <div className="absolute top-1/3 left-1/2 size-[min(28rem,70vw)] -translate-x-1/2 -translate-y-1/2 dark:hidden"
+                    style={{ background: 'radial-gradient(circle, oklch(0.65 0.16 195 / 0.03) 0%, transparent 60%)' }}
+                />
+                <div className="absolute top-1/3 left-1/2 size-[min(28rem,70vw)] -translate-x-1/2 -translate-y-1/2 hidden dark:block"
+                    style={{ background: 'radial-gradient(circle, oklch(0.70 0.18 195 / 0.05) 0%, transparent 60%)' }}
+                />
             </div>
 
             <div className="relative container px-6">
