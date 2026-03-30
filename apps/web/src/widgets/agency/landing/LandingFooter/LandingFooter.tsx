@@ -50,7 +50,7 @@ const LandingFooter = () => {
                     </div>
 
                     {/* 3 columns */}
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7">
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-3 lg:col-span-7">
                         {/* Product */}
                         <div>
                             <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
