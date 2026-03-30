@@ -15,7 +15,7 @@
     "landing_page": {
         "head": {
             "title": "CyanShip – Launch Your SaaS MVP in 4 Weeks",
-            "description": "Production-ready B2B platform development on Next.js and NestJS. Fast time-to-market with zero agency overhead."
+            "description": "B2B platform development with AI, payments, and auth built in. Next.js + NestJS. Fast time-to-market, zero agency overhead."
         },
         "nav": {
             "approach": "Approach",
@@ -27,26 +27,26 @@
         },
         "hero": {
             "heading": "Launch Your SaaS MVP in 4 Weeks.",
-            "description": "We build production-ready B2B platforms using a battle-tested Next.js & NestJS core. Fast time-to-market. Zero agency overhead.",
+            "description": "Production-ready B2B platforms — AI, payments, and auth baked in from day one. Built on a battle-tested Next.js & NestJS core. Zero agency overhead.",
             "cta_primary": "Request a Technical Estimate",
             "cta_secondary": "Try Live Demo"
         },
         "problem": {
             "label": "Approach",
             "heading": "Skip the Boilerplate. Focus on Business.",
-            "paragraph_1": "Most startup budgets are burned on rebuilding authentication, database models, and payment integrations. I've already built that.",
+            "paragraph_1": "Most startup budgets are burned on rebuilding authentication, payment integrations, and now — AI features. I've already built all of it.",
             "paragraph_2": "With \"CyanShip\" — my pre-built core — we bypass the setup phase and start building your custom logic on day one.",
             "feature_architecture_title": "Zero Tech Debt",
             "feature_architecture_description": "Built on industry standards. When you hire an in-house team, they can take over instantly without rewriting legacy code.",
             "feature_typed_title": "Built to Scale",
             "feature_typed_description": "Built for absolute reliability. Your product won't crash during critical investor demos or sudden traffic spikes.",
             "feature_scale_title": "Scale Without Rewrites",
-            "feature_scale_description": "A solid foundation with built-in Stripe billing. It handles your first 10 paying customers just as easily as your first 10,000."
+            "feature_scale_description": "A solid foundation with built-in Stripe billing and AI integration. Handles your first 10 paying customers just as easily as your first 10,000."
         },
         "dogfooding": {
             "label": "Proof",
             "heading": "You Are Looking at the Code Right Now",
-            "description": "I don't just sell this architecture; I run my business on it. This landing page is built on the exact same CyanShip core your product will use.",
+            "description": "I don't just sell this architecture; I run my business on it. This site — including its AI chat, Stripe billing, and auth — is built on the exact same CyanShip core your product will use.",
             "step_1": "Create an account to test the auth flow",
             "step_2": "Click the Stripe checkout to see the payment integration",
             "step_3": "Test the usage-based billing logic",
@@ -136,7 +136,7 @@
             "include_1": "Custom business logic development",
             "include_2": "Stripe subscription/payment integration",
             "include_3": "User authentication & authorization",
-            "include_4": "Admin dashboard (basic)",
+            "include_4": "AI chat integration with usage-based billing",
             "include_5": "Full source code ownership",
             "cta": "Request a Technical Estimate",
             "faq_heading": "Frequently Asked Questions",
@@ -149,7 +149,9 @@
             "faq_4_q": "Can you help with hosting?",
             "faq_4_a": "I'll set up your deployment on Vercel or your preferred platform as part of the package.",
             "faq_5_q": "What happens after the MVP is launched?",
-            "faq_5_a": "You have full control. You can take the clean, documented Next.js/NestJS codebase to an in-house team, or retain me for ongoing feature development via a monthly retainer or fixed hourly rate."
+            "faq_5_a": "You have full control. You can take the clean, documented Next.js/NestJS codebase to an in-house team, or retain me for ongoing feature development via a monthly retainer or fixed hourly rate.",
+            "faq_6_q": "Does the MVP include AI features?",
+            "faq_6_a": "Yes. The CyanShip core ships with a production-ready AI chat module — streaming responses, per-message billing, rate limiting, and abuse protection. You can use it as-is for customer support or adapt it to your domain. No extra cost."
         },
         "footer_cta": {
             "label": "Contact",

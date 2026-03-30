@@ -10,7 +10,7 @@ const includeKeys = [
     'include_5',
 ] as const;
 
-const faqKeys = [1, 2, 3, 4, 5] as const;
+const faqKeys = [1, 2, 3, 4, 5, 6] as const;
 
 const PricingSection = () => {
     const t = useTranslations('landing_page.pricing');
