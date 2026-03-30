@@ -35,9 +35,11 @@ const HeroSection = () => {
                         <br />
                         {t('heading_line2')}
                     </h1>
+
                     <p className="text-muted-foreground mx-auto mt-6 max-w-3xl text-lg leading-relaxed md:text-xl">
                         {t('description')}
                     </p>
+
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
                         <StartBriefButton
                             variant="filled"
