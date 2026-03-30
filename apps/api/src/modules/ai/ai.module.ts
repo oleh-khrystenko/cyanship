@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { redisProvider } from '../../common/providers/redis.provider';
 import { UsersModule } from '../users/users.module';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
@@ -26,7 +25,6 @@ import {
         AnthropicService,
         aiProviderProvider,
         AiRateLimitGuard,
-        redisProvider,
     ],
 })
 export class AiModule {}

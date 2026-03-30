@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { OnboardingInterceptor } from './common/interceptors/onboarding.interceptor';
 import { ENV } from './config/env';
+import { RedisModule } from './common/modules/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { UsersModule } from './modules/users/users.module';
@@ -27,6 +28,7 @@ import { AiModule } from './modules/ai/ai.module';
         }),
         ScheduleModule.forRoot(),
         MongooseModule.forRoot(ENV.MONGODB_URI),
+        RedisModule,
         AuthModule,
         EmailModule,
         UsersModule,

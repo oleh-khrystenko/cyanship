@@ -13,7 +13,7 @@ import Redis from 'ioredis';
 import { Request } from 'express';
 import { RESPONSE_CODE } from '@cyanship/types';
 
-import { REDIS_CLIENT } from '../../../common/providers/redis.provider';
+import { REDIS_CLIENT } from '../../../common/modules/redis.module';
 import { ENV } from '../../../config/env';
 import { UserDocument } from '../../users/schemas/user.schema';
 
