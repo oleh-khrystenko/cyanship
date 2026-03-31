@@ -1,5 +1,4 @@
 import { useTranslations } from 'next-intl';
-import { Play } from 'lucide-react';
 
 const DemoVideoSection = () => {
     const t = useTranslations('landing_page.demo_video');
@@ -19,17 +18,15 @@ const DemoVideoSection = () => {
                     </p>
                 </div>
 
-                {/* Video placeholder */}
-                <div className="mx-auto mt-12 max-w-4xl">
-                    <div className="flex aspect-video cursor-pointer items-center justify-center rounded-lg border border-border bg-card transition-colors hover:bg-secondary">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="flex size-16 items-center justify-center rounded-full bg-foreground">
-                                <Play className="ml-1 size-6 text-background" />
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                                {t('video_label')}
-                            </span>
-                        </div>
+                <div className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-lg border border-border">
+                    <div className="relative aspect-video">
+                        <iframe
+                            src={`https://customer-${process.env.NEXT_PUBLIC_CF_STREAM_CUSTOMER_CODE}.cloudflarestream.com/${process.env.NEXT_PUBLIC_CF_STREAM_VIDEO_ID}/iframe`}
+                            title={t('heading')}
+                            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 size-full border-0"
+                        />
                     </div>
                 </div>
             </div>

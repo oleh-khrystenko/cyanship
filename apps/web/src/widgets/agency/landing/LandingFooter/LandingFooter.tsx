@@ -5,7 +5,7 @@ import { GitHubIcon, LinkedInIcon, XIcon } from '@/shared/icons';
 
 const navLinks = [
     { key: 'pricing', href: '#pricing' },
-    // { key: 'demo', href: '#demo' },
+    { key: 'demo', href: '#demo' },
     { key: 'proof', href: '#dogfooding' },
 ] as const;
 

@@ -8,7 +8,7 @@ import { useBriefDialogStore } from '@/stores/briefDialog';
 const navKeys = [
     { key: 'approach', href: '#problem' },
     { key: 'proof', href: '#dogfooding' },
-    // { key: 'demo', href: '#demo' },
+    { key: 'demo', href: '#demo' },
     { key: 'workflow', href: '#workflow' },
     { key: 'pricing', href: '#pricing' },
     { key: 'get_started', href: '#footer-cta' },
