@@ -113,8 +113,12 @@
         "demo_video": {
             "label": "Demo",
             "heading": "See It Working. All of It.",
-            "description": "Two-minute walkthrough: auth, Stripe billing, AI chat, usage tracking — running on the same CyanShip core your product will use.",
-            "video_label": "Watch Demo"
+            "description": "You've tried the individual features. Now watch the complete flow — from first sign-in to AI chat — in one uncut walkthrough.",
+            "highlight_auth": "Google sign-in — three seconds, you're in",
+            "highlight_billing": "Stripe checkout with a live payment",
+            "highlight_ai": "AI chat — streaming response, auto-billed",
+            "highlight_dashboard": "Dashboard — balance updates in real time",
+            "note": "Full source code. Zero tech debt. This is your starting point."
         },
         "workflow": {
             "label": "Workflow",
