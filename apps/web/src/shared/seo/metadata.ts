@@ -85,11 +85,20 @@ export async function fetchMetadata({
             siteName: 'CyanShip',
             locale: locale === 'uk' ? 'uk_UA' : 'en_US',
             type: 'website',
+            images: [
+                {
+                    url: `${BASE_URL}/images/og-banner.png`,
+                    width: 1200,
+                    height: 630,
+                    alt: title,
+                },
+            ],
         },
         twitter: {
             card: 'summary_large_image',
             title,
             description,
+            images: [`${BASE_URL}/images/og-banner.png`],
         },
     };
 }
