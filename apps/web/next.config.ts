@@ -13,6 +13,7 @@ const apiInternalUrl = process.env.API_INTERNAL_URL;
 
 const nextConfig: NextConfig = {
     output: 'standalone',
+    compress: false,
     reactStrictMode: true,
     images: {
         remotePatterns: [
