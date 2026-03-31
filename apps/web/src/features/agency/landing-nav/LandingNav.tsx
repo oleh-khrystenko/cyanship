@@ -4,15 +4,18 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useHeaderNavStore } from '@/stores/headerNav';
 import { useBriefDialogStore } from '@/stores/briefDialog';
+import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
 
-const navKeys = [
+const allNavKeys = [
     { key: 'approach', href: '#problem' },
     { key: 'proof', href: '#dogfooding' },
-    { key: 'demo', href: '#demo' },
+    { key: 'demo', href: '#demo', enabled: DEMO_VIDEO_ENABLED },
     { key: 'workflow', href: '#workflow' },
     { key: 'pricing', href: '#pricing' },
     { key: 'get_started', href: '#footer-cta' },
 ] as const;
+
+const navKeys = allNavKeys.filter((item) => !('enabled' in item) || item.enabled);
 
 export default function LandingNav() {
     const tNav = useTranslations('landing_page.nav');

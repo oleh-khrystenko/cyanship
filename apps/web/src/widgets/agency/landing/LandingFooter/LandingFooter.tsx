@@ -2,12 +2,15 @@ import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
 import { GitHubIcon, LinkedInIcon, XIcon } from '@/shared/icons';
+import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
 
-const navLinks = [
+const allNavLinks = [
     { key: 'pricing', href: '#pricing' },
-    { key: 'demo', href: '#demo' },
+    { key: 'demo', href: '#demo', enabled: DEMO_VIDEO_ENABLED },
     { key: 'proof', href: '#dogfooding' },
 ] as const;
+
+const navLinks = allNavLinks.filter((item) => !('enabled' in item) || item.enabled);
 
 const legalLinks = [
     { key: 'terms', href: '/terms' },
