@@ -41,3 +41,6 @@ export const PAYMENTS_ONE_OFF_ENABLED =
         process.env.NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED,
         'NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED'
     ) === 'true';
+
+export const DEMO_VIDEO_ENABLED =
+    !!process.env.NEXT_PUBLIC_DEMO_VIDEO_URL;
