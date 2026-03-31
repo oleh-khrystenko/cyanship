@@ -24,7 +24,7 @@ const DemoVideoSection = () => {
                 <div className="mt-12 overflow-hidden rounded-lg border border-border">
                     <div className="relative aspect-video">
                         <iframe
-                            src={`https://customer-${process.env.NEXT_PUBLIC_CF_STREAM_CUSTOMER_CODE}.cloudflarestream.com/${process.env.NEXT_PUBLIC_CF_STREAM_VIDEO_ID}/iframe`}
+                            src={process.env.NEXT_PUBLIC_DEMO_VIDEO_URL}
                             title={t('heading')}
                             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
                             allowFullScreen
