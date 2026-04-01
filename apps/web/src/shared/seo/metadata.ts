@@ -87,7 +87,7 @@ export async function fetchMetadata({
             type: 'website',
             images: [
                 {
-                    url: `${BASE_URL}/images/og-banner.png`,
+                    url: `${BASE_URL}/images/og-banner-v2.png`,
                     width: 1200,
                     height: 630,
                     alt: title,
@@ -98,7 +98,7 @@ export async function fetchMetadata({
             card: 'summary_large_image',
             title,
             description,
-            images: [`${BASE_URL}/images/og-banner.png`],
+            images: [`${BASE_URL}/images/og-banner-v2.png`],
         },
     };
 }
