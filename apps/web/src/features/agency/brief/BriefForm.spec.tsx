@@ -17,6 +17,25 @@ jest.mock('next-intl', () => ({
 const mockSubmitBrief = jest.fn();
 jest.mock('@/shared/api/agency', () => ({
     submitBrief: (...args: unknown[]) => mockSubmitBrief(...args),
+    submitAuthenticatedBrief: jest.fn(),
+}));
+
+jest.mock('@/shared/api/auth', () => ({
+    getMe: jest.fn(),
+}));
+
+jest.mock('@/stores/auth', () => ({
+    useAuthStore: Object.assign(
+        (selector: (s: any) => any) => selector({ user: null }),
+        { getState: () => ({ user: null, setUser: jest.fn() }) }
+    ),
+}));
+
+jest.mock('@/stores/briefDialog', () => ({
+    useBriefDialogStore: Object.assign(
+        (selector: (s: any) => any) => selector({ requestAiBonus: false }),
+        { getState: () => ({ requestAiBonus: false }) }
+    ),
 }));
 
 // Mock mapApiCode

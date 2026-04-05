@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { CheckEmailSchema } from '@cyanship/types';
 import type { MagicLinkPurpose } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
+import UiLink from '@/shared/ui/UiLink';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiInput from '@/shared/ui/UiInput';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
@@ -331,26 +332,26 @@ function SigninContent() {
             >
                 {t.rich('terms_agree', {
                     terms: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/terms`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                     privacy: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/privacy`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                 })}
             </UiCheckbox>

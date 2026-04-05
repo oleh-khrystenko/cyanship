@@ -13,6 +13,7 @@ import type { MagicLinkPurpose } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
+import UiLink from '@/shared/ui/UiLink';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
@@ -298,26 +299,26 @@ const ProofAuth = () => {
             >
                 {t.rich('terms_agree', {
                     terms: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/terms`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                     privacy: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/privacy`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                 })}
             </UiCheckbox>

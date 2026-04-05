@@ -205,7 +205,7 @@ describe('client', () => {
 
             expect(mockAxiosPost).toHaveBeenCalledWith(
                 'http://localhost:4000/api/auth/refresh',
-                null,
+                { timezone: expect.any(String) },
                 { withCredentials: true }
             );
             expect(getAccessToken()).toBe('new-token-123');

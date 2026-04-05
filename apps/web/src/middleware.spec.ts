@@ -92,7 +92,7 @@ describe('middleware', () => {
     });
 
     describe('auth paths', () => {
-        it('redirects /uk/auth/signin to profile when cookie exists', () => {
+        it('redirects /uk/auth/signin to dashboard when cookie exists', () => {
             const req = createMockRequest('/uk/auth/signin', {
                 bid_refresh: 'some-token',
             });
@@ -100,7 +100,7 @@ describe('middleware', () => {
 
             expect(response.status).toBe(307);
             const url: URL = mockRedirect.mock.calls[0][0];
-            expect(url.pathname).toBe('/uk/profile');
+            expect(url.pathname).toBe('/uk/dashboard');
         });
 
         it('passes through /uk/auth/signin when no cookie', () => {

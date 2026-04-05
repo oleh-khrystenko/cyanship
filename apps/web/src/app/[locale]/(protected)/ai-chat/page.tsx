@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
 import { Send, Trash2 } from 'lucide-react';
@@ -15,6 +14,7 @@ import {
 } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
+import UiLink from '@/shared/ui/UiLink';
 import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
@@ -296,12 +296,13 @@ export default function AiChatPage() {
                 {canAfford ? (
                     <span>{t('cost_info', { cost: formattedCost })}</span>
                 ) : (
-                    <Link
+                    <UiLink
+                        as="link"
                         href={`/${locale}/billing`}
-                        className="font-medium text-primary hover:underline"
+                        className="font-medium"
                     >
                         {t('balance_top_up')}
-                    </Link>
+                    </UiLink>
                 )}
             </div>
 
@@ -382,12 +383,12 @@ export default function AiChatPage() {
                                 <span>
                                     {t.rich('all_tries_exhausted_line2', {
                                         email: (chunks) => (
-                                            <a
+                                            <UiLink
                                                 href="mailto:oleg@cyanship.com"
-                                                className="font-medium text-primary hover:underline"
+                                                className="font-medium"
                                             >
                                                 {chunks}
-                                            </a>
+                                            </UiLink>
                                         ),
                                     })}
                                 </span>

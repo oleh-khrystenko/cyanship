@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { getFullName, getInitials } from '@cyanship/types';
 import { useAuthStore } from '@/stores/auth';
 import { toIntlLocale } from '@/shared/lib';
@@ -12,6 +11,7 @@ import {
     UiAvatarFallback,
 } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
+import UiLink from '@/shared/ui/UiLink';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import AiChatTeaser from './AiChatTeaser';
@@ -66,12 +66,13 @@ export default function DashboardPage() {
                 title={t('balance_label')}
                 headerRight={
                     balance === 0 ? (
-                        <Link
+                        <UiLink
+                            as="link"
                             href={`/${locale}/billing`}
-                            className="text-sm font-medium text-primary hover:underline"
+                            className="text-sm font-medium"
                         >
                             {t('balance_top_up')}
-                        </Link>
+                        </UiLink>
                     ) : undefined
                 }
             >
