@@ -7,7 +7,7 @@ import {
     UiSheetHeader,
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
-import { useMediaQuery } from '@/shared/lib';
+import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 import { useDogfoodingSheetStore } from '@/stores/dogfoodingSheet';
 import ProofWindow from './ProofWindow';
 

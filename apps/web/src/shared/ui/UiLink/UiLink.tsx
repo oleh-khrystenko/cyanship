@@ -1,20 +1,22 @@
 import Link from 'next/link';
-import { Ref, forwardRef } from 'react';
-import { composeClasses } from '@/shared/lib/utils';
+import { forwardRef } from 'react';
+import { composeClasses } from '@/shared/lib';
 import type { UiLinkProps, UiLinkVariant } from './types';
 
 const variantStyles: Record<UiLinkVariant, string> = {
-    primary: 'text-primary hover:underline transition-colors',
-    'primary-underline':
-        'text-primary underline hover:no-underline transition-colors',
-    muted: 'text-muted-foreground hover:text-foreground transition-colors',
-    subtle: 'underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground',
+    primary: 'text-primary hover:underline',
+    'primary-underline': 'text-primary underline hover:no-underline',
+    muted: 'text-muted-foreground hover:text-foreground',
+    subtle: 'underline decoration-muted-foreground/30 underline-offset-4 hover:text-muted-foreground',
 };
+
+const baseStyles =
+    'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm';
 
 const UiLink = forwardRef<HTMLAnchorElement, UiLinkProps>((props, ref) => {
     const { children, className, variant = 'primary' } = props;
 
-    const classes = composeClasses(variantStyles[variant], className);
+    const classes = composeClasses(baseStyles, variantStyles[variant], className);
 
     if (props.as === 'link') {
         const {
@@ -52,7 +54,7 @@ const UiLink = forwardRef<HTMLAnchorElement, UiLinkProps>((props, ref) => {
             {...anchorProps}
             href={href}
             className={classes}
-            ref={ref as Ref<HTMLAnchorElement>}
+            ref={ref}
         >
             {children}
         </a>
