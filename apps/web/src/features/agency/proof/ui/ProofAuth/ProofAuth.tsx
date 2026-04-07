@@ -21,7 +21,7 @@ import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
 import { checkEmail, sendMagicLink, logout } from '@/shared/api';
 import { saveRedirect, getFieldError } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 const EmailFormSchema = CheckEmailSchema;
 type EmailFormValues = z.input<typeof EmailFormSchema>;

@@ -9,7 +9,7 @@ import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { refreshToken, getMe, restoreAccount, acceptTerms } from '@/shared/api';
 import { consumeRedirect } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 export default function CallbackPage() {
     const t = useTranslations('auth_page.callback');

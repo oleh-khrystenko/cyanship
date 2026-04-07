@@ -15,7 +15,7 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { setPassword, getMe } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import ChangePasswordForm from './ChangePasswordForm';
 
 const SetPasswordFormSchema = z.object({

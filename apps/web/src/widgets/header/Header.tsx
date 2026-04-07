@@ -14,10 +14,10 @@ import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { getFullName } from '@cyanship/types';
-import { useHeaderNavStore } from '@/stores/headerNav';
-import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
+import { useHeaderNavStore } from '@/entities/navigation';
+import { useMobileMenuSheetStore } from './mobileMenuSheetStore';
 import { useUserMenu } from './useUserMenu';
 import { useActiveSection } from './useActiveSection';
 

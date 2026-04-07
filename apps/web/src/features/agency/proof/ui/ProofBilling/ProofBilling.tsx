@@ -15,7 +15,7 @@ import {
     createOneOffCheckout,
     createPortalSession,
 } from '@/shared/api/payments';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { formatLocalDate } from '@/shared/lib';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';

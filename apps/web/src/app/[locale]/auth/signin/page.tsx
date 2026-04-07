@@ -28,7 +28,7 @@ import {
     getApiMessageKey,
 } from '@/shared/api';
 import { saveRedirect, consumeRedirect, getFieldError } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 const EmailFormSchema = CheckEmailSchema;
 type EmailFormValues = z.input<typeof EmailFormSchema>;

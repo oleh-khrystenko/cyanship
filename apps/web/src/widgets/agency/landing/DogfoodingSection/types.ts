@@ -1,1 +1,1 @@
-export type { ProofTabKey } from '@/stores/dogfoodingSheet';
+export type { ProofTabKey } from './dogfoodingSheetStore';

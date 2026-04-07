@@ -9,7 +9,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { verifyMagicLink, getMe, acceptTerms, getApiMessageKey } from '@/shared/api';
 import { isValidRedirect } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 type VerifyStatus = 'verifying' | 'success' | 'deleted' | 'error';
 

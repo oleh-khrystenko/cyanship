@@ -15,9 +15,9 @@ import {
     createOneOffCheckout,
     createPortalSession,
 } from '@/shared/api/payments';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { formatLocalDate, toIntlLocale } from '@/shared/lib';
-import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
+import { useBillingResetDialogStore } from '@/features/billing';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiLink from '@/shared/ui/UiLink';

@@ -24,14 +24,14 @@ jest.mock('@/shared/api/auth', () => ({
     getMe: jest.fn(),
 }));
 
-jest.mock('@/stores/auth', () => ({
+jest.mock('@/entities/user', () => ({
     useAuthStore: Object.assign(
         (selector: (s: any) => any) => selector({ user: null }),
         { getState: () => ({ user: null, setUser: jest.fn() }) }
     ),
 }));
 
-jest.mock('@/stores/briefDialog', () => ({
+jest.mock('./briefDialogStore', () => ({
     useBriefDialogStore: Object.assign(
         (selector: (s: any) => any) => selector({ requestAiBonus: false }),
         { getState: () => ({ requestAiBonus: false }) }

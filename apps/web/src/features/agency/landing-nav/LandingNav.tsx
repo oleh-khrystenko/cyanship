@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useHeaderNavStore } from '@/stores/headerNav';
-import { useBriefDialogStore } from '@/stores/briefDialog';
+import { useHeaderNavStore } from '@/entities/navigation';
+import { useBriefDialogStore } from '@/features/agency/brief';
 import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
 
 const allNavKeys = [

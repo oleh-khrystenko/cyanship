@@ -26,10 +26,10 @@ import {
     UiSheetHeader,
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { getFullName } from '@cyanship/types';
-import { useHeaderNavStore } from '@/stores/headerNav';
-import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
+import { useHeaderNavStore } from '@/entities/navigation';
+import { useMobileMenuSheetStore } from './mobileMenuSheetStore';
 import { useUserMenu } from './useUserMenu';
 
 const menuItemBase =

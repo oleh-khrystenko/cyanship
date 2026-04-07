@@ -11,7 +11,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import type { UiDropdownMenuItem } from '@/shared/ui/UiDropdownMenu';
 import { updatePreferredLang } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 const LANG_ITEMS: UiDropdownMenuItem[] = [
     {

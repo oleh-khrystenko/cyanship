@@ -27,9 +27,8 @@ import {
     AiChatError,
     getApiMessageKey,
 } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useBriefDialogStore } from '@/stores/briefDialog';
-import { toIntlLocale } from '@/shared/lib';
+import { useAuthStore } from '@/entities/user';
+import { toIntlLocale, uiIntents } from '@/shared/lib';
 
 interface ChatMessage {
     id: string;
@@ -257,7 +256,7 @@ export default function AiChatPage() {
     );
 
     const handleOpenBriefDialog = useCallback(() => {
-        useBriefDialogStore.getState().open({ requestAiBonus: true });
+        uiIntents.emit('open-brief-dialog', { requestAiBonus: true });
     }, []);
 
     return (

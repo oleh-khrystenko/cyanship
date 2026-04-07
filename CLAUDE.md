@@ -32,11 +32,10 @@ apps/
 │   └── modules/         # auth, email, users, payments, agency, ai, reports, storage
 ├── web/src/
 │   ├── app/[locale]/    # pages: auth, (protected), (agency)
-│   ├── entities/        # agency, brand
-│   ├── features/        # auth, billing, agency, profile, change-lang, change-theme
-│   ├── widgets/         # header, agency/landing
-│   ├── stores/          # auth, headerNav, briefDialog, deleteAccountDialog, billingResetDialog, termsReacceptDialog, mobileMenuSheet, dogfoodingSheet
-│   ├── shared/          # api, ui, config, styles, icons, seo, lib, fonts, types
+│   ├── entities/        # user (authStore), navigation (headerNavStore), agency, brand
+│   ├── features/        # auth, billing, agency, profile, change-lang, change-theme — own their dialog/state stores in-slice
+│   ├── widgets/         # header (mobileMenuSheetStore), agency/landing (dogfoodingSheetStore)
+│   ├── shared/          # api, ui, config, styles, icons, seo, lib (incl. authEvents bus), fonts, types
 │   └── i18n/            # routing, request config
 packages/
 └── types/src/           # contracts, entities, enums, constants, validation, utils, agency
@@ -143,7 +142,10 @@ API повертає machine-readable `code` через `AllExceptionsFilter`; w
 `AuthInitializer` (client effect) → `refreshToken()` → `getMe()` → hydrate `authStore`. Перевіряє terms version, показує modal при outdated. `AuthGuard` компонент в protected layout перевіряє auth + onboarding completion. Middleware (`middleware.ts`) перевіряє `bid_refresh` cookie для server-side redirects.
 
 ### Overlay management
-Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (dynamic imports). Конвенція: `docs/conventions/overlays.md`
+Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (dynamic imports). Конвенція: `docs/conventions/overlays.md`. Кожен dialog store живе **усередині свого slice** (feature/widget), що ним володіє — глобального `src/stores/` шару не існує (enforced ESLint правилом `no-restricted-imports` в `apps/web/eslint.config.mjs`). Cross-slice dialog opening (наприклад, core ai-chat відкриває agency brief dialog) виконується через прямий import компонента/стора з вищого шару (app/page → feature) — це дозволено FSD-направленням.
+
+### FSD layer inversion via event bus
+Якщо нижчий шар (наприклад, `shared/api`) потребує реакції від вищого шару (наприклад, очистити auth state на 401), використовується pub/sub bus у `shared/lib/` (приклад: `authEvents`). Нижчий шар лише публікує подію; верхній шар підписується зі свого місця. Це усуває циклічні залежності і dynamic-import обходи. ESLint guardrail (`SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS` у `eslint.config.mjs`) блокує будь-які прямі імпорти з `shared/` у вищі шари.
 
 ### Execution ledger
 Atomic `$inc` на `user.executions.balance` + створення `ExecutionTransaction` запису. Spend-ендпоінт перевіряє достатність балансу. AI chat також створює transaction з action `AI_CHAT`. Файл: `apps/api/src/modules/users/users.service.ts`

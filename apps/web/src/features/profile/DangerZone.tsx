@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import UiButton from '@/shared/ui/UiButton';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import { deleteAccount } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useDeleteAccountDialogStore } from '@/stores/deleteAccountDialog';
+import { useAuthStore } from '@/entities/user';
+import { useDeleteAccountDialogStore } from './deleteAccountDialogStore';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const RESEND_COOLDOWN_SEC = 60;

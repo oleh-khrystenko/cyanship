@@ -29,7 +29,7 @@ jest.mock('@/shared/ui/UiFullPageLoader', () => {
 
 const mockUseAuthStore = jest.fn();
 
-jest.mock('@/stores/auth', () => ({
+jest.mock('@/entities/user', () => ({
     useAuthStore: (selector: (s: any) => any) => mockUseAuthStore(selector),
 }));
 

@@ -7,7 +7,7 @@ import {
     UiModalHeader,
     UiModalTitle,
 } from '@/shared/ui/UiModal';
-import { useBriefDialogStore } from '@/stores/briefDialog';
+import { useBriefDialogStore } from './briefDialogStore';
 import BriefForm from './BriefForm';
 
 export default function BriefDialog() {

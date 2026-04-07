@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import { UiConfirmDialog } from '@/shared/ui/UiConfirmDialog';
 import { resetBilling } from '@/shared/api/payments';
 import { getMe } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
+import { useAuthStore } from '@/entities/user';
+import { useBillingResetDialogStore } from './billingResetDialogStore';
 
 export default function BillingResetDialog() {
     const t = useTranslations('billing_page.reset');

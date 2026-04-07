@@ -12,7 +12,7 @@ import {
     type SpendableAction,
 } from '@cyanship/types';
 import { spendExecutions, getExecutionTransactions } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
 

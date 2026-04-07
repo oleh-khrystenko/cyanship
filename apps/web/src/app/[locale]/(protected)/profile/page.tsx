@@ -7,7 +7,7 @@ import { isOnboardingComplete } from '@cyanship/types';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import {
     ProfileForm,
     SecuritySection,

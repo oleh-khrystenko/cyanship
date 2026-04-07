@@ -7,8 +7,8 @@
  *
  * This inverts the dependency: `shared/api` no longer needs to know that
  * an auth store exists, eliminating the circular import that previously
- * required a dynamic `import('@/stores/auth')` workaround inside the
- * axios response interceptor.
+ * required a dynamic `import()` workaround inside the axios response
+ * interceptor.
  */
 
 export type AuthEvent =
