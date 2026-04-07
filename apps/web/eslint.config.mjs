@@ -8,6 +8,13 @@ import nextTypescript from 'eslint-config-next/typescript';
 // flat config does NOT merge rules with the same id across blocks — the
 // later block fully replaces the earlier one — so each block must list every
 // pattern that should apply to the files it targets.
+//
+// Two complementary rules are used together:
+//   - `no-restricted-imports` covers static `import` statements.
+//   - `no-restricted-syntax` covers dynamic `import()` expressions, which
+//     `no-restricted-imports` does NOT see. Without this second layer,
+//     `dynamic(() => import('@/features/agency/...'))` and similar
+//     expressions silently bypass the layering boundary.
 // ---------------------------------------------------------------------------
 
 const NO_GLOBAL_STORES_LAYER = {
@@ -39,6 +46,32 @@ const SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS = {
         'shared/ is the lowest FSD layer and must not import from higher layers (stores, features, widgets, entities, app). Invert the dependency via an event bus or callback registration in shared/lib instead.',
 };
 
+// ---------------------------------------------------------------------------
+// Dynamic import() guards. Each entry targets `import('<pattern>')` literals
+// via the AST selector and uses the same message as the static counterpart.
+// Regex patterns mirror the glob groups above.
+// ---------------------------------------------------------------------------
+
+const dynamicImportGuard = (literalRegex, message) => ({
+    selector: `ImportExpression > Literal[value=/${literalRegex}/]`,
+    message,
+});
+
+const NO_DYNAMIC_GLOBAL_STORES = dynamicImportGuard(
+    '^@\\/stores\\/',
+    NO_GLOBAL_STORES_LAYER.message
+);
+
+const NO_DYNAMIC_CORE_TO_AGENCY = dynamicImportGuard(
+    '^@\\/(features|entities|widgets)\\/agency\\/',
+    CORE_MUST_NOT_IMPORT_AGENCY.message
+);
+
+const NO_DYNAMIC_SHARED_TO_HIGHER = dynamicImportGuard(
+    '^@\\/(stores|features|widgets|entities|app)\\/',
+    SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS.message
+);
+
 const eslintConfig = [
     ...nextCoreWebVitals,
     ...nextTypescript,
@@ -58,7 +91,8 @@ const eslintConfig = [
         },
     },
     // Default block: applies to every file. Bans the global stores/ layer
-    // and is the floor that more specific blocks build on.
+    // for both static and dynamic imports. This is the floor that more
+    // specific blocks build on.
     {
         rules: {
             'no-restricted-imports': [
@@ -67,6 +101,7 @@ const eslintConfig = [
                     patterns: [NO_GLOBAL_STORES_LAYER],
                 },
             ],
+            'no-restricted-syntax': ['error', NO_DYNAMIC_GLOBAL_STORES],
         },
     },
     // Core code: also bans imports from the agency module. Agency files
@@ -88,6 +123,11 @@ const eslintConfig = [
                     ],
                 },
             ],
+            'no-restricted-syntax': [
+                'error',
+                NO_DYNAMIC_GLOBAL_STORES,
+                NO_DYNAMIC_CORE_TO_AGENCY,
+            ],
         },
     },
     // shared/ slice: lowest FSD layer; must not depend on anything above it.
@@ -104,6 +144,21 @@ const eslintConfig = [
                     patterns: [SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS],
                 },
             ],
+            'no-restricted-syntax': ['error', NO_DYNAMIC_SHARED_TO_HIGHER],
+        },
+    },
+    // Sanctioned exception: `app/overlays.tsx` is the single global overlay
+    // registry for the entire app. By design it dynamically imports overlay
+    // components from every slice, including agency, so that overlays load
+    // on every page without coupling individual pages to specific dialogs.
+    // This file is the ONLY place where the core → agency dynamic-import
+    // boundary is allowed to be crossed; the exemption is scoped to this
+    // exact path so any other file that tries the same trick still fails
+    // lint. Documented in docs/conventions/overlays.md.
+    {
+        files: ['src/app/overlays.tsx'],
+        rules: {
+            'no-restricted-syntax': 'off',
         },
     },
 ];
