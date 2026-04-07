@@ -1,7 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { ENV } from '@/shared/config';
-import { getTimezone } from '@/shared/lib';
+import { authEvents, getTimezone } from '@/shared/lib';
 
 // In-memory token storage (more secure than localStorage)
 let accessToken: string | null = null;
@@ -74,10 +74,12 @@ apiClient.interceptors.response.use(
                 .catch(() => {
                     setAccessToken(null);
 
-                    // Clear auth store on refresh failure
-                    void import('@/stores/auth').then(({ useAuthStore }) => {
-                        useAuthStore.getState().clearUser();
-                    });
+                    // Notify domain layers that the session is gone.
+                    // The auth store subscribes to this event and owns
+                    // the corresponding state transition. Publishing an
+                    // event keeps `shared/api` decoupled from `stores`
+                    // and `features` (FSD layering).
+                    authEvents.emit('session-lost');
 
                     return null;
                 })

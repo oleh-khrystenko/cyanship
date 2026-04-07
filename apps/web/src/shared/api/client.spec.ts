@@ -7,13 +7,7 @@ jest.mock('@/shared/config', () => ({
     },
 }));
 
-// Dynamic import mock for auth store clear on refresh failure
-const mockClearUser = jest.fn();
-jest.mock('@/stores/auth', () => ({
-    useAuthStore: {
-        getState: () => ({ clearUser: mockClearUser }),
-    },
-}));
+import { authEvents } from '@/shared/lib';
 
 import { apiClient, getAccessToken, setAccessToken } from './client';
 
@@ -67,7 +61,6 @@ const rejectNextRequest = (
 describe('client', () => {
     beforeEach(() => {
         setAccessToken(null);
-        mockClearUser.mockClear();
     });
 
     describe('token management', () => {
@@ -213,9 +206,15 @@ describe('client', () => {
             apiClient.defaults.adapter = originalAdapter;
         });
 
-        it('on refresh failure → clears token and auth store', async () => {
+        it('on refresh failure → clears token and emits session-lost', async () => {
             mockAxiosPost.mockRejectedValueOnce(
                 new Error('Refresh failed')
+            );
+
+            const sessionLostListener = jest.fn();
+            const unsubscribe = authEvents.on(
+                'session-lost',
+                sessionLostListener
             );
 
             rejectNextRequest('/users/me', 401);
@@ -223,10 +222,58 @@ describe('client', () => {
             await expect(apiClient.get('/users/me')).rejects.toBeDefined();
 
             expect(getAccessToken()).toBeNull();
+            expect(sessionLostListener).toHaveBeenCalledTimes(1);
 
-            // Wait for dynamic import to resolve
-            await new Promise((r) => setTimeout(r, 10));
-            expect(mockClearUser).toHaveBeenCalled();
+            unsubscribe();
+        });
+
+        it('on successful refresh → does NOT emit session-lost', async () => {
+            mockAxiosPost.mockResolvedValueOnce({
+                data: { data: { accessToken: 'fresh-token' } },
+            });
+
+            const sessionLostListener = jest.fn();
+            const unsubscribe = authEvents.on(
+                'session-lost',
+                sessionLostListener
+            );
+
+            const originalAdapter = apiClient.defaults.adapter;
+            let callCount = 0;
+            apiClient.defaults.adapter = (config) => {
+                callCount++;
+                if (callCount === 1) {
+                    const error: any = new axios.AxiosError(
+                        'Unauthorized',
+                        '401',
+                        config,
+                        null,
+                        {
+                            status: 401,
+                            statusText: 'Unauthorized',
+                            headers: {},
+                            config,
+                            data: null,
+                        } as any
+                    );
+                    error.config = config;
+                    return Promise.reject(error);
+                }
+                return Promise.resolve({
+                    data: { ok: true },
+                    status: 200,
+                    statusText: 'OK',
+                    headers: {},
+                    config,
+                });
+            };
+
+            await apiClient.get('/users/me');
+
+            expect(sessionLostListener).not.toHaveBeenCalled();
+
+            apiClient.defaults.adapter = originalAdapter;
+            unsubscribe();
         });
     });
 });
