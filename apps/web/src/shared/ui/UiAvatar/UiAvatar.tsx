@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 import { composeClasses } from '@/shared/lib';
 import type { UiAvatarProps, UiAvatarSize } from './types';
@@ -29,7 +29,7 @@ const AVATAR_IMAGE_SIZES = '96px';
 
 function UiAvatar({
     src,
-    alt = '',
+    alt,
     fallback,
     size = 'sm',
     priority = false,
@@ -42,15 +42,15 @@ function UiAvatar({
     // is forgotten the moment it stops being relevant.
     const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-    const handleError = useCallback(() => {
-        if (src) setFailedSrc(src);
-    }, [src]);
-
-    const showImage = Boolean(src) && failedSrc !== src;
+    // Narrowing through a local const lets TS infer `string` in the JSX
+    // branch below — no `as` casts, no double-checks.
+    const activeSrc = src && failedSrc !== src ? src : null;
 
     return (
         <span
             {...props}
+            role="img"
+            aria-label={alt}
             className={composeClasses(
                 // The root owns the avatar's full visual identity —
                 // shape, neutral surface, ring, centered layout. The
@@ -64,24 +64,23 @@ function UiAvatar({
                 className
             )}
         >
-            {showImage ? (
+            {activeSrc ? (
                 <Image
-                    // `key` forces a fresh <img> when src changes so the
-                    // browser cannot reuse the previous element's decoded
-                    // bitmap during the swap (which would otherwise paint
-                    // the old avatar for one frame after navigation).
-                    key={src}
-                    src={src as string}
-                    alt={alt}
+                    src={activeSrc}
+                    // The root span carries the accessible name via
+                    // `aria-label`, so the inner image is decorative
+                    // within that labeled region — empty alt avoids
+                    // duplicate announcements by screen readers.
+                    alt=""
                     fill
                     sizes={AVATAR_IMAGE_SIZES}
                     priority={priority}
-                    onError={handleError}
+                    onError={() => setFailedSrc(activeSrc)}
                     className="object-cover"
                 />
             ) : (
                 <span
-                    aria-hidden={alt ? undefined : true}
+                    aria-hidden="true"
                     className={composeClasses(
                         'select-none',
                         fallbackTextStyles[size]
