@@ -1,25 +1,30 @@
-import type { ComponentPropsWithoutRef } from 'react';
-import type { ImageProps } from 'next/image';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
 export type UiAvatarSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface UiAvatarProps extends ComponentPropsWithoutRef<'span'> {
-    size?: UiAvatarSize;
-}
-
-// next/image owns the underlying <img>. The avatar primitive controls
-// layout (`fill`, `sizes`) and image source typing itself, so those props
-// are intentionally omitted to keep a single, unambiguous API surface.
-// `alt` is relaxed to optional because avatars are decorative when shown
-// next to the user's name; consumers can still pass it for screen readers.
-export type UiAvatarImageProps = Omit<
-    ImageProps,
-    'fill' | 'sizes' | 'width' | 'height' | 'loader' | 'src' | 'alt'
-> & {
-    src: string | undefined;
+export interface UiAvatarProps
+    extends Omit<ComponentPropsWithoutRef<'span'>, 'children'> {
+    /**
+     * Image source. When falsy or after a load error, the avatar
+     * displays `fallback` instead. Accepts `null`/`undefined` so callers
+     * can pass optional fields directly without nullish coalescing.
+     */
+    src?: string | null;
+    /**
+     * Alt text for the underlying image. Defaults to empty string —
+     * avatars are typically decorative when shown next to the user's name.
+     */
     alt?: string;
-};
-
-export interface UiAvatarFallbackProps extends ComponentPropsWithoutRef<'span'> {
+    /**
+     * Content shown when there is no image or the image fails to load
+     * (typically initials). Required so the avatar always has something
+     * meaningful to render.
+     */
+    fallback: ReactNode;
     size?: UiAvatarSize;
+    /**
+     * Forwarded to `next/image`. Use for above-the-fold avatars (e.g.
+     * the header) so the loader prioritizes them.
+     */
+    priority?: boolean;
 }

@@ -13,7 +13,7 @@ const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
-import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
+import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { useAuthStore } from '@/entities/user';
 import { getFullName } from '@cyanship/types';
 import { useHeaderNavStore } from '@/entities/navigation';
@@ -152,17 +152,12 @@ const Header = () => {
                             size="sm"
                             header={
                                 <div className="flex items-center gap-2.5">
-                                    <UiAvatar size="sm">
-                                        <UiAvatarImage
-                                            src={
-                                                user.profile.avatar ?? undefined
-                                            }
-                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
-                                        />
-                                        <UiAvatarFallback size="sm">
-                                            {initials}
-                                        </UiAvatarFallback>
-                                    </UiAvatar>
+                                    <UiAvatar
+                                        size="sm"
+                                        src={user.profile.avatar}
+                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
+                                        fallback={initials}
+                                    />
                                     <div className="flex flex-col">
                                         <span className="text-foreground text-sm font-medium">
                                             {getFullName(user.profile.firstName, user.profile.lastName)}
@@ -178,17 +173,13 @@ const Header = () => {
                                     type="button"
                                     className="cursor-pointer rounded-full transition-opacity hover:opacity-80"
                                 >
-                                    <UiAvatar size="sm">
-                                        <UiAvatarImage
-                                            src={
-                                                user.profile.avatar ?? undefined
-                                            }
-                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
-                                        />
-                                        <UiAvatarFallback size="sm">
-                                            {initials}
-                                        </UiAvatarFallback>
-                                    </UiAvatar>
+                                    <UiAvatar
+                                        size="sm"
+                                        src={user.profile.avatar}
+                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
+                                        fallback={initials}
+                                        priority
+                                    />
                                 </button>
                             }
                         />

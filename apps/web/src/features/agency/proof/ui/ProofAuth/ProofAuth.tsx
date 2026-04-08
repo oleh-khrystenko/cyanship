@@ -16,7 +16,7 @@ import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiLink from '@/shared/ui/UiLink';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
+import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
 import { checkEmail, sendMagicLink, logout } from '@/shared/api';
@@ -192,15 +192,12 @@ const ProofAuth = () => {
         return (
             <div className="w-full rounded-lg border border-border bg-card p-6">
                 <div className="flex flex-col items-center gap-6">
-                    <UiAvatar size="2xl">
-                        {user.profile.avatar && (
-                            <UiAvatarImage
-                                src={user.profile.avatar}
-                                alt={fullName || user.email}
-                            />
-                        )}
-                        <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
-                    </UiAvatar>
+                    <UiAvatar
+                        size="2xl"
+                        src={user.profile.avatar}
+                        alt={fullName || user.email}
+                        fallback={initials}
+                    />
 
                     <div className="space-y-1 text-center">
                         {fullName && (
