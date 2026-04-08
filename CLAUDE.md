@@ -142,10 +142,15 @@ API повертає machine-readable `code` через `AllExceptionsFilter`; w
 `AuthInitializer` (client effect) → `refreshToken()` → `getMe()` → hydrate `authStore`. Перевіряє terms version, показує modal при outdated. `AuthGuard` компонент в protected layout перевіряє auth + onboarding completion. Middleware (`middleware.ts`) перевіряє `bid_refresh` cookie для server-side redirects.
 
 ### Overlay management
-Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (dynamic imports). Конвенція: `docs/conventions/overlays.md`. Кожен dialog store живе **усередині свого slice** (feature/widget), що ним володіє — глобального `src/stores/` шару не існує (enforced ESLint правилом `no-restricted-imports` в `apps/web/eslint.config.mjs`). Cross-slice dialog opening (наприклад, core ai-chat відкриває agency brief dialog) виконується через прямий import компонента/стора з вищого шару (app/page → feature) — це дозволено FSD-направленням.
+Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (єдиний global mount + єдиний санкціонований core→agency dynamic-import exception). Конвенція: `docs/conventions/overlays.md`. Кожен dialog store живе **усередині свого slice** (feature/widget), що ним володіє — глобального `src/stores/` шару не існує (enforced ESLint правилом `no-restricted-imports` + `no-restricted-syntax` в `apps/web/eslint.config.mjs`). **In-module trigger** (та сама agency / той самий core): прямий import store з барелю slice. **Cross-module trigger** (core хоче відкрити agency-овий overlay чи навпаки): через `uiIntents` bus (див. наступний розділ) — прямий import заблокований.
 
 ### FSD layer inversion via event bus
-Якщо нижчий шар (наприклад, `shared/api`) потребує реакції від вищого шару (наприклад, очистити auth state на 401), використовується pub/sub bus у `shared/lib/` (приклад: `authEvents`). Нижчий шар лише публікує подію; верхній шар підписується зі свого місця. Це усуває циклічні залежності і dynamic-import обходи. ESLint guardrail (`SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS` у `eslint.config.mjs`) блокує будь-які прямі імпорти з `shared/` у вищі шари.
+Два механізми інверсії залежностей у `shared/lib/`:
+
+- **`authEvents`** — parameterless lifecycle events. Використовується коли нижчий шар (`shared/api`) потребує реакції від вищого шару (`entities/user/authStore` очищується при `'session-lost'`). Нижчий шар лише публікує; верхній підписується зі свого місця.
+- **`uiIntents`** — типізовані cross-slice imperative UI commands з payload. Використовується для cross-module dialog opens (`'open-brief-dialog'` від core до agency). Owning slice підписується при module init; будь-який інший slice публікує без імпорту owning slice.
+
+ESLint guardrails блокують усі прямі обходи: `SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS` для shared→higher layers, `CORE_MUST_NOT_IMPORT_AGENCY` для core→agency, обидва — і для static `import` statements (`no-restricted-imports`), і для dynamic `import()` expressions (`no-restricted-syntax`). Єдиний санкціонований виняток для dynamic imports — `app/overlays.tsx`, він явно файл-scoped у конфізі.
 
 ### Execution ledger
 Atomic `$inc` на `user.executions.balance` + створення `ExecutionTransaction` запису. Spend-ендпоінт перевіряє достатність балансу. AI chat також створює transaction з action `AI_CHAT`. Файл: `apps/api/src/modules/users/users.service.ts`

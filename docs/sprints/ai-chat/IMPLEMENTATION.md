@@ -270,7 +270,7 @@ When `isLimitExhausted` — two states based on `user.ai.bonusGranted` from auth
 - **`bonusGranted === false`**: replace input area with message "Free tries exhausted" + CTA button → `useBriefDialogStore.open({ requestAiBonus: true })`
 - **`bonusGranted === true`**: replace input area with message "All tries exhausted" (no CTA, chat permanently closed)
 
-Brief dialog store modifications (`apps/web/src/stores/briefDialog/briefDialogStore.ts`):
+Brief dialog store modifications (`apps/web/src/features/agency/brief/briefDialogStore.ts`):
 - Add `requestAiBonus: boolean` to state (default false)
 - `open(opts?)` sets `requestAiBonus` from opts
 - `close()` resets `requestAiBonus` to false
@@ -485,7 +485,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/web/src/shared/api/client.ts` | No changes needed — `getAccessToken()` already exported |
 | `apps/web/src/shared/api/index.ts` | Export ai module |
 | `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChatTeaser card above spend buttons |
-| `apps/web/src/stores/briefDialog/briefDialogStore.ts` | Add `requestAiBonus` state |
+| `apps/web/src/features/agency/brief/briefDialogStore.ts` | Add `requestAiBonus` state |
 | `apps/web/src/features/agency/brief/BriefForm.tsx` | Plain text name/email (readonly from auth store) + AI bonus flag |
 | `apps/web/messages/en.json` | AI chat + brief-gate translations |
 | `apps/web/messages/uk.json` | AI chat + brief-gate translations |

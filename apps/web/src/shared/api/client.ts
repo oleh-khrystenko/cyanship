@@ -75,10 +75,10 @@ apiClient.interceptors.response.use(
                     setAccessToken(null);
 
                     // Notify domain layers that the session is gone.
-                    // The auth store subscribes to this event and owns
-                    // the corresponding state transition. Publishing an
-                    // event keeps `shared/api` decoupled from `stores`
-                    // and `features` (FSD layering).
+                    // The auth store (entities/user) subscribes to this
+                    // event and owns the corresponding state transition.
+                    // Publishing an event keeps `shared/api` decoupled
+                    // from higher FSD layers (entities, features).
                     authEvents.emit('session-lost');
 
                     return null;

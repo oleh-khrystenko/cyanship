@@ -155,10 +155,15 @@ const eslintConfig = [
     // boundary is allowed to be crossed; the exemption is scoped to this
     // exact path so any other file that tries the same trick still fails
     // lint. Documented in docs/conventions/overlays.md.
+    //
+    // Note: the exception is narrow — it ONLY drops the core→agency
+    // restriction. The global stores/ layer ban is still enforced here,
+    // so even the overlay registry cannot resurrect a `src/stores/` god
+    // layer through a dynamic import.
     {
         files: ['src/app/overlays.tsx'],
         rules: {
-            'no-restricted-syntax': 'off',
+            'no-restricted-syntax': ['error', NO_DYNAMIC_GLOBAL_STORES],
         },
     },
 ];
