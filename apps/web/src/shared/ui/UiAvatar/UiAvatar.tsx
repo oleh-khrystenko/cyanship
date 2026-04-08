@@ -114,12 +114,15 @@ function UiAvatarImage({
         return null;
     }
 
-    // While loading we hide the image with `invisible` (visibility: hidden)
-    // rather than unmounting it: the element stays in the DOM, the browser
-    // fetches the resource, and next/image dispatches `onLoad` reliably —
-    // including for cache hits, which Next handles via its own ref effect.
-    // <UiAvatarFallback> owns the visible slot through the parent's relative
-    // box until status flips to `loaded`.
+    // The image is rendered in the SSR'd HTML and never gated on React
+    // state, so the browser starts fetching during document parse and
+    // paints the bytes the moment they arrive — including on cache hits,
+    // where the image is ready before the first paint and the user never
+    // sees a flash of fallback. <UiAvatarFallback> sits behind the image
+    // in painting order (normal flow vs. absolute-positioned `fill`),
+    // visible only while the <img> has no painted content yet. State is
+    // only used to (a) unmount on error and (b) drop the fallback from
+    // the DOM after load for accessibility.
     return (
         <Image
             {...props}
@@ -129,11 +132,7 @@ function UiAvatarImage({
             sizes={AVATAR_IMAGE_SIZES}
             onLoad={handleLoad}
             onError={handleError}
-            className={composeClasses(
-                'object-cover',
-                status !== 'loaded' && 'invisible',
-                className
-            )}
+            className={composeClasses('object-cover', className)}
         />
     );
 }
