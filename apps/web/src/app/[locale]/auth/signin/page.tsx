@@ -29,6 +29,7 @@ import {
 } from '@/shared/api';
 import { saveRedirect, consumeRedirect, getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/entities/user';
+import SessionExpiredHandler from '@/features/auth/SessionExpiredHandler';
 
 const EmailFormSchema = CheckEmailSchema;
 type EmailFormValues = z.input<typeof EmailFormSchema>;
@@ -599,6 +600,7 @@ function SigninContent() {
 
     return (
         <main className="flex min-h-screen items-center justify-center px-4">
+            <SessionExpiredHandler />
             <div className="w-full max-w-md space-y-8">
                 {renderHeader()}
 

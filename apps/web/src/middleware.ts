@@ -29,9 +29,18 @@ export default function middleware(request: NextRequest) {
     const isAccountDeleted = request.cookies.has(DELETED_COOKIE);
 
     if (isProtected && (!hasRefreshCookie || isAccountDeleted)) {
-        return NextResponse.redirect(
-            new URL(`/${locale}/auth/signin`, request.url)
-        );
+        const signinUrl = new URL(`/${locale}/auth/signin`, request.url);
+
+        // Tag genuine session-expiration redirects so the client can
+        // clear stale in-memory user state on arrival. Account-deletion
+        // redirects are NOT tagged — they have their own recovery flow
+        // on the signin page and must not trigger the "session expired"
+        // toast or clear the in-memory recovery context.
+        if (!hasRefreshCookie && !isAccountDeleted) {
+            signinUrl.searchParams.set('reason', 'session-expired');
+        }
+
+        return NextResponse.redirect(signinUrl);
     }
 
     const isAuthPath = AUTH_PATHS.some(
