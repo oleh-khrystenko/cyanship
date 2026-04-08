@@ -1,18 +1,13 @@
 import { ComponentPropsWithoutRef } from 'react';
-import * as AvatarPrimitive from '@radix-ui/react-avatar';
 
 export type UiAvatarSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface UiAvatarProps
-    extends ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> {
+export interface UiAvatarProps extends ComponentPropsWithoutRef<'span'> {
     size?: UiAvatarSize;
 }
 
-export type UiAvatarImageProps = ComponentPropsWithoutRef<
-    typeof AvatarPrimitive.Image
->;
+export type UiAvatarImageProps = ComponentPropsWithoutRef<'img'>;
 
-export interface UiAvatarFallbackProps
-    extends ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback> {
+export interface UiAvatarFallbackProps extends ComponentPropsWithoutRef<'span'> {
     size?: UiAvatarSize;
 }
