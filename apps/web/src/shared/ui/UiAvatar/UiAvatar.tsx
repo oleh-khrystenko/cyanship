@@ -59,7 +59,7 @@ function UiAvatar({
                 // instead of a flash of initials. Initials render only
                 // when there is genuinely no image to show (no src or
                 // load failed) — never as a transient loading state.
-                'bg-secondary text-foreground relative flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold ring-1 ring-border/40',
+                'bg-secondary relative flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-border/40',
                 rootSizeStyles[size],
                 className
             )}
@@ -82,7 +82,7 @@ function UiAvatar({
                 <span
                     aria-hidden="true"
                     className={composeClasses(
-                        'select-none',
+                        'text-foreground font-semibold select-none',
                         fallbackTextStyles[size]
                     )}
                 >
