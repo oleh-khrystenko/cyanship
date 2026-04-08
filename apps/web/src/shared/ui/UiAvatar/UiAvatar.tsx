@@ -1,5 +1,6 @@
 'use client';
 
+import Image, { type ImageProps } from 'next/image';
 import {
     createContext,
     useCallback,
@@ -50,6 +51,12 @@ const fallbackTextStyles: Record<UiAvatarSize, string> = {
     '2xl': 'text-3xl',
 };
 
+// Largest avatar variant is `2xl` = `size-24` = 96px. The Next image
+// optimizer uses `sizes` to pick a srcset entry; capping at 96px keeps
+// the network payload tiny while still letting retina screens pick a
+// 2x source.
+const AVATAR_IMAGE_SIZES = '96px';
+
 function UiAvatar({ className, size = 'sm', ...props }: UiAvatarProps) {
     const [status, setStatus] = useState<AvatarImageStatus>('idle');
     const value = useMemo<AvatarContextValue>(
@@ -74,7 +81,6 @@ function UiAvatar({ className, size = 'sm', ...props }: UiAvatarProps) {
 function UiAvatarImage({
     className,
     src,
-    style,
     alt = '',
     onLoad,
     onError,
@@ -82,15 +88,13 @@ function UiAvatarImage({
 }: UiAvatarImageProps) {
     const { status, setStatus } = useAvatarContext('UiAvatarImage');
 
-    // Reset status whenever the source changes so that switching avatars
-    // (e.g. profile update) re-runs the load cycle deterministically.
+    // Reset whenever the source changes so switching avatars (e.g. profile
+    // update) re-runs the load cycle deterministically.
     useLayoutEffect(() => {
         setStatus(src ? 'loading' : 'idle');
     }, [src, setStatus]);
 
-    const handleLoad = useCallback<
-        NonNullable<UiAvatarImageProps['onLoad']>
-    >(
+    const handleLoad = useCallback<NonNullable<ImageProps['onLoad']>>(
         (event) => {
             setStatus('loaded');
             onLoad?.(event);
@@ -98,9 +102,7 @@ function UiAvatarImage({
         [onLoad, setStatus]
     );
 
-    const handleError = useCallback<
-        NonNullable<UiAvatarImageProps['onError']>
-    >(
+    const handleError = useCallback<NonNullable<ImageProps['onError']>>(
         (event) => {
             setStatus('error');
             onError?.(event);
@@ -112,26 +114,26 @@ function UiAvatarImage({
         return null;
     }
 
-    // Image stays in the DOM while loading so that React's onLoad listener
-    // is attached before the browser dispatches the load event — even when
-    // the resource is served from cache. We just hide it visually until the
-    // browser confirms it has actually loaded, which lets <UiAvatarFallback>
-    // own the visible slot during loading. next/image is intentionally not
-    // used here: avatar URLs come from arbitrary third-party providers
-    // (e.g. Google CDN) and the optimizer would require host allow-listing
-    // for every provider users sign in with.
+    // While loading we hide the image with `invisible` (visibility: hidden)
+    // rather than unmounting it: the element stays in the DOM, the browser
+    // fetches the resource, and next/image dispatches `onLoad` reliably —
+    // including for cache hits, which Next handles via its own ref effect.
+    // <UiAvatarFallback> owns the visible slot through the parent's relative
+    // box until status flips to `loaded`.
     return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
             {...props}
             src={src}
             alt={alt}
+            fill
+            sizes={AVATAR_IMAGE_SIZES}
             onLoad={handleLoad}
             onError={handleError}
-            className={composeClasses('aspect-square size-full', className)}
-            style={
-                status === 'loaded' ? style : { ...style, display: 'none' }
-            }
+            className={composeClasses(
+                'object-cover',
+                status !== 'loaded' && 'invisible',
+                className
+            )}
         />
     );
 }
