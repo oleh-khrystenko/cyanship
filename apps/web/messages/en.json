@@ -313,10 +313,10 @@
         "cost_info": "{cost} executions per message",
         "balance_top_up": "Top up balance",
         "disclaimer": "AI can make mistakes. Please double-check responses.",
-        "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
+        "limit_exhausted": "Free tries exhausted. Tell us about your project to unlock 5 more.",
         "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
         "all_tries_exhausted_line2": "Drop me a line at <email>oleg@cyanship.com</email>",
-        "request_bonus": "Submit Brief",
+        "request_bonus": "Get 5 more tries",
         "clear_dialog": {
             "title": "Clear chat history?",
             "description": "All messages will be permanently deleted. This action cannot be undone.",
