@@ -9,8 +9,10 @@ import {
 import Redis from 'ioredis';
 
 import { ENV } from '../../config/env';
+import { RedisCounterService } from '../services/redis-counter.service';
+import { REDIS_CLIENT } from './redis.constants';
 
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+export { REDIS_CLIENT };
 
 const redisProvider = {
     provide: REDIS_CLIENT,
@@ -32,8 +34,8 @@ const redisProvider = {
 
 @Global()
 @Module({
-    providers: [redisProvider],
-    exports: [REDIS_CLIENT],
+    providers: [redisProvider, RedisCounterService],
+    exports: [REDIS_CLIENT, RedisCounterService],
 })
 export class RedisModule implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(RedisModule.name);
