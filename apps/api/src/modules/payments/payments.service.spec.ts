@@ -1603,11 +1603,13 @@ describe('PaymentsService', () => {
                 // delta = 40000, remaining = 20 days out of 30 → ratio = 20/30
                 // adjustment = floor(40000 * 20/30) = floor(26666.67) = 26666
                 expect(pipelineAdjustment()).toBe(26666);
+                expect(mockUserModel.findById).not.toHaveBeenCalled();
                 expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
                     expect.objectContaining({
                         type: 'credit',
                         action: 'plan_change',
                         amount: 26666,
+                        balanceAfter: 36666,
                     })
                 );
             });
