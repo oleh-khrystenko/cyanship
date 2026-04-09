@@ -1,8 +1,8 @@
 # AI Chat — Parallel Request Bypass (TOCTOU)
 
-> **Статус:** Знайдена проблема, виправлення НЕ розпочате. Цей документ — фіксація дефекту і затверджений план фіксу. Імплементацію виконати окремою задачею.
+> **Статус:** Знайдена проблема, виправлення НЕ розпочате. Цей документ — фіксація дефекту і затверджений план фіксу. Імплементацію виконати окремою задачею, спираючись на актуальний стан кодової бази на момент роботи.
 
-> **Критичність:** Висока. Прямий обхід білінгу + lifetime free-tier ліміту. Дозволяє ескалувати реальну вартість Anthropic API на нашу кишеню.
+> **Критичність:** Висока. Прямий обхід білінгу і lifetime free-tier ліміту. Дозволяє ескалувати реальну вартість Anthropic API на нашу кишеню.
 
 ---
 
@@ -16,58 +16,54 @@
 
 ## 2. Технічний опис (root cause)
 
-### 2.1 Залучені файли
+### 2.1 Залучені точки в коді
 
-| Файл | Що робить | Чому є частиною проблеми |
-|------|-----------|-------------------------|
-| `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts:49-61` | `checkAccountLimit()` читає `user.ai.requestsUsed` зі snapshot документа, отриманого `JwtActiveGuard`, і кидає `AI_LIMIT_EXHAUSTED` якщо ≥ ліміт | Snapshot — це фотографія стану ДО запиту. Конкурентні запити бачать однакову фотографію і всі проходять перевірку. |
-| `apps/api/src/modules/ai/ai.controller.ts:50-55` | Pre-stream balance check: `if (user.executions.balance < AI_CHAT_COST) throw` | Той самий snapshot. Та сама проблема: усі N паралельних запитів проходять перевірку одночасно. |
-| `apps/api/src/modules/ai/ai.controller.ts:74-104` | Стрімить SSE з Anthropic, накопичує `assistantContent`, після завершення викликає `finalizeChat()` | Витрата токенів Anthropic відбувається ТУТ, у пʼять (чи більше) потоків паралельно. Гроші вже списано з нашого боку. |
-| `apps/api/src/modules/ai/ai.service.ts:107-125` | `finalizeChat()` робить атомарний `findOneAndUpdate({ _id, 'executions.balance': { $gte: AI_CHAT_COST } }, { $inc: { 'executions.balance': -200, 'ai.requestsUsed': 1 } })` | Атомарність ТУТ захищає лише від негативного балансу. До цього моменту стрім уже завершився і відповідь у клієнта. |
+Назви файлів і рядки наводяться як орієнтир станом на момент виявлення проблеми. Перед імплементацією треба перевірити поточний стан — структура може змінитись.
+
+| Точка | Що робить | Чому є частиною проблеми |
+|-------|-----------|-------------------------|
+| `AiRateLimitGuard.checkAccountLimit` | Читає `ai.requestsUsed` зі snapshot документа користувача, отриманого попереднім guard-ом, і кидає `AI_LIMIT_EXHAUSTED` коли значення досягло ліміту | Snapshot — це фотографія стану ДО запиту. Конкурентні запити бачать однакову фотографію і всі проходять перевірку. |
+| Pre-stream balance check у контролері AI чату | Перевіряє `executions.balance >= AI_CHAT_COST` на тому самому snapshot документа | Та сама проблема: усі N паралельних запитів проходять перевірку одночасно. |
+| Тіло контролера AI чату | Стрімить SSE з Anthropic, накопичує текст відповіді, і лише після завершення викликає метод фіналізації | Витрата токенів Anthropic відбувається ТУТ, у кілька потоків паралельно. Гроші вже списано з нашого боку. |
+| `AiService.finalizeChat` | Робить атомарний conditional update, який списує executions і інкрементує `ai.requestsUsed`, з guard-ом `balance >= cost` | Атомарність ТУТ захищає лише від негативного балансу. До цього моменту стрім уже завершився і відповідь у клієнта. |
 
 ### 2.2 Часова діаграма експлойту
 
-Початковий стан користувача: `executions.balance = 200`, `ai.requestsUsed = limit - 1`.
+Початковий стан: `executions.balance = 200`, `ai.requestsUsed = limit - 1`.
 
 ```
 T0   Клієнт → надсилає 5 паралельних POST /ai/chat
-T1   Запит #1: JwtActiveGuard завантажує User → snapshot: balance=200, requestsUsed=limit-1
-T1   Запит #2: JwtActiveGuard завантажує User → snapshot: balance=200, requestsUsed=limit-1
-T1   Запит #3: JwtActiveGuard завантажує User → snapshot: balance=200, requestsUsed=limit-1
-T1   Запит #4: JwtActiveGuard завантажує User → snapshot: balance=200, requestsUsed=limit-1
-T1   Запит #5: JwtActiveGuard завантажує User → snapshot: balance=200, requestsUsed=limit-1
-
-T2   Усі 5: AiRateLimitGuard.checkAccountLimit() → requestsUsed (limit-1) < limit → PASS
-T3   Усі 5: pre-stream check у контролері → balance (200) >= 200 → PASS
-T4   Усі 5: res.flushHeaders() → SSE headers відправлені
-T5   Усі 5: aiService.processChat() → 5 паралельних стрімів до Anthropic API
-        ↑ ТУТ ми платимо Anthropic за 5 повних відповідей з нашого балансу
-
+T1   Усі 5 запитів: JwtActiveGuard завантажує User
+        → snapshot у кожного: balance=200, requestsUsed=limit-1
+T2   Усі 5: AiRateLimitGuard.checkAccountLimit() → PASS (бачать limit-1 < limit)
+T3   Усі 5: pre-stream check → PASS (бачать 200 >= 200)
+T4   Усі 5: SSE headers відправлені
+T5   Усі 5: запуск стрімів до Anthropic API
+        ↑ ТУТ ми платимо Anthropic за 5 повних відповідей
 T6   Усі 5: стріми завершуються, у клієнта 5 повних відповідей AI
-T7   Запит #1: finalizeChat → findOneAndUpdate з $gte:200 → SUCCESS, balance=0, requestsUsed=limit
-T7   Запит #2: finalizeChat → findOneAndUpdate з $gte:200 → FAIL (balance=0)
-        → throw 'Insufficient executions during finalization'
+T7   Запит #1: finalizeChat → atomic update успішний → balance=0, requestsUsed=limit
+T7   Запити #2-5: finalizeChat → atomic update fail (balance=0)
+        → throw "Insufficient executions during finalization"
         → SSE error event клієнту (але клієнт уже отримав повну відповідь!)
-T7   Запит #3, #4, #5: те саме що #2
 
 Підсумок:
   - Користувач отримав 5 AI-відповідей
   - Списано 200 executions (за 1 відповідь)
   - requestsUsed інкрементовано на 1 (а не на 5)
-  - Anthropic зняв з нашого Anthropic-акаунта вартість 5 запитів
+  - Anthropic зняв з нашого акаунта вартість 5 запитів
 ```
 
 ### 2.3 Чому existing захисти НЕ покривають цей кейс
 
 | Захист | Чому не працює |
 |--------|----------------|
-| `IpRateLimit` (Lua INCR+EXPIRE у тому ж guard) | Працює правильно й атомарно — але це **per-IP** ліміт. Він обмежує загальну кількість запитів з IP за 24 години (наприклад 20). Він НЕ запобігає burst-у з 5-10 паралельних запитів у межах ліміту. Атакуючий просто робить стільки паралельних запитів, скільки дозволяє IP-ліміт. |
-| Atomic guard у `finalizeChat` (`'executions.balance': { $gte: AI_CHAT_COST }`) | Захищає тільки інваріант "balance не може стати негативним". Не захищає від уже надісланої клієнту відповіді і вже сплачених Anthropic токенів. |
+| IP rate limit (атомарний Lua INCR+EXPIRE у тому ж guard) | Атомарний і коректний — але це **per-IP** ліміт за 24 години. Він НЕ запобігає burst-у з кількох паралельних запитів у межах ліміту. Атакуючий просто робить стільки паралельних запитів, скільки дозволяє IP-ліміт. |
+| Atomic guard у `finalizeChat` | Захищає виключно інваріант "balance не може стати негативним". Не захищає від уже надісланої клієнту відповіді і вже сплачених Anthropic токенів. |
 | `JwtActiveGuard` | Перевіряє лише валідність токена і soft-delete. Не має жодного відношення до rate limiting. |
 
 ### 2.4 Заявлений vs реальний інваріант
 
-CLAUDE.md і `docs/sprints/ai-chat/` декларують:
+CLAUDE.md і документація `docs/sprints/ai-chat/` декларують:
 - **"3-layer protection"** — насправді 1 шар (IP) атомарний, 2 шари (account, balance) — TOCTOU.
 - **"Debit only on success"** — насправді "debit only for one success out of N concurrent". Решта успіхів безкоштовні.
 
@@ -77,292 +73,134 @@ CLAUDE.md і `docs/sprints/ai-chat/` декларують:
 
 | Категорія | Вплив |
 |-----------|-------|
-| **Фінансовий (Anthropic API)** | Прямі витрати на наш Anthropic-акаунт. При ціні Haiku ~$0.0004/запит і ліміті 20 запитів з IP за 24h, один зловмисник на день = ~$0.008. Botnet на 1000 IP = ~$8/день. Не катастрофа, але реальні витрати без upper bound у бізнес-логіці. |
+| **Фінансовий (Anthropic API)** | Прямі витрати на наш Anthropic-акаунт. Один зловмисник у межах IP-ліміту = десятки запитів на день безкоштовно. Botnet з багатьох IP — лінійне масштабування витрат без upper bound у бізнес-логіці. |
 | **Бізнес (lifetime free limit)** | Lead може отримати десятки безкоштовних AI-відповідей замість 5. Це руйнує конверсійну воронку: ціль чату — після вичерпання 5 запитів показати brief-форму і конвертувати ліда. Якщо ліміт обходиться, brief-форма ніколи не зʼявляється. |
 | **Платні користувачі** | Користувач, що купив executions pack, може витратити в N разів більше реальних AI-відповідей, ніж заплатив. Прямий збиток на маржу. |
-| **Цілісність ledger** | `ExecutionTransaction` записи коректні (одна транзакція на одне успішне списання), але реальна "робота" виконана у N разів більша. Audit trail виглядає чистим, аномалію не видно з ledger-у. |
+| **Цілісність ledger** | `ExecutionTransaction` записи коректні (одна транзакція на одне успішне списання), але реальна "робота" виконана у N разів більша. Audit trail виглядає чистим, аномалію не видно з ledger-у — інцидент стає невидимим у звітах. |
 
 ---
 
-## 4. План виправлення (Reserve → Stream → Confirm/Refund)
+## 4. План виправлення (Reserve → Stream → Commit/Refund)
 
-Архітектурний принцип: **резервувати ресурс ДО виконання роботи, відкочувати при failure**. Це класична saga / two-phase pattern для одного ресурсу.
+Архітектурний принцип: **резервувати ресурс ДО виконання роботи, відкочувати при failure**. Класична saga / two-phase pattern для одного ресурсу.
 
 ### 4.1 Ключова ідея
 
-Замість "перевірити → попрацювати → списати", переходимо на "**атомарно зарезервувати → попрацювати → підтвердити (no-op) або відкотити (refund)**". Резерв — це і є списання, але з можливістю компенсації.
+Замість послідовності "перевірити → попрацювати → списати" переходимо на "**атомарно зарезервувати → попрацювати → підтвердити (no-op для балансу) або відкотити (refund)**". Резерв — це і є фактичне списання, але з можливістю компенсації при failure.
 
-### 4.2 Зміни по файлах
+### 4.2 Цільова поведінка по компонентах
 
-#### A. `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts`
+**AI rate limit guard.**
+- Залишити в guard-і виключно перевірку IP-ліміту (вона і зараз атомарна та коректна).
+- Видалити з guard-у перевірку account lifetime ліміту повністю. Це не послаблення захисту: account-ліміт переноситься в єдину атомарну операцію резерву нижче по стеку. Guard повертається до ролі "pure check" без будь-яких мутацій стану — це коректний контракт NestJS guards.
 
-**Що змінити:** замінити `checkAccountLimit()` зі snapshot-read на атомарний conditional `findOneAndUpdate`.
+**AI service: новий метод "резерв чату".**
+- Робить **одну** атомарну MongoDB-операцію, яка одночасно: перевіряє баланс executions ≥ ціна одного чату, перевіряє `requestsUsed < free + (bonusGranted ? bonus : 0)`, декрементує баланс на ціну, інкрементує `requestsUsed` на 1.
+- Якщо умови не виконуються — операція повертає null. Сервіс має розрізнити причину (нема лімітів vs нема балансу) додатковим read-only запитом і кинути відповідний доменний exception (`AI_LIMIT_EXHAUSTED` або `INSUFFICIENT_EXECUTIONS`).
+- Повертає невелику структуру-"квиток" з даними, потрібними для подальшого commit/refund: ідентифікатор резерву (для логів), залишок балансу після резерву, нове значення `requestsUsed`.
+- Викликається до встановлення SSE headers, тому помилки йдуть нормальним HTTP 4xx, без SSE.
 
-```ts
-// Було (TOCTOU):
-private checkAccountLimit(user: UserDocument): void {
-    const ai = user.ai ?? { requestsUsed: 0, bonusGranted: false };
-    const limit = ENV.AI_CHAT_FREE_LIMIT + (ai.bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
-    if (ai.requestsUsed >= limit) throw new ForbiddenException(...);
-}
+**AI service: новий метод "підтвердження чату".**
+- Викликається тільки після успішного завершення стріму.
+- НЕ міняє ані `balance`, ані `requestsUsed` — вони вже списані на етапі резерву.
+- Виконує лише дві дії: створює запис у `ExecutionTransaction` ledger (з `balanceAfter` із квитка резерву) і вставляє пару повідомлень (user + assistant) у history-колекцію.
+- Повертає клієнту фінальні дані для UI: залишок балансу і кількість залишених AI-запитів.
 
-// Стає (atomic reserve):
-private async reserveAccountSlot(userId: string): Promise<void> {
-    // Атомарно інкрементуємо requestsUsed з guard-ом на ліміт.
-    // Mongo рахує limit як free + (bonusGranted ? bonus : 0) через aggregation pipeline.
-    const result = await this.userModel.findOneAndUpdate(
-        {
-            _id: userId,
-            $expr: {
-                $lt: [
-                    '$ai.requestsUsed',
-                    {
-                        $add: [
-                            ENV.AI_CHAT_FREE_LIMIT,
-                            { $cond: ['$ai.bonusGranted', ENV.AI_CHAT_BONUS_AMOUNT, 0] }
-                        ]
-                    }
-                ]
-            }
-        },
-        { $inc: { 'ai.requestsUsed': 1 } }
-    );
-    if (!result) {
-        throw new ForbiddenException({
-            code: RESPONSE_CODE.AI_LIMIT_EXHAUSTED,
-            message: 'AI request limit exhausted',
-        });
-    }
-}
-```
+**AI service: новий метод "відкат чату".**
+- Робить одну атомарну MongoDB-операцію: інкрементує `balance` назад на ціну чату, декрементує `requestsUsed` назад на 1.
+- НЕ записує нічого в ledger — пара "резерв + відкат" має бути невидимою для ledger-у. У ledger потрапляють виключно повністю успішні чати через метод підтвердження.
+- Має бути ідемпотентним за конструкцією виклику: refund викликається рівно один раз з finally-блоку контролера для одного резерву.
 
-**Наслідок:** guard потребує `UserModel` (через `@InjectModel`). Guard перетворюється на mutating — це нестандартно для Nest guards (зазвичай pure check). Альтернатива нижче.
+**Видалення `finalizeChat`.**
+- Старий `finalizeChat` повністю замінюється трьома методами вище. Видалити сам метод і всі його виклики/тести/посилання.
 
-#### B. `apps/api/src/modules/ai/ai.controller.ts`
+**Контролер AI чату.**
+- На вході виконати резерв (атомарне списання). Якщо резерв кидає 4xx — повернути HTTP error як зараз, без жодних SSE.
+- Тільки після успішного резерву встановити SSE headers і запустити стрім.
+- Усе, що відбувається після `flushHeaders`, обгорнути в `try/catch/finally` так, щоб гарантувати: на будь-якому failure-шляху (помилка Anthropic, abort клієнтом, помилка commit) у `finally` спрацює відкат.
+- Локальний прапорець "committed" виставляється строго ПІСЛЯ успішного виклику методу підтвердження. У `finally` відкат викликається тоді й тільки тоді, коли `committed === false`.
+- Помилка самого відкату ловиться окремим catch і логується через `Logger.error` з ідентифікатором резерву. Це критичний інцидент і сигнал для алерту.
 
-**Що змінити:** до `flushHeaders()` атомарно зарезервувати executions; обгорнути весь стрім у try/catch/finally з компенсуючим refund на будь-яку failure-стежку.
+### 4.3 Архітектурне рішення: де робити резерв (guard vs service)
 
-```ts
-async chat(...) {
-    const userId = user._id.toString();
+Розглядали два варіанти.
 
-    // Step 1: атомарний резерв (account slot + executions)
-    // Викликаємо service-метод, який робить ОБИДВА інкременти атомарно.
-    const reservation = await this.aiService.reserveChat(userId);
-    // reservation = { reservationId, balanceAfter, requestsUsedAfter }
-    // Якщо ресурсу немає — service кидає 4xx ДО будь-яких SSE headers.
+| Варіант | Опис | Чому відхиляємо / приймаємо |
+|---------|------|----------------------------|
+| **A. Резерв у guard** | Зробити account+balance reserve атомарним прямо в `AiRateLimitGuard` | Відхиляємо. Перетворює guard на mutating компонент — anti-pattern для NestJS guards (вони мають бути pure check). До того ж розриває списання на дві точки: одна в guard, одна в сервісі — складніше думати про відкат. |
+| **B. Резерв у service, у guard лише IP** | Account+balance reserve атомарно в `AiService.reserveChat`. У guard залишається лише IP rate limit. | **Приймаємо.** Guard pure, mutation в service-шарі, єдина точка резерву і відкату, простіша ментальна модель. |
 
-    // Step 2: SSE headers
-    res.setHeader(...);
-    res.flushHeaders();
-
-    let committed = false;
-    try {
-        const stream = await this.aiService.processChat(...);
-        let assistantContent = '';
-        for await (const chunk of stream) {
-            if (aborted) break;
-            assistantContent += chunk;
-            this.writeSSE(...);
-        }
-
-        if (!aborted) {
-            // Step 3: підтвердження — пише історію, записує ledger transaction.
-            // НЕ міняє balance/requestsUsed (вже списано на резерві).
-            const result = await this.aiService.commitChat(
-                userId,
-                reservation,
-                dto.message,
-                assistantContent
-            );
-            committed = true;
-            this.writeSSE({ type: DONE, balanceAfter: result.balanceAfter, ... });
-        }
-    } catch (err) {
-        // SSE error event
-        this.writeSSE({ type: ERROR, code: 'AI_PROVIDER_ERROR' });
-    } finally {
-        if (!committed) {
-            // Step 4: компенсація — повертаємо executions і decrement requestsUsed.
-            // Обовʼязково: інакше юзер втратить кошти за провалений стрім.
-            await this.aiService.refundChat(userId, reservation).catch((err) => {
-                this.logger.error(`Failed to refund AI chat reservation ${reservation.reservationId}: ${err.message}`);
-                // Refund failure — критичний інцидент, треба алерт.
-            });
-        }
-        req.off('close', onClose);
-        if (!res.writableEnded) res.end();
-    }
-}
-```
-
-#### C. `apps/api/src/modules/ai/ai.service.ts`
-
-**Що змінити:** замінити `finalizeChat()` на три методи: `reserveChat()`, `commitChat()`, `refundChat()`.
-
-```ts
-async reserveChat(userId: string): Promise<Reservation> {
-    // Один атомарний findOneAndUpdate, що:
-    //  - перевіряє requestsUsed < limit (через $expr з $add+$cond як вище)
-    //  - перевіряє executions.balance >= AI_CHAT_COST
-    //  - інкрементує requestsUsed на 1
-    //  - декрементує balance на AI_CHAT_COST
-    const updated = await this.userModel.findOneAndUpdate(
-        {
-            _id: userId,
-            'executions.balance': { $gte: AI_CHAT_COST },
-            $expr: {
-                $lt: [
-                    '$ai.requestsUsed',
-                    { $add: [
-                        ENV.AI_CHAT_FREE_LIMIT,
-                        { $cond: ['$ai.bonusGranted', ENV.AI_CHAT_BONUS_AMOUNT, 0] }
-                    ]}
-                ]
-            }
-        },
-        {
-            $inc: {
-                'executions.balance': -AI_CHAT_COST,
-                'ai.requestsUsed': 1,
-            }
-        },
-        { new: true }
-    );
-
-    if (!updated) {
-        // Треба розрізнити "ліміт" vs "баланс" — другий запит на чистий read для exception code.
-        const fresh = await this.userModel.findById(userId).lean();
-        if (!fresh) throw new NotFoundException('User not found');
-        const limit = ENV.AI_CHAT_FREE_LIMIT + (fresh.ai?.bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
-        if ((fresh.ai?.requestsUsed ?? 0) >= limit) {
-            throw new ForbiddenException({ code: RESPONSE_CODE.AI_LIMIT_EXHAUSTED, ... });
-        }
-        throw new BadRequestException({ code: RESPONSE_CODE.INSUFFICIENT_EXECUTIONS, ... });
-    }
-
-    return {
-        reservationId: new Types.ObjectId().toString(), // для logging/idempotency
-        balanceAfter: updated.executions.balance,
-        requestsUsedAfter: updated.ai.requestsUsed,
-    };
-}
-
-async commitChat(userId, reservation, userMessage, assistantContent) {
-    // НЕ міняє balance/requestsUsed — вони вже списані на reserveChat.
-    // Лише: записує ChatMessage history + ExecutionTransaction ledger entry.
-    await this.usersService.recordTransaction({
-        userId,
-        type: EXECUTION_TRANSACTION_TYPE.DEBIT,
-        action: EXECUTION_ACTION.AI_CHAT,
-        amount: AI_CHAT_COST,
-        balanceAfter: reservation.balanceAfter,
-    });
-    await this.chatMessageModel.insertMany([...]);
-
-    // Recalc remaining для UI
-    const limit = ENV.AI_CHAT_FREE_LIMIT + (bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
-    const aiRequestsRemaining = Math.max(0, limit - reservation.requestsUsedAfter);
-    return { balanceAfter: reservation.balanceAfter, aiRequestsRemaining };
-}
-
-async refundChat(userId, reservation): Promise<void> {
-    // Атомарно повертаємо executions і decrement requestsUsed.
-    // Обовʼязково atomic — кілька рефандів не повинні дублюватись.
-    await this.userModel.findByIdAndUpdate(userId, {
-        $inc: {
-            'executions.balance': AI_CHAT_COST,
-            'ai.requestsUsed': -1,
-        }
-    });
-    // НЕ записуємо в ledger — резерв і refund скасовують один одного,
-    // у ledger потрапляє ТІЛЬКИ повна успішна транзакція через commitChat.
-}
-```
-
-#### D. Видалити старий `finalizeChat()`
-
-Метод повністю замінюється трьома вище. Видалити його разом з усіма імпортами/тестами, що на нього посилаються.
-
-#### E. Guard-вибір (важливе архітектурне рішення)
-
-Є два варіанти, де робити reserve:
-
-**Варіант 1 (рекомендований):** Видалити `checkAccountLimit` з guard-у повністю. Залишити в guard-і лише `checkIpLimit` (він уже атомарний). Reserve account+balance робити в `aiService.reserveChat()`, який викликається на початку контролера. **Плюси:** guard залишається pure check, mutation у service-шарі. **Мінуси:** unified reserve — менше layered protection, але це і є правильно (немає сенсу робити нерелевантну перевірку лімітів якщо є атомарний reserve далі).
-
-**Варіант 2:** Залишити guard, але переписати на atomic reserve (як у пункті A). Тоді у service-і `reserveChat` робить тільки decrement балансу. **Мінуси:** guard перестає бути pure (mutation у guard — anti-pattern), дві окремі точки списання (account і balance), складніше думати про refund.
-
-→ **Йдемо з Варіантом 1.**
-
-### 4.3 Edge cases і ризики імплементації
+### 4.4 Edge cases і ризики імплементації
 
 | Кейс | Що враховуємо |
 |------|---------------|
-| **Клієнт закрив вкладку посередині стріму** | `req.on('close')` тригерить abort, контролер потрапляє у `finally` без `committed=true` → `refundChat` повертає executions і requestsUsed. Юзер не втрачає нічого за провалений стрім. |
-| **Refund сам падає (наприклад, MongoDB down)** | Catch навколо `refundChat`, лог `error` з reservationId. Потенційно треба черга невдалих refundʼів (як `OrphanedProviderCustomer` для Stripe) або алерт. На перший проход — лог + Sentry alert; чергу додаємо лише якщо такі інциденти зʼявляться. |
-| **Anthropic повертає 5xx до першого токена** | `processChat` кидає → попадаємо у `catch` → `committed=false` → `refundChat` у `finally`. Юзер бачить SSE error, гроші не списано. ✓ |
-| **Стрім завершився, але `commitChat` падає** | `committed` ще не `true` (виставляється після `commitChat`) → `refundChat` спрацює. Але `assistantContent` вже надіслано клієнту. Це OK: кращий варіант — повернути гроші і втратити історію, ніж списати без history. |
-| **Race: дві finalize-and-commit спроби** | Неможливо: `commitChat` викликається лише з одного try-блоку для одного reservation. |
-| **`reserveChat` зарезервувало, але потім `processChat` ніколи не запускається (process crash між)** | Резерв зависає назавжди: requestsUsed і balance списані без compensation. На це треба окремий механізм (TTL на reservation у Redis або cron-reconcile). На перший проход приймаємо ризик — рідкісний кейс при graceful shutdown. Документуємо як known limitation. |
-| **Тестування паралельних сценаріїв** | Нові e2e тести з `Promise.all([chat(), chat(), chat(), chat(), chat()])` для юзера на межі ліміту. Очікується: рівно один stream завершується успішно, решта отримують 4xx ДО будь-якого SSE event. |
+| **Клієнт закрив вкладку посередині стріму** | Existing `req.on('close')` тригерить abort. Контролер потрапляє у `finally` без `committed === true` → відкат повертає executions і requestsUsed. Юзер не втрачає нічого за провалений стрім. |
+| **Відкат сам падає (наприклад, MongoDB недоступна на момент failure)** | Catch навколо виклику відкату, лог `error` з ідентифікатором резерву і userId. На перший проход — лог + Sentry alert. Чергу невдалих відкатів (за зразком `OrphanedProviderCustomer`) додаємо лише якщо такі інциденти зʼявляться у проді. |
+| **Anthropic повертає 5xx до першого токена** | `processChat` кидає → попадаємо у `catch` → `committed` залишається `false` → відкат у `finally` спрацює. Юзер бачить SSE error, гроші не списано. |
+| **Стрім завершився, але метод підтвердження падає (наприклад, помилка вставки в history)** | `committed` ще не `true` (виставляється тільки після успішного підтвердження) → відкат спрацює. Сторонній ефект: `assistantContent` уже надіслано клієнту по SSE, але history не збережено. Це прийнятна поведінка: краще повернути гроші і втратити запис у history, ніж списати без history. |
+| **Race: дві одночасні спроби підтвердження для одного резерву** | Неможливо за конструкцією: підтвердження викликається з єдиного try-блоку на один резерв. |
+| **Резерв виконано, але стрім ніколи не запускається через crash процесу між цими двома кроками** | Резерв зависає назавжди: `requestsUsed` і `balance` списані без compensation. На це треба окремий механізм (TTL на reservation у Redis або cron-reconcile). На перший проход приймаємо ризик — рідкісний кейс, що можливий лише при не-graceful shutdown. Документуємо як known limitation у DoD. |
+| **Розрізнення причини відмови резерву** | Атомарний conditional update повертає null коли НЕ виконалась хоча б одна з умов (баланс або ліміт). Щоб коректно повідомити клієнта (`AI_LIMIT_EXHAUSTED` vs `INSUFFICIENT_EXECUTIONS`), потрібен один додатковий read-only запит для діагностики і правильного error code. |
 
-### 4.4 Зміни в контракті API
+### 4.5 Зміни в публічному API і фронтенді
 
-**Жодних змін у публічному API.** SSE events `TOKEN`/`DONE`/`ERROR` залишаються. Frontend не потребує оновлень.
+**Жодних breaking changes.** SSE events `TOKEN`/`DONE`/`ERROR` залишаються. Frontend не потребує оновлень.
 
-Єдина різниця для клієнта: при exhausted limit / insufficient balance тепер відповідь приходить як HTTP 4xx з `code` у body (як зараз), а не як SSE error event. Це і так уже працює — `reserveChat` кидає до `flushHeaders`.
+Єдина різниця для клієнта: при exhausted limit / insufficient balance відповідь продовжує приходити як HTTP 4xx з `code` у body — як і зараз, оскільки резерв виконується ДО `flushHeaders`. Контракт зберігається.
 
-### 4.5 Тести (мінімальний набір)
+### 4.6 Тести (мінімальний набір)
 
-1. **Unit `ai.service.spec.ts`:**
-   - `reserveChat` успішно списує при достатніх ресурсах
-   - `reserveChat` кидає `INSUFFICIENT_EXECUTIONS` при нестачі балансу
-   - `reserveChat` кидає `AI_LIMIT_EXHAUSTED` при `requestsUsed >= limit`
-   - `reserveChat` враховує `bonusGranted` у розрахунку ліміту
-   - `refundChat` повертає рівно стільки, скільки списано
-   - `commitChat` не міняє balance/requestsUsed, лише пише ledger+history
+**Unit-тести AI service:**
+- Резерв успішно списує одночасно баланс і requestsUsed при достатніх ресурсах.
+- Резерв кидає `INSUFFICIENT_EXECUTIONS` коли балансу не вистачає, а ліміту вистачає.
+- Резерв кидає `AI_LIMIT_EXHAUSTED` коли requestsUsed досяг ліміту, а баланс достатній.
+- Резерв коректно враховує `bonusGranted` у розрахунку максимуму.
+- Відкат повертає рівно стільки, скільки списав резерв (баланс і requestsUsed).
+- Підтвердження НЕ міняє баланс/requestsUsed; пише ledger entry і history pair.
 
-2. **Unit `ai.controller.spec.ts`:**
-   - Успішний стрім → `commitChat` викликано, `refundChat` НЕ викликано
-   - Anthropic кидає → `commitChat` НЕ викликано, `refundChat` викликано
-   - Клієнт abort → `refundChat` викликано
+**Unit-тести AI controller:**
+- Успішний стрім → підтвердження викликано, відкат НЕ викликано.
+- Anthropic кидає → підтвердження НЕ викликано, відкат викликано.
+- Клієнт abort у середині стріму → відкат викликано.
+- Помилка самого відкату не пробрасується назовні, лише логується.
 
-3. **e2e `ai-chat-concurrency.e2e-spec.ts`:**
-   - User з `balance=200` робить 5 паралельних chat → рівно 1 успішний `DONE`, 4 отримують 4xx `INSUFFICIENT_EXECUTIONS` ДО SSE
-   - User з `requestsUsed=limit-1` робить 5 паралельних chat → рівно 1 успішний `DONE`, 4 отримують 4xx `AI_LIMIT_EXHAUSTED`
-   - Один користувач, успішний chat → перевірити, що `assistantContent` збережено в history і `ExecutionTransaction` створено
+**E2E тест на конкурентність (новий файл):**
+- Користувач з `balance = ціна одного чату` і запасом по ліміту робить N паралельних запитів → рівно один отримує SSE `DONE`, решта — HTTP 4xx `INSUFFICIENT_EXECUTIONS` ДО будь-якого SSE event.
+- Користувач з `requestsUsed = limit - 1` і запасом по балансу робить N паралельних запитів → рівно один отримує SSE `DONE`, решта — HTTP 4xx `AI_LIMIT_EXHAUSTED`.
+- Один користувач, успішний chat → у history присутні обидва повідомлення, у ledger зʼявився запис з коректним `balanceAfter`.
 
 ---
 
 ## 5. Чого НЕ робимо в межах цього спринта
 
-- Не додаємо TTL/reconcile для зависаючих reservation (приймаємо ризик crash-window).
+- Не додаємо TTL/reconcile для зависаючих резервів (приймаємо ризик crash-window як known limitation).
 - Не міняємо IP rate limit (він уже атомарний і коректний).
 - Не міняємо frontend.
-- Не міняємо ціну `AI_CHAT_COST` чи ліміти.
-- Не додаємо нову колекцію для reservation tracking — резерв і так "захардкоджений" як state у `User.executions.balance` + `User.ai.requestsUsed`.
+- Не міняємо ціну одного чату чи розміри лімітів.
+- Не додаємо нову колекцію для reservation tracking — резерв "захардкоджений" як state у `User.executions.balance` + `User.ai.requestsUsed`, додатковий store не потрібен.
 
 ---
 
 ## 6. Definition of Done
 
-- [ ] `checkAccountLimit` видалено з `AiRateLimitGuard`, guard містить лише IP check
-- [ ] `aiService.reserveChat()` / `commitChat()` / `refundChat()` реалізовані
-- [ ] Старий `finalizeChat()` видалено
-- [ ] Контролер обгорнуто у `try/catch/finally` з компенсаційним refund
-- [ ] Refund failure логуються через `Logger.error` з `reservationId`
-- [ ] Усі unit-тести зелені
-- [ ] Новий e2e на паралельні запити зелений (5 паралельних → 1 успіх)
-- [ ] CLAUDE.md оновлено: секція "AI chat debit only on success" перефразована на "Reserve → stream → commit/refund"
-- [ ] `docs/sprints/ai-chat/` оновлено: "3-layer protection" перефразовано так, щоб відображати, що account+balance — це **один атомарний reserve**, а не два окремих check-и
+- [ ] Перевірка account-ліміту видалена з AI rate limit guard. У guard залишається тільки перевірка IP-ліміту.
+- [ ] У AI service існують три методи: резерв, підтвердження, відкат. Контракти і поведінка відповідають розділу 4.2.
+- [ ] Старий `finalizeChat` (або еквівалентний метод одночасного списання після стріму) видалений; усі його виклики мігровані.
+- [ ] Контролер AI чату виконує резерв ДО `flushHeaders`, обгортає стрім у `try/catch/finally`, гарантує відкат на будь-якому failure-шляху.
+- [ ] Failure відкату ловиться окремим catch і логується через `Logger.error` з ідентифікатором резерву і userId.
+- [ ] Усі unit-тести (existing + нові з розділу 4.6) зелені.
+- [ ] Новий e2e тест на паралельні запити зелений: з N конкурентних спроб успішний рівно один.
+- [ ] CLAUDE.md оновлений: формулювання "AI chat debit only on success" перефразовано на reserve→stream→commit/refund.
+- [ ] `docs/sprints/ai-chat/` оновлено: "3-layer protection" перефразоване так, щоб відображати, що account+balance — це **один атомарний резерв**, а не два окремих TOCTOU check-и.
+- [ ] У цьому файлі або в окремому known-limitations документі зафіксована проблема "зависаючий резерв при non-graceful crash між reserve і stream".
 
 ---
 
 ## 7. Оцінка складності
 
 **6/10.** Не "додати один параметр", але і не тиждень роботи. Потребує:
-- Перебудови debit flow з check-then-act на reserve-then-confirm
-- Акуратного finally-блоку з гарантованим refund на всіх failure-стежках
-- Нових e2e тестів на паралельні сценарії (це найбільш fragile частина)
+- Перебудови debit flow з check-then-act на reserve-then-confirm.
+- Акуратного finally-блоку з гарантованим відкатом на всіх failure-стежках.
+- Нових e2e тестів на паралельні сценарії — це найбільш fragile частина (тести на конкурентність легко стають flaky, треба продумати детермінізм).
 
-**Орієнтовний обсяг:** кілька годин на код + час на тести і ручну верифікацію через `curl` з `&`.
+**Орієнтовний обсяг:** кілька годин на код + час на тести і ручну верифікацію конкурентного сценарію.
