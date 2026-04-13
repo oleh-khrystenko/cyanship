@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Header } from '@/widgets/header';
 import { LandingNav } from '@/features/agency/landing-nav';
 import { SourceTracker } from '@/features/agency/brief/ui/SourceTracker';
 
@@ -11,6 +12,7 @@ export default function AgencyLayout({ children }: AgencyLayoutProps) {
         <>
             <SourceTracker />
             <LandingNav />
+            <Header />
             {children}
         </>
     );

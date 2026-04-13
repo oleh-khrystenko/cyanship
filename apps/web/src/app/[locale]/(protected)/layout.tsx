@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Header } from '@/widgets/header';
 import { AuthGuard } from '@/features/auth';
 
 interface ProtectedLayoutProps {
@@ -6,5 +7,10 @@ interface ProtectedLayoutProps {
 }
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
-    return <AuthGuard>{children}</AuthGuard>;
+    return (
+        <>
+            <Header />
+            <AuthGuard>{children}</AuthGuard>
+        </>
+    );
 }

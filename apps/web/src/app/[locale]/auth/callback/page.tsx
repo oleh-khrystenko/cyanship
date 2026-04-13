@@ -73,30 +73,28 @@ export default function CallbackPage() {
 
     if (accountDeleted) {
         return (
-            <main className="flex min-h-screen items-center justify-center px-4">
-                <div className="w-full max-w-md space-y-6 text-center">
-                    <h1 className="text-foreground text-3xl font-bold">
-                        {tRecovery('title')}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {t('account_deleted_description')}
-                    </p>
+            <div className="w-full max-w-md space-y-6 text-center">
+                <h1 className="text-foreground text-3xl font-bold">
+                    {tRecovery('title')}
+                </h1>
+                <p className="text-muted-foreground">
+                    {t('account_deleted_description')}
+                </p>
 
-                    <UiButton
-                        variant="filled"
-                        size="lg"
-                        className="w-full justify-center"
-                        disabled={submitting}
-                        onClick={() => void handleRestore()}
-                    >
-                        {submitting ? (
-                            <UiSpinner size="sm" />
-                        ) : (
-                            tRecovery('restore_button')
-                        )}
-                    </UiButton>
-                </div>
-            </main>
+                <UiButton
+                    variant="filled"
+                    size="lg"
+                    className="w-full justify-center"
+                    disabled={submitting}
+                    onClick={() => void handleRestore()}
+                >
+                    {submitting ? (
+                        <UiSpinner size="sm" />
+                    ) : (
+                        tRecovery('restore_button')
+                    )}
+                </UiButton>
+            </div>
         );
     }
 

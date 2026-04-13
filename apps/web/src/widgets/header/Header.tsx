@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
 import { LogOut, User, CreditCard, Menu, LayoutDashboard, Bot } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -47,8 +46,6 @@ const Header = () => {
     const cta = useHeaderNavStore((s) => s.cta);
     const openMobileMenu = useMobileMenuSheetStore((s) => s.open);
 
-    const pathname = usePathname();
-    const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
     const activeSection = useHeaderNavStore((s) => s.activeSection);
     useActiveSection();
@@ -184,16 +181,14 @@ const Header = () => {
                             }
                         />
                     ) : (
-                        !isSigninPage && (
-                            <UiButton
-                                as="link"
-                                href={`/${locale}/auth/signin`}
-                                variant="text"
-                                size="sm"
-                            >
-                                {t('signin')}
-                            </UiButton>
-                        )
+                        <UiButton
+                            as="link"
+                            href={`/${locale}/auth/signin`}
+                            variant="text"
+                            size="sm"
+                        >
+                            {t('signin')}
+                        </UiButton>
                     )}
 
                     {cta && (

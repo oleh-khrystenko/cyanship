@@ -599,7 +599,7 @@ function SigninContent() {
     );
 
     return (
-        <main className="flex min-h-screen items-center justify-center px-4">
+        <>
             <SessionExpiredHandler />
             <div className="w-full max-w-md space-y-8">
                 {renderHeader()}
@@ -611,18 +611,14 @@ function SigninContent() {
                 {state === 'recovery' && renderRecoveryState()}
                 {state === 'error' && renderErrorState()}
             </div>
-        </main>
+        </>
     );
 }
 
 export default function SigninPage() {
     return (
         <Suspense
-            fallback={
-                <main className="flex min-h-screen items-center justify-center px-4">
-                    <UiSpinner size="lg" />
-                </main>
-            }
+            fallback={<UiSpinner size="lg" />}
         >
             <SigninContent />
         </Suspense>

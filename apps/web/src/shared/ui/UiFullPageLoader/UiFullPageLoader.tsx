@@ -3,9 +3,9 @@ import { composeClasses } from '@/shared/lib';
 import type { UiFullPageLoaderProps } from './types';
 
 const UiFullPageLoader = ({ message, className }: UiFullPageLoaderProps) => (
-    <main
+    <div
         className={composeClasses(
-            'flex min-h-screen flex-col items-center justify-center gap-4',
+            'flex flex-1 flex-col items-center justify-center gap-4',
             className
         )}
     >
@@ -13,7 +13,7 @@ const UiFullPageLoader = ({ message, className }: UiFullPageLoaderProps) => (
         {message && (
             <p className="text-muted-foreground text-lg">{message}</p>
         )}
-    </main>
+    </div>
 );
 
 UiFullPageLoader.displayName = 'UiFullPageLoader';
