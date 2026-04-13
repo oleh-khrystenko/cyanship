@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model, Types } from 'mongoose';
 
 import { EXECUTION_TRANSACTION_TYPE } from '@cyanship/types';
 import {
@@ -9,6 +9,10 @@ import {
     ExecutionTransactionLean,
 } from './schemas/execution-transaction.schema';
 import { User, UserDocument } from './schemas/user.schema';
+import type {
+    CommitReservationOptions,
+    CommitReservationResult,
+} from './interfaces/reservation';
 
 interface GoogleProfile {
     email: string;
@@ -20,12 +24,17 @@ interface GoogleProfile {
 
 @Injectable()
 export class UsersService {
+    private readonly logger = new Logger(UsersService.name);
+
     constructor(
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
 
         @InjectModel(ExecutionTransaction.name)
-        private readonly executionTransactionModel: Model<ExecutionTransactionDocument>
+        private readonly executionTransactionModel: Model<ExecutionTransactionDocument>,
+
+        @InjectConnection()
+        private readonly connection: Connection
     ) {}
 
     async findByEmail(email: string): Promise<UserDocument | null> {
@@ -289,5 +298,113 @@ export class UsersService {
         if (!user) return false;
 
         return user.executions.balance > 0 || !user.executions.freeReportUsed;
+    }
+
+    // ── Reservation core API ─────────────────────────────────────
+
+    async commitReservation(
+        options: CommitReservationOptions
+    ): Promise<CommitReservationResult> {
+        const { userId, reservationId, ledgerEntry, sideEffectInTx } = options;
+
+        const session = await this.connection.startSession();
+        try {
+            let balanceAfter = 0;
+
+            await session.withTransaction(async () => {
+                // Step 1 — Claim reservation (claim-first order).
+                const claimResult = await this.userModel.updateOne(
+                    {
+                        _id: userId,
+                        'executions.activeReservation.id': reservationId,
+                    },
+                    { $set: { 'executions.activeReservation': null } },
+                    { session }
+                );
+
+                if (claimResult.matchedCount === 0) {
+                    throw new Error(
+                        'Reservation not found or already closed'
+                    );
+                }
+
+                // Step 2 — Fresh balance read (concurrent-safe within transaction).
+                const user = await this.userModel.findOne(
+                    { _id: userId },
+                    { 'executions.balance': 1 },
+                    { session }
+                );
+                balanceAfter = user?.executions.balance ?? 0;
+
+                // Step 3 — Ledger insert (unique sparse index on reservationId = defense-in-depth).
+                await this.executionTransactionModel.create(
+                    [
+                        {
+                            userId: new Types.ObjectId(userId),
+                            type: ledgerEntry.type,
+                            action: ledgerEntry.action,
+                            amount: ledgerEntry.amount,
+                            balanceAfter,
+                            reservationId,
+                        },
+                    ],
+                    { session }
+                );
+
+                // Step 4 — Feature side effects (within same transaction).
+                if (sideEffectInTx) {
+                    await sideEffectInTx(session);
+                }
+            });
+
+            return { balanceAfter };
+        } finally {
+            await session.endSession();
+        }
+    }
+
+    async refundReservation(
+        userId: string,
+        reservationId: string
+    ): Promise<void> {
+        // Phase A — Read compensationOps from active reservation.
+        const user = await this.userModel.findOne(
+            {
+                _id: userId,
+                'executions.activeReservation.id': reservationId,
+            },
+            { 'executions.activeReservation': 1 }
+        );
+
+        if (!user?.executions.activeReservation) {
+            return; // Already closed — idempotent no-op.
+        }
+
+        const { amount, compensationOps } = user.executions.activeReservation;
+
+        // Phase B — Atomic update: restore balance + apply compensation + clear reservation.
+        const incOps: Record<string, number> = {
+            'executions.balance': amount,
+            ...(compensationOps?.inc ?? {}),
+        };
+
+        const result = await this.userModel.findOneAndUpdate(
+            {
+                _id: userId,
+                'executions.activeReservation.id': reservationId,
+            },
+            {
+                $inc: incOps,
+                $set: { 'executions.activeReservation': null },
+            }
+        );
+
+        if (!result) {
+            return; // Race: another process closed it — idempotent no-op.
+        }
+
+        this.logger.log(
+            `Refunded reservation ${reservationId} for user ${userId}: +${amount} balance`
+        );
     }
 }

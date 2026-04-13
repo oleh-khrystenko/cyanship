@@ -14,6 +14,9 @@ export const AI_CHAT_FREE_LIMIT = 5;
 /** One-time bonus AI requests granted via brief form */
 export const AI_CHAT_BONUS_AMOUNT = 5;
 
+/** Reservation TTL in milliseconds (5 minutes) */
+export const AI_CHAT_RESERVATION_TTL_MS = 5 * 60 * 1000;
+
 // --- Request Schema ---
 
 export const AiChatRequestSchema = z.object({

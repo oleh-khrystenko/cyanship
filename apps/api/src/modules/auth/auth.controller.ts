@@ -108,7 +108,10 @@ export class AuthController {
                     id: user.id as string,
                     email: user.email,
                     profile: user.profile,
-                    executions: user.executions,
+                    executions: {
+                        balance: user.executions.balance,
+                        freeReportUsed: user.executions.freeReportUsed,
+                    },
                     hasPassword: !!user.passwordHash,
                     deletedAt: user.deletedAt ?? null,
                     preferredLang: user.preferredLang as Lang,
@@ -169,7 +172,10 @@ export class AuthController {
                     id: user.id as string,
                     email: user.email,
                     profile: user.profile,
-                    executions: user.executions,
+                    executions: {
+                        balance: user.executions.balance,
+                        freeReportUsed: user.executions.freeReportUsed,
+                    },
                     hasPassword: !!user.passwordHash,
                     deletedAt: user.deletedAt ?? null,
                     preferredLang: user.preferredLang as Lang,
