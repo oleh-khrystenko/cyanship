@@ -453,11 +453,12 @@ export default function AiChatPage() {
                                 </div>
                             }
                         />
-                        <p className="mt-1.5 text-center text-xs text-muted-foreground">
-                            {t('disclaimer')}
-                            {' · '}
-                            {t('non_refundable_warning')}
-                        </p>
+                        <div className="mt-1.5 space-y-0.5 text-center text-xs text-muted-foreground">
+                            <p>{t('disclaimer')}</p>
+                            <p className="text-muted-foreground/60">
+                                {t('non_refundable_warning')}
+                            </p>
+                        </div>
                     </>
                 )}
             </div>
