@@ -35,28 +35,32 @@ Overlay за межами `shared/ui/` **завжди** використовує
 
 **Чому:** примітиви гарантують focus trap, scroll lock, accessibility (aria), анімації та консистентну поведінку. Ручна реалізація неминуче пропускає edge cases.
 
-### 2. Стан через Zustand store
+### 2. Стан через Zustand store, в межах власного slice
 
-Кожен overlay керується через виділений Zustand store:
+Кожен overlay керується через виділений Zustand store, який живе **усередині того slice, що володіє overlay**. Глобального `src/stores/` каталогу не існує — це enforced ESLint правилом `no-restricted-imports` (`apps/web/eslint.config.mjs`).
 
 ```
-stores/
-  {name}Dialog/
-    {name}DialogStore.ts    # isOpen, open(), close(), optional payload
-    index.ts
+features/{domain}/
+  {Name}Dialog.tsx          # overlay компонент
+  {name}DialogStore.ts      # Zustand store: isOpen, open(), close(), optional payload
 ```
 
-Store може містити payload для параметризації overlay (наприклад, ID сутності для підтвердження видалення).
+Аналогічно для widget-owned overlay'їв store лежить у `widgets/{name}/` поруч з компонентом.
 
-**Заборонено:** `useState` для стану overlay, `renderWrapper` / render prop патерни для передачі модалки через trigger.
+Store може містити payload для параметризації overlay (наприклад, ID сутності для підтвердження видалення, режим відкриття).
 
-**Чому:** єдиний патерн для всіх overlay — передбачуваний, тестований, масштабований. Коли з'являється другий trigger, нічого не треба рефакторити.
+**Заборонено:**
+- `useState` для стану overlay
+- `renderWrapper` / render prop патерни для передачі модалки через trigger
+- Винесення overlay store у глобальний `src/stores/` каталог (lint-error)
 
-### 3. Один overlay — один mount у root layout
+**Чому:** єдиний патерн для всіх overlay — передбачуваний, тестований, масштабований. In-slice ownership гарантує, що видалення фічі не залишає orphan-state у глобальному каталозі.
 
-Всі overlay монтуються в одному місці — `app/[locale]/layout.tsx`. Lazy-завантаження вирішується через `dynamic(() => import(...))` на рівні компонента.
+### 3. Один overlay — один mount через `app/overlays.tsx`
 
-**Заборонено:** монтувати overlay в секційних layout'ах, монтувати один overlay в кількох місцях, обгортати trigger компонентом overlay.
+Всі overlay монтуються через єдиний реєстр — `app/overlays.tsx`, який рендериться один раз у root layout. Lazy-завантаження вирішується через `dynamic(() => import(...))` на рівні реєстру. `app/overlays.tsx` — **єдиний санкціонований виняток** для core→agency dynamic-import, оголошений file-scoped override'ом у `apps/web/eslint.config.mjs`. Жоден інший файл не може dynamic-import з agency.
+
+**Заборонено:** монтувати overlay в секційних layout'ах, монтувати один overlay в кількох місцях, обгортати trigger компонентом overlay, додавати dynamic-imports з agency у будь-який файл крім `app/overlays.tsx`.
 
 ### 4. Вибір примітиву
 
@@ -73,18 +77,16 @@ Store може містити payload для параметризації overla
 ```
 features/{domain}/
   {Name}Dialog.tsx          # компонент overlay, читає store
-  ...
-
-stores/
-  {name}Dialog/
-    {name}DialogStore.ts    # Zustand store
-    index.ts
+  {name}DialogStore.ts      # Zustand store (in-slice)
+  index.ts                  # public API: експортує лише те, що потрібно ззовні
 ```
 
 Overlay-компонент:
-- Читає `isOpen` та `close` зі store
+- Читає `isOpen` та `close` зі store через **relative import** (`./{name}DialogStore`)
 - Не приймає `children` і не рендерить trigger
 - Містить весь контент overlay (або делегує internal-компонентам feature)
+
+**Внутрішньо-slice'ові споживачі** (в тому ж каталозі feature) — використовують relative import. **Зовнішні споживачі того ж модуля** (інша feature/widget у тому ж module) можуть імпортувати через барель `@/features/{domain}` — але тільки якщо store експортовано там явно. Не експортуй store з барелю, якщо у нього немає external консьюмерів — менший public API краще.
 
 ### 6. Payload для параметризованих overlay
 
@@ -105,21 +107,27 @@ Trigger викликає `open(id)`, overlay читає `targetId` зі store.
 
 Overlay не може відкривати інший overlay. Якщо потрібна послідовність кроків — використовуй multi-step контент всередині одного overlay (wizard pattern), а не вкладені модалки.
 
-## Приклад: правильна реалізація
+## Приклад: правильна реалізація (in-slice ownership)
 
-**Store:**
+**Store (поруч з overlay компонентом):**
 ```ts
-// stores/briefDialog/briefDialogStore.ts
+// features/agency/brief/briefDialogStore.ts
+import { create } from 'zustand';
+
 export const useBriefDialogStore = create<BriefDialogState>((set) => ({
     isOpen: false,
-    open: () => set({ isOpen: true }),
-    close: () => set({ isOpen: false }),
+    requestAiBonus: false,
+    open: (opts) =>
+        set({ isOpen: true, requestAiBonus: opts?.requestAiBonus ?? false }),
+    close: () => set({ isOpen: false, requestAiBonus: false }),
 }));
 ```
 
-**Overlay компонент:**
+**Overlay компонент (relative import зі свого slice):**
 ```tsx
 // features/agency/brief/BriefDialog.tsx
+import { useBriefDialogStore } from './briefDialogStore';
+
 export default function BriefDialog() {
     const isOpen = useBriefDialogStore((s) => s.isOpen);
     const close = useBriefDialogStore((s) => s.close);
@@ -132,20 +140,57 @@ export default function BriefDialog() {
 }
 ```
 
-**Layout mount:**
+**Реєстрація в overlay registry (єдиний global mount point):**
 ```tsx
-// app/[locale]/layout.tsx
-<Providers>
-    <NextIntlClientProvider>
-        <BriefDialog />
-        <Header />
-        {children}
-    </NextIntlClientProvider>
-</Providers>
+// app/overlays.tsx — sanctioned cross-module overlay registry
+const BriefDialog = dynamic(() => import('@/features/agency/brief/BriefDialog'));
+
+export function Overlays() {
+    return <><BriefDialog />{/* ... */}</>;
+}
 ```
 
-**Trigger (будь-де в app):**
+**Trigger зсередини того ж модуля (наприклад, інша agency feature):**
 ```tsx
-const openBrief = useBriefDialogStore((s) => s.open);
-<UiButton onClick={openBrief}>Get started</UiButton>
+// features/agency/landing-nav/LandingNav.tsx — agency → agency, direct OK
+import { useBriefDialogStore } from '@/features/agency/brief';
+
+const open = useBriefDialogStore((s) => s.open);
+<UiButton onClick={() => open({ requestAiBonus: false })}>Get started</UiButton>
 ```
+
+**Trigger ззовні модуля (наприклад, з core ai-chat) — через intent bus:**
+```tsx
+// app/(protected)/ai-chat/page.tsx — core, MUST NOT import agency
+import { uiIntents } from '@/shared/lib';
+
+<UiButton onClick={() => uiIntents.emit('open-brief-dialog', { requestAiBonus: true })}>
+    Get AI bonus
+</UiButton>
+```
+
+## Cross-slice trigger через intent bus
+
+Коли trigger лежить в **іншому модулі** (типово: core хоче відкрити agency-overlay або навпаки), прямий імпорт overlay store блокується ESLint правилом `CORE_MUST_NOT_IMPORT_AGENCY`. Замість цього використовується typed intent bus у `shared/lib/uiIntents.ts`:
+
+1. **Owning slice** (де живе overlay) підписується на intent при module init:
+   ```ts
+   // features/agency/brief/briefDialogStore.ts
+   uiIntents.on('open-brief-dialog', (payload) => {
+       useBriefDialogStore.getState().open(payload);
+   });
+   ```
+
+2. **Trigger slice** (звідки відкривається overlay) публікує intent:
+   ```ts
+   uiIntents.emit('open-brief-dialog', { requestAiBonus: true });
+   ```
+
+3. **Новий intent type** додається в `UiIntent` union у `shared/lib/uiIntents.ts`. Шар shared не знає implementation — лише контракт topic + payload.
+
+**Чому:** owning slice володіє і UI, і реакцією на intent. Trigger slice залишається ignorant про implementation. Заміна owning slice — це зміна тільки в одному файлі (subscribe handler), trigger-сторона не торкається.
+
+**Гарантії:**
+- Subscription активується автоматично при першому імпорті overlay компонента (через `app/overlays.tsx` dynamic import — мовиться у Rule 3).
+- Listener-failures ізольовані (intent bus має try/catch навколо delivery).
+- Якщо listener ще не зареєстровано (race window після hydration) — intent silently dropped. Для click-driven workflow це безпечно: hydration завжди завершується до взаємодії.

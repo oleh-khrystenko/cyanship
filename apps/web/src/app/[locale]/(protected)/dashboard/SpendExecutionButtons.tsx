@@ -10,7 +10,7 @@ import {
     type SpendableAction,
 } from '@cyanship/types';
 import { spendExecutions, getApiMessageKey } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { toIntlLocale } from '@/shared/lib';
 import UiButton from '@/shared/ui/UiButton';
 import UiSectionCard from '@/shared/ui/UiSectionCard';

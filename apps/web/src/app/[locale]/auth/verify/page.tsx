@@ -9,7 +9,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { verifyMagicLink, getMe, acceptTerms, getApiMessageKey } from '@/shared/api';
 import { isValidRedirect } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 type VerifyStatus = 'verifying' | 'success' | 'deleted' | 'error';
 
@@ -88,7 +88,7 @@ function VerifyContent() {
 
     if (status === 'deleted') {
         return (
-            <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+            <div className="flex flex-col items-center gap-4">
                 <CheckCircle className="h-12 w-12 text-success" />
                 <p className="text-foreground text-lg font-semibold">
                     {t('deleted_heading')}
@@ -104,13 +104,13 @@ function VerifyContent() {
                 >
                     {t('deleted_signin_button')}
                 </UiButton>
-            </main>
+            </div>
         );
     }
 
     if (status === 'error') {
         return (
-            <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+            <div className="flex flex-col items-center gap-4">
                 <p className="text-foreground text-lg">
                     {t('error_heading')}
                 </p>
@@ -125,7 +125,7 @@ function VerifyContent() {
                 >
                     {t('retry_button')}
                 </UiButton>
-            </main>
+            </div>
         );
     }
 

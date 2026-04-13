@@ -13,14 +13,15 @@ import type { MagicLinkPurpose } from '@cyanship/types';
 
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
+import UiLink from '@/shared/ui/UiLink';
 import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
+import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { GoogleIcon } from '@/shared/icons';
 import { ENV } from '@/shared/config';
 import { checkEmail, sendMagicLink, logout } from '@/shared/api';
 import { saveRedirect, getFieldError } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 const EmailFormSchema = CheckEmailSchema;
 type EmailFormValues = z.input<typeof EmailFormSchema>;
@@ -191,15 +192,12 @@ const ProofAuth = () => {
         return (
             <div className="w-full rounded-lg border border-border bg-card p-6">
                 <div className="flex flex-col items-center gap-6">
-                    <UiAvatar size="2xl">
-                        {user.profile.avatar && (
-                            <UiAvatarImage
-                                src={user.profile.avatar}
-                                alt={fullName || user.email}
-                            />
-                        )}
-                        <UiAvatarFallback size="2xl">{initials}</UiAvatarFallback>
-                    </UiAvatar>
+                    <UiAvatar
+                        size="2xl"
+                        src={user.profile.avatar}
+                        alt={fullName || user.email}
+                        fallback={initials}
+                    />
 
                     <div className="space-y-1 text-center">
                         {fullName && (
@@ -298,26 +296,26 @@ const ProofAuth = () => {
             >
                 {t.rich('terms_agree', {
                     terms: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/terms`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                     privacy: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/privacy`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                 })}
             </UiCheckbox>

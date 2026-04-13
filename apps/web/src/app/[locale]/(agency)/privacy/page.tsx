@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps } from '@/shared/types/settings';
+import UiLink from '@/shared/ui/UiLink';
 import { LandingFooter } from '@/widgets/agency/landing';
 import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
@@ -457,23 +458,23 @@ export default async function PrivacyPage() {
                         <footer className="mt-12 border-t border-border pt-8">
                             <p className="text-xs text-muted-foreground/60">
                                 This policy is adapted from the{' '}
-                                <a
+                                <UiLink
                                     href="https://github.com/basecamp/policies"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
+                                    variant="subtle"
                                 >
                                     Basecamp open-source policies
-                                </a>
+                                </UiLink>
                                 , licensed under{' '}
-                                <a
+                                <UiLink
                                     href="https://creativecommons.org/licenses/by/4.0/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-muted-foreground"
+                                    variant="subtle"
                                 >
                                     CC BY 4.0
-                                </a>
+                                </UiLink>
                                 .
                             </p>
                         </footer>

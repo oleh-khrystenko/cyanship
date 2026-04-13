@@ -12,7 +12,7 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { getFieldError } from '@/shared/lib';
 import { changePassword, getMe } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 const ChangePasswordFormSchema = z.object({
     currentPassword: z.string().min(1),

@@ -43,7 +43,7 @@ Unit, integration (e2e) та frontend unit тести для повного по
    - `apps/web/src/shared/api/client.ts` — axios interceptors, in-memory token
    - `apps/web/src/shared/api/auth.ts` — всі auth API функції
    - `apps/web/src/shared/api/mapApiCode.ts` — response code → i18n key
-   - `apps/web/src/stores/auth/authStore.ts` — Zustand store
+   - `apps/web/src/entities/user/authStore.ts` — Zustand store
    - `apps/web/src/features/auth/AuthInitializer.tsx`
    - `apps/web/src/features/auth/AuthGuard.tsx`
    - `apps/web/src/middleware.ts`
@@ -326,7 +326,7 @@ createMagicLinkToken(email, purpose) → зберігає token в mocked Redis,
 
 **Мокування:** Потрібно мокнути `RESPONSE_CODE_TYPE` з `@cyanship/types`.
 
-### 4.5 `apps/web/src/stores/auth/authStore.spec.ts`
+### 4.5 `apps/web/src/entities/user/authStore.spec.ts`
 
 - Initial state: `user: null`, `isAuthenticated: false`, `isLoading: true`
 - `setUser(user)` → `user` встановлено, `isAuthenticated: true`, `isLoading: false`

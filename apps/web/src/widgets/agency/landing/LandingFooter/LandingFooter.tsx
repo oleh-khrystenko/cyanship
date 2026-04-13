@@ -1,7 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
-import { GitHubIcon, LinkedInIcon, XIcon } from '@/shared/icons';
+import { GitHubIcon, LinkedInIcon, UpworkIcon } from '@/shared/icons';
+import UiLink from '@/shared/ui/UiLink';
 import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
 
 const allNavLinks = [
@@ -24,14 +25,14 @@ const socialLinks = [
         icon: LinkedInIcon,
     },
     {
-        key: 'x',
-        href: 'https://x.com/cyanshiphq',
-        icon: XIcon,
-    },
-    {
         key: 'github',
         href: 'https://github.com/oleh-khrystenko',
         icon: GitHubIcon,
+    },
+    {
+        key: 'upwork',
+        href: 'https://www.upwork.com/freelancers/cyanship',
+        icon: UpworkIcon,
     },
 ] as const;
 
@@ -62,12 +63,13 @@ const LandingFooter = () => {
                             <ul className="mt-4 space-y-3">
                                 {navLinks.map(({ key, href }) => (
                                     <li key={key}>
-                                        <a
+                                        <UiLink
                                             href={href}
-                                            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                                            variant="muted"
+                                            className="text-sm"
                                         >
                                             {t(`nav_${key}`)}
-                                        </a>
+                                        </UiLink>
                                     </li>
                                 ))}
                             </ul>
@@ -81,12 +83,13 @@ const LandingFooter = () => {
                             <ul className="mt-4 space-y-3">
                                 {legalLinks.map(({ key, href }) => (
                                     <li key={key}>
-                                        <a
+                                        <UiLink
                                             href={href}
-                                            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                                            variant="muted"
+                                            className="text-sm"
                                         >
                                             {t(`legal_${key}`)}
-                                        </a>
+                                        </UiLink>
                                     </li>
                                 ))}
                             </ul>
@@ -97,26 +100,27 @@ const LandingFooter = () => {
                             <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                                 {t('col_connect')}
                             </h4>
-                            <a
+                            <UiLink
                                 href="mailto:oleg@cyanship.com"
-                                className="text-muted-foreground hover:text-foreground mt-4 inline-flex items-center gap-1.5 text-sm transition-colors"
+                                variant="muted"
+                                className="mt-4 inline-flex items-center gap-1.5 text-sm"
                             >
                                 <Mail className="size-3.5" />
                                 {t('email')}
-                            </a>
+                            </UiLink>
                             <div className="mt-4 flex items-center gap-3">
                                 {socialLinks.map(
                                     ({ key, href, icon: Icon }) => (
-                                        <a
+                                        <UiLink
                                             key={key}
                                             href={href}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             aria-label={t(`social_${key}`)}
-                                            className="text-muted-foreground hover:text-foreground transition-colors"
+                                            variant="muted"
                                         >
                                             <Icon className="size-4" />
-                                        </a>
+                                        </UiLink>
                                     )
                                 )}
                             </div>

@@ -7,8 +7,8 @@ import {
     UiSheetHeader,
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
-import { useMediaQuery } from '@/shared/lib';
-import { useDogfoodingSheetStore } from '@/stores/dogfoodingSheet';
+import { useMediaQuery } from '@/shared/lib/useMediaQuery';
+import { useDogfoodingSheetStore } from './dogfoodingSheetStore';
 import ProofWindow from './ProofWindow';
 
 const DESKTOP_MQ = '(min-width: 1024px)';

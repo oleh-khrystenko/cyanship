@@ -15,21 +15,17 @@ const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
 });
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
-import {
-    UiAvatar,
-    UiAvatarImage,
-    UiAvatarFallback,
-} from '@/shared/ui/UiAvatar';
+import { UiAvatar } from '@/shared/ui/UiAvatar';
 import {
     UiSheet,
     UiSheetContent,
     UiSheetHeader,
     UiSheetTitle,
 } from '@/shared/ui/UiSheet';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { getFullName } from '@cyanship/types';
-import { useHeaderNavStore } from '@/stores/headerNav';
-import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
+import { useHeaderNavStore } from '@/entities/navigation';
+import { useMobileMenuSheetStore } from './mobileMenuSheetStore';
 import { useUserMenu } from './useUserMenu';
 
 const menuItemBase =
@@ -115,15 +111,12 @@ export default function MobileMenuSheet() {
                     ) : isAuthenticated && user ? (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-3 pb-3">
-                                <UiAvatar size="md">
-                                    <UiAvatarImage
-                                        src={user.profile.avatar ?? undefined}
-                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
-                                    />
-                                    <UiAvatarFallback size="md">
-                                        {initials}
-                                    </UiAvatarFallback>
-                                </UiAvatar>
+                                <UiAvatar
+                                    size="md"
+                                    src={user.profile.avatar}
+                                    alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
+                                    fallback={initials}
+                                />
                                 <div className="flex min-w-0 flex-col">
                                     <span className="truncate text-sm font-medium">
                                         {getFullName(user.profile.firstName, user.profile.lastName)}

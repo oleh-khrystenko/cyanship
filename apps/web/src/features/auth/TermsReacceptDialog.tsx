@@ -11,10 +11,11 @@ import {
 } from '@/shared/ui/UiModal';
 import UiButton from '@/shared/ui/UiButton';
 import UiCheckbox from '@/shared/ui/UiCheckbox';
+import UiLink from '@/shared/ui/UiLink';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { acceptTerms } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useTermsReacceptDialogStore } from '@/stores/termsReacceptDialog';
+import { useAuthStore } from '@/entities/user';
+import { useTermsReacceptDialogStore } from './termsReacceptDialogStore';
 
 function TermsReacceptForm({ onClose }: { onClose: () => void }) {
     const t = useTranslations('components.terms_reaccept');
@@ -63,26 +64,26 @@ function TermsReacceptForm({ onClose }: { onClose: () => void }) {
                 >
                     {t.rich('agree', {
                         terms: (chunks) => (
-                            <a
+                            <UiLink
                                 href={`/${locale}/terms`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary underline hover:no-underline"
+                                variant="primary-underline"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {chunks}
-                            </a>
+                            </UiLink>
                         ),
                         privacy: (chunks) => (
-                            <a
+                            <UiLink
                                 href={`/${locale}/privacy`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary underline hover:no-underline"
+                                variant="primary-underline"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {chunks}
-                            </a>
+                            </UiLink>
                         ),
                     })}
                 </UiCheckbox>

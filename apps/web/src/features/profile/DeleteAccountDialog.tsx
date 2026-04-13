@@ -17,7 +17,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { confirmDeleteAccount } from '@/shared/api';
-import { useDeleteAccountDialogStore } from '@/stores/deleteAccountDialog';
+import { useDeleteAccountDialogStore } from './deleteAccountDialogStore';
 
 const DeleteAccountFormSchema = z.object({
     password: z.string().min(1),

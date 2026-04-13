@@ -89,10 +89,45 @@ describe('middleware', () => {
             expect(response.status).toBe(200);
             expect(mockRedirect).not.toHaveBeenCalled();
         });
+
+        it('tags missing-cookie redirect with reason=session-expired', () => {
+            const req = createMockRequest('/uk/profile');
+            middleware(req);
+
+            const url: URL = mockRedirect.mock.calls[0][0];
+            expect(url.searchParams.get('reason')).toBe('session-expired');
+        });
+
+        it('does NOT tag account-deletion redirect with reason=session-expired', () => {
+            // Account-deleted users have their own recovery flow on the
+            // signin page; tagging this redirect would clear in-memory
+            // state needed by that flow and surface a misleading toast.
+            const req = createMockRequest('/uk/profile', {
+                bid_refresh: 'some-token',
+                bid_account_deleted: 'true',
+            });
+            middleware(req);
+
+            const url: URL = mockRedirect.mock.calls[0][0];
+            expect(url.searchParams.get('reason')).toBeNull();
+        });
+
+        it('does NOT tag redirect when both cookies are missing AND deletion flag set', () => {
+            // Edge case: deletion flag present but no refresh cookie.
+            // Deletion flow takes precedence — the user lands on signin
+            // for recovery, not session-expiration handling.
+            const req = createMockRequest('/uk/profile', {
+                bid_account_deleted: 'true',
+            });
+            middleware(req);
+
+            const url: URL = mockRedirect.mock.calls[0][0];
+            expect(url.searchParams.get('reason')).toBeNull();
+        });
     });
 
     describe('auth paths', () => {
-        it('redirects /uk/auth/signin to profile when cookie exists', () => {
+        it('redirects /uk/auth/signin to dashboard when cookie exists', () => {
             const req = createMockRequest('/uk/auth/signin', {
                 bid_refresh: 'some-token',
             });
@@ -100,7 +135,7 @@ describe('middleware', () => {
 
             expect(response.status).toBe(307);
             const url: URL = mockRedirect.mock.calls[0][0];
-            expect(url.pathname).toBe('/uk/profile');
+            expect(url.pathname).toBe('/uk/dashboard');
         });
 
         it('passes through /uk/auth/signin when no cookie', () => {

@@ -2,7 +2,7 @@
 
 import { ComponentProps } from 'react';
 import UiButton from '@/shared/ui/UiButton';
-import { useBriefDialogStore } from '@/stores/briefDialog';
+import { useBriefDialogStore } from '@/features/agency/brief';
 
 type StartBriefButtonProps = Omit<
     ComponentProps<typeof UiButton> & { as?: 'button' },

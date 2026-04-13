@@ -20,6 +20,7 @@ import {
 import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '../../common/modules/redis.module';
+import { RedisCounterService } from '../../common/services/redis-counter.service';
 import { ENV, parseLockoutThresholds } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
@@ -48,7 +49,8 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly usersService: UsersService,
         private readonly emailService: EmailService,
-        @Inject(REDIS_CLIENT) private readonly redis: Redis
+        @Inject(REDIS_CLIENT) private readonly redis: Redis,
+        private readonly redisCounter: RedisCounterService
     ) {}
 
     async generateTokens(userId: string, email: string): Promise<TokenPair> {
@@ -186,11 +188,13 @@ export class AuthService {
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
         const rateLimitTtl = ENV.AUTH_MAGIC_LINK_RATE_WINDOW_MIN * 60;
 
-        const count = await this.redis.incr(rateLimitKey);
-
-        if (count === 1) {
-            await this.redis.expire(rateLimitKey, rateLimitTtl);
-        }
+        // Atomic INCR + first-call EXPIRE via Lua. Prevents permanent counter
+        // retention if the process dies between INCR and EXPIRE — that bug would
+        // permanently block magic link sends to the affected email.
+        const count = await this.redisCounter.incrementFixedWindow(
+            rateLimitKey,
+            rateLimitTtl
+        );
 
         if (count > ENV.AUTH_MAGIC_LINK_RATE_LIMIT) {
             throw new TooManyRequestsException();
@@ -460,16 +464,17 @@ export class AuthService {
 
     private async checkEmailRateLimit(ip: string): Promise<void> {
         const key = `check_email:${ip}`;
-        const count = await this.redis.get(key);
-        if (count && parseInt(count, 10) >= 10) {
+        // Atomic INCR + sliding-window TTL refresh. The previous GET-then-INCR
+        // pattern had two bugs at once: a TOCTOU race that let multiple parallel
+        // requests pass the threshold simultaneously, and a non-atomic INCR/EXPIRE
+        // pair that could leave the counter without a TTL on process crash. Both
+        // are eliminated by checking the post-increment count from a single Lua call.
+        const count = await this.redisCounter.incrementSlidingWindow(key, 60);
+        if (count > 10) {
             throw new TooManyRequestsException(
                 'Too many requests. Try again later'
             );
         }
-        const pipeline = this.redis.pipeline();
-        pipeline.incr(key);
-        pipeline.expire(key, 60);
-        await pipeline.exec();
     }
 
     private async checkBruteForce(ip: string, email: string): Promise<void> {
@@ -498,10 +503,11 @@ export class AuthService {
     ): Promise<void> {
         const key = `login_attempts:${ip}:${email}`;
         const ttl = ENV.AUTH_LOGIN_ATTEMPTS_TTL_MIN * 60;
-        const pipeline = this.redis.pipeline();
-        pipeline.incr(key);
-        pipeline.expire(key, ttl);
-        await pipeline.exec();
+        // Sliding window: every failed attempt refreshes the TTL so an ongoing
+        // brute-force keeps the offender locked indefinitely. Atomic Lua avoids
+        // the race where a process crash between INCR and EXPIRE leaves the
+        // counter without TTL — that would permanently lock out the user.
+        await this.redisCounter.incrementSlidingWindow(key, ttl);
     }
 
     private async clearLoginAttempts(ip: string, email: string): Promise<void> {

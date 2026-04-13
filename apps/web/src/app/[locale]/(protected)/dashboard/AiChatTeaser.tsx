@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { AI_CHAT_FREE_LIMIT, AI_CHAT_BONUS_AMOUNT } from '@cyanship/types';
 
+import UiLink from '@/shared/ui/UiLink';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 export default function AiChatTeaser() {
     const t = useTranslations('dashboard_page.ai_chat_teaser');
@@ -23,12 +23,13 @@ export default function AiChatTeaser() {
         <UiSectionCard
             title={t('heading')}
             headerRight={
-                <Link
+                <UiLink
+                    as="link"
                     href={`/${locale}/ai-chat`}
-                    className="text-sm font-medium text-primary hover:underline"
+                    className="text-sm font-medium"
                 >
                     {t('cta_link')}
-                </Link>
+                </UiLink>
             }
         >
             <p className="mt-3 text-sm text-muted-foreground">

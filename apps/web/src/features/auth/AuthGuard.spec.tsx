@@ -6,17 +6,30 @@ const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
     useRouter: () => ({ replace: mockReplace }),
     useParams: () => ({ locale: 'uk' }),
+    usePathname: () => '/uk/dashboard',
 }));
 
-jest.mock('@/shared/ui/UiSpinner', () => {
-    return function MockSpinner() {
+jest.mock('next-intl', () => ({
+    useTranslations: () => (key: string) => key,
+}));
+
+jest.mock('sonner', () => ({
+    toast: { info: jest.fn(), error: jest.fn(), success: jest.fn() },
+}));
+
+jest.mock('@cyanship/types', () => ({
+    isOnboardingComplete: () => true,
+}));
+
+jest.mock('@/shared/ui/UiFullPageLoader', () => {
+    return function MockFullPageLoader() {
         return <div data-testid="spinner">Loading...</div>;
     };
 });
 
 const mockUseAuthStore = jest.fn();
 
-jest.mock('@/stores/auth', () => ({
+jest.mock('@/entities/user', () => ({
     useAuthStore: (selector: (s: any) => any) => mockUseAuthStore(selector),
 }));
 

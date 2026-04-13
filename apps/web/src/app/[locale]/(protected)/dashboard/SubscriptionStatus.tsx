@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
 import type { PaymentsCatalog } from '@cyanship/types';
 import { getCatalog } from '@/shared/api/payments';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { formatLocalDate, toIntlLocale } from '@/shared/lib';
+import UiLink from '@/shared/ui/UiLink';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 
 export default function SubscriptionStatus() {
@@ -40,12 +40,13 @@ export default function SubscriptionStatus() {
         : '';
 
     const billingLink = (
-        <Link
+        <UiLink
+            as="link"
             href={`/${locale}/billing`}
-            className="text-sm font-medium text-primary hover:underline"
+            className="text-sm font-medium"
         >
             {hasActive ? t('manage') : t('view_plans')}
-        </Link>
+        </UiLink>
     );
 
     return (

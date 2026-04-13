@@ -15,11 +15,12 @@ import {
     createOneOffCheckout,
     createPortalSession,
 } from '@/shared/api/payments';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { formatLocalDate, toIntlLocale } from '@/shared/lib';
-import { useBillingResetDialogStore } from '@/stores/billingResetDialog';
+import { useBillingResetDialogStore } from '@/features/billing';
 import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
+import UiLink from '@/shared/ui/UiLink';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiPageHeading from '@/shared/ui/UiPageHeading';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -498,14 +499,14 @@ export default function BillingPage() {
             <p className="text-muted-foreground text-center text-xs">
                 {t.rich('checkout_terms_note', {
                     terms: (chunks) => (
-                        <a
+                        <UiLink
                             href={`/${locale}/terms`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline hover:no-underline"
+                            variant="primary-underline"
                         >
                             {chunks}
-                        </a>
+                        </UiLink>
                     ),
                 })}
             </p>
