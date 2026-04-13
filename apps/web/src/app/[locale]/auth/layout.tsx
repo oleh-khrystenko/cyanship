@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useLocale } from 'next-intl';
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
+import UiHeaderShell from '@/shared/ui/UiHeaderShell';
 import ChangeLang from '@/features/change-lang';
 
 const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
@@ -16,7 +17,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
     return (
         <main className="flex flex-1 flex-col">
-            <div className="container flex h-16 items-center justify-between px-6">
+            <UiHeaderShell>
                 <UiButton
                     as="link"
                     href={`/${locale}`}
@@ -31,7 +32,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                     <ChangeLang />
                     <ChangeTheme />
                 </div>
-            </div>
+            </UiHeaderShell>
 
             <div className="flex flex-1 items-center justify-center px-4 py-8">
                 {children}

@@ -11,6 +11,7 @@ const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
 });
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
+import UiHeaderShell from '@/shared/ui/UiHeaderShell';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
 import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { useAuthStore } from '@/entities/user';
@@ -67,7 +68,7 @@ const Header = () => {
     }, []);
 
     return (
-        <header className="sticky top-0 z-50">
+        <div className="sticky top-0 z-50">
             <div
                 className={`pointer-events-none absolute inset-0 ${
                     canAnimate
@@ -76,7 +77,7 @@ const Header = () => {
                 } ${showGlass ? 'opacity-100' : 'opacity-0'}`}
                 aria-hidden="true"
             />
-            <div className="relative z-10 container flex h-16 items-center justify-between gap-6 px-6">
+            <UiHeaderShell className="relative z-10 gap-6">
                 {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
                 {hasNav ? (
                     <UiButton
@@ -213,8 +214,8 @@ const Header = () => {
                         onClick={openMobileMenu}
                     />
                 </div>
-            </div>
-        </header>
+            </UiHeaderShell>
+        </div>
     );
 };
 
