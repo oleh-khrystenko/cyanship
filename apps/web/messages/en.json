@@ -283,7 +283,8 @@
             "no_billing_account": "No billing account found. Please subscribe first."
         },
         "users": {
-            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription."
+            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription.",
+            "executions_reservation_active": "A previous request is still being processed. Wait a few seconds and try again."
         },
         "generic": {
             "validation_error": "Please check the entered data",
@@ -313,6 +314,7 @@
         "cost_info": "{cost} executions per message",
         "balance_top_up": "Top up balance",
         "disclaimer": "AI can make mistakes. Please double-check responses.",
+        "non_refundable_warning": "Once AI starts responding, executions are not refunded if you cancel.",
         "limit_exhausted": "Free tries exhausted. Tell us about your project to unlock 5 more.",
         "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
         "all_tries_exhausted_line2": "Drop me a line at <email>oleg@cyanship.com</email>",

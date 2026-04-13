@@ -215,7 +215,10 @@ export default function AiChatPage() {
                     setIsLimitExhausted(true);
                 } else if (err.code === 'AI_RATE_LIMIT_EXCEEDED') {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'ai')));
-                } else if (err.code === 'INSUFFICIENT_EXECUTIONS') {
+                } else if (
+                    err.code === 'INSUFFICIENT_EXECUTIONS' ||
+                    err.code === 'EXECUTIONS_RESERVATION_ACTIVE'
+                ) {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'users')));
                 } else {
                     toast.error(tGlobal(getApiMessageKey(err.code)));
@@ -452,6 +455,8 @@ export default function AiChatPage() {
                         />
                         <p className="mt-1.5 text-center text-xs text-muted-foreground">
                             {t('disclaimer')}
+                            {' · '}
+                            {t('non_refundable_warning')}
                         </p>
                     </>
                 )}
