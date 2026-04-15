@@ -107,8 +107,7 @@ describe('ReservationReconcileService', () => {
 
         await service.reconcileExpiredReservations();
 
-        const limitCall =
-            mockUserModel.find.mock.results[0].value.limit;
+        const limitCall = mockUserModel.find.mock.results[0].value.limit;
         expect(limitCall).toHaveBeenCalledWith(100);
     });
 

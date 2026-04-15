@@ -45,8 +45,7 @@ export class AiController {
 
         // Pre-stream phase: reserve atomically (balance + account limit + single-flight).
         // Any 4xx exception propagates as HTTP error — SSE headers not yet set.
-        const reservation =
-            await this.aiService.reserveChatRequest(userId);
+        const reservation = await this.aiService.reserveChatRequest(userId);
 
         // SSE bootstrap — after this point, errors go as SSE events.
         res.setHeader('Content-Type', 'text/event-stream');

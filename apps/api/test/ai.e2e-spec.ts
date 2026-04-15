@@ -90,7 +90,7 @@ function createStatefulRedisMock() {
             (key: string, value: string, _ex?: string, _ttl?: number) => {
                 store.set(key, value);
                 return Promise.resolve('OK');
-            },
+            }
         ),
         del: jest.fn((key: string) => {
             store.delete(key);
@@ -109,7 +109,7 @@ function createStatefulRedisMock() {
                     /* TTL ignored in mock */
                 }
                 return Promise.resolve(current);
-            },
+            }
         ),
         pipeline: jest.fn(() => {
             const ops: Array<() => void> = [];
@@ -132,7 +132,7 @@ function createStatefulRedisMock() {
         keys: jest.fn((pattern: string) => {
             const prefix = pattern.replace('*', '');
             return Promise.resolve(
-                [...store.keys()].filter((k) => k.startsWith(prefix)),
+                [...store.keys()].filter((k) => k.startsWith(prefix))
             );
         }),
         ping: jest.fn(() => Promise.resolve('PONG')),
@@ -146,7 +146,7 @@ function createStatefulRedisMock() {
 
 const mockAiProvider = {
     streamChat: jest.fn(() =>
-        Promise.resolve(Readable.from(['Hello', ' world', '!'])),
+        Promise.resolve(Readable.from(['Hello', ' world', '!']))
     ),
 };
 
@@ -160,12 +160,16 @@ const mockEmailService = {
 
 async function createUser(
     userModel: Model<UserDocument>,
-    overrides: Record<string, unknown> = {},
+    overrides: Record<string, unknown> = {}
 ) {
     return userModel.create({
         email: `test-${Date.now()}@test.com`,
         preferredLang: 'en',
-        executions: { balance: 1000, freeReportUsed: false, activeReservation: null },
+        executions: {
+            balance: 1000,
+            freeReportUsed: false,
+            activeReservation: null,
+        },
         ai: { requestsUsed: 0, bonusGranted: false },
         profile: { firstName: 'Test' },
         termsAcceptedAt: new Date(),
@@ -175,15 +179,20 @@ async function createUser(
 }
 
 function getAccessToken(_app: INestApplication<App>, userId: string): string {
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+    const header = Buffer.from(
+        JSON.stringify({ alg: 'HS256', typ: 'JWT' })
+    ).toString('base64url');
     const payload = Buffer.from(
         JSON.stringify({
             sub: userId,
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + 900,
-        }),
+        })
     ).toString('base64url');
-    const signature = createHmac('sha256', 'e2e-test-access-secret-must-be-long-enough')
+    const signature = createHmac(
+        'sha256',
+        'e2e-test-access-secret-must-be-long-enough'
+    )
         .update(`${header}.${payload}`)
         .digest('base64url');
     return `${header}.${payload}.${signature}`;
@@ -250,13 +259,13 @@ describe('AI Chat E2E', () => {
         await app.listen(0); // Random port for raw HTTP abort tests
 
         userModel = moduleFixture.get<Model<UserDocument>>(
-            getModelToken(User.name),
+            getModelToken(User.name)
         );
-        transactionModel = moduleFixture.get<Model<ExecutionTransactionDocument>>(
-            getModelToken(ExecutionTransaction.name),
-        );
+        transactionModel = moduleFixture.get<
+            Model<ExecutionTransactionDocument>
+        >(getModelToken(ExecutionTransaction.name));
         chatMessageModel = moduleFixture.get<Model<ChatMessageDocument>>(
-            getModelToken(ChatMessage.name),
+            getModelToken(ChatMessage.name)
         );
         reconcileService = moduleFixture.get(ReservationReconcileService);
     }, 120_000);
@@ -269,7 +278,7 @@ describe('AI Chat E2E', () => {
     beforeEach(async () => {
         redisMock._clear();
         mockAiProvider.streamChat.mockImplementation(() =>
-            Promise.resolve(Readable.from(['Hello', ' world', '!'])),
+            Promise.resolve(Readable.from(['Hello', ' world', '!']))
         );
         await userModel.deleteMany({});
         await transactionModel.deleteMany({});
@@ -317,7 +326,11 @@ describe('AI Chat E2E', () => {
     describe('Race on balance', () => {
         it('should allow exactly 1 of 5 parallel requests when balance = AI_CHAT_COST', async () => {
             const user = await createUser(userModel, {
-                executions: { balance: 200, freeReportUsed: false, activeReservation: null },
+                executions: {
+                    balance: 200,
+                    freeReportUsed: false,
+                    activeReservation: null,
+                },
             });
             const token = getAccessToken(app, user._id.toString());
 
@@ -326,22 +339,22 @@ describe('AI Chat E2E', () => {
                     supertest(app.getHttpServer())
                         .post('/api/ai/chat')
                         .set('Authorization', `Bearer ${token}`)
-                        .send({ message: 'Race test' }),
-                ),
+                        .send({ message: 'Race test' })
+                )
             );
 
             const responses = results
                 .filter(
                     (r): r is PromiseFulfilledResult<supertest.Response> =>
-                        r.status === 'fulfilled',
+                        r.status === 'fulfilled'
                 )
                 .map((r) => r.value);
 
             const successes = responses.filter((r) =>
-                r.text.includes('"type":"done"'),
+                r.text.includes('"type":"done"')
             );
             const failures = responses.filter(
-                (r) => !r.text.includes('"type":"done"'),
+                (r) => !r.text.includes('"type":"done"')
             );
 
             expect(successes).toHaveLength(1);
@@ -367,7 +380,11 @@ describe('AI Chat E2E', () => {
     describe('Race on lifetime limit', () => {
         it('should allow exactly 1 of 5 parallel requests when requestsUsed = limit - 1', async () => {
             const user = await createUser(userModel, {
-                executions: { balance: 10000, freeReportUsed: false, activeReservation: null },
+                executions: {
+                    balance: 10000,
+                    freeReportUsed: false,
+                    activeReservation: null,
+                },
                 ai: { requestsUsed: 4, bonusGranted: false },
             });
             const token = getAccessToken(app, user._id.toString());
@@ -377,22 +394,22 @@ describe('AI Chat E2E', () => {
                     supertest(app.getHttpServer())
                         .post('/api/ai/chat')
                         .set('Authorization', `Bearer ${token}`)
-                        .send({ message: 'Limit race' }),
-                ),
+                        .send({ message: 'Limit race' })
+                )
             );
 
             const responses = results
                 .filter(
                     (r): r is PromiseFulfilledResult<supertest.Response> =>
-                        r.status === 'fulfilled',
+                        r.status === 'fulfilled'
                 )
                 .map((r) => r.value);
 
             const successes = responses.filter((r) =>
-                r.text.includes('"type":"done"'),
+                r.text.includes('"type":"done"')
             );
             const failures = responses.filter(
-                (r) => !r.text.includes('"type":"done"'),
+                (r) => !r.text.includes('"type":"done"')
             );
 
             expect(successes).toHaveLength(1);
@@ -485,18 +502,17 @@ describe('AI Chat E2E', () => {
             });
 
             // Get UsersService and call refund twice
-            const { UsersService } = await import(
-                '../src/modules/users/users.service'
-            );
+            const { UsersService } =
+                await import('../src/modules/users/users.service');
             const usersService = app.get(UsersService);
 
             await usersService.refundReservation(
                 user._id.toString(),
-                'double-refund-id',
+                'double-refund-id'
             );
             await usersService.refundReservation(
                 user._id.toString(),
-                'double-refund-id',
+                'double-refund-id'
             );
 
             const updatedUser = await userModel.findById(user._id);
@@ -518,7 +534,9 @@ describe('AI Chat E2E', () => {
             });
             mockAiProvider.streamChat.mockImplementation(() => streamPromise);
 
-            const address = (app.getHttpServer() as http.Server).address() as { port: number };
+            const address = (app.getHttpServer() as http.Server).address() as {
+                port: number;
+            };
             const port = address.port;
 
             // Make raw HTTP request so we can destroy it mid-flight
@@ -547,7 +565,7 @@ describe('AI Chat E2E', () => {
                         // Once SSE headers arrive, abort before any token
                         // Give a tick for the controller to set up the close listener
                         setTimeout(() => req.destroy(), 50);
-                    },
+                    }
                 );
                 req.write(body);
                 req.end();
@@ -593,7 +611,9 @@ describe('AI Chat E2E', () => {
             });
             mockAiProvider.streamChat.mockImplementation(() => streamPromise);
 
-            const address = (app.getHttpServer() as http.Server).address() as { port: number };
+            const address = (app.getHttpServer() as http.Server).address() as {
+                port: number;
+            };
             const port = address.port;
 
             const body = JSON.stringify({ message: 'Abort after token' });
@@ -616,14 +636,17 @@ describe('AI Chat E2E', () => {
                         res.on('data', (chunk) => {
                             data += chunk;
                             // Once we see a TOKEN event, abort
-                            if (!firstTokenSeen && data.includes('"type":"token"')) {
+                            if (
+                                !firstTokenSeen &&
+                                data.includes('"type":"token"')
+                            ) {
                                 firstTokenSeen = true;
                                 setTimeout(() => req.destroy(), 20);
                             }
                         });
                         res.on('end', () => resolve(data));
                         res.on('error', () => resolve(data));
-                    },
+                    }
                 );
                 req.write(body);
                 req.end();
@@ -653,7 +676,9 @@ describe('AI Chat E2E', () => {
             expect(txns[0].action).toBe('ai_chat');
 
             // History with partial content
-            const messages = await chatMessageModel.find({ userId: user._id }).sort({ createdAt: 1 });
+            const messages = await chatMessageModel
+                .find({ userId: user._id })
+                .sort({ createdAt: 1 });
             expect(messages).toHaveLength(2);
             expect(messages[0].role).toBe('user');
             expect(messages[1].role).toBe('assistant');

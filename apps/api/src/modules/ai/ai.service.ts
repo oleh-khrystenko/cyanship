@@ -111,9 +111,7 @@ export class AiService {
         );
     }
 
-    async reserveChatRequest(
-        userId: string
-    ): Promise<AiChatReservationTicket> {
+    async reserveChatRequest(userId: string): Promise<AiChatReservationTicket> {
         const reservationId = randomUUID();
         const now = new Date();
         const expiresAt = new Date(now.getTime() + AI_CHAT_RESERVATION_TTL_MS);
@@ -206,8 +204,7 @@ export class AiService {
         }
 
         const ai = user.ai ?? { requestsUsed: 0, bonusGranted: false };
-        const limit =
-            freeLimit + (ai.bonusGranted ? bonusAmount : 0);
+        const limit = freeLimit + (ai.bonusGranted ? bonusAmount : 0);
 
         if (ai.requestsUsed >= limit) {
             throw new ForbiddenException({
@@ -268,9 +265,7 @@ export class AiService {
         };
     }
 
-    async refundChatRequest(
-        ticket: AiChatReservationTicket
-    ): Promise<void> {
+    async refundChatRequest(ticket: AiChatReservationTicket): Promise<void> {
         try {
             await this.usersService.refundReservation(
                 ticket.userId,

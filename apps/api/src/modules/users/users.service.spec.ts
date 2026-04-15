@@ -432,6 +432,39 @@ describe('UsersService', () => {
         });
     });
 
+    describe('grantAiBonus', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        it('grants bonus atomically with $ne guard and returns true on first call', async () => {
+            mockModel.findOneAndUpdate.mockResolvedValue({ _id: userId });
+
+            const granted = await service.grantAiBonus(userId);
+
+            expect(granted).toBe(true);
+            expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: userId, 'ai.bonusGranted': { $ne: true } },
+                { $set: { 'ai.bonusGranted': true } },
+                expect.anything()
+            );
+        });
+
+        it('returns false when bonus already granted (guard miss)', async () => {
+            mockModel.findOneAndUpdate.mockResolvedValue(null);
+
+            const granted = await service.grantAiBonus(userId);
+
+            expect(granted).toBe(false);
+        });
+
+        it('returns false when user does not exist', async () => {
+            mockModel.findOneAndUpdate.mockResolvedValue(null);
+
+            const granted = await service.grantAiBonus('nonexistent');
+
+            expect(granted).toBe(false);
+        });
+    });
+
     describe('updateLang', () => {
         it('should update preferredLang for user', async () => {
             mockModel.findByIdAndUpdate.mockReturnValue({
@@ -659,7 +692,9 @@ describe('UsersService', () => {
                 .mockRejectedValue(new Error('History insert failed'));
 
             // withTransaction propagates the error from the callback
-            mockSession.withTransaction.mockImplementationOnce(async (fn: () => Promise<void>) => fn());
+            mockSession.withTransaction.mockImplementationOnce(
+                async (fn: () => Promise<void>) => fn()
+            );
 
             await expect(
                 service.commitReservation({
@@ -677,7 +712,9 @@ describe('UsersService', () => {
             mockModel.updateOne.mockRejectedValue(
                 new Error('DB connection lost')
             );
-            mockSession.withTransaction.mockImplementationOnce(async (fn: () => Promise<void>) => fn());
+            mockSession.withTransaction.mockImplementationOnce(
+                async (fn: () => Promise<void>) => fn()
+            );
 
             await expect(
                 service.commitReservation({

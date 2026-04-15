@@ -255,7 +255,11 @@ describe('AiService', () => {
             });
 
             const result = await service.commitChatRequest(
-                { ...ticket, bonusGranted: true, aiRequestsUsedAfterReserve: 8 },
+                {
+                    ...ticket,
+                    bonusGranted: true,
+                    aiRequestsUsedAfterReserve: 8,
+                },
                 'hello',
                 'response'
             );
@@ -276,7 +280,9 @@ describe('AiService', () => {
 
         it('should pass sideEffectInTx that inserts chat messages', async () => {
             mockUsersService.commitReservation.mockImplementation(
-                async (opts: { sideEffectInTx?: (s: unknown) => Promise<void> }) => {
+                async (opts: {
+                    sideEffectInTx?: (s: unknown) => Promise<void>;
+                }) => {
                     if (opts.sideEffectInTx) {
                         await opts.sideEffectInTx('mock-session');
                     }

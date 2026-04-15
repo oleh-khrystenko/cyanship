@@ -29,8 +29,14 @@ const mockAiService = {
 
 const buildReq = () => {
     const req = new EventEmitter() as EventEmitter & {
-        on: (event: string, listener: (...args: unknown[]) => void) => EventEmitter;
-        off: (event: string, listener: (...args: unknown[]) => void) => EventEmitter;
+        on: (
+            event: string,
+            listener: (...args: unknown[]) => void
+        ) => EventEmitter;
+        off: (
+            event: string,
+            listener: (...args: unknown[]) => void
+        ) => EventEmitter;
     };
     return req;
 };
@@ -139,9 +145,9 @@ describe('AiController', () => {
             expect(mockAiService.refundChatRequest).toHaveBeenCalledWith(
                 mockTicket
             );
-            expect(res.chunks.some((c: string) => c.includes('"type":"error"'))).toBe(
-                true
-            );
+            expect(
+                res.chunks.some((c: string) => c.includes('"type":"error"'))
+            ).toBe(true);
             expect(mockAiService.commitChatRequest).not.toHaveBeenCalled();
         });
 
@@ -169,9 +175,9 @@ describe('AiController', () => {
             );
 
             expect(mockAiService.refundChatRequest).toHaveBeenCalled();
-            expect(res.chunks.some((c: string) => c.includes('"type":"error"'))).toBe(
-                true
-            );
+            expect(
+                res.chunks.some((c: string) => c.includes('"type":"error"'))
+            ).toBe(true);
         });
 
         it('Client abort before first token: refund, no DONE/ERROR', async () => {
@@ -269,9 +275,9 @@ describe('AiController', () => {
             expect(mockAiService.refundChatRequest).toHaveBeenCalledWith(
                 mockTicket
             );
-            expect(res.chunks.some((c: string) => c.includes('"type":"error"'))).toBe(
-                true
-            );
+            expect(
+                res.chunks.some((c: string) => c.includes('"type":"error"'))
+            ).toBe(true);
         });
 
         it('Refund failure is silently handled — res.end still called', async () => {
