@@ -11,7 +11,7 @@ const UiPageContainer = ({
 }: UiPageContainerProps) => (
     <main
         className={composeClasses(
-            'mx-auto flex max-w-3xl flex-col px-4',
+            'mx-auto flex w-full max-w-3xl flex-col px-4',
             fixed ? viewportHeight : viewportMinHeight,
             className,
         )}
