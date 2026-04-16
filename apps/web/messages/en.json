@@ -299,7 +299,8 @@
         "ai": {
             "ai_limit_exhausted": "AI request limit has been reached.",
             "ai_rate_limit_exceeded": "Too many AI requests. Please try again later.",
-            "ai_provider_error": "AI is temporarily unavailable. Please try again later."
+            "ai_provider_error": "AI is temporarily unavailable. Please try again later.",
+            "ai_message_too_long": "Your message is too long for the current conversation. Try shortening it or clearing chat history."
         }
     },
     "ai_chat_page": {

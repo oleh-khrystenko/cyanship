@@ -220,7 +220,10 @@ export default function AiChatPage() {
             if (err instanceof AiChatError) {
                 if (err.code === 'AI_LIMIT_EXHAUSTED') {
                     setIsLimitExhausted(true);
-                } else if (err.code === 'AI_RATE_LIMIT_EXCEEDED') {
+                } else if (
+                    err.code === 'AI_RATE_LIMIT_EXCEEDED' ||
+                    err.code === 'AI_MESSAGE_TOO_LONG'
+                ) {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'ai')));
                 } else if (
                     err.code === 'INSUFFICIENT_EXECUTIONS' ||

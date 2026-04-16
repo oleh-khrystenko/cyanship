@@ -43,9 +43,32 @@ export class AiController {
     ): Promise<void> {
         const userId = user._id.toString();
 
-        // Pre-stream phase: reserve atomically (balance + account limit + single-flight).
-        // Any 4xx exception propagates as HTTP error — SSE headers not yet set.
+        // Pre-stream phase: any 4xx exception propagates as HTTP error — SSE headers not yet set.
         const reservation = await this.aiService.reserveChatRequest(userId);
+
+        const abortController = new AbortController();
+        let aborted = false;
+
+        const onClose = () => {
+            aborted = true;
+            abortController.abort();
+        };
+        req.on('close', onClose);
+
+        let messages;
+        try {
+            messages = await this.aiService.buildChatMessages(userId, dto.message);
+        } catch (err) {
+            req.off('close', onClose);
+            await this.aiService.refundChatRequest(reservation);
+            throw err;
+        }
+
+        if (aborted) {
+            req.off('close', onClose);
+            await this.aiService.refundChatRequest(reservation);
+            return;
+        }
 
         // SSE bootstrap — after this point, errors go as SSE events.
         res.setHeader('Content-Type', 'text/event-stream');
@@ -55,22 +78,13 @@ export class AiController {
         res.socket?.setNoDelay(true);
         res.flushHeaders();
 
-        const abortController = new AbortController();
         let firstTokenReceived = false;
         let committed = false;
-        let aborted = false;
-
-        const onClose = () => {
-            aborted = true;
-            abortController.abort();
-        };
-        req.on('close', onClose);
-
         let assistantContent = '';
 
         try {
-            const stream = await this.aiService.processChat(
-                dto.message,
+            const stream = await this.aiService.streamChat(
+                messages,
                 abortController.signal
             );
 

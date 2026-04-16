@@ -20,7 +20,8 @@ const mockTicket: AiChatReservationTicket = {
 
 const mockAiService = {
     reserveChatRequest: jest.fn(),
-    processChat: jest.fn(),
+    buildChatMessages: jest.fn(),
+    streamChat: jest.fn(),
     commitChatRequest: jest.fn(),
     refundChatRequest: jest.fn(),
     getHistory: jest.fn(),
@@ -71,12 +72,15 @@ describe('AiController', () => {
 
         controller = module.get<AiController>(AiController);
         jest.clearAllMocks();
+        mockAiService.buildChatMessages.mockResolvedValue([
+            { role: 'user', content: 'hello' },
+        ]);
     });
 
     describe('chat — exit matrix', () => {
         it('Happy path: reserve → stream → commit → DONE', async () => {
             mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
-            mockAiService.processChat.mockResolvedValue(
+            mockAiService.streamChat.mockResolvedValue(
                 Readable.from(['chunk1', 'chunk2', 'chunk3'])
             );
             mockAiService.commitChatRequest.mockResolvedValue({
@@ -125,9 +129,77 @@ describe('AiController', () => {
             expect(mockAiService.refundChatRequest).not.toHaveBeenCalled();
         });
 
+        it('buildChatMessages fail after reserve: refund + propagate as HTTP error', async () => {
+            mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
+            mockAiService.buildChatMessages.mockRejectedValue(
+                new Error('AI_MESSAGE_TOO_LONG')
+            );
+            mockAiService.refundChatRequest.mockResolvedValue(undefined);
+
+            const req = buildReq();
+            const res = buildRes();
+
+            await expect(
+                controller.chat(
+                    buildUser(),
+                    { message: 'huge message' },
+                    req as never,
+                    res as never
+                )
+            ).rejects.toThrow('AI_MESSAGE_TOO_LONG');
+
+            expect(res.flushHeaders).not.toHaveBeenCalled();
+            expect(mockAiService.refundChatRequest).toHaveBeenCalledWith(
+                mockTicket
+            );
+            expect(mockAiService.streamChat).not.toHaveBeenCalled();
+        });
+
+        it('Client disconnect during buildChatMessages: refund, no SSE, no stream', async () => {
+            mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
+            mockAiService.refundChatRequest.mockResolvedValue(undefined);
+            mockAiService.buildChatMessages.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        setTimeout(
+                            () =>
+                                resolve([
+                                    { role: 'user', content: 'hello' },
+                                ]),
+                            50,
+                        );
+                    }),
+            );
+
+            const req = buildReq();
+            const res = buildRes();
+
+            const chatPromise = controller.chat(
+                buildUser(),
+                { message: 'hello' },
+                req as never,
+                res as never,
+            );
+
+            // Let microtasks drain so req.on('close') is registered
+            await new Promise((r) => setImmediate(r));
+
+            // Client disconnects while buildChatMessages is pending
+            req.emit('close');
+
+            await chatPromise;
+
+            expect(res.flushHeaders).not.toHaveBeenCalled();
+            expect(mockAiService.refundChatRequest).toHaveBeenCalledWith(
+                mockTicket,
+            );
+            expect(mockAiService.streamChat).not.toHaveBeenCalled();
+            expect(mockAiService.commitChatRequest).not.toHaveBeenCalled();
+        });
+
         it('Provider error before first token: refund, SSE ERROR', async () => {
             mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
-            mockAiService.processChat.mockRejectedValue(
+            mockAiService.streamChat.mockRejectedValue(
                 new Error('Anthropic API down')
             );
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
@@ -161,7 +233,7 @@ describe('AiController', () => {
                     this.destroy(new Error('Mid-stream failure'));
                 },
             });
-            mockAiService.processChat.mockResolvedValue(errorStream);
+            mockAiService.streamChat.mockResolvedValue(errorStream);
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
             const req = buildReq();
@@ -184,7 +256,7 @@ describe('AiController', () => {
             mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
 
             const slowStream = new Readable({ read() {} });
-            mockAiService.processChat.mockResolvedValue(slowStream);
+            mockAiService.streamChat.mockResolvedValue(slowStream);
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
             const req = buildReq();
@@ -197,7 +269,7 @@ describe('AiController', () => {
                 res as never
             );
 
-            // Let chat() reach the for-await loop (reserve + processChat resolve, SSE headers set)
+            // Let chat() reach the for-await loop (reserve + buildChatMessages + streamChat resolve, SSE headers set)
             await new Promise((r) => setImmediate(r));
 
             // Abort before any chunks, then end stream to unblock for-await
@@ -223,7 +295,7 @@ describe('AiController', () => {
             });
 
             const controlledStream = new Readable({ read() {} });
-            mockAiService.processChat.mockResolvedValue(controlledStream);
+            mockAiService.streamChat.mockResolvedValue(controlledStream);
 
             const req = buildReq();
             const res = buildRes();
@@ -254,7 +326,7 @@ describe('AiController', () => {
 
         it('Commit fails: refund called, SSE ERROR sent', async () => {
             mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
-            mockAiService.processChat.mockResolvedValue(
+            mockAiService.streamChat.mockResolvedValue(
                 Readable.from(['chunk1'])
             );
             mockAiService.commitChatRequest.mockRejectedValue(
@@ -282,7 +354,7 @@ describe('AiController', () => {
 
         it('Refund failure is silently handled — res.end still called', async () => {
             mockAiService.reserveChatRequest.mockResolvedValue(mockTicket);
-            mockAiService.processChat.mockRejectedValue(
+            mockAiService.streamChat.mockRejectedValue(
                 new Error('Provider down')
             );
             // refundChatRequest catches internally, so this just tests the finally block
@@ -310,7 +382,7 @@ describe('AiController', () => {
 
             // Stream that yields one chunk then throws when aborted
             const abortStream = new Readable({ read() {} });
-            mockAiService.processChat.mockResolvedValue(abortStream);
+            mockAiService.streamChat.mockResolvedValue(abortStream);
 
             const req = buildReq();
             const res = buildRes();
