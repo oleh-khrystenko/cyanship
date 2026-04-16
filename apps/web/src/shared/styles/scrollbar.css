@@ -1,3 +1,7 @@
+html {
+    scrollbar-gutter: stable;
+}
+
 *::-webkit-scrollbar {
     height: 6px;
     width: 6px;

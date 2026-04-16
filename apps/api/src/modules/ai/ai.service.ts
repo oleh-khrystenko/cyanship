@@ -1,12 +1,23 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+    BadRequestException,
+    ConflictException,
+    ForbiddenException,
+    Inject,
+    Injectable,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 
 import {
     AI_CHAT_COST,
+    AI_CHAT_RESERVATION_TTL_MS,
     EXECUTION_ACTION,
     EXECUTION_TRANSACTION_TYPE,
+    RESPONSE_CODE,
 } from '@cyanship/types';
 
 import { ENV } from '../../config/env';
@@ -18,8 +29,10 @@ import {
 } from './schemas/chat-message.schema';
 import {
     AI_PROVIDER,
+    type AiChatMessage,
     type IAiProvider,
 } from './interfaces/ai-provider.interface';
+import type { AiChatReservationTicket } from './interfaces/ai-chat-reservation';
 
 const SYSTEM_PROMPT = `You are the AI assistant on CyanShip — a done-for-you SaaS MVP development agency run by Oleh Khrystenko.
 
@@ -70,6 +83,8 @@ RESPONSE GUIDELINES
 - If you don't know something specific, say so honestly and suggest emailing oleg@cyanship.com.
 - Never invent services, prices, or guarantees that aren't listed above.`;
 
+const AI_CHAT_MAX_HISTORY_MESSAGES = 50;
+
 @Injectable()
 export class AiService {
     private readonly logger = new Logger(AiService.name);
@@ -87,77 +102,247 @@ export class AiService {
         private readonly usersService: UsersService
     ) {}
 
-    async processChat(
+    async buildChatMessages(
+        userId: string,
         userMessage: string,
-        signal?: AbortSignal
+    ): Promise<AiChatMessage[]> {
+        const history = await this.chatMessageModel
+            .find({ userId: new Types.ObjectId(userId) })
+            .sort({ createdAt: -1, _id: -1 })
+            .limit(AI_CHAT_MAX_HISTORY_MESSAGES)
+            .select({ role: 1, content: 1 })
+            .lean();
+
+        history.reverse();
+
+        if (history.length > 0 && history[0].role === 'assistant') {
+            history.shift();
+        }
+
+        const currentMessage: AiChatMessage = {
+            role: 'user',
+            content: userMessage,
+        };
+        let historyMessages: AiChatMessage[] = history.map((m) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+        }));
+
+        const inputBudget =
+            this.aiProvider.contextWindow - ENV.AI_CHAT_MAX_TOKENS;
+
+        let messages = [...historyMessages, currentMessage];
+        let inputTokens = await this.aiProvider.countTokens(
+            messages,
+            SYSTEM_PROMPT,
+        );
+
+        while (inputTokens > inputBudget && historyMessages.length > 0) {
+            const removeCount = Math.max(
+                2,
+                Math.ceil(historyMessages.length * 0.2),
+            );
+            historyMessages = historyMessages.slice(removeCount);
+            if (
+                historyMessages.length > 0 &&
+                historyMessages[0].role === 'assistant'
+            ) {
+                historyMessages.shift();
+            }
+            messages = [...historyMessages, currentMessage];
+            inputTokens = await this.aiProvider.countTokens(
+                messages,
+                SYSTEM_PROMPT,
+            );
+        }
+
+        if (inputTokens > inputBudget) {
+            throw new BadRequestException({
+                code: RESPONSE_CODE.AI_MESSAGE_TOO_LONG,
+                message: 'Message exceeds context budget',
+            });
+        }
+
+        return messages;
+    }
+
+    async streamChat(
+        messages: AiChatMessage[],
+        signal?: AbortSignal,
     ): Promise<Readable> {
         return this.aiProvider.streamChat(
-            userMessage,
+            messages,
             SYSTEM_PROMPT,
             ENV.AI_CHAT_MAX_TOKENS,
-            signal
+            signal,
         );
     }
 
-    async finalizeChat(
-        userId: string,
-        userMessage: string,
-        assistantContent: string
-    ): Promise<{ balanceAfter: number; aiRequestsRemaining: number }> {
-        // Atomic deduction: executions -200 AND ai.requestsUsed +1
-        // Guard ensures balance is sufficient (race-condition safe)
-        const updatedUser = await this.userModel.findOneAndUpdate(
+    async reserveChatRequest(userId: string): Promise<AiChatReservationTicket> {
+        const reservationId = randomUUID();
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + AI_CHAT_RESERVATION_TTL_MS);
+
+        const freeLimit = ENV.AI_CHAT_FREE_LIMIT;
+        const bonusAmount = ENV.AI_CHAT_BONUS_AMOUNT;
+
+        const updated = await this.userModel.findOneAndUpdate(
             {
                 _id: userId,
                 'executions.balance': { $gte: AI_CHAT_COST },
+                'executions.activeReservation': null,
+                $expr: {
+                    $lt: [
+                        { $ifNull: ['$ai.requestsUsed', 0] },
+                        {
+                            $add: [
+                                freeLimit,
+                                {
+                                    $cond: [
+                                        {
+                                            $ifNull: [
+                                                '$ai.bonusGranted',
+                                                false,
+                                            ],
+                                        },
+                                        bonusAmount,
+                                        0,
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
             },
             {
                 $inc: {
                     'executions.balance': -AI_CHAT_COST,
                     'ai.requestsUsed': 1,
                 },
+                $set: {
+                    'executions.activeReservation': {
+                        id: reservationId,
+                        amount: AI_CHAT_COST,
+                        reservedAt: now,
+                        expiresAt,
+                        feature: 'ai_chat',
+                        compensationOps: {
+                            inc: { 'ai.requestsUsed': -1 },
+                        },
+                    },
+                },
             },
             { new: true }
         );
 
-        if (!updatedUser) {
-            throw new Error('Insufficient executions during finalization');
+        if (updated) {
+            const ai = updated.ai ?? {
+                requestsUsed: 0,
+                bonusGranted: false,
+            };
+            return {
+                reservationId,
+                userId,
+                amount: AI_CHAT_COST,
+                balanceAfterReserve: updated.executions.balance,
+                expiresAt,
+                feature: 'ai_chat',
+                aiRequestsUsedAfterReserve: ai.requestsUsed,
+                bonusGranted: ai.bonusGranted,
+            };
         }
 
-        const balanceAfter = updatedUser.executions.balance;
-
-        // Record execution transaction (audit trail)
-        await this.usersService.recordTransaction({
-            userId,
-            type: EXECUTION_TRANSACTION_TYPE.DEBIT,
-            action: EXECUTION_ACTION.AI_CHAT,
-            amount: AI_CHAT_COST,
-            balanceAfter,
+        // Diagnostic read to distinguish failure cause.
+        const user = await this.userModel.findById(userId, {
+            'executions.balance': 1,
+            'executions.activeReservation': 1,
+            ai: 1,
         });
 
-        // Save both messages to history (ordered insertMany preserves array order;
-        // Mongoose timestamps assigns same createdAt, _id tiebreaks ordering)
-        await this.chatMessageModel.insertMany([
-            {
-                userId: new Types.ObjectId(userId),
-                role: 'user',
-                content: userMessage,
-            },
-            {
-                userId: new Types.ObjectId(userId),
-                role: 'assistant',
-                content: assistantContent,
-            },
-        ]);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
 
-        // Calculate remaining AI requests
-        const ai = updatedUser.ai ?? { requestsUsed: 0, bonusGranted: false };
+        if (user.executions.activeReservation !== null) {
+            throw new ConflictException({
+                code: RESPONSE_CODE.EXECUTIONS_RESERVATION_ACTIVE,
+                message: 'A reservation is already active',
+            });
+        }
+
+        const ai = user.ai ?? { requestsUsed: 0, bonusGranted: false };
+        const limit = freeLimit + (ai.bonusGranted ? bonusAmount : 0);
+
+        if (ai.requestsUsed >= limit) {
+            throw new ForbiddenException({
+                code: RESPONSE_CODE.AI_LIMIT_EXHAUSTED,
+                message: 'AI request limit exhausted',
+            });
+        }
+
+        throw new BadRequestException({
+            code: RESPONSE_CODE.INSUFFICIENT_EXECUTIONS,
+            message: 'Insufficient executions',
+        });
+    }
+
+    async commitChatRequest(
+        ticket: AiChatReservationTicket,
+        userMessage: string,
+        assistantContent: string
+    ): Promise<{ balanceAfter: number; aiRequestsRemaining: number }> {
+        const result = await this.usersService.commitReservation({
+            userId: ticket.userId,
+            reservationId: ticket.reservationId,
+            ledgerEntry: {
+                type: EXECUTION_TRANSACTION_TYPE.DEBIT,
+                action: EXECUTION_ACTION.AI_CHAT,
+                amount: ticket.amount,
+            },
+            sideEffectInTx: async (session) => {
+                await this.chatMessageModel.insertMany(
+                    [
+                        {
+                            userId: new Types.ObjectId(ticket.userId),
+                            role: 'user',
+                            content: userMessage,
+                        },
+                        {
+                            userId: new Types.ObjectId(ticket.userId),
+                            role: 'assistant',
+                            content: assistantContent,
+                        },
+                    ],
+                    { session, ordered: true }
+                );
+            },
+        });
+
         const limit =
             ENV.AI_CHAT_FREE_LIMIT +
-            (ai.bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
-        const aiRequestsRemaining = Math.max(0, limit - ai.requestsUsed);
+            (ticket.bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
+        const aiRequestsRemaining = Math.max(
+            0,
+            limit - ticket.aiRequestsUsedAfterReserve
+        );
 
-        return { balanceAfter, aiRequestsRemaining };
+        return {
+            balanceAfter: result.balanceAfter,
+            aiRequestsRemaining,
+        };
+    }
+
+    async refundChatRequest(ticket: AiChatReservationTicket): Promise<void> {
+        try {
+            await this.usersService.refundReservation(
+                ticket.userId,
+                ticket.reservationId
+            );
+        } catch (err) {
+            this.logger.error(
+                `Failed to refund reservation ${ticket.reservationId} for user ${ticket.userId}: ${(err as Error).message}`
+            );
+        }
     }
 
     async getHistory(userId: string): Promise<
@@ -170,7 +355,7 @@ export class AiService {
     > {
         const messages = await this.chatMessageModel
             .find({ userId: new Types.ObjectId(userId) })
-            .sort({ createdAt: 1 })
+            .sort({ createdAt: 1, _id: 1 })
             .lean();
 
         return messages.map((m) => ({

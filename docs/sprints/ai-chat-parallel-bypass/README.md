@@ -2,7 +2,7 @@
 
 > **Authoritative implementation plan:** [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) (v3, durable reservation + claim-first commit + compensation-in-reservation + generic cron). Цей файл — **problem statement only** (секції 1-3: опис дефекту, технічний root cause, вплив). Секція 4 — короткий orientation-блок з посиланням на authoritative plan.
 >
-> **Статус:** Виправлення сплановане у v3. Імплементація виконується окремою задачею.
+> **Статус:** Реалізовано (v3). Durable reservation pattern з claim-first commit, compensation-in-reservation, generic cron reconciler.
 >
 > **Критичність:** Висока. Прямий обхід білінгу і lifetime free-tier ліміту. Дозволяє ескалувати реальну вартість Anthropic API на нашу кишеню.
 
@@ -94,3 +94,18 @@ CLAUDE.md і документація `docs/sprints/ai-chat/` декларуют
 - **Boilerplate value:** generic reservation primitives (`UsersService.commitReservation`, `refundReservation`, cron) переповідаються будь-яким майбутнім usage-based feature через `compensationOps` у самій reservation.
 
 Раніше в цьому файлі був v1-план із "accepted risk" для crash-window, без durable reservation, без розшарування core/feature. Він був замінений у v3 після архітектурного рев'ю — **не використовуйте його як інструкцію**.
+
+---
+
+## 5. Implementation outcome
+
+Реалізація виконана за `IMPLEMENTATION_PLAN.md` v3. Ключові зміни:
+
+- **Schema:** `User.executions.activeReservation` embedded subdocument з `compensationOps`. `ExecutionTransaction.reservationId` з unique sparse index.
+- **Core API:** `UsersService.commitReservation()` (MongoDB transaction, claim-first), `refundReservation()` (atomic single-doc, idempotent). `ReservationReconcileService` — generic cron кожні 5 хвилин.
+- **AI feature:** `AiService.reserveChatRequest()` (atomic reserve з balance + account limit + single-flight), `commitChatRequest()`, `refundChatRequest()`. `AiRateLimitGuard` спрощений до IP-only.
+- **Controller:** exit matrix з 8 сценаріями, non-refundable after first token.
+- **Frontend:** `EXECUTIONS_RESERVATION_ACTIVE` (409) error handling + inline non-refundable abort warning.
+- **Types:** `RESPONSE_CODE.EXECUTIONS_RESERVATION_ACTIVE`, `AI_CHAT_RESERVATION_TTL_MS`.
+
+**Backlog:** міграція `UsersService.spendExecutions` на reservation primitives (той самий TOCTOU-клас у меншому масштабі).

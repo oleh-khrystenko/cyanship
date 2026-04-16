@@ -1,5 +1,4 @@
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -14,9 +13,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import {
-    AI_CHAT_COST,
     AI_CHAT_EVENT,
-    RESPONSE_CODE,
     type AiChatDoneEvent,
     type AiChatErrorEvent,
     type AiChatTokenEvent,
@@ -46,21 +43,8 @@ export class AiController {
     ): Promise<void> {
         const userId = user._id.toString();
 
-        // Pre-stream balance check (throws HTTP error before SSE headers)
-        if (user.executions.balance < AI_CHAT_COST) {
-            throw new BadRequestException({
-                code: RESPONSE_CODE.INSUFFICIENT_EXECUTIONS,
-                message: 'Insufficient executions',
-            });
-        }
-
-        // Set SSE headers — after this point, errors go as SSE events
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('X-Accel-Buffering', 'no');
-        res.socket?.setNoDelay(true);
-        res.flushHeaders();
+        // Pre-stream phase: any 4xx exception propagates as HTTP error — SSE headers not yet set.
+        const reservation = await this.aiService.reserveChatRequest(userId);
 
         const abortController = new AbortController();
         let aborted = false;
@@ -71,16 +55,45 @@ export class AiController {
         };
         req.on('close', onClose);
 
+        let messages;
         try {
-            const stream = await this.aiService.processChat(
-                dto.message,
+            messages = await this.aiService.buildChatMessages(userId, dto.message);
+        } catch (err) {
+            req.off('close', onClose);
+            await this.aiService.refundChatRequest(reservation);
+            throw err;
+        }
+
+        if (aborted) {
+            req.off('close', onClose);
+            await this.aiService.refundChatRequest(reservation);
+            return;
+        }
+
+        // SSE bootstrap — after this point, errors go as SSE events.
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        res.socket?.setNoDelay(true);
+        res.flushHeaders();
+
+        let firstTokenReceived = false;
+        let committed = false;
+        let assistantContent = '';
+
+        try {
+            const stream = await this.aiService.streamChat(
+                messages,
                 abortController.signal
             );
 
-            let assistantContent = '';
-
             for await (const chunk of stream) {
                 if (aborted) break;
+
+                if (!firstTokenReceived) {
+                    firstTokenReceived = true;
+                }
 
                 assistantContent += chunk as string;
                 this.writeSSE<AiChatTokenEvent>(res, {
@@ -90,23 +103,55 @@ export class AiController {
             }
 
             if (!aborted) {
-                const result = await this.aiService.finalizeChat(
-                    userId,
+                // Happy path — commit and send DONE.
+                const result = await this.aiService.commitChatRequest(
+                    reservation,
                     dto.message,
                     assistantContent
                 );
+                committed = true;
 
                 this.writeSSE<AiChatDoneEvent>(res, {
                     type: AI_CHAT_EVENT.DONE,
                     balanceAfter: result.balanceAfter,
                     aiRequestsRemaining: result.aiRequestsRemaining,
                 });
+            } else if (firstTokenReceived) {
+                // Client aborted after first token — non-refundable, commit silently.
+                try {
+                    await this.aiService.commitChatRequest(
+                        reservation,
+                        dto.message,
+                        assistantContent
+                    );
+                    committed = true;
+                } catch (commitErr) {
+                    this.logger.error(
+                        `Commit after abort failed for reservation ${reservation.reservationId}: ${(commitErr as Error).message}`
+                    );
+                }
             }
+            // aborted && !firstTokenReceived → do nothing, refund in finally
         } catch (err) {
+            this.logger.error(
+                `AI chat error for user ${userId}, reservation ${reservation.reservationId}: ${(err as Error).message}`
+            );
+
+            // Abort signal may cause provider to throw after first token — still non-refundable.
+            if (aborted && firstTokenReceived && !committed) {
+                try {
+                    await this.aiService.commitChatRequest(
+                        reservation,
+                        dto.message,
+                        assistantContent
+                    );
+                    committed = true;
+                } catch {
+                    // Commit failed — will refund in finally.
+                }
+            }
+
             if (!aborted) {
-                this.logger.error(
-                    `AI chat error for user ${userId}: ${(err as Error).message}`
-                );
                 this.writeSSE<AiChatErrorEvent>(res, {
                     type: AI_CHAT_EVENT.ERROR,
                     code: 'AI_PROVIDER_ERROR',
@@ -114,6 +159,11 @@ export class AiController {
             }
         } finally {
             req.off('close', onClose);
+
+            if (!committed) {
+                await this.aiService.refundChatRequest(reservation);
+            }
+
             if (!res.writableEnded) {
                 res.end();
             }

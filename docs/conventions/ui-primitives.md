@@ -27,7 +27,7 @@ Ui-компоненти інкапсулюють:
 
 | Ui-компонент | Замінює нативний елемент | Варіанти |
 |---|---|---|
-| `UiButton` | `<button>`, `<a>`, Next.js `<Link>` | `filled`, `text`, `icon`, `icon-compact`; polymorphic: `as="button"` / `as="link"` / `as="a"` |
+| `UiButton` | `<button>`, `<a>`, Next.js `<Link>` | `filled`, `outline`, `soft`, `text`, `icon`, `icon-compact`; polymorphic: `as="button"` / `as="link"` / `as="a"` |
 | `UiInput` | `<input>` (text, email, number, etc.) | `outlined`, `filled` |
 | `UiPasswordInput` | `<input type="password">` + show/hide toggle | композиція UiInput + UiButton; внутрішній стан visibility |
 | `UiSelect` | `<select>` | `outlined`, `filled` |
@@ -39,6 +39,7 @@ Ui-компоненти інкапсулюють:
 | `UiTextarea` | `<textarea>` | `outlined`, `filled` |
 | `UiChipGroup` | Radio-style inline chip selector | -- (sizes: sm/md/lg); Headless UI RadioGroup |
 | `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet, desktop centered; hideOverlay, hideCloseButton; Radix Dialog |
+| `UiHeaderShell` | Структурна обгортка header-зони (`<header>` + container h-16) | -- ; className override |
 
 ## Rules
 

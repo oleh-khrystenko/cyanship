@@ -25,6 +25,9 @@ export class ExecutionTransaction {
     @Prop({ required: true, min: 0 })
     balanceAfter!: number;
 
+    @Prop({ type: String })
+    reservationId?: string;
+
     // Declared for TypeScript visibility; managed by Mongoose timestamps: true.
     createdAt!: Date;
 }
@@ -33,3 +36,7 @@ export const ExecutionTransactionSchema =
     SchemaFactory.createForClass(ExecutionTransaction);
 
 ExecutionTransactionSchema.index({ userId: 1, createdAt: -1 });
+ExecutionTransactionSchema.index(
+    { reservationId: 1 },
+    { unique: true, sparse: true }
+);

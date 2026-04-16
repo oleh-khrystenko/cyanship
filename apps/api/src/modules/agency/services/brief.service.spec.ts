@@ -8,8 +8,8 @@ import {
 
 import { BriefService } from './brief.service';
 import { Brief } from '../schemas/brief.schema';
-import { User } from '../../users/schemas/user.schema';
 import { EmailService } from '../../email/email.service';
+import { UsersService } from '../../users/users.service';
 
 jest.mock('../../../config/env', () => ({
     ENV: {},
@@ -19,8 +19,8 @@ const mockBriefModel = {
     create: jest.fn(),
 };
 
-const mockUserModel = {
-    findOneAndUpdate: jest.fn(),
+const mockUsersService = {
+    grantAiBonus: jest.fn(),
 };
 
 const mockEmailService = {
@@ -59,12 +59,12 @@ describe('BriefService', () => {
                     useValue: mockBriefModel,
                 },
                 {
-                    provide: getModelToken(User.name),
-                    useValue: mockUserModel,
-                },
-                {
                     provide: EmailService,
                     useValue: mockEmailService,
+                },
+                {
+                    provide: UsersService,
+                    useValue: mockUsersService,
                 },
             ],
         }).compile();
@@ -157,10 +157,7 @@ describe('BriefService', () => {
 
     describe('AI bonus', () => {
         it('grants AI bonus when requestAiBonus and userId provided', async () => {
-            mockUserModel.findOneAndUpdate.mockResolvedValue({
-                _id: 'user-id',
-                ai: { requestsUsed: 5, bonusGranted: true },
-            });
+            mockUsersService.grantAiBonus.mockResolvedValue(true);
 
             const result = await service.submit({
                 dto: testDto,
@@ -169,18 +166,13 @@ describe('BriefService', () => {
             });
 
             expect(result).toEqual({ aiBonusGranted: true });
-            expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
-                {
-                    _id: 'user-id',
-                    'ai.bonusGranted': { $ne: true },
-                },
-                { $set: { 'ai.bonusGranted': true } },
-                { new: true }
+            expect(mockUsersService.grantAiBonus).toHaveBeenCalledWith(
+                'user-id'
             );
         });
 
         it('does not grant AI bonus if already granted', async () => {
-            mockUserModel.findOneAndUpdate.mockResolvedValue(null);
+            mockUsersService.grantAiBonus.mockResolvedValue(false);
 
             const result = await service.submit({
                 dto: testDto,
@@ -198,7 +190,7 @@ describe('BriefService', () => {
             });
 
             expect(result).toEqual({ aiBonusGranted: false });
-            expect(mockUserModel.findOneAndUpdate).not.toHaveBeenCalled();
+            expect(mockUsersService.grantAiBonus).not.toHaveBeenCalled();
         });
 
         it('does not attempt bonus grant without requestAiBonus', async () => {
@@ -208,13 +200,11 @@ describe('BriefService', () => {
             });
 
             expect(result).toEqual({ aiBonusGranted: false });
-            expect(mockUserModel.findOneAndUpdate).not.toHaveBeenCalled();
+            expect(mockUsersService.grantAiBonus).not.toHaveBeenCalled();
         });
 
         it('saves brief with userId and requestAiBonus fields', async () => {
-            mockUserModel.findOneAndUpdate.mockResolvedValue({
-                _id: 'user-id',
-            });
+            mockUsersService.grantAiBonus.mockResolvedValue(true);
 
             await service.submit({
                 dto: testDto,

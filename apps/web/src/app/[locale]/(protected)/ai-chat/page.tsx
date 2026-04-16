@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
-import { Send, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, Trash2 } from 'lucide-react';
 import {
     AI_CHAT_COST,
     AI_CHAT_BONUS_AMOUNT,
@@ -35,6 +35,13 @@ interface ChatMessage {
     role: 'user' | 'assistant';
     content: string;
 }
+
+const SUGGESTION_KEYS = [
+    'suggestion_1',
+    'suggestion_2',
+    'suggestion_3',
+    'suggestion_4',
+] as const;
 
 function computeIsExhausted(
     ai: { requestsUsed: number; bonusGranted: boolean } | null | undefined,
@@ -213,9 +220,15 @@ export default function AiChatPage() {
             if (err instanceof AiChatError) {
                 if (err.code === 'AI_LIMIT_EXHAUSTED') {
                     setIsLimitExhausted(true);
-                } else if (err.code === 'AI_RATE_LIMIT_EXCEEDED') {
+                } else if (
+                    err.code === 'AI_RATE_LIMIT_EXCEEDED' ||
+                    err.code === 'AI_MESSAGE_TOO_LONG'
+                ) {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'ai')));
-                } else if (err.code === 'INSUFFICIENT_EXECUTIONS') {
+                } else if (
+                    err.code === 'INSUFFICIENT_EXECUTIONS' ||
+                    err.code === 'EXECUTIONS_RESERVATION_ACTIVE'
+                ) {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'users')));
                 } else {
                     toast.error(tGlobal(getApiMessageKey(err.code)));
@@ -312,10 +325,36 @@ export default function AiChatPage() {
                         <UiSpinner size="lg" />
                     </div>
                 ) : messages.length === 0 ? (
-                    <div className="flex h-full items-center justify-center">
-                        <p className="text-center text-sm text-muted-foreground">
-                            {t('empty_state')}
-                        </p>
+                    <div className="flex h-full flex-col items-center justify-center gap-6">
+                        <div className="text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                                <MessageSquare className="h-7 w-7 text-muted-foreground" />
+                            </div>
+                            <h2 className="mt-4 text-lg font-semibold tracking-tight">
+                                {t('empty_state_title')}
+                            </h2>
+                            <p className="mt-1.5 text-sm text-muted-foreground">
+                                {t('empty_state')}
+                            </p>
+                        </div>
+                        {!isLimitExhausted && (
+                            <div className="grid w-full gap-2 sm:grid-cols-2">
+                                {SUGGESTION_KEYS.map((key) => (
+                                    <UiButton
+                                        key={key}
+                                        variant="soft"
+                                        size="sm"
+                                        className="w-full"
+                                        onClick={() => {
+                                            setInput(t(key));
+                                            inputRef.current?.focus();
+                                        }}
+                                    >
+                                        {t(key)}
+                                    </UiButton>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -450,9 +489,12 @@ export default function AiChatPage() {
                                 </div>
                             }
                         />
-                        <p className="mt-1.5 text-center text-xs text-muted-foreground">
-                            {t('disclaimer')}
-                        </p>
+                        <div className="mt-1.5 space-y-0.5 text-center text-xs text-muted-foreground">
+                            <p>{t('disclaimer')}</p>
+                            <p className="text-muted-foreground/60">
+                                {t('non_refundable_warning')}
+                            </p>
+                        </div>
                     </>
                 )}
             </div>

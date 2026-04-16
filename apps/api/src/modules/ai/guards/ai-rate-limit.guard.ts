@@ -1,7 +1,6 @@
 import {
     CanActivate,
     ExecutionContext,
-    ForbiddenException,
     HttpException,
     HttpStatus,
     Injectable,
@@ -13,11 +12,15 @@ import { RESPONSE_CODE } from '@cyanship/types';
 
 import { RedisCounterService } from '../../../common/services/redis-counter.service';
 import { ENV } from '../../../config/env';
-import { UserDocument } from '../../users/schemas/user.schema';
 
 const AI_IP_KEY_PREFIX = 'ai:ip:';
 const AI_IP_TTL_SECONDS = 86_400; // 24 hours
 
+/**
+ * IP-based rate limit guard for AI chat.
+ * Account-level limits (lifetime free limit, balance, single-flight)
+ * are enforced atomically in AiService.reserveChatRequest.
+ */
 @Injectable()
 export class AiRateLimitGuard implements CanActivate {
     private readonly logger = new Logger(AiRateLimitGuard.name);
@@ -26,26 +29,8 @@ export class AiRateLimitGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
-        const user = request.user as UserDocument;
-
-        this.checkAccountLimit(user);
         await this.checkIpLimit(request);
-
         return true;
-    }
-
-    private checkAccountLimit(user: UserDocument): void {
-        const ai = user.ai ?? { requestsUsed: 0, bonusGranted: false };
-        const limit =
-            ENV.AI_CHAT_FREE_LIMIT +
-            (ai.bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
-
-        if (ai.requestsUsed >= limit) {
-            throw new ForbiddenException({
-                code: RESPONSE_CODE.AI_LIMIT_EXHAUSTED,
-                message: 'AI request limit exhausted',
-            });
-        }
     }
 
     private async checkIpLimit(request: Request): Promise<void> {

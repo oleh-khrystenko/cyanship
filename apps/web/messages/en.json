@@ -283,7 +283,8 @@
             "no_billing_account": "No billing account found. Please subscribe first."
         },
         "users": {
-            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription."
+            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription.",
+            "executions_reservation_active": "A previous request is still being processed. Wait a few seconds and try again."
         },
         "generic": {
             "validation_error": "Please check the entered data",
@@ -298,7 +299,8 @@
         "ai": {
             "ai_limit_exhausted": "AI request limit has been reached.",
             "ai_rate_limit_exceeded": "Too many AI requests. Please try again later.",
-            "ai_provider_error": "AI is temporarily unavailable. Please try again later."
+            "ai_provider_error": "AI is temporarily unavailable. Please try again later.",
+            "ai_message_too_long": "Your message is too long for the current conversation. Try shortening it or clearing chat history."
         }
     },
     "ai_chat_page": {
@@ -306,13 +308,19 @@
         "placeholder": "Type your message...",
         "send": "Send",
         "clear_history": "Clear history",
+        "empty_state_title": "How can I help you?",
         "empty_state": "Send a message to start a conversation with AI.",
+        "suggestion_1": "What technologies do you use and why?",
+        "suggestion_2": "How long does it take to build an MVP?",
+        "suggestion_3": "What's included in the development cost?",
+        "suggestion_4": "How are you different from other agencies?",
         "balance_unit": "executions",
         "tries_remaining_label": "free tries left",
         "tries_exhausted": "No free tries left",
         "cost_info": "{cost} executions per message",
         "balance_top_up": "Top up balance",
         "disclaimer": "AI can make mistakes. Please double-check responses.",
+        "non_refundable_warning": "Once AI starts responding, executions are not refunded if you cancel.",
         "limit_exhausted": "Free tries exhausted. Tell us about your project to unlock 5 more.",
         "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
         "all_tries_exhausted_line2": "Drop me a line at <email>oleg@cyanship.com</email>",

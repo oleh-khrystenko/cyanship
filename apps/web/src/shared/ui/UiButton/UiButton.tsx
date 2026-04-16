@@ -47,6 +47,7 @@ const variantStyles: Record<UiButtonVariant, string> = {
     filled: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
     outline:
         'border border-muted-foreground/40 bg-transparent text-muted-foreground hover:border-foreground hover:text-foreground active:bg-muted/50',
+    soft: 'border border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
     'destructive-outline':
         'border border-destructive bg-transparent text-destructive hover:bg-destructive/10 active:bg-destructive/20',
     text: 'bg-transparent text-muted-foreground hover:text-foreground',
