@@ -299,7 +299,8 @@
         "ai": {
             "ai_limit_exhausted": "AI request limit has been reached.",
             "ai_rate_limit_exceeded": "Too many AI requests. Please try again later.",
-            "ai_provider_error": "AI is temporarily unavailable. Please try again later."
+            "ai_provider_error": "AI is temporarily unavailable. Please try again later.",
+            "ai_message_too_long": "Your message is too long for the current conversation. Try shortening it or clearing chat history."
         }
     },
     "ai_chat_page": {
@@ -307,7 +308,12 @@
         "placeholder": "Type your message...",
         "send": "Send",
         "clear_history": "Clear history",
+        "empty_state_title": "How can I help you?",
         "empty_state": "Send a message to start a conversation with AI.",
+        "suggestion_1": "What technologies do you use and why?",
+        "suggestion_2": "How long does it take to build an MVP?",
+        "suggestion_3": "What's included in the development cost?",
+        "suggestion_4": "How are you different from other agencies?",
         "balance_unit": "executions",
         "tries_remaining_label": "free tries left",
         "tries_exhausted": "No free tries left",

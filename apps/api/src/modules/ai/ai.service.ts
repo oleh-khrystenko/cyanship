@@ -29,6 +29,7 @@ import {
 } from './schemas/chat-message.schema';
 import {
     AI_PROVIDER,
+    type AiChatMessage,
     type IAiProvider,
 } from './interfaces/ai-provider.interface';
 import type { AiChatReservationTicket } from './interfaces/ai-chat-reservation';
@@ -82,6 +83,8 @@ RESPONSE GUIDELINES
 - If you don't know something specific, say so honestly and suggest emailing oleg@cyanship.com.
 - Never invent services, prices, or guarantees that aren't listed above.`;
 
+const AI_CHAT_MAX_HISTORY_MESSAGES = 50;
+
 @Injectable()
 export class AiService {
     private readonly logger = new Logger(AiService.name);
@@ -99,15 +102,79 @@ export class AiService {
         private readonly usersService: UsersService
     ) {}
 
-    async processChat(
+    async buildChatMessages(
+        userId: string,
         userMessage: string,
-        signal?: AbortSignal
+    ): Promise<AiChatMessage[]> {
+        const history = await this.chatMessageModel
+            .find({ userId: new Types.ObjectId(userId) })
+            .sort({ createdAt: -1, _id: -1 })
+            .limit(AI_CHAT_MAX_HISTORY_MESSAGES)
+            .select({ role: 1, content: 1 })
+            .lean();
+
+        history.reverse();
+
+        if (history.length > 0 && history[0].role === 'assistant') {
+            history.shift();
+        }
+
+        const currentMessage: AiChatMessage = {
+            role: 'user',
+            content: userMessage,
+        };
+        let historyMessages: AiChatMessage[] = history.map((m) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+        }));
+
+        const inputBudget =
+            this.aiProvider.contextWindow - ENV.AI_CHAT_MAX_TOKENS;
+
+        let messages = [...historyMessages, currentMessage];
+        let inputTokens = await this.aiProvider.countTokens(
+            messages,
+            SYSTEM_PROMPT,
+        );
+
+        while (inputTokens > inputBudget && historyMessages.length > 0) {
+            const removeCount = Math.max(
+                2,
+                Math.ceil(historyMessages.length * 0.2),
+            );
+            historyMessages = historyMessages.slice(removeCount);
+            if (
+                historyMessages.length > 0 &&
+                historyMessages[0].role === 'assistant'
+            ) {
+                historyMessages.shift();
+            }
+            messages = [...historyMessages, currentMessage];
+            inputTokens = await this.aiProvider.countTokens(
+                messages,
+                SYSTEM_PROMPT,
+            );
+        }
+
+        if (inputTokens > inputBudget) {
+            throw new BadRequestException({
+                code: RESPONSE_CODE.AI_MESSAGE_TOO_LONG,
+                message: 'Message exceeds context budget',
+            });
+        }
+
+        return messages;
+    }
+
+    async streamChat(
+        messages: AiChatMessage[],
+        signal?: AbortSignal,
     ): Promise<Readable> {
         return this.aiProvider.streamChat(
-            userMessage,
+            messages,
             SYSTEM_PROMPT,
             ENV.AI_CHAT_MAX_TOKENS,
-            signal
+            signal,
         );
     }
 
@@ -288,7 +355,7 @@ export class AiService {
     > {
         const messages = await this.chatMessageModel
             .find({ userId: new Types.ObjectId(userId) })
-            .sort({ createdAt: 1 })
+            .sort({ createdAt: 1, _id: 1 })
             .lean();
 
         return messages.map((m) => ({

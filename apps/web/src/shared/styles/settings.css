@@ -84,6 +84,14 @@
         @apply underline underline-offset-2;
     }
 
+    & pre {
+        @apply overflow-x-auto rounded-lg bg-muted p-3 my-1.5;
+    }
+
+    & pre code {
+        @apply p-0 bg-transparent;
+    }
+
     & code {
         @apply text-xs px-1 py-0.5 rounded bg-muted;
     }

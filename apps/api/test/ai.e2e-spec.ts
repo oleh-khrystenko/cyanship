@@ -145,6 +145,8 @@ function createStatefulRedisMock() {
 // ─── Mock AI provider ────────────────────────────────────────────────────────
 
 const mockAiProvider = {
+    contextWindow: 200_000,
+    countTokens: jest.fn().mockResolvedValue(500),
     streamChat: jest.fn(() =>
         Promise.resolve(Readable.from(['Hello', ' world', '!']))
     ),

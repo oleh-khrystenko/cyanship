@@ -28,13 +28,24 @@ const mockUserModel = {
     findById: jest.fn(),
 };
 
+function createFindChain(result: unknown[] = []) {
+    const chain: Record<string, jest.Mock> = {};
+    chain.sort = jest.fn().mockReturnValue(chain);
+    chain.limit = jest.fn().mockReturnValue(chain);
+    chain.select = jest.fn().mockReturnValue(chain);
+    chain.lean = jest.fn().mockResolvedValue(result);
+    return chain;
+}
+
 const mockChatMessageModel = {
-    find: jest.fn(),
+    find: jest.fn().mockReturnValue(createFindChain()),
     insertMany: jest.fn(),
     deleteMany: jest.fn(),
 };
 
 const mockAiProvider = {
+    contextWindow: 200_000,
+    countTokens: jest.fn().mockResolvedValue(500),
     streamChat: jest.fn(),
 };
 
@@ -348,6 +359,193 @@ describe('AiService', () => {
             await service.refundChatRequest(ticket);
 
             expect(mockUsersService.refundReservation).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('buildChatMessages', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        it('should return history + new message', async () => {
+            const history = [
+                { role: 'assistant', content: 'hi there' },
+                { role: 'user', content: 'hello' },
+            ];
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain(history),
+            );
+
+            const result = await service.buildChatMessages(userId, 'new question');
+
+            expect(result).toEqual([
+                { role: 'user', content: 'hello' },
+                { role: 'assistant', content: 'hi there' },
+                { role: 'user', content: 'new question' },
+            ]);
+        });
+
+        it('should return only new message when no history', async () => {
+            mockChatMessageModel.find.mockReturnValue(createFindChain([]));
+
+            const result = await service.buildChatMessages(userId, 'first message');
+
+            expect(result).toEqual([
+                { role: 'user', content: 'first message' },
+            ]);
+        });
+
+        it('should drop leading assistant message from truncated history', async () => {
+            const history = [
+                { role: 'assistant', content: 'reply' },
+                { role: 'user', content: 'follow-up' },
+                { role: 'assistant', content: 'orphaned response' },
+            ];
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain(history),
+            );
+
+            const result = await service.buildChatMessages(userId, 'next');
+
+            expect(result[0].role).toBe('user');
+            expect(result).toHaveLength(3);
+        });
+
+        it('should limit history to most recent messages', async () => {
+            mockChatMessageModel.find.mockReturnValue(createFindChain([]));
+
+            await service.buildChatMessages(userId, 'msg');
+
+            const findChain = mockChatMessageModel.find.mock.results[0].value;
+            expect(findChain.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
+            expect(findChain.limit).toHaveBeenCalledWith(50);
+        });
+
+        it('should truncate history when countTokens exceeds budget', async () => {
+            const history = [
+                { role: 'assistant', content: 'reply-4' },
+                { role: 'user', content: 'q4' },
+                { role: 'assistant', content: 'reply-3' },
+                { role: 'user', content: 'q3' },
+                { role: 'assistant', content: 'reply-2' },
+                { role: 'user', content: 'q2' },
+                { role: 'assistant', content: 'reply-1' },
+                { role: 'user', content: 'q1' },
+            ];
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain(history),
+            );
+
+            const inputBudget =
+                mockAiProvider.contextWindow - 800;
+            mockAiProvider.countTokens
+                .mockResolvedValueOnce(inputBudget + 5000)
+                .mockResolvedValueOnce(inputBudget - 100);
+
+            const result = await service.buildChatMessages(userId, 'new msg');
+
+            expect(mockAiProvider.countTokens).toHaveBeenCalledTimes(2);
+            expect(result.length).toBeLessThan(9);
+            expect(result[0].role).toBe('user');
+            expect(result[result.length - 1].content).toBe('new msg');
+        });
+
+        it('should not truncate when within budget', async () => {
+            const history = [
+                { role: 'assistant', content: 'reply' },
+                { role: 'user', content: 'hello' },
+            ];
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain(history),
+            );
+            mockAiProvider.countTokens.mockResolvedValue(500);
+
+            const result = await service.buildChatMessages(userId, 'new msg');
+
+            expect(mockAiProvider.countTokens).toHaveBeenCalledTimes(1);
+            expect(result).toHaveLength(3);
+        });
+
+        it('should ensure user-first after truncation removes leading assistant', async () => {
+            const history = [
+                { role: 'user', content: 'q3' },
+                { role: 'assistant', content: 'r2' },
+                { role: 'user', content: 'q2' },
+                { role: 'assistant', content: 'r1' },
+                { role: 'user', content: 'q1' },
+            ];
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain(history),
+            );
+
+            const inputBudget =
+                mockAiProvider.contextWindow - 800;
+            mockAiProvider.countTokens
+                .mockResolvedValueOnce(inputBudget + 1000)
+                .mockResolvedValueOnce(inputBudget - 100);
+
+            const result = await service.buildChatMessages(userId, 'new');
+
+            expect(result[0].role).toBe('user');
+        });
+
+        it('should never drop current user message during truncation', async () => {
+            const history = [
+                { role: 'user', content: 'q2' },
+                { role: 'assistant', content: 'r1' },
+                { role: 'user', content: 'q1' },
+            ];
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain(history),
+            );
+
+            const inputBudget =
+                mockAiProvider.contextWindow - 800;
+            mockAiProvider.countTokens
+                .mockResolvedValueOnce(inputBudget + 5000)
+                .mockResolvedValueOnce(inputBudget + 2000)
+                .mockResolvedValueOnce(inputBudget - 100);
+
+            const result = await service.buildChatMessages(userId, 'current msg');
+
+            expect(result[result.length - 1].content).toBe('current msg');
+            expect(result[result.length - 1].role).toBe('user');
+        });
+
+        it('should throw AI_MESSAGE_TOO_LONG when single message exceeds budget', async () => {
+            mockChatMessageModel.find.mockReturnValue(
+                createFindChain([]),
+            );
+
+            const inputBudget =
+                mockAiProvider.contextWindow - 800;
+            mockAiProvider.countTokens.mockResolvedValue(
+                inputBudget + 1000,
+            );
+
+            await expect(
+                service.buildChatMessages(userId, 'huge message'),
+            ).rejects.toMatchObject({
+                response: { code: 'AI_MESSAGE_TOO_LONG' },
+            });
+        });
+    });
+
+    describe('streamChat', () => {
+        it('should forward messages and signal to provider', async () => {
+            mockAiProvider.streamChat.mockResolvedValue('mock-stream');
+            const signal = new AbortController().signal;
+            const messages = [
+                { role: 'user' as const, content: 'hello' },
+            ];
+
+            const result = await service.streamChat(messages, signal);
+
+            expect(result).toBe('mock-stream');
+            expect(mockAiProvider.streamChat).toHaveBeenCalledWith(
+                messages,
+                expect.any(String),
+                800,
+                signal,
+            );
         });
     });
 });
