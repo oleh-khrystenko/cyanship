@@ -5,7 +5,6 @@ import { routing } from '@/i18n/routing';
 import localFont from 'next/font/local';
 import '@/app/globals.css';
 import { PageParams } from '@/shared/types/settings';
-import { Header } from '@/widgets/header';
 import { AuthInitializer } from '@/features/auth';
 import { Providers } from '@/app/providers';
 import { Overlays } from '@/app/overlays';
@@ -57,13 +56,12 @@ export default async function LocaleLayout({
             </head>
 
             <body
-                className={`${mulish.className} bg-background text-foreground`}
+                className={`${mulish.className} flex min-h-dvh flex-col bg-background text-foreground`}
             >
                 <Providers>
                     <NextIntlClientProvider>
                         <AuthInitializer />
                         <Overlays />
-                        <Header />
                         {children}
                     </NextIntlClientProvider>
                 </Providers>

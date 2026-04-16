@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { isOnboardingComplete } from '@cyanship/types';
 
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 interface AuthGuardProps {
     children: ReactNode;

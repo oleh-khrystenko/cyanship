@@ -13,7 +13,7 @@ import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { getFieldError } from '@/shared/lib';
 import { updateProfile, getMe } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 const ProfileFormSchema = z.object({
     firstName: firstNameSchema,

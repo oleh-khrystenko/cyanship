@@ -39,6 +39,7 @@ Ui-компоненти інкапсулюють:
 | `UiTextarea` | `<textarea>` | `outlined`, `filled` |
 | `UiChipGroup` | Radio-style inline chip selector | -- (sizes: sm/md/lg); Headless UI RadioGroup |
 | `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet, desktop centered; hideOverlay, hideCloseButton; Radix Dialog |
+| `UiHeaderShell` | Структурна обгортка header-зони (`<header>` + container h-16) | -- ; className override |
 
 ## Rules
 

@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { getMe } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 export default function BillingSuccessPage() {
     const t = useTranslations('billing_page.callback');

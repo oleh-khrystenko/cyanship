@@ -3,7 +3,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { getFullName, getInitials } from '@cyanship/types';
 import { logout } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 interface UserMenuItem {
     value: string;

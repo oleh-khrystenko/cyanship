@@ -351,10 +351,12 @@ export class PaymentsService {
                 ],
             },
             phase1Update,
-            { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
+            { new: true, maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
         );
 
-        if (!updated) {
+        let appliedUser = updated;
+
+        if (!appliedUser) {
             // Phase 2: billing is null (first billing event) — set full subdocument.
             // The { billing: null } filter guarantees exactly-once, so no $cond
             // guard is needed — but buildAtomicUpdatePipeline still adds it for
@@ -365,13 +367,13 @@ export class PaymentsService {
                 event.occurredAt
             );
 
-            const initialized = await this.userModel.findOneAndUpdate(
+            appliedUser = await this.userModel.findOneAndUpdate(
                 { _id: userId, billing: null },
                 phase2Update,
-                { maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
+                { new: true, maxTimeMS: WEBHOOK_MONGO_TIMEOUT_MS }
             );
 
-            if (!initialized) {
+            if (!appliedUser) {
                 this.logger.debug(
                     `Skipping stale/orphan event ${event.providerEventId} for user ${userId}`
                 );
@@ -389,21 +391,17 @@ export class PaymentsService {
                     ? EXECUTION_TRANSACTION_TYPE.CREDIT
                     : EXECUTION_TRANSACTION_TYPE.DEBIT;
 
-            // Read fresh balance after atomic pipeline update
-            const updatedUser = await this.userModel
-                .findById(userId)
-                .maxTimeMS(WEBHOOK_MONGO_TIMEOUT_MS)
-                .lean();
-
-            if (updatedUser) {
-                await this.usersService.recordTransaction({
-                    userId,
-                    type: txType,
-                    action: txAction,
-                    amount: Math.abs(executionAdjustment),
-                    balanceAfter: updatedUser.executions.balance,
-                });
-            }
+            // Use the post-update document returned by findOneAndUpdate ({ new: true }).
+            // This is the same atomic operation that applied the adjustment, so
+            // balanceAfter reflects exactly this event — no race window with other
+            // concurrent webhooks mutating balance between update and read.
+            await this.usersService.recordTransaction({
+                userId,
+                type: txType,
+                action: txAction,
+                amount: Math.abs(executionAdjustment),
+                balanceAfter: appliedUser.executions.balance,
+            });
 
             const direction = executionAdjustment > 0 ? 'Added' : 'Deducted';
             const reason =

@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { AuthModule } from '../auth/auth.module';
 import { CleanupService } from './cleanup.service';
+import { ReservationReconcileService } from './reservation-reconcile.service';
 import {
     ExecutionTransaction,
     ExecutionTransactionSchema,
@@ -23,7 +24,7 @@ import { UsersService } from './users.service';
         forwardRef(() => AuthModule),
     ],
     controllers: [UsersController],
-    providers: [UsersService, CleanupService],
+    providers: [UsersService, CleanupService, ReservationReconcileService],
     exports: [UsersService, MongooseModule],
 })
 export class UsersModule {}

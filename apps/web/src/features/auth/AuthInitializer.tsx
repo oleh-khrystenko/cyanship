@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { CURRENT_TERMS_VERSION } from '@cyanship/types';
 
 import { getMe, refreshToken } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useTermsReacceptDialogStore } from '@/stores/termsReacceptDialog';
+import { useAuthStore } from '@/entities/user';
+import { useTermsReacceptDialogStore } from './termsReacceptDialogStore';
 
 // Auth pages that handle their own refresh/verify flow
 const SELF_AUTH_PATHS = ['/auth/callback', '/auth/verify', '/auth/reset-password'];

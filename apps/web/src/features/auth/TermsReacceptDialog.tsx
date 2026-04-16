@@ -14,8 +14,8 @@ import UiCheckbox from '@/shared/ui/UiCheckbox';
 import UiLink from '@/shared/ui/UiLink';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { acceptTerms } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useTermsReacceptDialogStore } from '@/stores/termsReacceptDialog';
+import { useAuthStore } from '@/entities/user';
+import { useTermsReacceptDialogStore } from './termsReacceptDialogStore';
 
 function TermsReacceptForm({ onClose }: { onClose: () => void }) {
     const t = useTranslations('components.terms_reaccept');

@@ -18,7 +18,7 @@ jest.mock('next/navigation', () => ({
 const mockSetUser = jest.fn();
 const mockClearUser = jest.fn();
 
-jest.mock('@/stores/auth', () => ({
+jest.mock('@/entities/user', () => ({
     useAuthStore: (selector: (s: any) => any) => {
         const state = { setUser: mockSetUser, clearUser: mockClearUser };
         return selector(state);

@@ -28,22 +28,22 @@ apps/
 ├── api/src/
 │   ├── main.ts, app.module.ts
 │   ├── config/          # fail-fast env loader
-│   ├── common/          # decorators, filters, guards, interceptors, providers
+│   ├── common/          # decorators, filters, guards, interceptors, modules (Redis)
 │   └── modules/         # auth, email, users, payments, agency, ai, reports, storage
 ├── web/src/
 │   ├── app/[locale]/    # pages: auth, (protected), (agency)
-│   ├── entities/        # agency, brand
-│   ├── features/        # auth, billing, agency, profile, change-lang, change-theme
-│   ├── widgets/         # header, agency/landing
-│   ├── stores/          # auth, headerNav, briefDialog, deleteAccountDialog, billingResetDialog, termsReacceptDialog, mobileMenuSheet, dogfoodingSheet
-│   ├── shared/          # api, ui, config, styles, icons, seo, lib, fonts, types
+│   ├── entities/        # user (authStore), navigation (headerNavStore), brand (Logo), agency (placeholder)
+│   ├── features/        # auth, billing, agency, profile, change-lang, change-theme — own their dialog/state stores in-slice
+│   ├── widgets/         # header (mobileMenuSheetStore), agency/landing (dogfoodingSheetStore)
+│   ├── shared/          # api, ui, config, styles, icons, seo, lib (authEvents + uiIntents buses), fonts, types
 │   └── i18n/            # routing, request config
 packages/
 └── types/src/           # contracts, entities, enums, constants, validation, utils, agency
 docs/
 ├── architecture/        # auth-flow, payments-flow
 ├── conventions/         # source-of-truth правила
-└── sprints/             # ai-chat, brief-submission, auth-turnstile
+├── sprints/             # ai-chat, ai-chat-parallel-bypass, brief-submission, auth-turnstile
+└── vision/              # product vision & business model
 ```
 
 ## Domain Model
@@ -52,9 +52,9 @@ docs/
 Файл: `apps/api/src/modules/users/schemas/user.schema.ts` | Zod: `packages/types/src/entities/user.ts`
 - Soft-delete через `deletedAt` + `accountDeletionRequestedAt` (grace period, cron hard-delete)
 - Embedded `billing` subdocument (nullable, створюється лише при першій billing-події) з `lastProviderEventAt` для out-of-order webhook protection
-- Embedded `executions` subdocument (`balance`, `freeReportUsed`) з atomic `$inc` операціями
+- Embedded `executions` subdocument (`balance`, `freeReportUsed`, `activeReservation`) з atomic `$inc` операціями
 - Embedded `ai` subdocument (`requestsUsed`, `bonusGranted`) — lifetime AI chat usage tracking
-- Sparse indexes: `provider.id`, `billing.providerCustomerId`, `billing.providerSubscriptionId`
+- Sparse indexes: `provider.id`, `billing.providerCustomerId`, `billing.providerSubscriptionId`, `executions.activeReservation.expiresAt`
 
 ### ExecutionTransaction
 Файл: `apps/api/src/modules/users/schemas/execution-transaction.schema.ts`
@@ -87,11 +87,13 @@ docs/
 - `AppModule` global providers: `ThrottlerGuard` (APP_GUARD), `OnboardingInterceptor` (APP_INTERCEPTOR)
 - `AuthModule` ↔ `UsersModule` (`forwardRef`, circular)
 - `EmailModule` — `@Global()`, доступний всім модулям
+- `RedisModule` — `@Global()`, exports `REDIS_CLIENT` token + `RedisCounterService` (Lua-based atomic counters)
 - `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` injection token + `CatalogService` + `REDIS_CLIENT`
 - `CatalogService` → own Stripe SDK instance + `REDIS_CLIENT` (no dependency on `IPaymentProvider`)
-- `AgencyModule` → `EmailModule` (global) + `TurnstileService` + `BriefService`
+- `AgencyModule` → `EmailModule` (global) + `UsersModule` (for AI bonus) + `TurnstileService` + `BriefService`
 - `AiModule` → `UsersModule` + `REDIS_CLIENT` + `AI_PROVIDER` injection token (AnthropicService)
 - `CleanupService` (cron, every 6h) → `AuthService` + `UserModel`
+- `ReservationReconcileService` (cron, every 5min) → `UsersService` — generic expired reservation refund
 - `PaymentsCleanupService` (cron, 4 AM) → `PAYMENT_PROVIDER` + `OrphanedProviderCustomerModel`
 - Web: `shared/api/client.ts` → axios interceptors → refresh dedupe → `authStore`
 - Web: protected routes → `AuthGuard` компонент → auth store → `shared/api/auth.ts`
@@ -128,7 +130,10 @@ Provider abstraction (`PAYMENT_PROVIDER` → `StripeService`), two-phase idempot
 `CatalogService` (`apps/api/src/modules/payments/catalog.service.ts`) fetches Products/Prices from Stripe API, caches in Redis (TTL 5 min). Has own Stripe SDK instance (not via `IPaymentProvider`) to avoid circular DI. Warms cache on startup (fail-fast). Public endpoint `GET /payments/catalog` — no auth, applies feature flags. Plan/pack codes remain as TypeScript union types (`SubscriptionPlanCode`, `ExecutionPackCode`) — structural identifiers for i18n keys, images, DB records. Business data (prices, executions, display order, featured) comes exclusively from Stripe Product metadata.
 
 ### AI chat streaming
-Provider abstraction (`AI_PROVIDER` → `AnthropicService`), SSE streaming через `res.write()`. 3-layer protection: lifetime account limit (free + bonus), IP rate limit (Redis), execution balance check. Debit executions тільки після успішного стріму. Файл: `apps/api/src/modules/ai/ai.controller.ts`. Спринт-документація: `docs/sprints/ai-chat/`
+Provider abstraction (`AI_PROVIDER` → `AnthropicService`), SSE streaming через `res.write()`. Durable reservation pattern: `AiService.reserveChatRequest()` робить atomic `findOneAndUpdate` (balance + account limit + single-flight guard + compensationOps), потім stream, потім commit або refund. 2-layer protection: IP rate limit (Redis Lua) і atomic durable reservation (single-document Mongo op). Abort policy: refundable до першого токена, non-refundable після. Файл: `apps/api/src/modules/ai/ai.controller.ts`. Спринт-документація: `docs/sprints/ai-chat/`, `docs/sprints/ai-chat-parallel-bypass/`
+
+### Reservation primitives (generic core API)
+`UsersService.commitReservation()` — MongoDB transaction з claim-first порядком (active claim резервації перед side effects). `UsersService.refundReservation()` — single atomic `findOneAndUpdate`, що застосовує `compensationOps` зі збереженого reservation document. `ReservationReconcileService` — generic cron (кожні 5 хвилин), знаходить expired reservations і викликає той самий `refundReservation`. Будь-який feature, що мутує власні поля під час reserve, декларує compensation у `activeReservation.compensationOps`; core refund застосовує їх атомарно.
 
 ### AI bonus grant через brief
 Authenticated brief endpoint (`POST /agency/brief/authenticated`) дозволяє отримати AI bonus (5 додаткових запитів). Server-side sets `requestAiBonus: true` + `userId`. `BriefService` atomically sets `user.ai.bonusGranted: true`. Frontend brief dialog підтримує `requestAiBonus` mode через Zustand store.
@@ -143,7 +148,15 @@ API повертає machine-readable `code` через `AllExceptionsFilter`; w
 `AuthInitializer` (client effect) → `refreshToken()` → `getMe()` → hydrate `authStore`. Перевіряє terms version, показує modal при outdated. `AuthGuard` компонент в protected layout перевіряє auth + onboarding completion. Middleware (`middleware.ts`) перевіряє `bid_refresh` cookie для server-side redirects.
 
 ### Overlay management
-Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (dynamic imports). Конвенція: `docs/conventions/overlays.md`
+Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (єдиний global mount + єдиний санкціонований core→agency dynamic-import exception). Конвенція: `docs/conventions/overlays.md`. Кожен dialog store живе **усередині свого slice** (feature/widget), що ним володіє — глобального `src/stores/` шару не існує (enforced ESLint правилом `no-restricted-imports` + `no-restricted-syntax` в `apps/web/eslint.config.mjs`). **In-module trigger** (та сама agency / той самий core): прямий import store з барелю slice. **Cross-module trigger** (core хоче відкрити agency-овий overlay чи навпаки): через `uiIntents` bus (див. наступний розділ) — прямий import заблокований.
+
+### FSD layer inversion via event bus
+Два механізми інверсії залежностей у `shared/lib/`:
+
+- **`authEvents`** — parameterless lifecycle events. Використовується коли нижчий шар (`shared/api`) потребує реакції від вищого шару (`entities/user/authStore` очищується при `'session-lost'`). Нижчий шар лише публікує; верхній підписується зі свого місця.
+- **`uiIntents`** — типізовані cross-slice imperative UI commands з payload. Використовується для cross-module dialog opens (`'open-brief-dialog'` від core до agency). Owning slice підписується при module init; будь-який інший slice публікує без імпорту owning slice.
+
+ESLint guardrails блокують усі прямі обходи: `SHARED_MUST_NOT_IMPORT_HIGHER_LAYERS` для shared→higher layers, `CORE_MUST_NOT_IMPORT_AGENCY` для core→agency, обидва — і для static `import` statements (`no-restricted-imports`), і для dynamic `import()` expressions (`no-restricted-syntax`). Єдиний санкціонований виняток для dynamic imports — `app/overlays.tsx`, він явно файл-scoped у конфізі.
 
 ### Execution ledger
 Atomic `$inc` на `user.executions.balance` + створення `ExecutionTransaction` запису. Spend-ендпоінт перевіряє достатність балансу. AI chat також створює transaction з action `AI_CHAT`. Файл: `apps/api/src/modules/users/users.service.ts`
@@ -239,6 +252,7 @@ Scaffold без ендпоінтів.
 
 **Web — optional**
 - `API_INTERNAL_URL` — server-side reverse proxy target (rewrites в `next.config.ts`)
+- `NEXT_PUBLIC_DEMO_VIDEO_URL` — якщо задано, вмикає demo video секцію на landing
 
 **Infra**
 - `WEB_PORT`, `API_PORT` — Docker compose порти
@@ -269,6 +283,7 @@ docker compose up --build -d                          # prod-like
 - API e2e: `apps/api/test/*.e2e-spec.ts` (MongoMemoryServer + provider overrides)
 - Web: Jest + jsdom, поруч з source файлами
 - Test env setup: `apps/api/src/test-setup.ts` — fallback env vars для unit тестів (placeholder values через `??=`, запобігає fail-fast crash)
+- Test docs: `docs/testing/auth/`, `docs/testing/payments/` — unit/integration + manual E2E test plans
 - CI: `.github/workflows/ci.yml` (lint → build → API tests з MongoDB service)
 - Deploy: `.github/workflows/deploy.yml` (SSH → Docker build → health checks → auto-rollback)
 
@@ -309,7 +324,8 @@ Full index: [docs/conventions/README.md](docs/conventions/README.md)
 - **CatalogService own Stripe instance**: `CatalogService` створює власний `new Stripe(...)` для читання Products/Prices. Це зроблено щоб уникнути circular DI з `IPaymentProvider` → `StripeService`. Обидва інстанси використовують один `STRIPE_SECRET_KEY`.
 - **Catalog cache startup**: `CatalogService.onModuleInit()` робить warm fetch до Stripe. Якщо Stripe недоступний при старті — app crash (fail-fast). Після старту cache fallback працює через Redis TTL.
 - **Execution proration на plan change**: `calculatePlanChangeAdjustment()` в `PaymentsService` рахує пропорцію залишку періоду для коригування executions при upgrade/downgrade. Використовує `previousPriceId` з webhook event та `getPriceToExecutionsMap()` з CatalogService.
-- **AI chat SSE після headers**: Після `res.flushHeaders()` помилки більше не можуть бути HTTP errors — йдуть як SSE events з типом `ERROR`. Pre-stream balance check відбувається ДО встановлення SSE headers.
-- **AI chat debit only on success**: Executions списуються лише після завершення стріму (`finalizeChat()`). Якщо стрім перервано або помилка — баланс не змінюється.
-- **AI rate limit Redis atomic**: `INCR` + `EXPIRE` для IP rate limiting — `INCR` на неіснуючому ключі створює його зі значенням 1, `EXPIRE` встановлює TTL тільки якщо `INCR` повернув 1 (новий ключ).
+- **AI chat SSE після headers**: Після `res.flushHeaders()` помилки більше не можуть бути HTTP errors — йдуть як SSE events з типом `ERROR`. Reservation (`reserveChatRequest`) відбувається ДО встановлення SSE headers — будь-яка 4xx помилка (balance, limit, active reservation) йде як звичайний HTTP error.
+- **AI chat durable reservation**: Reserve (atomic `findOneAndUpdate`, без транзакції) → stream → commit (MongoDB transaction, claim-first) або refund (atomic single-doc op). Abort policy: refundable до першого токена, non-refundable після. `ReservationReconcileService` cron — generic safety net для crash-window (кожні 5 хвилин).
+- **Redis atomic counters via Lua**: `RedisCounterService` використовує `redis.eval()` Lua scripts для atomicity. Fixed-window: TTL тільки при першому increment. Sliding-window: TTL оновлюється при кожному increment. Обидва повертають post-increment count.
+- **Reservation compensation pattern**: `activeReservation.compensationOps` зберігає `$inc` операції, які core `refundReservation` застосовує атомарно. Cron-reconciler повністю generic — не знає про feature-specific поля. Для AI: `{ inc: { 'ai.requestsUsed': -1 } }`.
 - **AI bonus grant one-time**: `BriefService` використовує MongoDB atomic guard (`ai.bonusGranted: false`) щоб запобігти повторному нарахуванню бонусу.

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useHeaderNavStore } from '@/stores/headerNav';
+import { useHeaderNavStore } from '@/entities/navigation';
 
 export function useActiveSection() {
     const navItems = useHeaderNavStore((s) => s.navItems);

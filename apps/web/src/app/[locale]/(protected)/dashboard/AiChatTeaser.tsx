@@ -5,7 +5,7 @@ import { AI_CHAT_FREE_LIMIT, AI_CHAT_BONUS_AMOUNT } from '@cyanship/types';
 
 import UiLink from '@/shared/ui/UiLink';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 
 export default function AiChatTeaser() {
     const t = useTranslations('dashboard_page.ai_chat_teaser');

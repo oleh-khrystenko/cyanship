@@ -37,17 +37,17 @@ export function BaseLayout({ lang, children }: BaseLayoutProps) {
                         </Link>
                         <span style={socialDot}>&middot;</span>
                         <Link
-                            href="https://x.com/cyanshiphq"
-                            style={socialLink}
-                        >
-                            X
-                        </Link>
-                        <span style={socialDot}>&middot;</span>
-                        <Link
                             href="https://github.com/oleh-khrystenko"
                             style={socialLink}
                         >
                             GitHub
+                        </Link>
+                        <span style={socialDot}>&middot;</span>
+                        <Link
+                            href="https://www.upwork.com/freelancers/cyanship"
+                            style={socialLink}
+                        >
+                            Upwork
                         </Link>
                     </Section>
                     <Text style={siteLink}>

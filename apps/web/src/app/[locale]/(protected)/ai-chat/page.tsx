@@ -27,9 +27,8 @@ import {
     AiChatError,
     getApiMessageKey,
 } from '@/shared/api';
-import { useAuthStore } from '@/stores/auth';
-import { useBriefDialogStore } from '@/stores/briefDialog';
-import { toIntlLocale } from '@/shared/lib';
+import { useAuthStore } from '@/entities/user';
+import { toIntlLocale, uiIntents } from '@/shared/lib';
 
 interface ChatMessage {
     id: string;
@@ -216,7 +215,10 @@ export default function AiChatPage() {
                     setIsLimitExhausted(true);
                 } else if (err.code === 'AI_RATE_LIMIT_EXCEEDED') {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'ai')));
-                } else if (err.code === 'INSUFFICIENT_EXECUTIONS') {
+                } else if (
+                    err.code === 'INSUFFICIENT_EXECUTIONS' ||
+                    err.code === 'EXECUTIONS_RESERVATION_ACTIVE'
+                ) {
                     toast.error(tGlobal(getApiMessageKey(err.code, 'users')));
                 } else {
                     toast.error(tGlobal(getApiMessageKey(err.code)));
@@ -257,7 +259,7 @@ export default function AiChatPage() {
     );
 
     const handleOpenBriefDialog = useCallback(() => {
-        useBriefDialogStore.getState().open({ requestAiBonus: true });
+        uiIntents.emit('open-brief-dialog', { requestAiBonus: true });
     }, []);
 
     return (
@@ -451,9 +453,12 @@ export default function AiChatPage() {
                                 </div>
                             }
                         />
-                        <p className="mt-1.5 text-center text-xs text-muted-foreground">
-                            {t('disclaimer')}
-                        </p>
+                        <div className="mt-1.5 space-y-0.5 text-center text-xs text-muted-foreground">
+                            <p>{t('disclaimer')}</p>
+                            <p className="text-muted-foreground/60">
+                                {t('non_refundable_warning')}
+                            </p>
+                        </div>
                     </>
                 )}
             </div>

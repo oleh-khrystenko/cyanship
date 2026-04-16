@@ -22,8 +22,8 @@ import { submitBrief, submitAuthenticatedBrief } from '@/shared/api/agency';
 import { getMe } from '@/shared/api/auth';
 import { getApiMessageKey } from '@/shared/api/mapApiCode';
 import { getFieldError } from '@/shared/lib';
-import { useAuthStore } from '@/stores/auth';
-import { useBriefDialogStore } from '@/stores/briefDialog';
+import { useAuthStore } from '@/entities/user';
+import { useBriefDialogStore } from './briefDialogStore';
 import { getSource } from './lib/source';
 import { useTurnstile } from './lib/useTurnstile';
 

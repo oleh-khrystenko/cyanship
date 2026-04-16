@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 
 import { REDIS_CLIENT } from '../../common/modules/redis.module';
+import { RedisCounterService } from '../../common/services/redis-counter.service';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { EmailService } from '../email/email.service';
@@ -53,9 +54,12 @@ const mockUser = {
     }),
 };
 
+// Pipeline is now used only by refresh-token rotation flow:
+//   set/sadd/expire — storeRefreshToken (set token, add to family, refresh family TTL)
+//   del/srem        — revokeRefreshToken (delete token, remove from family)
+// INCR-based rate-limit usage moved to RedisCounterService.
 const mockPipeline = {
     set: jest.fn().mockReturnThis(),
-    incr: jest.fn().mockReturnThis(),
     expire: jest.fn().mockReturnThis(),
     exec: jest.fn().mockResolvedValue([]),
     del: jest.fn().mockReturnThis(),
@@ -68,11 +72,14 @@ const mockRedis = {
     getdel: jest.fn(),
     del: jest.fn(),
     set: jest.fn(),
-    incr: jest.fn(),
-    expire: jest.fn(),
     srem: jest.fn(),
     pipeline: jest.fn(),
     smembers: jest.fn(),
+};
+
+const mockRedisCounter = {
+    incrementFixedWindow: jest.fn(),
+    incrementSlidingWindow: jest.fn(),
 };
 
 describe('AuthService', () => {
@@ -119,6 +126,10 @@ describe('AuthService', () => {
                     provide: REDIS_CLIENT,
                     useValue: mockRedis,
                 },
+                {
+                    provide: RedisCounterService,
+                    useValue: mockRedisCounter,
+                },
             ],
         }).compile();
 
@@ -128,6 +139,9 @@ describe('AuthService', () => {
         emailService = module.get<EmailService>(EmailService);
         jest.clearAllMocks();
         mockRedis.pipeline.mockReturnValue(mockPipeline);
+        // Default: counter calls return 1 (first hit, well under any limit)
+        mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
+        mockRedisCounter.incrementSlidingWindow.mockResolvedValue(1);
     });
 
     describe('generateTokens', () => {
@@ -468,14 +482,12 @@ describe('AuthService', () => {
         });
 
         it('should normalize email, generate token, store JSON in Redis, and send email', async () => {
-            mockRedis.incr.mockResolvedValue(1);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
 
             await authService.sendMagicLink('  User@Example.COM  ');
 
-            expect(mockRedis.incr).toHaveBeenCalledWith(
-                'ratelimit:magic:user@example.com'
-            );
-            expect(mockRedis.expire).toHaveBeenCalledWith(
+            // Atomic counter: single call replaces INCR + conditional EXPIRE
+            expect(mockRedisCounter.incrementFixedWindow).toHaveBeenCalledWith(
                 'ratelimit:magic:user@example.com',
                 900
             );
@@ -496,7 +508,7 @@ describe('AuthService', () => {
         });
 
         it('should store purpose in Redis JSON payload', async () => {
-            mockRedis.incr.mockResolvedValue(1);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
 
             await authService.sendMagicLink(email, 'register');
 
@@ -509,7 +521,7 @@ describe('AuthService', () => {
         });
 
         it('should default purpose to login', async () => {
-            mockRedis.incr.mockResolvedValue(1);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
 
             await authService.sendMagicLink(email);
 
@@ -521,17 +533,16 @@ describe('AuthService', () => {
             );
         });
 
-        it('should not set expire on subsequent requests (count > 1)', async () => {
-            mockRedis.incr.mockResolvedValue(2);
+        it('should send on subsequent requests within limit (count = 2)', async () => {
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(2);
 
             await authService.sendMagicLink(email);
 
-            expect(mockRedis.expire).not.toHaveBeenCalled();
             expect(emailService.sendMagicLink).toHaveBeenCalled();
         });
 
         it('should allow up to 3 requests within rate limit window', async () => {
-            mockRedis.incr.mockResolvedValue(3);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(3);
 
             await authService.sendMagicLink(email);
 
@@ -539,7 +550,7 @@ describe('AuthService', () => {
         });
 
         it('should throw 429 when rate limit exceeded (4th request)', async () => {
-            mockRedis.incr.mockResolvedValue(4);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(4);
 
             await expect(
                 authService.sendMagicLink(email)
@@ -548,7 +559,7 @@ describe('AuthService', () => {
         });
 
         it('should throw 429 when rate limit is well over max', async () => {
-            mockRedis.incr.mockResolvedValue(10);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(10);
 
             await expect(
                 authService.sendMagicLink(email)
@@ -556,7 +567,7 @@ describe('AuthService', () => {
         });
 
         it('should not leak email in rate limit error message', async () => {
-            mockRedis.incr.mockResolvedValue(4);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(4);
 
             await expect(
                 authService.sendMagicLink('secret@example.com')
@@ -567,7 +578,7 @@ describe('AuthService', () => {
         });
 
         it('should skip sending email if dedup key exists (anti-spam)', async () => {
-            mockRedis.incr.mockResolvedValue(1);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
             mockRedis.get.mockResolvedValue('existing-token');
 
             await authService.sendMagicLink(email);
@@ -576,7 +587,7 @@ describe('AuthService', () => {
         });
 
         it('should use user preferredLang for email when user exists', async () => {
-            mockRedis.incr.mockResolvedValue(1);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
             jest.spyOn(usersService, 'findByEmail').mockResolvedValue({
                 preferredLang: 'en',
             } as never);
@@ -593,19 +604,20 @@ describe('AuthService', () => {
         });
 
         it('should rate limit per-email regardless of purpose', async () => {
-            mockRedis.incr.mockResolvedValue(4);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(4);
 
             await expect(
                 authService.sendMagicLink(email, 'register')
             ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
 
-            expect(mockRedis.incr).toHaveBeenCalledWith(
-                `ratelimit:magic:${email}`
+            expect(mockRedisCounter.incrementFixedWindow).toHaveBeenCalledWith(
+                `ratelimit:magic:${email}`,
+                900
             );
         });
 
         it('should dedup per email+purpose: different purposes both send', async () => {
-            mockRedis.incr.mockResolvedValue(1);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
             // Dedup returns null for both — no existing dedup keys
             mockRedis.get.mockResolvedValue(null);
 
@@ -852,6 +864,8 @@ describe('AuthService', () => {
 
         beforeEach(() => {
             mockRedis.get.mockResolvedValue(null);
+            // Default: counter starts at 1 (well under the 10-request limit)
+            mockRedisCounter.incrementSlidingWindow.mockResolvedValue(1);
         });
 
         it('should return hasPassword: true for existing user with password', async () => {
@@ -897,8 +911,8 @@ describe('AuthService', () => {
             );
         });
 
-        it('should allow up to 10 requests per IP', async () => {
-            mockRedis.get.mockResolvedValue('9');
+        it('should allow up to 10 requests per IP (10th still passes)', async () => {
+            mockRedisCounter.incrementSlidingWindow.mockResolvedValue(10);
             jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
 
             await expect(
@@ -907,24 +921,21 @@ describe('AuthService', () => {
         });
 
         it('should throw 429 on 11th request from same IP', async () => {
-            mockRedis.get.mockResolvedValue('10');
+            mockRedisCounter.incrementSlidingWindow.mockResolvedValue(11);
 
             await expect(
                 authService.checkEmail('test@gmail.com', ip)
             ).rejects.toHaveProperty('status', HttpStatus.TOO_MANY_REQUESTS);
         });
 
-        it('should use pipeline to increment and set expiry for rate limit counter', async () => {
+        it('should use atomic sliding-window counter for rate limit', async () => {
             jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
 
             await authService.checkEmail('test@gmail.com', ip);
 
-            expect(mockPipeline.incr).toHaveBeenCalledWith(`check_email:${ip}`);
-            expect(mockPipeline.expire).toHaveBeenCalledWith(
-                `check_email:${ip}`,
-                60
-            );
-            expect(mockPipeline.exec).toHaveBeenCalled();
+            expect(
+                mockRedisCounter.incrementSlidingWindow
+            ).toHaveBeenCalledWith(`check_email:${ip}`, 60);
         });
     });
 
@@ -977,9 +988,9 @@ describe('AuthService', () => {
                 authService.loginWithPassword(email, password, ip)
             ).rejects.toThrow('Invalid email or password');
 
-            expect(mockPipeline.incr).toHaveBeenCalledWith(
-                `login_attempts:${ip}:${email}`
-            );
+            expect(
+                mockRedisCounter.incrementSlidingWindow
+            ).toHaveBeenCalledWith(`login_attempts:${ip}:${email}`, 900);
         });
 
         it('should throw 401 and increment attempts when user not found', async () => {
@@ -989,9 +1000,9 @@ describe('AuthService', () => {
                 authService.loginWithPassword(email, password, ip)
             ).rejects.toThrow('Invalid email or password');
 
-            expect(mockPipeline.incr).toHaveBeenCalledWith(
-                `login_attempts:${ip}:${email}`
-            );
+            expect(
+                mockRedisCounter.incrementSlidingWindow
+            ).toHaveBeenCalledWith(`login_attempts:${ip}:${email}`, 900);
         });
 
         it('should throw 401 and increment attempts when user has no password', async () => {
@@ -1004,9 +1015,9 @@ describe('AuthService', () => {
                 authService.loginWithPassword(email, password, ip)
             ).rejects.toThrow('Invalid email or password');
 
-            expect(mockPipeline.incr).toHaveBeenCalledWith(
-                `login_attempts:${ip}:${email}`
-            );
+            expect(
+                mockRedisCounter.incrementSlidingWindow
+            ).toHaveBeenCalledWith(`login_attempts:${ip}:${email}`, 900);
         });
 
         it('should throw 429 after 5 failed attempts (1 min block)', async () => {

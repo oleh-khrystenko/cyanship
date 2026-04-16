@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
-import { useDogfoodingSheetStore } from '@/stores/dogfoodingSheet';
+import { useDogfoodingSheetStore } from './dogfoodingSheetStore';
 import ProofTabs from './ProofTabs';
 import ProofWindow from './ProofWindow';
 import type { ProofTabKey } from './types';

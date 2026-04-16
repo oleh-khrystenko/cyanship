@@ -1,3 +1,5 @@
+import { authEvents } from '@/shared/lib';
+
 import { useAuthStore } from './authStore';
 
 const mockUser = {
@@ -55,5 +57,19 @@ describe('authStore', () => {
         useAuthStore.getState().setLoading(false);
         useAuthStore.getState().setLoading(true);
         expect(useAuthStore.getState().isLoading).toBe(true);
+    });
+
+    describe('authEvents integration', () => {
+        it('clears the user when authEvents emits "session-lost"', () => {
+            useAuthStore.getState().setUser(mockUser);
+            expect(useAuthStore.getState().isAuthenticated).toBe(true);
+
+            authEvents.emit('session-lost');
+
+            const state = useAuthStore.getState();
+            expect(state.user).toBeNull();
+            expect(state.isAuthenticated).toBe(false);
+            expect(state.isLoading).toBe(false);
+        });
     });
 });

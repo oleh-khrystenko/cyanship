@@ -10,7 +10,7 @@ import {
 } from '@cyanship/types';
 
 import { EmailService } from '../../email/email.service';
-import { User, UserDocument } from '../../users/schemas/user.schema';
+import { UsersService } from '../../users/users.service';
 import { Brief } from '../schemas/brief.schema';
 import type { SubmitBriefDto } from '../dto/submit-brief.dto';
 
@@ -26,9 +26,8 @@ export class BriefService {
 
     constructor(
         @InjectModel(Brief.name) private readonly briefModel: Model<Brief>,
-        @InjectModel(User.name)
-        private readonly userModel: Model<UserDocument>,
-        private readonly emailService: EmailService
+        private readonly emailService: EmailService,
+        private readonly usersService: UsersService
     ) {}
 
     async submit(
@@ -84,26 +83,15 @@ export class BriefService {
             });
         });
 
-        // Grant one-time AI bonus if requested by authenticated user
-        let aiBonusGranted = false;
+        const aiBonusGranted =
+            requestAiBonus && userId
+                ? await this.usersService.grantAiBonus(userId)
+                : false;
 
-        if (requestAiBonus && userId) {
-            const result = await this.userModel.findOneAndUpdate(
-                {
-                    _id: userId,
-                    'ai.bonusGranted': { $ne: true },
-                },
-                { $set: { 'ai.bonusGranted': true } },
-                { new: true }
+        if (aiBonusGranted) {
+            this.logger.log(
+                `AI bonus granted via brief ${brief._id.toString()} to user ${userId}`
             );
-
-            aiBonusGranted = result !== null;
-
-            if (aiBonusGranted) {
-                this.logger.log(
-                    `AI bonus granted to user ${userId} via brief ${brief._id.toString()}`
-                );
-            }
         }
 
         return { aiBonusGranted };

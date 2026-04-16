@@ -3,13 +3,9 @@
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getFullName, getInitials } from '@cyanship/types';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/entities/user';
 import { toIntlLocale } from '@/shared/lib';
-import {
-    UiAvatar,
-    UiAvatarImage,
-    UiAvatarFallback,
-} from '@/shared/ui/UiAvatar';
+import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
 import UiLink from '@/shared/ui/UiLink';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
@@ -40,15 +36,12 @@ export default function DashboardPage() {
         <UiPageContainer className="space-y-8 py-12 md:py-16">
             {/* ── Greeting ── */}
             <div className="flex items-center gap-4">
-                <UiAvatar size="xl">
-                    <UiAvatarImage
-                        src={user.profile.avatar ?? undefined}
-                        alt={fullName}
-                    />
-                    <UiAvatarFallback size="xl">
-                        {initials}
-                    </UiAvatarFallback>
-                </UiAvatar>
+                <UiAvatar
+                    size="xl"
+                    src={user.profile.avatar}
+                    alt={fullName}
+                    fallback={initials}
+                />
                 <div className="flex flex-col gap-0.5">
                     <h1 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
                         {t('greeting', {

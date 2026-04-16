@@ -183,8 +183,8 @@
             "legal_privacy": "Privacy Policy",
             "email": "oleg@cyanship.com",
             "social_linkedin": "LinkedIn",
-            "social_x": "X",
             "social_github": "GitHub",
+            "social_upwork": "Upwork",
             "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
         }
     },
@@ -211,7 +211,7 @@
             "invalid_credentials": "Invalid email or password",
             "too_many_attempts": "Too many attempts. Try again in {minutes} minutes or use \"Forgot password?\"",
             "login_via_email_link": "Sign in via email link",
-            "session_revoked": "Session ended. Please sign in again",
+            "session_expired": "Your session has expired. Please sign in again.",
             "error_generic": "Something went wrong. Please try again",
             "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
             "terms_required": "Please accept the Terms of Service and Privacy Policy to continue",
@@ -283,7 +283,8 @@
             "no_billing_account": "No billing account found. Please subscribe first."
         },
         "users": {
-            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription."
+            "insufficient_executions": "Not enough executions for this operation. Purchase more or upgrade your subscription.",
+            "executions_reservation_active": "A previous request is still being processed. Wait a few seconds and try again."
         },
         "generic": {
             "validation_error": "Please check the entered data",
@@ -313,10 +314,11 @@
         "cost_info": "{cost} executions per message",
         "balance_top_up": "Top up balance",
         "disclaimer": "AI can make mistakes. Please double-check responses.",
-        "limit_exhausted": "Free tries exhausted. Submit a project brief to get 5 more.",
+        "non_refundable_warning": "Once AI starts responding, executions are not refunded if you cancel.",
+        "limit_exhausted": "Free tries exhausted. Tell us about your project to unlock 5 more.",
         "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
         "all_tries_exhausted_line2": "Drop me a line at <email>oleg@cyanship.com</email>",
-        "request_bonus": "Submit Brief",
+        "request_bonus": "Get 5 more tries",
         "clear_dialog": {
             "title": "Clear chat history?",
             "description": "All messages will be permanently deleted. This action cannot be undone.",

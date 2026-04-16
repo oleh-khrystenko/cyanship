@@ -512,7 +512,7 @@ describe('PaymentsService', () => {
                             'billing.currency': 'usd',
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
         });
@@ -819,7 +819,7 @@ describe('PaymentsService', () => {
                         ],
                     },
                     expect.objectContaining({ $set: expect.any(Object) }),
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -908,7 +908,7 @@ describe('PaymentsService', () => {
                                 SUBSCRIPTION_STATUS.ACTIVE,
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -944,7 +944,7 @@ describe('PaymentsService', () => {
                             'billing.cancelAtPeriodEnd': false,
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -977,7 +977,7 @@ describe('PaymentsService', () => {
                                 SUBSCRIPTION_STATUS.TRIALING,
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -1010,7 +1010,7 @@ describe('PaymentsService', () => {
                                 SUBSCRIPTION_STATUS.PAST_DUE,
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -1047,7 +1047,7 @@ describe('PaymentsService', () => {
                             'billing.hasActiveSubscription': true,
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -1083,7 +1083,7 @@ describe('PaymentsService', () => {
                             'billing.planCode': expect.anything(),
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -1117,7 +1117,7 @@ describe('PaymentsService', () => {
                             'billing.providerSubscriptionStatus': 'canceled',
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -1162,7 +1162,7 @@ describe('PaymentsService', () => {
                             'billing.provider': 'stripe',
                         }),
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
 
                 // Phase 2: full subdocument set with billing: null filter
@@ -1179,7 +1179,7 @@ describe('PaymentsService', () => {
                             }),
                         },
                     },
-                    { maxTimeMS: 10000 }
+                    { new: true, maxTimeMS: 10000 }
                 );
             });
 
@@ -1265,9 +1265,8 @@ describe('PaymentsService', () => {
                     event
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue(
-                    chainQuery(mockUser({ executions: { balance: 10000 } }))
+                mockUserModel.findOneAndUpdate.mockResolvedValue(
+                    mockUser({ executions: { balance: 10000 } })
                 );
                 mockUsersService.recordTransaction.mockResolvedValue({});
 
@@ -1276,12 +1275,14 @@ describe('PaymentsService', () => {
                 // Execution adjustment is inside the atomic pipeline, NOT a separate call
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
                 expect(pipelineAdjustment()).toBe(10000);
+                expect(mockUserModel.findById).not.toHaveBeenCalled();
                 expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
                     expect.objectContaining({
                         userId: MOCK_USER_ID,
                         type: 'credit',
                         action: 'subscription_activation',
                         amount: 10000,
+                        balanceAfter: 10000,
                     })
                 );
             });
@@ -1372,9 +1373,8 @@ describe('PaymentsService', () => {
                     event
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue(
-                    chainQuery(mockUser({ executions: { balance: 30000 } }))
+                mockUserModel.findOneAndUpdate.mockResolvedValue(
+                    mockUser({ executions: { balance: 30000 } })
                 );
                 mockUsersService.recordTransaction.mockResolvedValue({});
 
@@ -1383,11 +1383,13 @@ describe('PaymentsService', () => {
                 // delta = 50000 - 10000 = 40000, ratio ≈ 0.5, adjustment = floor(40000 * 0.5) = 20000
                 expect(mockUsersService.addExecutions).not.toHaveBeenCalled();
                 expect(pipelineAdjustment()).toBe(20000);
+                expect(mockUserModel.findById).not.toHaveBeenCalled();
                 expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
                     expect.objectContaining({
                         type: 'credit',
                         action: 'plan_change',
                         amount: 20000,
+                        balanceAfter: 30000,
                     })
                 );
             });
@@ -1415,9 +1417,8 @@ describe('PaymentsService', () => {
                     event
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue(
-                    chainQuery(mockUser({ executions: { balance: 30000 } }))
+                mockUserModel.findOneAndUpdate.mockResolvedValue(
+                    mockUser({ executions: { balance: 30000 } })
                 );
                 mockUsersService.recordTransaction.mockResolvedValue({});
 
@@ -1425,11 +1426,13 @@ describe('PaymentsService', () => {
 
                 // delta = 10000 - 50000 = -40000, ratio ≈ 0.5, adjustment = -20000
                 expect(pipelineAdjustment()).toBe(-20000);
+                expect(mockUserModel.findById).not.toHaveBeenCalled();
                 expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
                     expect.objectContaining({
                         type: 'debit',
                         action: 'plan_change',
                         amount: 20000,
+                        balanceAfter: 30000,
                     })
                 );
             });
@@ -1545,9 +1548,8 @@ describe('PaymentsService', () => {
                     event
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue(
-                    chainQuery(mockUser({ executions: { balance: 50000 } }))
+                mockUserModel.findOneAndUpdate.mockResolvedValue(
+                    mockUser({ executions: { balance: 50000 } })
                 );
                 mockUsersService.recordTransaction.mockResolvedValue({});
 
@@ -1555,11 +1557,13 @@ describe('PaymentsService', () => {
 
                 // No period info → ratio = 1.0 → full delta = 40000
                 expect(pipelineAdjustment()).toBe(40000);
+                expect(mockUserModel.findById).not.toHaveBeenCalled();
                 expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
                     expect.objectContaining({
                         type: 'credit',
                         action: 'plan_change',
                         amount: 40000,
+                        balanceAfter: 50000,
                     })
                 );
             });
@@ -1589,9 +1593,8 @@ describe('PaymentsService', () => {
                     event
                 );
                 mockWebhookEventModel.create.mockResolvedValue({});
-                mockUserModel.findOneAndUpdate.mockResolvedValue({});
-                mockUserModel.findById.mockReturnValue(
-                    chainQuery(mockUser({ executions: { balance: 36666 } }))
+                mockUserModel.findOneAndUpdate.mockResolvedValue(
+                    mockUser({ executions: { balance: 36666 } })
                 );
                 mockUsersService.recordTransaction.mockResolvedValue({});
 
@@ -1600,11 +1603,13 @@ describe('PaymentsService', () => {
                 // delta = 40000, remaining = 20 days out of 30 → ratio = 20/30
                 // adjustment = floor(40000 * 20/30) = floor(26666.67) = 26666
                 expect(pipelineAdjustment()).toBe(26666);
+                expect(mockUserModel.findById).not.toHaveBeenCalled();
                 expect(mockUsersService.recordTransaction).toHaveBeenCalledWith(
                     expect.objectContaining({
                         type: 'credit',
                         action: 'plan_change',
                         amount: 26666,
+                        balanceAfter: 36666,
                     })
                 );
             });

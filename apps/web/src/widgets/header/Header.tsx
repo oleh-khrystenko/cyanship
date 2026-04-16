@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
 import { LogOut, User, CreditCard, Menu, LayoutDashboard, Bot } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
 
@@ -12,12 +11,13 @@ const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
 });
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
+import UiHeaderShell from '@/shared/ui/UiHeaderShell';
 import UiDropdownMenu from '@/shared/ui/UiDropdownMenu';
-import { UiAvatar, UiAvatarImage, UiAvatarFallback } from '@/shared/ui/UiAvatar';
-import { useAuthStore } from '@/stores/auth';
+import { UiAvatar } from '@/shared/ui/UiAvatar';
+import { useAuthStore } from '@/entities/user';
 import { getFullName } from '@cyanship/types';
-import { useHeaderNavStore } from '@/stores/headerNav';
-import { useMobileMenuSheetStore } from '@/stores/mobileMenuSheet';
+import { useHeaderNavStore } from '@/entities/navigation';
+import { useMobileMenuSheetStore } from './mobileMenuSheetStore';
 import { useUserMenu } from './useUserMenu';
 import { useActiveSection } from './useActiveSection';
 
@@ -47,8 +47,6 @@ const Header = () => {
     const cta = useHeaderNavStore((s) => s.cta);
     const openMobileMenu = useMobileMenuSheetStore((s) => s.open);
 
-    const pathname = usePathname();
-    const isSigninPage = pathname.endsWith('/auth/signin');
     const hasNav = navItems.length > 0;
     const activeSection = useHeaderNavStore((s) => s.activeSection);
     useActiveSection();
@@ -70,7 +68,7 @@ const Header = () => {
     }, []);
 
     return (
-        <header className="sticky top-0 z-50">
+        <div className="sticky top-0 z-50">
             <div
                 className={`pointer-events-none absolute inset-0 ${
                     canAnimate
@@ -79,7 +77,7 @@ const Header = () => {
                 } ${showGlass ? 'opacity-100' : 'opacity-0'}`}
                 aria-hidden="true"
             />
-            <div className="relative z-10 container flex h-16 items-center justify-between gap-6 px-6">
+            <UiHeaderShell className="relative z-10 gap-6">
                 {/* Logo — on landing: smooth scroll to top, elsewhere: navigate home */}
                 {hasNav ? (
                     <UiButton
@@ -152,17 +150,12 @@ const Header = () => {
                             size="sm"
                             header={
                                 <div className="flex items-center gap-2.5">
-                                    <UiAvatar size="sm">
-                                        <UiAvatarImage
-                                            src={
-                                                user.profile.avatar ?? undefined
-                                            }
-                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
-                                        />
-                                        <UiAvatarFallback size="sm">
-                                            {initials}
-                                        </UiAvatarFallback>
-                                    </UiAvatar>
+                                    <UiAvatar
+                                        size="sm"
+                                        src={user.profile.avatar}
+                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
+                                        fallback={initials}
+                                    />
                                     <div className="flex flex-col">
                                         <span className="text-foreground text-sm font-medium">
                                             {getFullName(user.profile.firstName, user.profile.lastName)}
@@ -178,31 +171,25 @@ const Header = () => {
                                     type="button"
                                     className="cursor-pointer rounded-full transition-opacity hover:opacity-80"
                                 >
-                                    <UiAvatar size="sm">
-                                        <UiAvatarImage
-                                            src={
-                                                user.profile.avatar ?? undefined
-                                            }
-                                            alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
-                                        />
-                                        <UiAvatarFallback size="sm">
-                                            {initials}
-                                        </UiAvatarFallback>
-                                    </UiAvatar>
+                                    <UiAvatar
+                                        size="sm"
+                                        src={user.profile.avatar}
+                                        alt={getFullName(user.profile.firstName, user.profile.lastName) ?? ''}
+                                        fallback={initials}
+                                        priority
+                                    />
                                 </button>
                             }
                         />
                     ) : (
-                        !isSigninPage && (
-                            <UiButton
-                                as="link"
-                                href={`/${locale}/auth/signin`}
-                                variant="text"
-                                size="sm"
-                            >
-                                {t('signin')}
-                            </UiButton>
-                        )
+                        <UiButton
+                            as="link"
+                            href={`/${locale}/auth/signin`}
+                            variant="text"
+                            size="sm"
+                        >
+                            {t('signin')}
+                        </UiButton>
                     )}
 
                     {cta && (
@@ -227,8 +214,8 @@ const Header = () => {
                         onClick={openMobileMenu}
                     />
                 </div>
-            </div>
-        </header>
+            </UiHeaderShell>
+        </div>
     );
 };
 

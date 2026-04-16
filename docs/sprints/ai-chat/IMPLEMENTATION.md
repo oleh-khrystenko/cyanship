@@ -1,6 +1,10 @@
-# AI Chat — Technical Implementation Plan
+# AI Chat — Technical Implementation Plan (Historical)
 
-> **Goal:** Add a streaming AI chat to the dashboard, fully integrated with the existing executions billing system. Provider-agnostic architecture following the established `PAYMENT_PROVIDER` → `StripeService` pattern. Lifetime per-account AI limit with brief-form lead-gen gate for one-time bonus. Persistent chat history in MongoDB. Executions deducted only after successful AI response.
+> **Status: HISTORICAL.** Цей документ описує початкову реалізацію AI chat модуля. Billing flow (`finalizeChat`, snapshot-based guard, debit-only-on-success) був замінений durable reservation pattern. Актуальний billing/concurrency flow описано в [`../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md`](../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md).
+>
+> Частини цього документа, що стосуються структури модуля, provider abstraction, schema, frontend UI, i18n — залишаються актуальними. Секції про billing flow (finalizeChat, AiRateLimitGuard.checkAccountLimit, pre-stream balance check, abort semantics) — застарілі.
+>
+> **Original goal:** Add a streaming AI chat to the dashboard, fully integrated with the existing executions billing system. Provider-agnostic architecture following the established `PAYMENT_PROVIDER` → `StripeService` pattern. Lifetime per-account AI limit with brief-form lead-gen gate for one-time bonus. Persistent chat history in MongoDB.
 
 ---
 
@@ -8,25 +12,22 @@
 
 ### Request Flow
 
+> **OUTDATED** — цей flow замінений durable reservation pattern. Актуальний flow: reserve (atomic) → stream → commit (transaction) / refund (atomic). Див. [`../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md`](../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md).
+
 ```
 POST /ai/chat (text/event-stream)
   → JwtActiveGuard (existing)
   → OnboardingInterceptor (existing, global)
-  → AiRateLimitGuard (new — lifetime account limit from MongoDB + Redis IP limit)
+  → AiRateLimitGuard (IP rate limit only — account limit moved to atomic reserve)
   → AiController.chat()
-      → Check executions balance (sufficient? don't deduct yet)
-      → IAiProvider.streamChat(message, systemPrompt)  // injected provider
+      → AiService.reserveChatRequest(userId) — atomic balance + account limit + single-flight
+      → Set SSE headers
+      → IAiProvider.streamChat(message, systemPrompt)
       → SSE stream: {type:"token"} → {type:"token"} → ...
-      → On success:
-          → Single atomic MongoDB update: $inc executions.balance -200 AND $inc ai.requestsUsed +1 (with balance $gte guard)
-          → Record ExecutionTransaction (type: debit, action: ai_chat, amount: 200, balanceAfter)
-          → Save both user + assistant messages to MongoDB
-          → SSE: {type:"done", balanceAfter, aiRequestsRemaining}
-      → On client disconnect (request close):
-          → Abort AI provider stream, skip finalization — nothing saved, nothing deducted
-      → On AI failure:
-          → SSE: {type:"error", code:"AI_PROVIDER_ERROR"}
-          → Nothing saved, nothing deducted, no try spent
+      → On success: commitChatRequest (MongoDB transaction: claim reservation + ledger + history)
+      → On client abort after first token: commit (non-refundable)
+      → On client abort before first token / provider error: refundChatRequest (atomic restore)
+      → Cron safety net: ReservationReconcileService refunds expired reservations every 5 minutes
 
 GET /ai/chat/history → JwtActiveGuard → Returns ChatMessage[] for user
 DELETE /ai/chat/history → JwtActiveGuard → Deletes all ChatMessage for user
@@ -147,11 +148,11 @@ apps/api/src/modules/ai/
 
 ### 2.6 AI Rate Limit Guard (`guards/ai-rate-limit.guard.ts`)
 
+> **UPDATED** — account limit check removed from guard, now enforced atomically in `AiService.reserveChatRequest()`. Guard performs IP rate limit only.
+
 - Implements `CanActivate`
-- Injects: `REDIS_CLIENT` (Redis), `User` model (Mongoose)
-- Check 1 — Lifetime account limit (MongoDB): load `user.ai`, check `requestsUsed < ENV.AI_CHAT_FREE_LIMIT + (bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0)`. If exceeded → throw 403 `AI_LIMIT_EXHAUSTED`
-- Check 2 — IP rate limit (Redis): `INCR ai:ip:{ip}`, set TTL 86400 on first request, check against `ENV.AI_CHAT_IP_LIMIT`. If exceeded → throw 429 `AI_RATE_LIMIT_EXCEEDED`
-- Two distinct error codes so frontend knows: `AI_LIMIT_EXHAUSTED` → show brief-gate, `AI_RATE_LIMIT_EXCEEDED` → toast "try later"
+- Injects: `RedisCounterService`
+- IP rate limit (Redis Lua): atomic `INCR` + `EXPIRE`, check against `ENV.AI_CHAT_IP_LIMIT`. If exceeded → throw 429 `AI_RATE_LIMIT_EXCEEDED`
 - Fail-closed: Redis error propagates as 500 → request blocked
 
 ### 2.7 DTO (`dto/ai-chat.dto.ts`)
@@ -160,32 +161,30 @@ apps/api/src/modules/ai/
 
 ### 2.8 AI Service (`ai.service.ts`)
 
-- Injects: `AI_PROVIDER`, `ChatMessage` model, `User` model, `UsersService` (for `recordTransaction`)
-- System prompt constant: "You are a helpful AI assistant... Keep responses concise: 2-3 sentences maximum. Answer in the same language as the user's message."
-- `processChat(userId, message)`: calls `aiProvider.streamChat()` → returns `{ stream }` (user message is NOT saved yet — saved only on success to avoid orphaned messages)
-- `finalizeChat(userId, userMessage, assistantContent)`:
-  1. Atomic `findOneAndUpdate` on User: `{ $inc: { 'executions.balance': -AI_CHAT_COST, 'ai.requestsUsed': 1 } }` with guard `'executions.balance': { $gte: AI_CHAT_COST }` — if null → throw (race condition, balance went insufficient between check and finalize)
-  2. `usersService.recordTransaction()`: type debit, action `ai_chat`, amount `AI_CHAT_COST`, balanceAfter — creates ExecutionTransaction record (transaction appears in dashboard history)
-  3. Save both user + assistant messages to `chat_messages` collection via `insertMany`
-  → Returns `{ balanceAfter, aiRequestsRemaining }`
-  → Order is critical: deduction first (irreversible business operation) → audit trail → messages (cosmetic). If step 2 or 3 fails after step 1, balance is deducted but worst case is missing history — same resilience model as existing `spendExecutions` pattern
+> **UPDATED** — `finalizeChat` replaced by durable reservation pattern: `reserveChatRequest` → `commitChatRequest` → `refundChatRequest`. See [`../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md`](../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md) for full details.
+
+- Injects: `AI_PROVIDER`, `ChatMessage` model, `User` model, `UsersService`
+- System prompt constant: CyanShip company info + response guidelines
+- `processChat(userMessage, signal?)`: calls `aiProvider.streamChat()` → returns Readable stream
+- `reserveChatRequest(userId)`: atomic `findOneAndUpdate` — checks balance, account limit, single-flight guard, decrements balance, increments requestsUsed, sets activeReservation with compensationOps. Returns `AiChatReservationTicket`
+- `commitChatRequest(ticket, userMessage, assistantContent)`: delegates to `usersService.commitReservation()` (MongoDB transaction: claim-first → fresh balance read → ledger insert → history insertMany). Returns `{ balanceAfter, aiRequestsRemaining }`
+- `refundChatRequest(ticket)`: delegates to `usersService.refundReservation()` — catches errors internally
 - `getHistory(userId)`: find messages sorted by `createdAt: 1`, map to `ChatMessageItem[]`
 - `clearHistory(userId)`: `deleteMany({ userId })`
-- **Critical**: `finalizeChat` only called on successful stream completion. If AI fails mid-stream — nothing is persisted, nothing deducted (both messages saved only on success)
 
 ### 2.9 AI Controller (`ai.controller.ts`)
 
+> **UPDATED** — controller refactored to durable reservation flow. See [`../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md`](../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md) for exit matrix.
+
 - `@Controller('ai')`
 - `POST /chat` — `@UseGuards(JwtActiveGuard, AiRateLimitGuard)`:
-  1. Check executions balance sufficient (read-only check, no deduction)
-  2. Set SSE headers: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no`
-  3. Call `aiService.processChat()` — starts stream (messages NOT saved yet)
-  4. Loop `for await (chunk of stream)` → `res.write(JSON.stringify(tokenEvent))`
-  5. Accumulate `assistantContent` from chunks
-  6. On stream end: call `aiService.finalizeChat(userId, userMessage, assistantContent)` → saves both messages + atomic deduction → send done event with `balanceAfter` and `aiRequestsRemaining`
-  7. On stream error: send error SSE event, do NOT call `finalizeChat` (nothing saved, nothing deducted)
-  8. On client disconnect (`req.on('close')`): abort AI provider stream (via AbortController), skip `finalizeChat` — nothing saved, nothing deducted, AI generation stops immediately
-  9. `res.end()` in finally block
+  1. `reserveChatRequest(userId)` — atomic reserve (any 4xx → HTTP error, no SSE headers yet)
+  2. Set SSE headers
+  3. Stream from provider with `firstTokenReceived` flag tracking
+  4. Happy path: `commitChatRequest` → SSE DONE
+  5. Client abort after first token: `commitChatRequest` (non-refundable, no SSE DONE)
+  6. Client abort before first token / provider error: `refundChatRequest` in finally block
+  7. `res.end()` in finally block
 - `GET /chat/history` — `@UseGuards(JwtActiveGuard)`: returns `{ data: { messages } }`
 - `DELETE /chat/history` — `@UseGuards(JwtActiveGuard)`: clears history, returns `{ data: { cleared: true } }`
 - Uses `@Res()` manual response for SSE (NestJS `@Sse()` is for GET + Observables, not POST + streaming)
@@ -270,7 +269,7 @@ When `isLimitExhausted` — two states based on `user.ai.bonusGranted` from auth
 - **`bonusGranted === false`**: replace input area with message "Free tries exhausted" + CTA button → `useBriefDialogStore.open({ requestAiBonus: true })`
 - **`bonusGranted === true`**: replace input area with message "All tries exhausted" (no CTA, chat permanently closed)
 
-Brief dialog store modifications (`apps/web/src/stores/briefDialog/briefDialogStore.ts`):
+Brief dialog store modifications (`apps/web/src/features/agency/brief/briefDialogStore.ts`):
 - Add `requestAiBonus: boolean` to state (default false)
 - `open(opts?)` sets `requestAiBonus` from opts
 - `close()` resets `requestAiBonus` to false
@@ -344,46 +343,21 @@ process.env.AI_CHAT_BONUS_AMOUNT ??= '5';
 
 ## Phase 7 — Testing
 
-### Unit Tests (API)
+> **OUTDATED** — testing plan below describes the original flow (finalizeChat, snapshot-based guard). Current billing/concurrency tests are in `apps/api/src/modules/ai/ai.service.spec.ts`, `ai.controller.spec.ts`, `apps/api/src/modules/users/users.service.spec.ts` (reservation core), and `apps/api/test/ai.e2e-spec.ts` (race, abort, reconcile, stale commit, double refund). See [`../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md`](../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md) §8 for authoritative test plan.
 
-`ai.service.spec.ts`:
-- Mock `AI_PROVIDER`, `ChatMessage` model, `User` model, `UsersService`
-- `processChat`: calls AI provider, returns stream (no DB writes yet)
-- `finalizeChat`: atomic deduction (executions + requestsUsed) → records ExecutionTransaction via UsersService → saves both messages
-- `getHistory`: returns sorted messages
-- `clearHistory`: deletes all messages for user
+### Unit Tests (API) — historical
 
-`ai-rate-limit.guard.spec.ts`:
-- Mock `REDIS_CLIENT`, `User` model
-- First 5 requests pass (lifetime), 6th returns 403 `AI_LIMIT_EXHAUSTED`
-- User with `bonusGranted: true` gets `FREE_LIMIT + BONUS_AMOUNT` total
-- IP limit returns 429 after exceeding
-- Account and IP limits are independent
+`ai.service.spec.ts`: now tests `reserveChatRequest`, `commitChatRequest`, `refundChatRequest` instead of `finalizeChat`.
 
-`anthropic.service.spec.ts`:
-- Mock `@anthropic-ai/sdk`
-- Verify `messages.stream()` called with correct model/params
-- Verify Readable emits chunks and ends
+`ai-rate-limit.guard.spec.ts`: account limit check removed; guard tests cover IP rate limit only.
 
-### E2E Tests (API)
+### E2E Tests (API) — historical
 
-`test/ai-chat.e2e-spec.ts`:
-- Override `AI_PROVIDER` with mock
-- Full flow: POST → auth → rate limit → stream → deduct → transaction recorded → messages saved → done event
-- Insufficient balance → 402 (nothing deducted)
-- Lifetime limit exceeded → 403 `AI_LIMIT_EXHAUSTED`
-- AI provider failure → error SSE event, nothing deducted
-- GET history returns saved messages, DELETE clears them
-- Brief with `requestAiBonus: true` + JWT auth sets `ai.bonusGranted: true` (userId from req.user, idempotent — second call is no-op)
+`test/ai.e2e-spec.ts`: now covers race on balance/limit, abort before/after first token, cron reconcile, stale commit detection, double refund safety. Uses `MongoMemoryReplSet` for transaction support.
 
-### Frontend Tests
+### Frontend Tests — unchanged
 
-`AiChat.test.tsx`:
-- Mock `streamAiChat`, `getChatHistory`, `clearChatHistory`
-- Renders empty state, loads history on mount
-- Submit adds messages, streaming updates assistant
-- Done event updates balance, `aiRequestsRemaining: 0` shows brief-gate (if `bonusGranted: false`) or permanent exhaustion (if `bonusGranted: true`)
-- Error shows toast, input disabled during streaming
+`AiChat.test.tsx` plan remains valid for UI behavior.
 
 ---
 
@@ -426,11 +400,14 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 
 ## Response Codes
 
+> **UPDATED** — `EXECUTIONS_RESERVATION_ACTIVE` (409) added for concurrent request blocking. All codes below now returned from `AiService.reserveChatRequest()` (pre-SSE), except `AI_PROVIDER_ERROR` which is still SSE-only.
+
 | Code | HTTP | When | Frontend Action |
 |------|------|------|-----------------|
 | `AI_LIMIT_EXHAUSTED` | 403 | Lifetime account limit reached | Show brief-gate CTA |
 | `AI_RATE_LIMIT_EXCEEDED` | 429 | IP limit exceeded | Toast "try again later" |
-| `INSUFFICIENT_EXECUTIONS` | 402 | Not enough balance (existing) | Toast "insufficient executions" |
+| `INSUFFICIENT_EXECUTIONS` | 400 | Not enough balance | Toast "insufficient executions" |
+| `EXECUTIONS_RESERVATION_ACTIVE` | 409 | Another request in progress | Toast "wait and retry" |
 | `AI_PROVIDER_ERROR` | SSE event | AI provider failed mid-stream | Toast "AI unavailable" |
 
 ---
@@ -448,6 +425,8 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 
 ## Files Changed
 
+> **HISTORICAL** — file list below reflects the original AI chat sprint. Subsequent changes from the parallel-bypass sprint added/modified: `apps/api/src/modules/ai/interfaces/ai-chat-reservation.ts`, `apps/api/src/modules/users/interfaces/reservation.ts`, `apps/api/src/modules/users/reservation-reconcile.service.ts`, `apps/api/test/ai.e2e-spec.ts`. For full scope see [`../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md`](../ai-chat-parallel-bypass/IMPLEMENTATION_PLAN.md).
+
 ### New Files
 
 | File | Purpose |
@@ -458,7 +437,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/api/src/modules/ai/interfaces/ai-provider.interface.ts` | Provider contract + DI token |
 | `apps/api/src/modules/ai/providers/ai-provider.provider.ts` | Provider factory |
 | `apps/api/src/modules/ai/providers/anthropic.service.ts` | Anthropic SDK adapter |
-| `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts` | Lifetime account + Redis IP limiter |
+| `apps/api/src/modules/ai/guards/ai-rate-limit.guard.ts` | Redis IP limiter only (account limit moved to atomic reserve) |
 | `apps/api/src/modules/ai/schemas/chat-message.schema.ts` | Chat message MongoDB schema |
 | `apps/api/src/modules/ai/dto/ai-chat.dto.ts` | Zod DTO |
 | `packages/types/src/contracts/ai-chat.ts` | Shared contracts + message types |
@@ -485,7 +464,7 @@ Compound index: `{ userId: 1, createdAt: 1 }`
 | `apps/web/src/shared/api/client.ts` | No changes needed — `getAccessToken()` already exported |
 | `apps/web/src/shared/api/index.ts` | Export ai module |
 | `apps/web/src/app/[locale]/(protected)/dashboard/page.tsx` | Add AiChatTeaser card above spend buttons |
-| `apps/web/src/stores/briefDialog/briefDialogStore.ts` | Add `requestAiBonus` state |
+| `apps/web/src/features/agency/brief/briefDialogStore.ts` | Add `requestAiBonus` state |
 | `apps/web/src/features/agency/brief/BriefForm.tsx` | Plain text name/email (readonly from auth store) + AI bonus flag |
 | `apps/web/messages/en.json` | AI chat + brief-gate translations |
 | `apps/web/messages/uk.json` | AI chat + brief-gate translations |

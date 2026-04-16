@@ -1,32 +1,29 @@
-# Інструкція для Codex Agent: Аудит та оновлення контексту
-
-Виконай повний аудит кодової бази проєкту та онови файл `AGENTS.md`.
+Виконай повний аудит кодової бази проєкту та онови файл AGENTS.md.
 
 ## Філософія
 
-`AGENTS.md` — це **навігаційна карта + правила**, НЕ документація і НЕ копія кодової бази.
+AGENTS.md — це **навігаційна карта + правила**, НЕ документація і НЕ копія кодової бази.
 
 Тест для кожного блоку: **"Чи агент прийме ГІРШЕ рішення без цієї інформації?"**
 Якщо ні — не включай.
 
 Агент може за секунди відкрити будь-який файл. Тому:
 - НЕ копіюй зміст файлів (таблиці полів схем, enum values, списки UI компонентів)
-- НЕ вставляй в `AGENTS.md` code blocks з прикладами коду або flow-схемами — вказуй шлях до файлу-прикладу
-- НЕ дублюй те, що вже є в `docs/`, особливо в `docs/conventions/` та `docs/architecture/` — посилайся
+- НЕ вставляй code blocks — вказуй шлях до файлу-прикладу
+- НЕ дублюй те, що є в `docs/` — посилайся
 - НЕ описуй те, що очевидно з назв файлів та структури директорій
 
 ## Ліміти
 
 - **Цільовий розмір: до 30,000 символів. Жорсткий ліміт: 40,000.**
-- Після генерації перевір розмір `AGENTS.md`. Якщо > 40,000 — скороти, починаючи з найменш критичних секцій.
+- Після генерації перевір розмір. Якщо > 40,000 — скороти, починаючи з найменш критичних секцій.
 
 ## Інструкції
 
 ### Крок 1 — Аналіз
 
-Рекурсивно переглянь кодову базу проєкту. Перед оновленням контексту обов'язково прочитай поточний `AGENTS.md`, `docs/conventions/README.md` і релевантні правила з `docs/conventions/*`.
+Рекурсивно переглянь кодову базу проєкту. Зрозумій:
 
-Зрозумій:
 - Загальну архітектуру та як модулі/компоненти пов'язані між собою
 - Ключові бізнес-сутності та доменну модель
 - Патерни, що повторюються (як організовані сервіси, контролери, утиліти)
@@ -34,18 +31,16 @@
 - Схему БД та зв'язки між моделями
 - API ендпоінти та їх структуру
 - Middleware, guards, interceptors, pipes — що є і де
-- Конфігурацію (`env`, config files) — які змінні критичні
+- Конфігурацію (env, config files) — які змінні критичні
 - Тести — де є, яка стратегія тестування
 
-### Крок 2 — Збережи manual knowledge
+### Крок 2 — Збережи існуючі правила
 
-Прочитай поточний `AGENTS.md`. Весь контент між маркерами `<!-- MANUAL:START -->` та `<!-- MANUAL:END -->` збережи в оновленому `AGENTS.md` **БЕЗ ЖОДНИХ ЗМІН** — дослівно, включно з маркерами. Решту контенту можна повністю переписати на основі аналізу.
-
-Якщо поза manual-блоком є корисні правила, перенеси лише ті, що реально впливають на рішення агента. Стискай агресивно і віддавай перевагу посиланням на `docs/conventions/*`, а не дублюванню тексту.
+Прочитай поточний AGENTS.md. Весь контент між маркерами `<!-- MANUAL:START -->` та `<!-- MANUAL:END -->` збережи в оновленому AGENTS.md **БЕЗ ЖОДНИХ ЗМІН** — дослівно, включно з маркерами. Решту контенту можна повністю переписати на основі аналізу.
 
 ### Крок 3 — Запис
 
-Перепиши/допиши `AGENTS.md` з такою структурою та правилами:
+Перепиши/допиши AGENTS.md з такою структурою та правилами:
 
 ---
 
@@ -56,8 +51,8 @@
 ## Tech Stack
 
 Таблиця: шар, технологія, версія.
-Тільки **ключові** залежності (framework, language, runtime, ORM, DB, auth, payments, state, styling, i18n, tests).
-НЕ включай: утилітні бібліотеки, іконки, toast-бібліотеки, окремі UI-бібліотеки — якщо вони не впливають на архітектурні рішення.
+Тільки **ключові** залежності (фреймворк, мова, ORM, DB, auth, payments, state, styling, i18n, тести).
+НЕ включай: утилітні бібліотеки, іконки, тост-бібліотеки, окремі UI-бібліотеки — якщо вони не впливають на архітектурні рішення.
 
 ## Architecture Overview
 
@@ -74,26 +69,25 @@ apps/
 ├── api/src/
 │   ├── main.ts, app.module.ts
 │   ├── config/
-│   ├── common/          # guards, filters, providers
-│   └── modules/         # auth, users, payments, reports, storage
+│   ├── common/          # decorators, filters, guards, providers
+│   └── modules/         # auth, users, payments, agency, reports, storage
 ├── web/src/
-│   ├── app/[locale]/    # routes
-│   ├── features/        # feature slices
-│   ├── widgets/         # composed UI
-│   └── shared/          # api, ui, config, i18n
+│   ├── app/[locale]/    # pages: auth, (protected), (agency)
+│   ├── features/        # auth, change-lang, change-theme, profile, agency
+│   ├── widgets/         # header, agency/landing
+│   └── shared/          # api, ui, config, stores, i18n, styles
 packages/
-└── types/src/           # contracts, entities, enums
+└── types/src/           # constants, enums, entities, contracts, validation
 ```
 
 **Правила:**
 - Анотації папок — максимум 3–5 слів після `#`
 - НЕ розкривай окремі файли всередині модулів
-- НЕ дублюй те, що буде в інших секціях (endpoints, guards, DTO)
+- НЕ дублюй те, що буде в інших секціях (endpoints, guards, dto)
 
-## Domain Model & Schema
+## Domain Model
 
-Для кожної ключової persistent model: назва + шлях до schema/entity файлу + 2–3 ключові особливості.
-Якщо є runtime state, без якого агент легко помилиться (наприклад Redis session/token families), опиши його compact-форматом без key-by-key dump, якщо це можливо.
+Для кожної моделі: назва + шлях до schema файлу + 2–3 ключові особливості.
 
 Формат:
 ```text
@@ -115,31 +109,31 @@ packages/
 ```text
 AuthModule ↔ UsersModule (forwardRef, circular)
 PaymentsModule → UsersModule
-Web auth client → /api/auth + auth store
 ```
 
 Крос-модульні залежності та circular dependencies — обов'язково.
-НЕ розкривай внутрішні providers кожного модуля, якщо це не критично для reasoning.
+НЕ розкривай внутрішні providers кожного модуля.
 
-## Key Patterns (CodeDNA)
+## Key Patterns
 
 Для кожного патерну: **правило + шлях до файлу-прикладу**. Один рядок або короткий абзац.
 
 **Правила:**
-- БЕЗ code blocks в `AGENTS.md` для прикладів патернів
+- БЕЗ code blocks — тільки шлях до reference файлу
 - Кожен патерн описаний ОДИН раз (не дублювати між секціями)
-- Якщо є окрема документація (`docs/architecture/*`, `docs/conventions/*`) — вказуй посилання замість переказу
+- Якщо є окрема документація (`docs/architecture/*`) — вказуй посилання замість опису
 
 Приклад правильного формату:
 ```text
 ### Створення endpoint
-Guard + DTO + Service. Приклад: apps/api/src/modules/auth/auth.controller.ts
+Guard + @CurrentUser() + DTO + Service. Приклад: payments.controller.ts
 
 ### Валідація
-Zod schema в packages/types → createZodDto() в api dto. Приклад: packages/types/src/contracts/...
+Zod schema в packages/types → createZodDto() в api dto. Приклад: create-checkout-session.dto.ts
 
 ### Авторизація
-JWT strategy + guard на API, cookie gate + client bootstrap на web. Файли: apps/api/src/common/guards/, apps/web/src/features/auth/
+JwtActiveGuard (основний, блокує soft-deleted). JwtAuthGuard (тільки для restore).
+SubscriptionGuard (платний контент). Файли: common/guards/
 ```
 
 ## API Overview
@@ -152,8 +146,7 @@ Compact таблиця або список.
 Критичні env змінні — ЦЕ ПОВНА СЕКЦІЯ, не скорочуй.
 Помилки в env коштують найбільше часу на debug.
 
-Включи: required vars (crash if missing), optional з defaults, feature flags, fail-fast policy, файли-джерела env loader'ів.
-Якщо в проєкті є `docs/conventions/fail-fast.md`, посилайся на нього і НЕ копіюй весь текст правил.
+Включи: required vars (crash if missing), optional з defaults, feature flags, fail-fast policy.
 
 ## Common Commands
 
@@ -162,25 +155,24 @@ Compact список.
 
 ## Rules & Conventions
 
-⚠️ ЗБЕРЕЖИ manual-блок з поточного `AGENTS.md` БЕЗ ЗМІН.
-Якщо є `docs/conventions/README.md`, трактуй його як source of truth і в `AGENTS.md` лишай лише короткі посилання на критичні правила, а не дублювання.
+⚠️ ЗБЕРЕЖИ З ПОТОЧНОГО AGENTS.md БЕЗ ЗМІН (між маркерами або окрему секцію).
+Якщо секція не між маркерами — перенеси ключові правила, але НЕ роздувай.
 
-Якщо Rules & Conventions не існує — створи з виявлених патернів. Фокус на правилах, порушення яких реально ламає проєкт.
+Якщо Rules & Conventions не існує — створи з виявлених патернів. Фокус на правилах, порушення яких ламає проєкт.
 
-## Known Complexities & Debt
+## Known Complexities
 
 **Тільки gotchas** — речі, які агент НЕ ЗМОЖЕ зрозуміти тільки з коду:
 
 - Workaround'и з поясненням ЧОМУ
-- Неочевидні залежності
+- Неочевидні залежності (rawBody для Stripe, build order для packages/types)
 - Circular dependencies та як вони вирішені
-- Runtime поведінка, яка відрізняється від очевидної
+- Runtime поведінка, яка відрізняється від очевидної (test vs prod TTL)
 
 **Правила:**
 - Якщо gotcha вже описана в Key Patterns — НЕ дублюй тут
 - Кожна complexity — максимум 2–3 рядки
 - НЕ описуй нормальну поведінку системи — тільки пастки
-- Якщо функціонал незрозумілий з коду — познач як `[NEED_CONTEXT]`
 
 ---
 
@@ -188,18 +180,17 @@ Compact список.
 
 - Пиши лаконічно. Це навігаційна карта для AI-агента, не документація.
 - Конкретика > абстракція. Вказуй точні шляхи до файлів.
-- Якщо щось неочевидно з коду — зазнач це явно як `[ПОТРЕБУЄ УТОЧНЕННЯ]`
+- Якщо щось неочевидно з коду — зазнач це явно як "[ПОТРЕБУЄ УТОЧНЕННЯ]"
 - Мова файлу: українська для описів, англійська для технічних термінів та назв
 
 ### Антипатерни (НЕ роби цього)
 
 - ❌ Таблиці з переліком полів моделей — агент відкриє schema файл
-- ❌ Таблиці UI компонентів з описом кожного — агент відкриє `shared/ui/`
-- ❌ Таблиці секцій landing page або screen-by-screen inventory
+- ❌ Таблиці UI компонентів з описом кожного — агент відкриє shared/ui/
+- ❌ Таблиці секцій landing page — агент відкриє widgets/agency/landing/
 - ❌ Code blocks з прикладами патернів — достатньо шляху до файлу
-- ❌ Повний опис auth/payment/report flow кроками — посилайся на `docs/architecture/`
+- ❌ Повний опис auth/payments flow кроками — посилайся на docs/architecture/
 - ❌ Перелік enum values — агент прочитає enum файл
 - ❌ Дублювання інформації між секціями (особливо Key Patterns ↔ Known Complexities)
-- ❌ Redis keys таблиця, якщо достатньо короткого опису runtime state
-- ❌ Опис `packages/types` по підпапках — це зміст директорії, агент бачить через tree
-- ❌ Копіювання тексту з `docs/conventions/*` у `AGENTS.md` замість короткого посилання
+- ❌ Redis keys таблиця — агент знайде це в auth.service.ts
+- ❌ Опис packages/types модулів — це зміст директорії, агент бачить через tree
