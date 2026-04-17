@@ -104,7 +104,7 @@ export class AiService {
 
     async buildChatMessages(
         userId: string,
-        userMessage: string,
+        userMessage: string
     ): Promise<AiChatMessage[]> {
         const history = await this.chatMessageModel
             .find({ userId: new Types.ObjectId(userId) })
@@ -134,13 +134,13 @@ export class AiService {
         let messages = [...historyMessages, currentMessage];
         let inputTokens = await this.aiProvider.countTokens(
             messages,
-            SYSTEM_PROMPT,
+            SYSTEM_PROMPT
         );
 
         while (inputTokens > inputBudget && historyMessages.length > 0) {
             const removeCount = Math.max(
                 2,
-                Math.ceil(historyMessages.length * 0.2),
+                Math.ceil(historyMessages.length * 0.2)
             );
             historyMessages = historyMessages.slice(removeCount);
             if (
@@ -152,7 +152,7 @@ export class AiService {
             messages = [...historyMessages, currentMessage];
             inputTokens = await this.aiProvider.countTokens(
                 messages,
-                SYSTEM_PROMPT,
+                SYSTEM_PROMPT
             );
         }
 
@@ -168,13 +168,13 @@ export class AiService {
 
     async streamChat(
         messages: AiChatMessage[],
-        signal?: AbortSignal,
+        signal?: AbortSignal
     ): Promise<Readable> {
         return this.aiProvider.streamChat(
             messages,
             SYSTEM_PROMPT,
             ENV.AI_CHAT_MAX_TOKENS,
-            signal,
+            signal
         );
     }
 

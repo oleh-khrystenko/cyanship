@@ -4,3 +4,4 @@ export * from './users';
 export * from './payments';
 export * from './executions';
 export * from './ai-chat';
+export * from './storage';

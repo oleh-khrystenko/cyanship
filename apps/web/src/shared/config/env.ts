@@ -28,6 +28,13 @@ export const ENV = {
         process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
         'NEXT_PUBLIC_TURNSTILE_SITE_KEY'
     ),
+    // Hostname of the R2 public CDN. Used by next/image `remotePatterns`.
+    // MUST equal the hostname of `R2_PUBLIC_URL` on the API — otherwise
+    // next/image blocks uploaded photos at runtime.
+    NEXT_PUBLIC_STORAGE_HOSTNAME: assertEnv(
+        process.env.NEXT_PUBLIC_STORAGE_HOSTNAME,
+        'NEXT_PUBLIC_STORAGE_HOSTNAME'
+    ),
 } as const;
 
 export const PAYMENTS_SUBSCRIPTION_ENABLED =
