@@ -25,6 +25,7 @@ import { ENV, parseLockoutThresholds } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
+import { StorageService } from '../storage/storage.service';
 import { GoogleValidatedUser } from './strategies/google.strategy';
 
 interface TokenPair {
@@ -49,6 +50,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly usersService: UsersService,
         private readonly emailService: EmailService,
+        private readonly storageService: StorageService,
         @Inject(REDIS_CLIENT) private readonly redis: Redis,
         private readonly redisCounter: RedisCounterService
     ) {}
@@ -169,6 +171,30 @@ export class AuthService {
     }> {
         const user =
             await this.usersService.findOrCreateByGoogle(googleProfile);
+
+        // Re-upload external Google avatar to R2 synchronously. The UX trade-off
+        // (adds ~300-800ms to callback vs. avoiding the URL jump after login)
+        // is documented in docs/sprints/upload-media/README.md. Failure is
+        // non-critical — the external URL remains as a functional fallback and
+        // the next login retries.
+        if (
+            user.profile.avatar &&
+            !this.storageService.isR2Url(user.profile.avatar)
+        ) {
+            try {
+                const r2Url = await this.storageService.reUploadExternalAvatar(
+                    user.id as string,
+                    user.profile.avatar
+                );
+                user.profile.avatar = r2Url;
+                await user.save();
+            } catch (err) {
+                this.logger.warn(
+                    `Failed to re-upload Google avatar for user ${user.id as string}: ${(err as Error).message}`
+                );
+            }
+        }
+
         const tokens = await this.generateTokens(user.id as string, user.email);
 
         return {
