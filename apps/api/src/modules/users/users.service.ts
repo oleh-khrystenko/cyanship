@@ -281,6 +281,14 @@ export class UsersService {
         return this.userModel.findByIdAndUpdate(userId, update, { new: true });
     }
 
+    async clearAvatar(userId: string): Promise<UserDocument | null> {
+        return this.userModel.findByIdAndUpdate(
+            userId,
+            { $unset: { 'profile.avatar': 1 } },
+            { new: true }
+        );
+    }
+
     async acceptTerms(userId: string, termsVersion: string): Promise<void> {
         await this.userModel.updateOne(
             { _id: userId },
