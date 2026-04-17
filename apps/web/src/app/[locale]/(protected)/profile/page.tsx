@@ -44,6 +44,7 @@ function ProfileContent() {
                 <ProfileForm
                     user={user}
                     editable={mode === 'new' || mode === null}
+                    onboardingMode={mode === 'new'}
                     onSaved={handleProfileSaved}
                 />
 
