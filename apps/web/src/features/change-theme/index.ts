@@ -1,1 +1,1 @@
-export { default } from './ChangeTheme';
+export { default, THEME_ICONS } from './ChangeTheme';

@@ -1,16 +1,12 @@
 'use client';
 
 import { ReactNode } from 'react';
-import dynamic from 'next/dynamic';
 import { useLocale } from 'next-intl';
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
 import UiHeaderShell from '@/shared/ui/UiHeaderShell';
 import ChangeLang from '@/features/change-lang';
-
-const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
-    ssr: false,
-});
+import ChangeTheme from '@/features/change-theme';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     const locale = useLocale();
