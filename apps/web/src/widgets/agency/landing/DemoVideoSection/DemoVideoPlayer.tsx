@@ -56,7 +56,7 @@ export default function DemoVideoPlayer({
                             variant="icon"
                             size="lg"
                             aria-label={playLabel}
-                            className="border-primary/25 text-primary transition-all hover:border-primary/40 hover:text-primary focus-visible:ring-ring focus-visible:ring-offset-black pointer-events-auto size-16 rounded-full border bg-black/70 p-0 shadow-lg backdrop-blur-sm hover:scale-[1.03] hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-offset-2"
+                            className="border-primary/25 text-primary hover:border-primary/40 hover:text-primary focus-visible:ring-ring hover:bg-muted pointer-events-auto size-16 rounded-full border bg-black/70 p-0 shadow-lg backdrop-blur-sm transition-all hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                             IconLeft={
                                 <Play className="ml-0.5 size-6 fill-current" />
                             }
