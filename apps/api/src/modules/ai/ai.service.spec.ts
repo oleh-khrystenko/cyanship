@@ -370,11 +370,12 @@ describe('AiService', () => {
                 { role: 'assistant', content: 'hi there' },
                 { role: 'user', content: 'hello' },
             ];
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain(history),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const result = await service.buildChatMessages(userId, 'new question');
+            const result = await service.buildChatMessages(
+                userId,
+                'new question'
+            );
 
             expect(result).toEqual([
                 { role: 'user', content: 'hello' },
@@ -386,7 +387,10 @@ describe('AiService', () => {
         it('should return only new message when no history', async () => {
             mockChatMessageModel.find.mockReturnValue(createFindChain([]));
 
-            const result = await service.buildChatMessages(userId, 'first message');
+            const result = await service.buildChatMessages(
+                userId,
+                'first message'
+            );
 
             expect(result).toEqual([
                 { role: 'user', content: 'first message' },
@@ -399,9 +403,7 @@ describe('AiService', () => {
                 { role: 'user', content: 'follow-up' },
                 { role: 'assistant', content: 'orphaned response' },
             ];
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain(history),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
             const result = await service.buildChatMessages(userId, 'next');
 
@@ -415,7 +417,10 @@ describe('AiService', () => {
             await service.buildChatMessages(userId, 'msg');
 
             const findChain = mockChatMessageModel.find.mock.results[0].value;
-            expect(findChain.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
+            expect(findChain.sort).toHaveBeenCalledWith({
+                createdAt: -1,
+                _id: -1,
+            });
             expect(findChain.limit).toHaveBeenCalledWith(50);
         });
 
@@ -430,12 +435,9 @@ describe('AiService', () => {
                 { role: 'assistant', content: 'reply-1' },
                 { role: 'user', content: 'q1' },
             ];
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain(history),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const inputBudget =
-                mockAiProvider.contextWindow - 800;
+            const inputBudget = mockAiProvider.contextWindow - 800;
             mockAiProvider.countTokens
                 .mockResolvedValueOnce(inputBudget + 5000)
                 .mockResolvedValueOnce(inputBudget - 100);
@@ -453,9 +455,7 @@ describe('AiService', () => {
                 { role: 'assistant', content: 'reply' },
                 { role: 'user', content: 'hello' },
             ];
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain(history),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain(history));
             mockAiProvider.countTokens.mockResolvedValue(500);
 
             const result = await service.buildChatMessages(userId, 'new msg');
@@ -472,12 +472,9 @@ describe('AiService', () => {
                 { role: 'assistant', content: 'r1' },
                 { role: 'user', content: 'q1' },
             ];
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain(history),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const inputBudget =
-                mockAiProvider.contextWindow - 800;
+            const inputBudget = mockAiProvider.contextWindow - 800;
             mockAiProvider.countTokens
                 .mockResolvedValueOnce(inputBudget + 1000)
                 .mockResolvedValueOnce(inputBudget - 100);
@@ -493,36 +490,31 @@ describe('AiService', () => {
                 { role: 'assistant', content: 'r1' },
                 { role: 'user', content: 'q1' },
             ];
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain(history),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const inputBudget =
-                mockAiProvider.contextWindow - 800;
+            const inputBudget = mockAiProvider.contextWindow - 800;
             mockAiProvider.countTokens
                 .mockResolvedValueOnce(inputBudget + 5000)
                 .mockResolvedValueOnce(inputBudget + 2000)
                 .mockResolvedValueOnce(inputBudget - 100);
 
-            const result = await service.buildChatMessages(userId, 'current msg');
+            const result = await service.buildChatMessages(
+                userId,
+                'current msg'
+            );
 
             expect(result[result.length - 1].content).toBe('current msg');
             expect(result[result.length - 1].role).toBe('user');
         });
 
         it('should throw AI_MESSAGE_TOO_LONG when single message exceeds budget', async () => {
-            mockChatMessageModel.find.mockReturnValue(
-                createFindChain([]),
-            );
+            mockChatMessageModel.find.mockReturnValue(createFindChain([]));
 
-            const inputBudget =
-                mockAiProvider.contextWindow - 800;
-            mockAiProvider.countTokens.mockResolvedValue(
-                inputBudget + 1000,
-            );
+            const inputBudget = mockAiProvider.contextWindow - 800;
+            mockAiProvider.countTokens.mockResolvedValue(inputBudget + 1000);
 
             await expect(
-                service.buildChatMessages(userId, 'huge message'),
+                service.buildChatMessages(userId, 'huge message')
             ).rejects.toMatchObject({
                 response: { code: 'AI_MESSAGE_TOO_LONG' },
             });
@@ -533,9 +525,7 @@ describe('AiService', () => {
         it('should forward messages and signal to provider', async () => {
             mockAiProvider.streamChat.mockResolvedValue('mock-stream');
             const signal = new AbortController().signal;
-            const messages = [
-                { role: 'user' as const, content: 'hello' },
-            ];
+            const messages = [{ role: 'user' as const, content: 'hello' }];
 
             const result = await service.streamChat(messages, signal);
 
@@ -544,7 +534,7 @@ describe('AiService', () => {
                 messages,
                 expect.any(String),
                 800,
-                signal,
+                signal
             );
         });
     });

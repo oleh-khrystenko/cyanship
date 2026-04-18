@@ -17,6 +17,7 @@ jobs:
             NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED: 'true'
             NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED: 'true'
             NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x0000000000000000000000'
+            NEXT_PUBLIC_STORAGE_HOSTNAME: media.cyanship.com
 
         steps:
             - uses: actions/checkout@v4

@@ -10,7 +10,7 @@ export interface IAiProvider {
 
     countTokens(
         messages: AiChatMessage[],
-        systemPrompt: string,
+        systemPrompt: string
     ): Promise<number>;
 
     streamChat(
