@@ -114,6 +114,7 @@
             "label": "Demo",
             "heading": "See It Working. All of It.",
             "description": "You've tried the individual features. Now watch the complete flow — from first sign-in to AI chat — in one uncut walkthrough.",
+            "play_button": "Play video",
             "highlight_auth": "Google sign-in — three seconds, you're in",
             "highlight_billing": "Stripe checkout with a live payment",
             "highlight_ai": "AI chat — streaming response, auto-billed",

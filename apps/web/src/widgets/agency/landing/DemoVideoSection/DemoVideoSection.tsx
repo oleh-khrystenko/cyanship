@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { KeyRound, CreditCard, Sparkles, Activity, LucideIcon } from 'lucide-react';
 import { DEMO_VIDEO, DEMO_VIDEO_ENABLED } from '@/shared/config/env';
+import DemoVideoPlayer from './DemoVideoPlayer';
 
 const highlights: { key: string; icon: LucideIcon }[] = [
     { key: 'auth', icon: KeyRound },
@@ -50,22 +51,12 @@ const DemoVideoSection = () => {
                         </p>
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border border-border bg-black">
-                        <div className="relative aspect-video">
-                            <video
-                                controls
-                                playsInline
-                                preload="metadata"
-                                aria-label={t('heading')}
-                                className="absolute inset-0 size-full"
-                                {...(DEMO_VIDEO.poster
-                                    ? { poster: DEMO_VIDEO.poster }
-                                    : {})}
-                            >
-                                <source src={DEMO_VIDEO.src} />
-                            </video>
-                        </div>
-                    </div>
+                    <DemoVideoPlayer
+                        title={t('heading')}
+                        src={DEMO_VIDEO.src}
+                        poster={DEMO_VIDEO.poster}
+                        playLabel={t('play_button')}
+                    />
                 </div>
             </div>
         </section>
