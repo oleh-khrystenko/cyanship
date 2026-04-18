@@ -57,7 +57,10 @@ export class AiController {
 
         let messages;
         try {
-            messages = await this.aiService.buildChatMessages(userId, dto.message);
+            messages = await this.aiService.buildChatMessages(
+                userId,
+                dto.message
+            );
         } catch (err) {
             req.off('close', onClose);
             await this.aiService.refundChatRequest(reservation);

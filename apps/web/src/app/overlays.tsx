@@ -8,6 +8,12 @@ const BriefDialog = dynamic(
 const DeleteAccountDialog = dynamic(
     () => import('@/features/profile/DeleteAccountDialog'),
 );
+const AvatarUploadDialog = dynamic(
+    () => import('@/features/profile/AvatarUploadDialog'),
+);
+const AvatarDeleteConfirmDialog = dynamic(
+    () => import('@/features/profile/AvatarDeleteConfirmDialog'),
+);
 const TermsReacceptDialog = dynamic(
     () => import('@/features/auth/TermsReacceptDialog'),
 );
@@ -26,6 +32,8 @@ export function Overlays() {
         <>
             <BriefDialog />
             <DeleteAccountDialog />
+            <AvatarUploadDialog />
+            <AvatarDeleteConfirmDialog />
             <TermsReacceptDialog />
             <BillingResetDialog />
             <MobileMenuSheet />

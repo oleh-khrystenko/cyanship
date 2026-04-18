@@ -12,6 +12,7 @@ import { RedisCounterService } from '../../common/services/redis-counter.service
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { EmailService } from '../email/email.service';
+import { StorageService } from '../storage/storage.service';
 
 jest.mock('../../config/env', () => ({
     ENV: {
@@ -82,6 +83,11 @@ const mockRedisCounter = {
     incrementSlidingWindow: jest.fn(),
 };
 
+const mockStorageService = {
+    isR2Url: jest.fn(),
+    reUploadExternalAvatar: jest.fn(),
+};
+
 describe('AuthService', () => {
     let authService: AuthService;
     let jwtService: JwtService;
@@ -123,6 +129,10 @@ describe('AuthService', () => {
                     },
                 },
                 {
+                    provide: StorageService,
+                    useValue: mockStorageService,
+                },
+                {
                     provide: REDIS_CLIENT,
                     useValue: mockRedis,
                 },
@@ -142,6 +152,9 @@ describe('AuthService', () => {
         // Default: counter calls return 1 (first hit, well under any limit)
         mockRedisCounter.incrementFixedWindow.mockResolvedValue(1);
         mockRedisCounter.incrementSlidingWindow.mockResolvedValue(1);
+        // Default: no avatar re-upload path. Individual tests override.
+        mockStorageService.isR2Url.mockReturnValue(false);
+        mockStorageService.reUploadExternalAvatar.mockReset();
     });
 
     describe('generateTokens', () => {
@@ -428,6 +441,128 @@ describe('AuthService', () => {
             const result = await authService.handleGoogleAuth(googleProfile);
 
             expect(result.accountDeleted).toBeUndefined();
+        });
+    });
+
+    describe('handleGoogleAuth — Google avatar re-upload', () => {
+        const USER_ID = '507f1f77bcf86cd799439011';
+        const externalUrl = 'https://lh3.googleusercontent.com/photo.jpg';
+        const r2Url = `https://media.test.local/avatars/${USER_ID}/abc.webp`;
+
+        const googleProfile = {
+            email: 'test@gmail.com',
+            name: 'John Doe',
+            avatar: externalUrl,
+            providerId: 'google-123',
+        };
+
+        const buildUserWithAvatar = (avatar: string) => ({
+            id: USER_ID,
+            _id: { toString: () => USER_ID },
+            email: 'test@gmail.com',
+            profile: { name: 'John Doe', avatar } as {
+                name: string;
+                avatar: string;
+            },
+            executions: { balance: 0, freeReportUsed: false },
+            passwordHash: null as string | null,
+            lastLoginAt: null as Date | null,
+            save: jest.fn().mockImplementation(function (this: unknown) {
+                return Promise.resolve(this);
+            }),
+        });
+
+        beforeEach(() => {
+            jest.spyOn(jwtService, 'signAsync')
+                .mockResolvedValueOnce('access-token')
+                .mockResolvedValueOnce('refresh-token');
+        });
+
+        it('re-uploads avatar when it is external (non-R2) and persists new URL', async () => {
+            const user = buildUserWithAvatar(externalUrl);
+            jest.spyOn(usersService, 'findOrCreateByGoogle').mockResolvedValue(
+                user as never
+            );
+            mockStorageService.isR2Url.mockReturnValue(false);
+            mockStorageService.reUploadExternalAvatar.mockResolvedValue(r2Url);
+
+            const result = await authService.handleGoogleAuth(googleProfile);
+
+            expect(mockStorageService.isR2Url).toHaveBeenCalledWith(
+                externalUrl
+            );
+            expect(
+                mockStorageService.reUploadExternalAvatar
+            ).toHaveBeenCalledWith(USER_ID, externalUrl);
+            expect(user.profile.avatar).toBe(r2Url);
+            expect(user.save).toHaveBeenCalledTimes(1);
+            expect(result.user).toBe(user);
+            expect(result.tokens).toEqual({
+                accessToken: 'access-token',
+                refreshToken: 'refresh-token',
+            });
+        });
+
+        it('skips re-upload when the avatar is already an R2 URL', async () => {
+            const user = buildUserWithAvatar(r2Url);
+            jest.spyOn(usersService, 'findOrCreateByGoogle').mockResolvedValue(
+                user as never
+            );
+            mockStorageService.isR2Url.mockReturnValue(true);
+
+            const result = await authService.handleGoogleAuth(googleProfile);
+
+            expect(mockStorageService.isR2Url).toHaveBeenCalledWith(r2Url);
+            expect(
+                mockStorageService.reUploadExternalAvatar
+            ).not.toHaveBeenCalled();
+            expect(user.save).not.toHaveBeenCalled();
+            expect(user.profile.avatar).toBe(r2Url);
+            expect(result.user).toBe(user);
+        });
+
+        it('warns and continues with the external URL when re-upload fails', async () => {
+            const user = buildUserWithAvatar(externalUrl);
+            jest.spyOn(usersService, 'findOrCreateByGoogle').mockResolvedValue(
+                user as never
+            );
+            mockStorageService.isR2Url.mockReturnValue(false);
+            mockStorageService.reUploadExternalAvatar.mockRejectedValue(
+                new Error('R2 down')
+            );
+
+            const result = await authService.handleGoogleAuth(googleProfile);
+
+            expect(
+                mockStorageService.reUploadExternalAvatar
+            ).toHaveBeenCalledTimes(1);
+            // Avatar mutation only happens AFTER successful re-upload — on
+            // failure the external URL must remain as a functional fallback.
+            expect(user.save).not.toHaveBeenCalled();
+            expect(user.profile.avatar).toBe(externalUrl);
+            // Token issuance must still succeed — re-upload is non-critical.
+            expect(result.tokens).toEqual({
+                accessToken: 'access-token',
+                refreshToken: 'refresh-token',
+            });
+            expect(result.user).toBe(user);
+        });
+
+        it('skips re-upload entirely when the user has no avatar', async () => {
+            const user = buildUserWithAvatar('');
+            // Simulate the realistic shape — avatar absent on fresh account.
+            (user.profile as { avatar?: string }).avatar = undefined;
+            jest.spyOn(usersService, 'findOrCreateByGoogle').mockResolvedValue(
+                user as never
+            );
+
+            await authService.handleGoogleAuth(googleProfile);
+
+            expect(mockStorageService.isR2Url).not.toHaveBeenCalled();
+            expect(
+                mockStorageService.reUploadExternalAvatar
+            ).not.toHaveBeenCalled();
+            expect(user.save).not.toHaveBeenCalled();
         });
     });
 

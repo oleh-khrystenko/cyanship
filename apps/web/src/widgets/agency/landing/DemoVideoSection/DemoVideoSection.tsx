@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { KeyRound, CreditCard, Sparkles, Activity, LucideIcon } from 'lucide-react';
-import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
+import { DEMO_VIDEO, DEMO_VIDEO_ENABLED } from '@/shared/config/env';
+import DemoVideoPlayer from './DemoVideoPlayer';
 
 const highlights: { key: string; icon: LucideIcon }[] = [
     { key: 'auth', icon: KeyRound },
@@ -12,7 +13,7 @@ const highlights: { key: string; icon: LucideIcon }[] = [
 const DemoVideoSection = () => {
     const t = useTranslations('landing_page.demo_video');
 
-    if (!DEMO_VIDEO_ENABLED) return null;
+    if (!DEMO_VIDEO_ENABLED || !DEMO_VIDEO) return null;
 
     return (
         <section id="demo" className="scroll-mt-16 border-t border-border py-24">
@@ -50,17 +51,12 @@ const DemoVideoSection = () => {
                         </p>
                     </div>
 
-                    <div className="cursor-pointer overflow-hidden rounded-xl border border-border">
-                        <div className="relative aspect-video">
-                            <iframe
-                                src={process.env.NEXT_PUBLIC_DEMO_VIDEO_URL}
-                                title={t('heading')}
-                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                                allowFullScreen
-                                className="absolute inset-0 size-full border-0"
-                            />
-                        </div>
-                    </div>
+                    <DemoVideoPlayer
+                        title={t('heading')}
+                        src={DEMO_VIDEO.src}
+                        poster={DEMO_VIDEO.poster}
+                        playLabel={t('play_button')}
+                    />
                 </div>
             </div>
         </section>

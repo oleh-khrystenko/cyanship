@@ -15,6 +15,9 @@ import { getFieldError } from '@/shared/lib';
 import { updateProfile, getMe } from '@/shared/api';
 import { useAuthStore } from '@/entities/user';
 
+import AvatarEditButton from './AvatarEditButton';
+import { useAvatarUploadDialogStore } from './avatarUploadDialogStore';
+
 const ProfileFormSchema = z.object({
     firstName: firstNameSchema,
     lastName: z.union([lastNameSchema, z.literal('')]),
@@ -25,16 +28,25 @@ type ProfileFormValues = z.input<typeof ProfileFormSchema>;
 interface ProfileFormProps {
     user: UserProfile;
     editable: boolean;
+    /**
+     * When true (onboarding), the avatar edit affordance is hidden. Avatar
+     * endpoints require a completed profile (no @SkipOnboarding), so surfacing
+     * the control during onboarding would dead-end on the OnboardingInterceptor.
+     */
+    onboardingMode?: boolean;
     onSaved?: () => void;
 }
 
 const ProfileForm = ({
     user,
     editable,
+    onboardingMode = false,
     onSaved,
 }: ProfileFormProps) => {
     const t = useTranslations('profile_page.form');
+    const tAvatar = useTranslations('profile_page.avatar');
     const setUser = useAuthStore((s) => s.setUser);
+    const openAvatarDialog = useAvatarUploadDialogStore((s) => s.open);
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(ProfileFormSchema),
@@ -87,16 +99,28 @@ const ProfileForm = ({
 
     return (
         <UiSectionCard title={t('heading')}>
+            {!onboardingMode && (
+                <div className="mt-5 flex justify-start">
+                    <AvatarEditButton
+                        user={user}
+                        editable={editable}
+                        ariaLabel={tAvatar('edit_aria_label')}
+                        onPress={openAvatarDialog}
+                    />
+                </div>
+            )}
+
             <dl className="mt-5">
                 <dt className="text-muted-foreground text-sm">
                     {t('email_label')}
                 </dt>
-                <dd className="mt-1 text-foreground">
-                    {user.email}
-                </dd>
+                <dd className="text-foreground mt-1">{user.email}</dd>
             </dl>
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4">
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="mt-4 space-y-4"
+            >
                 <div>
                     <label className="text-muted-foreground mb-1.5 block text-sm">
                         {t('name_label')}
@@ -106,7 +130,11 @@ const ProfileForm = ({
                         {...form.register('firstName')}
                         type="text"
                         placeholder={t('name_placeholder')}
-                        error={getFieldError(errors.firstName, nameMessages, firstNameValue)}
+                        error={getFieldError(
+                            errors.firstName,
+                            nameMessages,
+                            firstNameValue
+                        )}
                         disabled={!editable}
                         size="lg"
                     />
@@ -120,7 +148,11 @@ const ProfileForm = ({
                         {...form.register('lastName')}
                         type="text"
                         placeholder={t('last_name_placeholder')}
-                        error={getFieldError(errors.lastName, nameMessages, lastNameValue)}
+                        error={getFieldError(
+                            errors.lastName,
+                            nameMessages,
+                            lastNameValue
+                        )}
                         disabled={!editable}
                         size="lg"
                     />

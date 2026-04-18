@@ -11,6 +11,20 @@ config({ path: resolve(__dirname, '../../.env') });
 // are set on the web domain and visible to middleware.
 const apiInternalUrl = process.env.API_INTERNAL_URL;
 
+// R2 CDN hostname for user-uploaded avatars. Required — the value must be
+// the hostname of the backend's R2_PUBLIC_URL (documented invariant). We
+// read it via `process.env` directly (not the shared fail-fast helper)
+// because `next.config.ts` runs in the Node build context, outside the
+// client env module. A missing value is a deployment bug, so we surface
+// it as a hard failure at build time rather than silently omitting the
+// remote pattern (which would break `next/image` at render time).
+const storageHostname = process.env.NEXT_PUBLIC_STORAGE_HOSTNAME;
+if (!storageHostname) {
+    throw new Error(
+        '❌ Environment variable "NEXT_PUBLIC_STORAGE_HOSTNAME" is not defined'
+    );
+}
+
 const nextConfig: NextConfig = {
     output: 'standalone',
     compress: false,
@@ -20,6 +34,10 @@ const nextConfig: NextConfig = {
             {
                 protocol: 'https',
                 hostname: 'lh3.googleusercontent.com',
+            },
+            {
+                protocol: 'https',
+                hostname: storageHostname,
             },
         ],
     },

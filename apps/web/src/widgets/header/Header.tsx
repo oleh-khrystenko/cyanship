@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { LogOut, User, CreditCard, Menu, LayoutDashboard, Bot } from 'lucide-react';
 import ChangeLang from '@/features/change-lang';
-
-const ChangeTheme = dynamic(() => import('@/features/change-theme'), {
-    ssr: false,
-});
+import ChangeTheme from '@/features/change-theme';
 import { Logo } from '@/entities/brand';
 import UiButton from '@/shared/ui/UiButton';
 import UiHeaderShell from '@/shared/ui/UiHeaderShell';

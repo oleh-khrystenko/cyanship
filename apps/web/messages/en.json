@@ -114,6 +114,7 @@
             "label": "Demo",
             "heading": "See It Working. All of It.",
             "description": "You've tried the individual features. Now watch the complete flow — from first sign-in to AI chat — in one uncut walkthrough.",
+            "play_button": "Play video",
             "highlight_auth": "Google sign-in — three seconds, you're in",
             "highlight_billing": "Stripe checkout with a live payment",
             "highlight_ai": "AI chat — streaming response, auto-billed",
@@ -270,6 +271,10 @@
         },
         "agency": {
             "brief_submitted": "Request submitted. We will respond within 24 hours."
+        },
+        "storage": {
+            "avatar_updated": "Photo updated",
+            "avatar_deleted": "Photo removed"
         }
     },
     "errors": {
@@ -301,6 +306,12 @@
             "ai_rate_limit_exceeded": "Too many AI requests. Please try again later.",
             "ai_provider_error": "AI is temporarily unavailable. Please try again later.",
             "ai_message_too_long": "Your message is too long for the current conversation. Try shortening it or clearing chat history."
+        },
+        "storage": {
+            "avatar_upload_failed": "Failed to upload photo. Please try again later",
+            "avatar_file_key_invalid": "Upload session expired. Please try again",
+            "avatar_upload_not_found": "We couldn't find your uploaded photo. Please try again",
+            "avatar_upload_invalid": "This file can't be used as a photo. Please try a different image"
         }
     },
     "ai_chat_page": {
@@ -443,6 +454,23 @@
             "save_button": "Save",
             "saved": "Profile updated",
             "save_error": "Failed to save profile"
+        },
+        "avatar": {
+            "dialog_title": "Profile photo",
+            "edit_aria_label": "Edit profile photo",
+            "drop_text": "Drag a photo here or",
+            "browse_button": "Choose file",
+            "supported_formats": "JPEG, PNG or WebP. Max 5 MB",
+            "zoom_label": "Zoom",
+            "save_button": "Save",
+            "cancel_button": "Cancel",
+            "delete_button": "Remove photo",
+            "delete_confirm_title": "Remove profile photo?",
+            "delete_confirm_description": "Your avatar will be replaced with initials",
+            "delete_confirm_button": "Remove",
+            "delete_cancel_button": "Cancel",
+            "file_too_large": "File is too large. Maximum size is 5 MB",
+            "unsupported_format": "Unsupported format. Please use JPEG, PNG or WebP"
         },
         "security": {
             "heading": "Security",

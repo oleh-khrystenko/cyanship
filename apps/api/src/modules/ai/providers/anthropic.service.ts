@@ -3,14 +3,17 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Readable } from 'stream';
 
 import { ENV } from '../../../config/env';
-import type { AiChatMessage, IAiProvider } from '../interfaces/ai-provider.interface';
+import type {
+    AiChatMessage,
+    IAiProvider,
+} from '../interfaces/ai-provider.interface';
 
 const MODEL = 'claude-haiku-4-5-20251001';
 const CONTEXT_WINDOW = 200_000;
 
 function buildRequestShape(
     messages: AiChatMessage[],
-    systemPrompt: string,
+    systemPrompt: string
 ): {
     system: Anthropic.TextBlockParam[];
     messages: Anthropic.MessageParam[];
@@ -23,27 +26,25 @@ function buildRequestShape(
         },
     ];
 
-    const anthropicMessages: Anthropic.MessageParam[] = messages.map(
-        (m, i) => {
-            const isLastHistoryMessage =
-                messages.length > 1 && i === messages.length - 2;
-            if (isLastHistoryMessage) {
-                return {
-                    role: m.role,
-                    content: [
-                        {
-                            type: 'text' as const,
-                            text: m.content,
-                            cache_control: {
-                                type: 'ephemeral' as const,
-                            },
+    const anthropicMessages: Anthropic.MessageParam[] = messages.map((m, i) => {
+        const isLastHistoryMessage =
+            messages.length > 1 && i === messages.length - 2;
+        if (isLastHistoryMessage) {
+            return {
+                role: m.role,
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: m.content,
+                        cache_control: {
+                            type: 'ephemeral' as const,
                         },
-                    ],
-                };
-            }
-            return { role: m.role, content: m.content };
-        },
-    );
+                    },
+                ],
+            };
+        }
+        return { role: m.role, content: m.content };
+    });
 
     return { system, messages: anthropicMessages };
 }
@@ -60,7 +61,7 @@ export class AnthropicService implements IAiProvider {
 
     async countTokens(
         messages: AiChatMessage[],
-        systemPrompt: string,
+        systemPrompt: string
     ): Promise<number> {
         const shape = buildRequestShape(messages, systemPrompt);
         const result = await this.client.messages.countTokens({

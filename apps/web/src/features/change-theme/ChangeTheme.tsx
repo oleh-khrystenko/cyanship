@@ -1,6 +1,6 @@
 'use client';
 
-import { type FC, type ReactNode } from 'react';
+import { useSyncExternalStore, type FC, type ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { Sun, Moon, SunMoon } from 'lucide-react';
@@ -26,14 +26,31 @@ interface ChangeThemeProps {
     align?: 'start' | 'end';
 }
 
+const subscribe = () => () => {};
+
+const useIsHydrated = () =>
+    useSyncExternalStore(subscribe, () => true, () => false);
+
+const getActiveTheme = (theme: string | undefined, isHydrated: boolean): Theme => {
+    if (!isHydrated) {
+        return THEME.SYSTEM;
+    }
+
+    return Object.values(THEME).includes(theme as Theme)
+        ? (theme as Theme)
+        : THEME.SYSTEM;
+};
+
 const ChangeTheme: FC<ChangeThemeProps> = ({
     trigger: customTrigger,
     align = 'end',
 }) => {
     const { theme, setTheme } = useTheme();
+    const isHydrated = useIsHydrated();
     const t = useTranslations('components.change_theme');
 
-    const TriggerIcon = THEME_ICONS[(theme as Theme) ?? THEME.SYSTEM];
+    const activeTheme = getActiveTheme(theme, isHydrated);
+    const TriggerIcon = THEME_ICONS[activeTheme];
 
     const items: UiDropdownMenuItem[] = THEME_KEYS.map(({ value, key }) => {
         const Icon = THEME_ICONS[value];
@@ -58,7 +75,7 @@ const ChangeTheme: FC<ChangeThemeProps> = ({
         <UiDropdownMenu
             items={items}
             onSelect={setTheme}
-            activeValue={theme}
+            activeValue={activeTheme}
             align={align}
             size="sm"
             trigger={customTrigger ?? defaultTrigger}

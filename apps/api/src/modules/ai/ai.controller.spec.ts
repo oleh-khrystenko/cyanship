@@ -162,13 +162,10 @@ describe('AiController', () => {
                 () =>
                     new Promise((resolve) => {
                         setTimeout(
-                            () =>
-                                resolve([
-                                    { role: 'user', content: 'hello' },
-                                ]),
-                            50,
+                            () => resolve([{ role: 'user', content: 'hello' }]),
+                            50
                         );
-                    }),
+                    })
             );
 
             const req = buildReq();
@@ -178,7 +175,7 @@ describe('AiController', () => {
                 buildUser(),
                 { message: 'hello' },
                 req as never,
-                res as never,
+                res as never
             );
 
             // Let microtasks drain so req.on('close') is registered
@@ -191,7 +188,7 @@ describe('AiController', () => {
 
             expect(res.flushHeaders).not.toHaveBeenCalled();
             expect(mockAiService.refundChatRequest).toHaveBeenCalledWith(
-                mockTicket,
+                mockTicket
             );
             expect(mockAiService.streamChat).not.toHaveBeenCalled();
             expect(mockAiService.commitChatRequest).not.toHaveBeenCalled();
