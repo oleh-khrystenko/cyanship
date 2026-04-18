@@ -32,7 +32,6 @@ import { useAuthStore } from '@/entities/user';
 import { useAvatarUploadDialogStore } from './avatarUploadDialogStore';
 import { useAvatarDeleteConfirmDialogStore } from './avatarDeleteConfirmDialogStore';
 import { cropImage } from './lib/cropImage';
-import { convertHeicToJpeg, isHeic } from './lib/convertHeic';
 
 type Phase = 'idle' | 'crop';
 
@@ -124,22 +123,14 @@ export default function AvatarUploadDialog() {
             AVATAR.ALLOWED_MIME_TYPES as readonly string[]
         ).includes(file.type);
 
-        let workingFile = file;
-        if (isHeic(file)) {
-            try {
-                workingFile = await convertHeicToJpeg(file);
-            } catch {
-                toast.error(t('heic_conversion_failed'));
-                return;
-            }
-        } else if (!mimeOk) {
+        if (!mimeOk) {
             toast.error(t('unsupported_format'));
             return;
         }
 
         if (imageSrc) URL.revokeObjectURL(imageSrc);
 
-        const url = URL.createObjectURL(workingFile);
+        const url = URL.createObjectURL(file);
         setImageSrc(url);
         setCrop({ x: 0, y: 0 });
         setZoom(1);

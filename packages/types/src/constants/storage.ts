@@ -17,14 +17,15 @@ export const AVATAR = {
     OUTPUT_FORMAT: 'image/webp',
     /** WebP quality used by `canvas.toBlob` on the client and `sharp.webp` on the server. */
     OUTPUT_QUALITY: 0.85,
-    /** Input MIME types accepted by the file picker before cropping. HEIC is converted to JPEG on the client. */
-    ALLOWED_MIME_TYPES: [
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-        'image/heic',
-        'image/heif',
-    ],
+    /**
+     * Input MIME types accepted by the file picker before cropping. HEIC
+     * intentionally excluded: every browser-side HEIC decoder transitively
+     * depends on libheif (LGPL-3.0), which is incompatible with the repo's
+     * permissive licence profile. iOS Safari ≥14 auto-converts HEIC to JPEG
+     * on file-pick when `accept` omits the HEIC MIME, so iPhone UX is
+     * preserved without shipping a decoder.
+     */
+    ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
 } as const;
 
 export type AvatarOutputFormat = typeof AVATAR.OUTPUT_FORMAT;

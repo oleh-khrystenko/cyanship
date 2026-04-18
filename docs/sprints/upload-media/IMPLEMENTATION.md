@@ -138,7 +138,7 @@ Backend потребує повний URL (для побудови public avatar
 | `OUTPUT_SIZE` | 512 | Квадратні px, фіксований розмір canvas (клієнт) і `sharp.resize` (бекенд, Google re-upload) |
 | `OUTPUT_FORMAT` | `'image/webp'` | Єдиний allowed content type після crop. Signed у presigned URL |
 | `OUTPUT_QUALITY` | 0.85 | Єдина крапка істини для quality: клієнтський `canvas.toBlob` і серверний `sharp.webp({ quality })` |
-| `ALLOWED_MIME_TYPES` | `['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']` | Валідація **вхідного** файлу перед crop (що користувач може обрати у file picker). **Вихідний** формат завжди WebP |
+| `ALLOWED_MIME_TYPES` | `['image/jpeg', 'image/png', 'image/webp']` | Валідація **вхідного** файлу перед crop (що користувач може обрати у file picker). **Вихідний** формат завжди WebP. HEIC свідомо виключений — див. README секцію "Прийняті рішення" (libheif-деривативи мають LGPL-3.0, несумісні з permissive-профілем; iOS Safari ≥14 auto-конвертує HEIC → JPEG у file picker, якщо accept не містить HEIC MIME) |
 
 Тип: `as const` для literal inference на фронті та бекенді.
 
@@ -260,7 +260,6 @@ Sharp 0.33+ дистрибутує prebuilt binaries для Linux musl (вклю
 | Package | Призначення |
 |---------|-------------|
 | `react-easy-crop` | Crop UI з круглою маскою, zoom, drag, pinch-to-zoom |
-| `heic2any` | HEIC → JPEG конвертація на клієнті (iPhone photos) |
 
 ---
 
@@ -505,7 +504,6 @@ Props:
 - `apps/web/src/features/profile/avatarUploadDialogStore.ts`
 - `apps/web/src/features/profile/AvatarEditButton.tsx`
 - `apps/web/src/features/profile/lib/cropImage.ts`
-- `apps/web/src/features/profile/lib/convertHeic.ts`
 
 **Файли (оновити):**
 - `apps/web/src/features/profile/index.ts` — додати exports
@@ -529,13 +527,9 @@ Zustand store: `isOpen`, `open()`, `close()`. Живе в `features/profile/` (i
 
 **Сумісність `canvas.toBlob` з WebP:** Chrome 50+, Firefox 65+, Safari 14+ (iOS 14+). Всі цільові браузери проєкту підтримують. Для старіших — на практиці toBlob виклик тихо поверне null; якщо така ситуація виникне — fallback на PNG з попередженням у консоль. Деталі fallback вирішуються на етапі тестування; MVP scope — тільки WebP.
 
-### 9.3. HEIC conversion utility
+### 9.3. HEIC — свідомо поза scope
 
-Файл: `apps/web/src/features/profile/lib/convertHeic.ts`
-
-Дві функції:
-- `isHeic(file: File): boolean` — перевіряє MIME type (`image/heic`, `image/heif`) та розширення (`.heic`, `.heif`). Подвійна перевірка потрібна бо Safari/iOS іноді повертає empty MIME для HEIC з filesystem
-- `convertHeicToJpeg(file: File): Promise<File>` — dynamic import `heic2any` (~200KB, lazy load — не потрапляє в main bundle), конвертує в JPEG quality 0.9, повертає новий File object
+HEIC не підтримується на клієнті: всі browser-side HEIC-декодери (`heic2any`, `heic-to`, `libheif-js`) транзитивно спираються на libheif (LGPL-3.0), що несумісне з permissive-ліцензійним профілем репо (ISC/MIT/UNLICENSED). iOS Safari ≥14 автоматично конвертує HEIC → JPEG у file picker, якщо `accept` не містить `image/heic`, тож iPhone UX зберігається без shipping'у декодера. Non-Safari браузери з HEIC-файлом отримають toast `unsupported_format` — малий trade-off на тлі уникнення copyleft у bundle. Див. README "Прийняті рішення".
 
 ### 9.4. AvatarEditButton
 
@@ -575,10 +569,9 @@ Props: `user: UserProfile`, `editable: boolean`, `onPress: () => void`. `aria-la
 
 **File select flow:**
 1. Валідація розміру — `file.size > AVATAR.MAX_FILE_SIZE` → toast error (`file_too_large`)
-2. Валідація типу — перевірка проти `AVATAR.ALLOWED_MIME_TYPES` + `isHeic()` (HEIC з empty MIME покривається extension-check'ом)
-3. Якщо HEIC — конвертація через `convertHeicToJpeg()` (з error handling → `heic_conversion_failed`)
-4. Revoke попередній `URL.createObjectURL` якщо є (memory leak prevention)
-5. Створення нового object URL для Cropper
+2. Валідація типу — перевірка проти `AVATAR.ALLOWED_MIME_TYPES` (`image/jpeg`, `image/png`, `image/webp`); при невідповідності — toast `unsupported_format`. HEIC не в списку (див. 9.3) — iPhone-юзери отримують JPEG через нативний auto-convert iOS Safari
+3. Revoke попередній `URL.createObjectURL` якщо є (memory leak prevention)
+4. Створення нового object URL для Cropper
 
 **Memory cleanup:** При закритті діалогу або unmount — `URL.revokeObjectURL()`. Реалізувати через `useEffect` cleanup.
 
@@ -619,7 +612,7 @@ Avatar бере `src` з `user.profile.avatar`, fallback — `getInitials(fullNa
 | `edit_aria_label` | Edit profile photo | Редагувати фото профілю |
 | `drop_text` | Drag a photo here or | Перетягніть фото сюди або |
 | `browse_button` | Choose file | Оберіть файл |
-| `supported_formats` | JPEG, PNG, WebP or HEIC. Max 5 MB | JPEG, PNG, WebP або HEIC. Максимум 5 МБ |
+| `supported_formats` | JPEG, PNG or WebP. Max 5 MB | JPEG, PNG або WebP. Максимум 5 МБ |
 | `zoom_label` | Zoom | Масштаб |
 | `save_button` | Save | Зберегти |
 | `cancel_button` | Cancel | Скасувати |
@@ -629,8 +622,7 @@ Avatar бере `src` з `user.profile.avatar`, fallback — `getInitials(fullNa
 | `delete_confirm_button` | Remove | Видалити |
 | `delete_cancel_button` | Cancel | Скасувати |
 | `file_too_large` | File is too large. Maximum size is 5 MB | Файл занадто великий. Максимальний розмір — 5 МБ |
-| `unsupported_format` | Unsupported format. Please use JPEG, PNG, WebP or HEIC | Непідтримуваний формат. Використовуйте JPEG, PNG, WebP або HEIC |
-| `heic_conversion_failed` | Failed to process this photo. Please try another file | Не вдалося обробити це фото. Спробуйте інший файл |
+| `unsupported_format` | Unsupported format. Please use JPEG, PNG or WebP | Непідтримуваний формат. Використовуйте JPEG, PNG або WebP |
 
 ### 11.2. Notifications та errors (API response codes)
 
@@ -735,10 +727,6 @@ Mock'и: `IStorageProvider` (mock implementation), `UsersService` (mock).
 - Output blob type = `AVATAR.OUTPUT_FORMAT`
 - `toBlob` викликається з `AVATAR.OUTPUT_QUALITY`
 
-**Файл:** `apps/web/src/features/profile/lib/convertHeic.test.ts`
-- `isHeic` коректно ідентифікує HEIC файли за MIME type
-- `isHeic` покриває edge case: empty MIME + `.heic` extension (iPhone)
-
 **Файл:** `apps/web/src/shared/ui/UiAvatarButton/UiAvatarButton.test.tsx`
 - Рендерить `UiAvatar` з переданими src/fallback
 - Overlay показується тільки при hover (CSS class check)
@@ -768,7 +756,6 @@ Mock'и: `IStorageProvider` (mock implementation), `UsersService` (mock).
 | `apps/web/src/features/profile/AvatarEditButton.tsx` | Клікабельна аватарка (композиція UiAvatarButton) |
 | `apps/web/src/features/profile/avatarUploadDialogStore.ts` | Zustand dialog state |
 | `apps/web/src/features/profile/lib/cropImage.ts` | Canvas crop → WebP blob |
-| `apps/web/src/features/profile/lib/convertHeic.ts` | HEIC detection + conversion |
 
 ### Модифіковані файли
 

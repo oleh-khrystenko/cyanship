@@ -29,7 +29,7 @@ CyanShip — демо-бойлерплейт для стартапів. Кліє
 
 ### Крок 2: Вибір зображення
 
-В діалозі — зона для drop файлу або кнопка "Вибрати файл". Drag & drop є обов'язковим — це сучасний стандарт. Підтримуються формати: JPEG, PNG, WebP, HEIC (конвертується на клієнті). Максимальний розмір вхідного файлу — 5 MB.
+В діалозі — зона для drop файлу або кнопка "Вибрати файл". Drag & drop є обов'язковим — це сучасний стандарт. Підтримуються формати: JPEG, PNG, WebP. Максимальний розмір вхідного файлу — 5 MB. HEIC свідомо не у списку: iOS Safari ≥14 автоматично конвертує HEIC → JPEG при виборі файла з Photos, якщо `accept` не містить HEIC MIME, тож iPhone UX зберігається без shipping'у WASM-декодера.
 
 ### Крок 3: Обрізка та масштабування
 
@@ -163,7 +163,7 @@ avatars/{userId}/{uuid}.webp
 |---------|---------|
 | Максимальний розмір файлу | **5 MB** — покриває будь-яке фото з телефону, після crop + WebP фінальний файл ~50-200 KB |
 | Роздільна здатність crop | **512×512 px** — чітко на Retina, компактний файл (на рівні Slack, GitHub, Discord) |
-| HEIC (iPhone) | **Конвертація на клієнті** через `heic2any` перед crop — повний iPhone UX без компромісів |
+| HEIC (iPhone) | **Не підтримується на bundle-рівні.** Усі browser-side HEIC-декодери (`heic-to`, `heic2any`, `libheif-js`) транзитивно спираються на libheif (LGPL-3.0), що несумісне з permissive-профілем репо (ISC/MIT/UNLICENSED). iOS Safari ≥14 нативно конвертує HEIC → JPEG у file picker, коли `accept` не містить `image/heic`, — тож iPhone UX збережений без ship'у декодера. Користувачі з HEIC на Chrome/Firefox Desktop отримують toast `unsupported_format`. Trade-off свідомий: MVP уникає copyleft-obligations на користь простої legal-картини. Якщо у майбутньому з'явиться політика допустимості LGPL-3.0 — природний апгрейд: server-side декодування через `sharp` + libheif (LGPL на сервері допустимий для proprietary SaaS, не відображається у client bundle) |
 | R2 bucket | **Один bucket `cyanship-media`**, папка `avatars/` — розділення можливе пізніше за потреби. Public access через Cloudflare CDN |
 | Видалення Google-аватарки | **Fallback на ініціали** — без повернення до Google-фото, один простий flow для всіх випадків |
 | Джерело правди розміру | **Application layer: client-side pre-check + HeadObject перевірка при commit з cleanup** — не transport layer. Причина: signed Content-Length у presigned PUT неможливий як upper bound (forbidden header у Fetch + exact-match семантика у S3 signature). Альтернатива (presigned POST з `content-length-range` policy) — overkill для малих аватарок під auth |

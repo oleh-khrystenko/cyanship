@@ -459,7 +459,7 @@
             "edit_aria_label": "Edit profile photo",
             "drop_text": "Drag a photo here or",
             "browse_button": "Choose file",
-            "supported_formats": "JPEG, PNG, WebP or HEIC. Max 5 MB",
+            "supported_formats": "JPEG, PNG or WebP. Max 5 MB",
             "zoom_label": "Zoom",
             "save_button": "Save",
             "cancel_button": "Cancel",
@@ -469,8 +469,7 @@
             "delete_confirm_button": "Remove",
             "delete_cancel_button": "Cancel",
             "file_too_large": "File is too large. Maximum size is 5 MB",
-            "unsupported_format": "Unsupported format. Please use JPEG, PNG, WebP or HEIC",
-            "heic_conversion_failed": "Failed to process this photo. Please try another file"
+            "unsupported_format": "Unsupported format. Please use JPEG, PNG or WebP"
         },
         "security": {
             "heading": "Security",

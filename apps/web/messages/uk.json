@@ -459,7 +459,7 @@
             "edit_aria_label": "Редагувати фото профілю",
             "drop_text": "Перетягніть фото сюди або",
             "browse_button": "Оберіть файл",
-            "supported_formats": "JPEG, PNG, WebP або HEIC. Максимум 5 МБ",
+            "supported_formats": "JPEG, PNG або WebP. Максимум 5 МБ",
             "zoom_label": "Масштаб",
             "save_button": "Зберегти",
             "cancel_button": "Скасувати",
@@ -469,8 +469,7 @@
             "delete_confirm_button": "Видалити",
             "delete_cancel_button": "Скасувати",
             "file_too_large": "Файл занадто великий. Максимальний розмір — 5 МБ",
-            "unsupported_format": "Непідтримуваний формат. Використовуйте JPEG, PNG, WebP або HEIC",
-            "heic_conversion_failed": "Не вдалося обробити це фото. Спробуйте інший файл"
+            "unsupported_format": "Непідтримуваний формат. Використовуйте JPEG, PNG або WebP"
         },
         "security": {
             "heading": "Безпека",

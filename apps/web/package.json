@@ -19,7 +19,6 @@
         "axios": "^1.13.5",
         "class-variance-authority": "^0.7.1",
         "country-flag-icons": "^1.5.21",
-        "heic2any": "^0.0.4",
         "lucide-react": "^0.564.0",
         "next": "^16.0.1",
         "next-intl": "^4.4.0",
