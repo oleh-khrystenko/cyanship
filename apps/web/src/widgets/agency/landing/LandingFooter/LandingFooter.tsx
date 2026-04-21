@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { Logo } from '@/entities/brand';
-import { GitHubIcon, LinkedInIcon, UpworkIcon } from '@/shared/icons';
+import { GitHubIcon, LinkedInIcon } from '@/shared/icons';
 import UiLink from '@/shared/ui/UiLink';
 import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
 
@@ -28,11 +28,6 @@ const socialLinks = [
         key: 'github',
         href: 'https://github.com/oleh-khrystenko',
         icon: GitHubIcon,
-    },
-    {
-        key: 'upwork',
-        href: 'https://www.upwork.com/freelancers/cyanship',
-        icon: UpworkIcon,
     },
 ] as const;
 
