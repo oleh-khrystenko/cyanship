@@ -42,13 +42,6 @@ export function BaseLayout({ lang, children }: BaseLayoutProps) {
                         >
                             GitHub
                         </Link>
-                        <span style={socialDot}>&middot;</span>
-                        <Link
-                            href="https://www.upwork.com/freelancers/cyanship"
-                            style={socialLink}
-                        >
-                            Upwork
-                        </Link>
                     </Section>
                     <Text style={siteLink}>
                         <Link
