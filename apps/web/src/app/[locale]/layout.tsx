@@ -41,6 +41,7 @@ export default async function LocaleLayout({
             <head>
                 <meta name="darkreader-lock" />
                 <meta name="color-scheme" content="light dark" />
+                <meta name="freelancehunt" content="e28e9c10cf40a79" />
                 <link
                     rel="icon"
                     href="/logo/light-theme.svg"
