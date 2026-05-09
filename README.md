@@ -48,7 +48,7 @@ cyanship/
 │           ├── index.ts              # Core exports
 │           └── agency.ts             # Agency exports (окремий entry point)
 ├── docs/                     # Vision, planning, testing, conventions
-├── docker-compose.yml        # Production (api + web)
+├── compose.yaml              # Production (api + web)
 ├── docker-compose.dev.yml    # Development (mongo + redis + api + web)
 ├── turbo.json                # Build pipeline
 └── pnpm-workspace.yaml       # Workspaces: apps/*, packages/*

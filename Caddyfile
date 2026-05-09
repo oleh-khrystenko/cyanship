@@ -1,12 +1,9 @@
 cyanship.com {
     reverse_proxy 127.0.0.1:3000
 
-    # Cloudflare Origin Certificate — issued via Cloudflare Dashboard:
-    # SSL/TLS → Origin Server → Create Certificate
-    # Place the certificate and key on the VPS:
-    #   /etc/caddy/tls/origin.pem
-    #   /etc/caddy/tls/origin-key.pem
     tls /etc/caddy/tls/origin.pem /etc/caddy/tls/origin-key.pem
+
+    encode zstd gzip
 
     header {
         # Prevent MIME-type sniffing
@@ -15,6 +12,13 @@ cyanship.com {
         X-Frame-Options DENY
         # Disable referrer on cross-origin
         Referrer-Policy strict-origin-when-cross-origin
+        # 1 year HSTS, all subdomains, preload-eligible. Cloudflare in front does not send HSTS by default;
+        # this header reaches the browser via CF and pins HTTPS for cyanship.com + *.cyanship.com.
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Disable browser features the app doesn't need
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)"
+        # Cross-origin isolation safe-defaults
+        Cross-Origin-Opener-Policy same-origin
         # Remove server identity
         -Server
     }
