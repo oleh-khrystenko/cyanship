@@ -7,6 +7,12 @@ services:
             - redis_data:/data
         networks:
             - internal
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 30s
+            timeout: 3s
+            retries: 3
+            start_period: 5s
 
     api:
         build:
@@ -54,6 +60,12 @@ services:
             - redis
         networks:
             - internal
+        healthcheck:
+            test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:${API_PORT}/api/health"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
 
     web:
         build:
@@ -83,6 +95,12 @@ services:
             - api
         networks:
             - internal
+        healthcheck:
+            test: ["CMD-SHELL", "wget --spider -q http://$$HOSTNAME:${WEB_PORT}/"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 60s
 
 networks:
     internal:

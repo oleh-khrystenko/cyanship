@@ -206,7 +206,7 @@ Backend повертає machine-readable `code` через `apps/api/src/common
 
 **Infra / orchestration**
 - `docker-compose.dev.yml` піднімає `redis`, `api`, `web`; MongoDB у compose немає, він приходить з зовнішнього `MONGODB_URI`
-- `docker-compose.yml` також очікує зовнішній MongoDB і передає env у build/runtime
+- `compose.yaml` також очікує зовнішній MongoDB і передає env у build/runtime
 - Dev compose збирає `@cyanship/types` перед запуском apps
 
 **Policy**
