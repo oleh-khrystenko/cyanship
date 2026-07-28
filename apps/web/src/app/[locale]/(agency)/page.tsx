@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
+import { setRequestLocale } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
-import { MetaProps } from '@/shared/types/settings';
+import { MetaProps, PageParams } from '@/shared/types/settings';
 import {
     HeroSection,
     ProblemSection,
@@ -16,7 +17,10 @@ export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     return await fetchMetadata({ ...props, page: 'landing', href: 'landing' });
 }
 
-export default function HomePage() {
+export default async function HomePage({ params }: PageParams) {
+    const { locale } = await params;
+    setRequestLocale(locale);
+
     return (
         <main>
             <HeroSection />
