@@ -5,7 +5,6 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { passwordSchema } from '@cyanship/types';
@@ -15,7 +14,7 @@ import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import UiFullPageLoader from '@/shared/ui/UiFullPageLoader';
 import { getFieldError } from '@/shared/lib';
-import { resetPassword } from '@/shared/api';
+import { resetPassword, getApiErrorCode } from '@/shared/api';
 
 const ResetPasswordFormSchema = z.object({
     newPassword: passwordSchema,
@@ -61,12 +60,9 @@ function ResetPasswordContent() {
             router.replace(`/${locale}/auth/signin`);
         } catch (err) {
             setStatus('error');
-            const code =
-                err instanceof AxiosError
-                    ? err.response?.data?.error?.code
-                    : undefined;
+            const code = getApiErrorCode(err);
 
-            if (code === 'UNAUTHORIZED' || code === 'INVALID_MAGIC_LINK') {
+            if (code === 'UNAUTHORIZED') {
                 setErrorMessage(t('error_invalid_token'));
             } else {
                 setErrorMessage(t('error_generic'));
@@ -128,6 +124,7 @@ function ResetPasswordContent() {
                     )}
                     disabled={isSubmitting}
                     autoFocus
+                    autoComplete="new-password"
                     size="lg"
                 />
 
@@ -153,6 +150,7 @@ function ResetPasswordContent() {
                               )
                     }
                     disabled={isSubmitting}
+                    autoComplete="new-password"
                     size="lg"
                 />
 

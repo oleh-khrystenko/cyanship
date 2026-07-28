@@ -278,8 +278,7 @@
     },
     "errors": {
         "auth": {
-            "unauthorized": "Your session has expired. Please sign in again",
-            "invalid_magic_link": "The link is invalid or has expired"
+            "unauthorized": "Your session has expired. Please sign in again"
         },
         "payments": {
             "already_subscribed": "You already have an active subscription.",
@@ -295,6 +294,7 @@
             "rate_limit_exceeded": "Too many requests. Please try again in {minutes} minutes",
             "email_send_failed": "Failed to send the email. Please try again later",
             "internal_error": "Server error occurred. Please try again later",
+            "onboarding_incomplete": "Please complete your profile to continue",
             "unknown": "Something went wrong. Please try again later"
         },
         "agency": {
@@ -316,6 +316,7 @@
     "ai_chat_page": {
         "heading": "AI Chat",
         "placeholder": "Type your message...",
+        "message_too_long": "Message is too long. Shorten it to {max} characters",
         "send": "Send",
         "clear_history": "Clear history",
         "empty_state_title": "How can I help you?",
@@ -508,6 +509,7 @@
         "title": "Delete account",
         "description": "Are you sure? Your account will be deactivated. You will have 30 days to restore it.",
         "password_label": "Enter password to confirm",
+        "password_required": "Enter your password to confirm",
         "cancel_button": "Cancel",
         "confirm_button": "Delete account",
         "magic_link_sent": "Confirmation link sent to your email",

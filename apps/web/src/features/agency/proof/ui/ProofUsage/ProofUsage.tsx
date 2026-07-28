@@ -11,7 +11,11 @@ import {
     type ExecutionTransactionItem,
     type SpendableAction,
 } from '@cyanship/types';
-import { spendExecutions, getExecutionTransactions } from '@/shared/api';
+import {
+    spendExecutions,
+    getExecutionTransactions,
+    getApiErrorMessage,
+} from '@/shared/api';
 import { useAuthStore } from '@/entities/user';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
@@ -27,6 +31,7 @@ const ACTION_BUTTONS: { action: SpendableAction; labelKey: string }[] = [
 
 const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
     const t = useTranslations('landing_page.dogfooding.proof_usage');
+    const tGlobal = useTranslations();
 
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -63,6 +68,11 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
             return;
         }
 
+        if (balance < EXECUTION_ACTION_COST[action]) {
+            toast.error(t('insufficient_balance'));
+            return;
+        }
+
         setSpendingAction(action);
         try {
             const result = await spendExecutions(action);
@@ -77,8 +87,9 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
 
             // Prepend new transaction
             setTransactions((prev) => [result.transaction, ...prev].slice(0, 10));
-        } catch {
-            toast.error(t('insufficient_balance'));
+        } catch (error) {
+            const { key, values } = getApiErrorMessage(error);
+            toast.error(tGlobal(key, values));
         } finally {
             setSpendingAction(null);
         }
@@ -150,7 +161,7 @@ const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
                             variant={canAfford ? 'filled' : 'outline'}
                             size="sm"
                             className="relative w-full justify-center"
-                            disabled={isActionInProgress || !canAfford}
+                            disabled={isActionInProgress}
                             onClick={() => handleSpend(action)}
                         >
                             <span className={`flex flex-wrap items-center justify-center gap-x-1 ${isBusy ? 'invisible' : ''}`}>

@@ -129,6 +129,7 @@ const ProfileForm = ({
                     <UiInput
                         {...form.register('firstName')}
                         type="text"
+                        autoComplete="given-name"
                         placeholder={t('name_placeholder')}
                         error={getFieldError(
                             errors.firstName,
@@ -147,6 +148,7 @@ const ProfileForm = ({
                     <UiInput
                         {...form.register('lastName')}
                         type="text"
+                        autoComplete="family-name"
                         placeholder={t('last_name_placeholder')}
                         error={getFieldError(
                             errors.lastName,

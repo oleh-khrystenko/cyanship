@@ -19,7 +19,7 @@ export default function BriefDialog() {
         <UiModal open={isOpen} onOpenChange={(open) => !open && close()}>
             <UiModalContent>
                 <UiModalHeader>
-                    <UiModalTitle className="text-xl">{t('title')}</UiModalTitle>
+                    <UiModalTitle>{t('title')}</UiModalTitle>
                 </UiModalHeader>
                 <div className="px-4 pb-6">
                     <BriefForm onSuccess={close} />
