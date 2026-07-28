@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -16,6 +16,7 @@ import { Model } from 'mongoose';
 import { createHmac } from 'crypto';
 
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
+import { OnboardingInterceptor } from '../src/common/interceptors/onboarding.interceptor';
 import { RedisModule, REDIS_CLIENT } from '../src/common/modules/redis.module';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
@@ -33,124 +34,41 @@ import {
     ChatMessageDocument,
 } from '../src/modules/ai/schemas/chat-message.schema';
 import { EmailService } from '../src/modules/email/email.service';
-import { AI_PROVIDER } from '../src/modules/ai/interfaces/ai-provider.interface';
+import {
+    AI_PROVIDER,
+    type IAiProvider,
+} from '../src/modules/ai/interfaces/ai-provider.interface';
 import { ReservationReconcileService } from '../src/modules/users/reservation-reconcile.service';
+import { ENV } from '../src/config/env';
+import {
+    createStatefulRedisMock,
+    type StatefulRedisMock,
+} from './utils/redis.mock';
+import { listenOnLoopback } from './utils/listen';
 
-// ─── Mock ENV ────────────────────────────────────────────────────────────────
-
-jest.mock('../src/config/env', () => ({
-    ENV: {
-        NODE_ENV: 'test',
-        PORT: '4000',
-        WEB_URL: 'http://localhost:3000',
-        MONGODB_URI: 'overridden-by-MongoMemoryReplSet',
-        REDIS_URL: 'redis://mock',
-        JWT_ACCESS_SECRET: 'e2e-test-access-secret-must-be-long-enough',
-        JWT_REFRESH_SECRET: 'e2e-test-refresh-secret-must-be-long-enough',
-        GOOGLE_CLIENT_ID: 'test-id.apps.googleusercontent.com',
-        GOOGLE_CLIENT_SECRET: 'GOCSPX-test-secret',
-        GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
-        RESEND_API_KEY: 're_test_key',
-        RESEND_FROM_EMAIL: 'CyanShip <test@test.com>',
-        AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
-        AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
-        AUTH_MAGIC_LINK_TTL_MIN: 15,
-        AUTH_MAGIC_LINK_RATE_LIMIT: 3,
-        AUTH_MAGIC_LINK_RATE_WINDOW_MIN: 15,
-        AUTH_MAGIC_LINK_DEDUP_SEC: 60,
-        ACCOUNT_DELETION_GRACE_DAYS: 30,
-        AUTH_PASSWORD_MIN_LENGTH: 8,
-        STRIPE_SECRET_KEY: 'sk_test_xxx',
-        STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        PAYMENTS_SUBSCRIPTION_ENABLED: true,
-        PAYMENTS_ONE_OFF_ENABLED: true,
-        ANTHROPIC_API_KEY: 'test-key',
-        AI_CHAT_MAX_TOKENS: 800,
-        AI_CHAT_IP_LIMIT: 100,
-        AI_CHAT_FREE_LIMIT: 5,
-        AI_CHAT_BONUS_AMOUNT: 5,
-        TURNSTILE_SECRET_KEY: 'test-turnstile',
-        BRIEF_NOTIFICATION_EMAIL: 'test@test.dev',
-    },
-    parseLockoutThresholds: (raw: string) =>
-        raw.split(',').map((entry: string) => {
-            const [attempts, blockMin] = entry.split(':').map(Number);
-            return { attempts, blockMin };
-        }),
-}));
-
-// ─── Stateful in-memory Redis mock ───
-
-function createStatefulRedisMock() {
-    const store = new Map<string, string>();
-
-    const mock = {
-        get: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
-        set: jest.fn(
-            (key: string, value: string, _ex?: string, _ttl?: number) => {
-                store.set(key, value);
-                return Promise.resolve('OK');
-            }
-        ),
-        del: jest.fn((key: string) => {
-            store.delete(key);
-            return Promise.resolve(1);
-        }),
-        getdel: jest.fn((key: string) => {
-            const val = store.get(key) ?? null;
-            store.delete(key);
-            return Promise.resolve(val);
-        }),
-        eval: jest.fn(
-            (_script: string, _numKeys: number, key: string, ttl: string) => {
-                const current = parseInt(store.get(key) ?? '0', 10) + 1;
-                store.set(key, String(current));
-                if (current === 1 && ttl) {
-                    /* TTL ignored in mock */
-                }
-                return Promise.resolve(current);
-            }
-        ),
-        pipeline: jest.fn(() => {
-            const ops: Array<() => void> = [];
-            const pipe = {
-                set(key: string, value: string) {
-                    ops.push(() => store.set(key, value));
-                    return pipe;
-                },
-                del(key: string) {
-                    ops.push(() => store.delete(key));
-                    return pipe;
-                },
-                exec: jest.fn(() => {
-                    ops.forEach((op) => op());
-                    return Promise.resolve(ops.map(() => [null, 'OK']));
-                }),
-            };
-            return pipe;
-        }),
-        keys: jest.fn((pattern: string) => {
-            const prefix = pattern.replace('*', '');
-            return Promise.resolve(
-                [...store.keys()].filter((k) => k.startsWith(prefix))
-            );
-        }),
-        ping: jest.fn(() => Promise.resolve('PONG')),
-        quit: jest.fn(() => Promise.resolve('OK')),
-        _clear: () => store.clear(),
-    };
-    return mock;
-}
+// Env comes from src/test-setup.ts (jest-e2e.json setupFiles) — the real
+// fail-fast loader runs against placeholder values, so a newly required var
+// breaks the suite immediately instead of silently missing from a hand-written mock.
+// beforeAll raises AI_CHAT_IP_LIMIT in place; afterAll restores it.
 
 // ─── Mock AI provider ────────────────────────────────────────────────────────
 
-const mockAiProvider = {
+// Typed against IAiProvider so the stub keeps the `signal` parameter the
+// controller relies on for abort handling — an untyped jest.fn() would let a
+// zero-arg implementation silently drop it.
+const mockAiProvider: jest.Mocked<IAiProvider> = {
     contextWindow: 200_000,
-    countTokens: jest.fn().mockResolvedValue(500),
-    streamChat: jest.fn(() =>
-        Promise.resolve(Readable.from(['Hello', ' world', '!']))
-    ),
+    countTokens: jest.fn(),
+    streamChat: jest.fn(),
 };
+
+/** Default provider behaviour, restored before every test. */
+function resetAiProviderDefaults(): void {
+    mockAiProvider.countTokens.mockResolvedValue(500);
+    mockAiProvider.streamChat.mockImplementation(() =>
+        Promise.resolve(Readable.from(['Hello', ' world', '!']))
+    );
+}
 
 const mockEmailService = {
     sendMagicLink: jest.fn().mockResolvedValue(undefined),
@@ -191,10 +109,9 @@ function getAccessToken(_app: INestApplication<App>, userId: string): string {
             exp: Math.floor(Date.now() / 1000) + 900,
         })
     ).toString('base64url');
-    const signature = createHmac(
-        'sha256',
-        'e2e-test-access-secret-must-be-long-enough'
-    )
+    // Signed with the same secret the JwtStrategy reads, so the token stays
+    // valid if the test env placeholder ever changes.
+    const signature = createHmac('sha256', ENV.JWT_ACCESS_SECRET)
         .update(`${header}.${payload}`)
         .digest('base64url');
     return `${header}.${payload}.${signature}`;
@@ -207,6 +124,55 @@ function parseSSEEvents(body: string): Array<Record<string, unknown>> {
         .map((line) => JSON.parse(line.replace('data: ', '')));
 }
 
+/**
+ * Provider stub that hands back a stream we feed by hand and exposes the exact
+ * moment the *server* observes the client disconnect.
+ *
+ * The controller passes its `AbortController.signal` down to the provider, so
+ * that signal is the only trustworthy proof that `res.on('close')` fired.
+ * Without it a test can only sleep and hope — and a sleep that finishes before
+ * the server notices makes the request look like a normal completed stream,
+ * which is a different code path with different billing rules.
+ */
+function createControlledStream(): {
+    stream: Readable;
+    serverSawAbort: Promise<void>;
+} {
+    const stream = new Readable({ read() {} });
+    let markAborted: () => void;
+    const serverSawAbort = new Promise<void>((resolve) => {
+        markAborted = resolve;
+    });
+
+    mockAiProvider.streamChat.mockImplementation(
+        (_messages, _systemPrompt, _maxTokens, signal) => {
+            signal?.addEventListener('abort', () => markAborted());
+            return Promise.resolve(stream);
+        }
+    );
+
+    return { stream, serverSawAbort };
+}
+
+/**
+ * Polls until `predicate` holds. The controller finishes commit/refund in a
+ * `finally` block after the socket is already gone, so there is no response to
+ * await — polling with a deadline is deterministic where a fixed sleep is a
+ * coin flip under CI load.
+ */
+async function waitUntil(
+    predicate: () => Promise<boolean>,
+    label: string,
+    timeoutMs = 10_000
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (await predicate()) return;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error(`Timed out waiting for: ${label}`);
+}
+
 // ─── Test suite ──────────────────────────────────────────────────────────────
 
 describe('AI Chat E2E', () => {
@@ -216,9 +182,15 @@ describe('AI Chat E2E', () => {
     let transactionModel: Model<ExecutionTransactionDocument>;
     let chatMessageModel: Model<ChatMessageDocument>;
     let reconcileService: ReservationReconcileService;
-    let redisMock: ReturnType<typeof createStatefulRedisMock>;
+    let redisMock: StatefulRedisMock;
+    let originalIpLimit: number;
 
     beforeAll(async () => {
+        // Race tests fire several requests from the same IP on purpose — the
+        // account-level guards are what they assert, not the IP counter.
+        originalIpLimit = ENV.AI_CHAT_IP_LIMIT;
+        ENV.AI_CHAT_IP_LIMIT = 100;
+
         mongoServer = await MongoMemoryReplSet.create({
             replSet: { count: 1 },
         });
@@ -241,7 +213,10 @@ describe('AI Chat E2E', () => {
             controllers: [AppController],
             providers: [
                 AppService,
+                // Mirrors AppModule: both global providers must be present, or
+                // e2e green-lights requests that production would reject.
                 { provide: APP_GUARD, useClass: ThrottlerGuard },
+                { provide: APP_INTERCEPTOR, useClass: OnboardingInterceptor },
             ],
         })
             .overrideProvider(REDIS_CLIENT)
@@ -258,7 +233,7 @@ describe('AI Chat E2E', () => {
         app.useGlobalPipes(new ZodValidationPipe());
         app.useGlobalFilters(new AllExceptionsFilter());
         await app.init();
-        await app.listen(0); // Random port for raw HTTP abort tests
+        await listenOnLoopback(app); // Real port — the abort tests drive raw HTTP
 
         userModel = moduleFixture.get<Model<UserDocument>>(
             getModelToken(User.name)
@@ -273,15 +248,14 @@ describe('AI Chat E2E', () => {
     }, 120_000);
 
     afterAll(async () => {
+        ENV.AI_CHAT_IP_LIMIT = originalIpLimit;
         await app.close();
         await mongoServer.stop();
     });
 
     beforeEach(async () => {
         redisMock._clear();
-        mockAiProvider.streamChat.mockImplementation(() =>
-            Promise.resolve(Readable.from(['Hello', ' world', '!']))
-        );
+        resetAiProviderDefaults();
         await userModel.deleteMany({});
         await transactionModel.deleteMany({});
         await chatMessageModel.deleteMany({});
@@ -524,160 +498,137 @@ describe('AI Chat E2E', () => {
         });
     });
 
+    /**
+     * Raw HTTP request — supertest owns its socket and cannot destroy a
+     * connection mid-flight, which is exactly what these tests need.
+     *
+     * `headersReceived` resolves when the SSE headers arrive: at that point the
+     * reservation is already taken and the controller is parked in its
+     * streaming loop. `firstToken` resolves once a TOKEN event reaches the
+     * client, which is the boundary of the refund policy.
+     */
+    function openChatRequest(
+        accessToken: string,
+        message: string
+    ): {
+        request: http.ClientRequest;
+        headersReceived: Promise<void>;
+        firstToken: Promise<void>;
+    } {
+        const { port } = (app.getHttpServer() as http.Server).address() as {
+            port: number;
+        };
+        const body = JSON.stringify({ message });
+
+        let onHeaders!: () => void;
+        const headersReceived = new Promise<void>((resolve) => {
+            onHeaders = resolve;
+        });
+        let onFirstToken!: () => void;
+        const firstToken = new Promise<void>((resolve) => {
+            onFirstToken = resolve;
+        });
+
+        const request = http.request(
+            {
+                hostname: '127.0.0.1',
+                port,
+                path: '/api/ai/chat',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Length': Buffer.byteLength(body),
+                },
+            },
+            (res) => {
+                onHeaders();
+                let received = '';
+                res.on('data', (chunk: Buffer | string) => {
+                    received += chunk.toString();
+                    if (received.includes('"type":"token"')) onFirstToken();
+                });
+                res.on('error', () => {});
+            }
+        );
+        // Destroying the socket surfaces as ECONNRESET on the client side.
+        request.on('error', () => {});
+        request.write(body);
+        request.end();
+
+        return { request, headersReceived, firstToken };
+    }
+
     describe('Client abort before first token', () => {
         it('should refund: balance restored, requestsUsed compensated, no ledger/history', async () => {
             const user = await createUser(userModel);
             const token = getAccessToken(app, user._id.toString());
+            const { stream, serverSawAbort } = createControlledStream();
 
-            // Controlled stream: hangs until we push data
-            let streamResolve: (stream: Readable) => void;
-            const streamPromise = new Promise<Readable>((resolve) => {
-                streamResolve = resolve;
-            });
-            mockAiProvider.streamChat.mockImplementation(() => streamPromise);
+            const { request, headersReceived } = openChatRequest(
+                token,
+                'Abort before token'
+            );
 
-            const address = (app.getHttpServer() as http.Server).address() as {
-                port: number;
-            };
-            const port = address.port;
+            await headersReceived; // reservation taken, stream loop running
+            request.destroy(); // client goes away without a single token
+            await serverSawAbort; // server registered the disconnect
+            stream.push(null); // unblock the controller's stream loop
 
-            // Make raw HTTP request so we can destroy it mid-flight
-            const body = JSON.stringify({ message: 'Abort before token' });
-            const abortedResponse = await new Promise<string>((resolve) => {
-                const req = http.request(
-                    {
-                        hostname: '127.0.0.1',
-                        port,
-                        path: '/api/ai/chat',
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
-                            'Content-Length': Buffer.byteLength(body),
-                        },
-                    },
-                    (res) => {
-                        let data = '';
-                        res.on('data', (chunk) => {
-                            data += chunk;
-                        });
-                        res.on('end', () => resolve(data));
-                        res.on('error', () => resolve(data));
+            await waitUntil(
+                async () =>
+                    (await userModel.findById(user._id))!.executions
+                        .activeReservation === null,
+                'reservation released after abort'
+            );
 
-                        // Once SSE headers arrive, abort before any token
-                        // Give a tick for the controller to set up the close listener
-                        setTimeout(() => req.destroy(), 50);
-                    }
-                );
-                req.write(body);
-                req.end();
-
-                // Resolve the provider stream after request is made but make it slow
-                const controlledStream = new Readable({ read() {} });
-                streamResolve!(controlledStream);
-
-                // After destroy, push null to unblock any remaining reads
-                setTimeout(() => {
-                    controlledStream.push(null);
-                }, 200);
-            });
-
-            // Wait for server-side finally block to complete
-            await new Promise((r) => setTimeout(r, 500));
-
-            // Verify DB state: fully refunded
+            // Fully refunded — the abort landed before the first token.
             const updatedUser = await userModel.findById(user._id);
-            expect(updatedUser!.executions.balance).toBe(1000); // restored
-            expect(updatedUser!.ai.requestsUsed).toBe(0); // compensated
-            expect(updatedUser!.executions.activeReservation).toBeNull();
+            expect(updatedUser!.executions.balance).toBe(1000);
+            expect(updatedUser!.ai.requestsUsed).toBe(0);
 
-            // No ledger entry
             const txns = await transactionModel.find({ userId: user._id });
             expect(txns).toHaveLength(0);
 
-            // No chat history
             const messages = await chatMessageModel.find({ userId: user._id });
             expect(messages).toHaveLength(0);
-        });
+        }, 30_000);
     });
 
     describe('Client abort after first token', () => {
         it('should commit (non-refundable): balance debited, requestsUsed incremented, ledger+history present', async () => {
             const user = await createUser(userModel);
             const token = getAccessToken(app, user._id.toString());
+            const { stream, serverSawAbort } = createControlledStream();
 
-            // Controlled stream: delivers first chunk immediately, then waits
-            let streamResolve: (stream: Readable) => void;
-            const streamPromise = new Promise<Readable>((resolve) => {
-                streamResolve = resolve;
-            });
-            mockAiProvider.streamChat.mockImplementation(() => streamPromise);
+            const { request, headersReceived, firstToken } = openChatRequest(
+                token,
+                'Abort after token'
+            );
 
-            const address = (app.getHttpServer() as http.Server).address() as {
-                port: number;
-            };
-            const port = address.port;
+            await headersReceived;
+            stream.push('Partial response');
+            await firstToken; // client received a token — past the refund line
+            request.destroy();
+            await serverSawAbort;
+            stream.push(null);
 
-            const body = JSON.stringify({ message: 'Abort after token' });
-            await new Promise<string>((resolve) => {
-                let firstTokenSeen = false;
-                const req = http.request(
-                    {
-                        hostname: '127.0.0.1',
-                        port,
-                        path: '/api/ai/chat',
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
-                            'Content-Length': Buffer.byteLength(body),
-                        },
-                    },
-                    (res) => {
-                        let data = '';
-                        res.on('data', (chunk) => {
-                            data += chunk;
-                            // Once we see a TOKEN event, abort
-                            if (
-                                !firstTokenSeen &&
-                                data.includes('"type":"token"')
-                            ) {
-                                firstTokenSeen = true;
-                                setTimeout(() => req.destroy(), 20);
-                            }
-                        });
-                        res.on('end', () => resolve(data));
-                        res.on('error', () => resolve(data));
-                    }
-                );
-                req.write(body);
-                req.end();
+            await waitUntil(
+                async () =>
+                    (await userModel.findById(user._id))!.executions
+                        .activeReservation === null,
+                'reservation closed after abort'
+            );
 
-                // Resolve provider with a stream that sends first chunk then pauses
-                const controlledStream = new Readable({ read() {} });
-                streamResolve!(controlledStream);
-
-                // Push first chunk to trigger firstTokenReceived in controller
-                setTimeout(() => controlledStream.push('Partial response'), 50);
-                // End stream after abort to let controller exit cleanly
-                setTimeout(() => controlledStream.push(null), 300);
-            });
-
-            // Wait for server-side commit in finally block
-            await new Promise((r) => setTimeout(r, 500));
-
-            // Verify DB state: committed (non-refundable)
+            // Committed, not refunded — tokens were already delivered.
             const updatedUser = await userModel.findById(user._id);
-            expect(updatedUser!.executions.balance).toBe(800); // 1000 - 200, NOT restored
-            expect(updatedUser!.ai.requestsUsed).toBe(1); // incremented, NOT compensated
-            expect(updatedUser!.executions.activeReservation).toBeNull();
+            expect(updatedUser!.executions.balance).toBe(800);
+            expect(updatedUser!.ai.requestsUsed).toBe(1);
 
-            // 1 ledger entry
             const txns = await transactionModel.find({ userId: user._id });
             expect(txns).toHaveLength(1);
             expect(txns[0].action).toBe('ai_chat');
 
-            // History with partial content
             const messages = await chatMessageModel
                 .find({ userId: user._id })
                 .sort({ createdAt: 1 });
@@ -685,6 +636,6 @@ describe('AI Chat E2E', () => {
             expect(messages[0].role).toBe('user');
             expect(messages[1].role).toBe('assistant');
             expect(messages[1].content).toBe('Partial response');
-        });
+        }, 30_000);
     });
 });

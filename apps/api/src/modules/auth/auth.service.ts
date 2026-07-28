@@ -173,10 +173,9 @@ export class AuthService {
             await this.usersService.findOrCreateByGoogle(googleProfile);
 
         // Re-upload external Google avatar to R2 synchronously. The UX trade-off
-        // (adds ~300-800ms to callback vs. avoiding the URL jump after login)
-        // is documented in docs/sprints/upload-media/README.md. Failure is
-        // non-critical — the external URL remains as a functional fallback and
-        // the next login retries.
+        // is deliberate: adds ~300-800ms to the callback, but avoids the URL jump
+        // after login. Failure is non-critical — the external URL remains as a
+        // functional fallback and the next login retries.
         if (
             user.profile.avatar &&
             !this.storageService.isR2Url(user.profile.avatar)

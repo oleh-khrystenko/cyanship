@@ -44,15 +44,8 @@ jobs:
         name: API Tests
         runs-on: ubuntu-latest
 
-        env:
-            MONGODB_URI: mongodb://localhost:27017/cyanship-test
-
-        services:
-            mongodb:
-                image: mongo:7
-                ports:
-                    - 27017:27017
-
+        # No MongoDB service: unit tests mock the models and e2e boots its own
+        # MongoMemoryServer. Env comes from apps/api/src/test-setup.ts.
         steps:
             - uses: actions/checkout@v4
 
@@ -71,3 +64,7 @@ jobs:
             - run: pnpm install --frozen-lockfile
 
             - run: pnpm --filter api test
+
+            # E2E boots the real Nest module graph against MongoMemoryServer —
+            # it is what catches DI/contract drift that unit tests mock away.
+            - run: pnpm --filter api test:e2e

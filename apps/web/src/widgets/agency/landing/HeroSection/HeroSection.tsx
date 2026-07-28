@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
-import ambientGlow from '../../../../../public/images/ambient-glow.png';
+import ambientGlow from '../../../../../public/images/ambient-glow.webp';
 import StartBriefButton from '../StartBriefButton';
 
 const HeroSection = () => {
@@ -24,7 +24,7 @@ const HeroSection = () => {
                             alt=""
                             aria-hidden="true"
                             priority
-                            quality={100}
+                            quality={75}
                             className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50 dark:opacity-100"
                             sizes="1088px"
                         />
