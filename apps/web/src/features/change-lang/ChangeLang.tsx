@@ -1,7 +1,7 @@
 'use client';
 
 import { FC } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Globe } from 'lucide-react';
 import { UA, US } from 'country-flag-icons/react/3x2';
@@ -32,7 +32,6 @@ const ChangeLang: FC<ChangeLangProps> = ({
 }) => {
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const activeLocale = useLocale();
     const t = useTranslations('components.change_lang');
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -40,7 +39,11 @@ const ChangeLang: FC<ChangeLangProps> = ({
     const handleChangeLang = (value: string) => {
         if (value === activeLocale) return;
 
-        const allSearchParams = searchParams.toString();
+        // Read the query string off the location rather than via
+        // `useSearchParams()`: the hook opts every route rendering the header
+        // out of static generation, and the value is only ever needed here,
+        // inside a click handler that by definition runs on the client.
+        const allSearchParams = window.location.search.replace(/^\?/, '');
         const newPath = pathname.replace(`/${activeLocale}`, '');
         const newUrl = `/${value}${newPath}${allSearchParams ? `?${allSearchParams}` : ''}`;
         router.replace(newUrl);

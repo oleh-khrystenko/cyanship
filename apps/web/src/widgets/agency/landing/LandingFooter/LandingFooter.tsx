@@ -4,6 +4,7 @@ import { Logo } from '@/entities/brand';
 import { GitHubIcon, LinkedInIcon } from '@/shared/icons';
 import UiLink from '@/shared/ui/UiLink';
 import { DEMO_VIDEO_ENABLED } from '@/shared/config/env';
+import CopyrightLine from './CopyrightLine';
 
 const allNavLinks = [
     { key: 'pricing', href: '#pricing' },
@@ -125,11 +126,7 @@ const LandingFooter = () => {
 
                 {/* Divider */}
                 <div className="border-border border-t py-8">
-                    <p className="text-muted-foreground text-center text-sm">
-                        {t('copyright', {
-                            year: new Date().getFullYear(),
-                        })}
-                    </p>
+                    <CopyrightLine prerenderedYear={new Date().getFullYear()} />
                 </div>
             </div>
         </footer>

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
-import { MetaProps } from '@/shared/types/settings';
+import { MetaProps, PageParams } from '@/shared/types/settings';
 import UiLink from '@/shared/ui/UiLink';
 import { LandingFooter } from '@/widgets/agency/landing';
 import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
@@ -21,8 +21,9 @@ export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     });
 }
 
-export default async function TermsPage() {
-    const locale = await getLocale();
+export default async function TermsPage({ params }: PageParams) {
+    const { locale } = await params;
+    setRequestLocale(locale);
 
     return (
         <>
