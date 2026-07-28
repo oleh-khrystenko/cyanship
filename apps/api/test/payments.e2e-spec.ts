@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -18,7 +18,9 @@ import {
 } from '@cyanship/types';
 
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
-import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
+import { OnboardingInterceptor } from '../src/common/interceptors/onboarding.interceptor';
+import { REDIS_CLIENT } from '../src/common/modules/redis.constants';
+import { RedisModule } from '../src/common/modules/redis.module';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/modules/auth/auth.module';
@@ -33,229 +35,20 @@ import {
     ProcessedWebhookEventDocument,
 } from '../src/modules/payments/schemas/processed-webhook-event.schema';
 import { EmailService } from '../src/modules/email/email.service';
+import { UsersService } from '../src/modules/users/users.service';
 import { PAYMENT_PROVIDER } from '../src/modules/payments/interfaces/payment-provider.interface';
 import { CatalogService } from '../src/modules/payments/catalog.service';
+import { ENV } from '../src/config/env';
+import { createStatefulRedisMock } from './utils/redis.mock';
+import { createCatalogServiceMock } from './utils/catalog.mock';
+import { listenOnLoopback } from './utils/listen';
 
-// ─── Mock ENV ────────────────────────────────────────────────────────────────
+// Env comes from src/test-setup.ts (jest-e2e.json setupFiles) — the real
+// fail-fast loader runs against placeholder values, so a newly required var
+// breaks the suite immediately instead of silently missing from a hand-written mock.
+// Feature-flag tests mutate ENV in place; beforeEach restores both toggles.
 
-jest.mock('../src/config/env', () => ({
-    ENV: {
-        NODE_ENV: 'test',
-        PORT: '4000',
-        WEB_URL: 'http://localhost:3000',
-        MONGODB_URI: 'overridden-by-MongoMemoryServer',
-        REDIS_URL: 'redis://mock',
-        JWT_ACCESS_SECRET: 'e2e-test-access-secret-must-be-long-enough',
-        JWT_REFRESH_SECRET: 'e2e-test-refresh-secret-must-be-long-enough',
-        GOOGLE_CLIENT_ID: 'test-id.apps.googleusercontent.com',
-        GOOGLE_CLIENT_SECRET: 'GOCSPX-test-secret',
-        GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
-        RESEND_API_KEY: 're_test_key',
-        RESEND_FROM_EMAIL: 'CyanShip <test@test.com>',
-        AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
-        AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
-        AUTH_MAGIC_LINK_TTL_MIN: 15,
-        AUTH_MAGIC_LINK_RATE_LIMIT: 3,
-        AUTH_MAGIC_LINK_RATE_WINDOW_MIN: 15,
-        AUTH_MAGIC_LINK_DEDUP_SEC: 60,
-        ACCOUNT_DELETION_GRACE_DAYS: 30,
-        AUTH_PASSWORD_MIN_LENGTH: 8,
-        STRIPE_SECRET_KEY: 'sk_test_payments_e2e',
-        STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        PAYMENTS_SUBSCRIPTION_ENABLED: true,
-        PAYMENTS_ONE_OFF_ENABLED: true,
-    },
-    parseLockoutThresholds: (raw: string) =>
-        raw.split(',').map((entry: string) => {
-            const [attempts, blockMin] = entry.split(':').map(Number);
-            return { attempts, blockMin };
-        }),
-}));
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
-const envModule = require('../src/config/env') as {
-    ENV: Record<string, unknown>;
-};
-
-// ─── Test catalog data ───────────────────────────────────────────────────────
-
-const TEST_CATALOG = {
-    subscriptionPlans: [
-        {
-            code: 'starter',
-            priceId: 'price_test_starter',
-            priceAmount: 4900,
-            currency: 'usd',
-            interval: 'month',
-            executions: 10000,
-            displayOrder: 1,
-            featured: false,
-        },
-        {
-            code: 'pro',
-            priceId: 'price_test_pro',
-            priceAmount: 14900,
-            currency: 'usd',
-            interval: 'month',
-            executions: 50000,
-            displayOrder: 2,
-            featured: true,
-        },
-    ],
-    executionPacks: [
-        {
-            code: 'basic',
-            priceId: 'price_test_basic',
-            priceAmount: 2900,
-            currency: 'usd',
-            executions: 5000,
-            displayOrder: 1,
-            featured: false,
-        },
-        {
-            code: 'max',
-            priceId: 'price_test_max',
-            priceAmount: 9900,
-            currency: 'usd',
-            executions: 25000,
-            displayOrder: 2,
-            featured: true,
-        },
-    ],
-};
-
-const mockCatalogService = {
-    onModuleInit: jest.fn().mockResolvedValue(undefined),
-    getCatalog: jest.fn().mockResolvedValue(TEST_CATALOG),
-    getSubscriptionPlan: jest.fn((code: string) =>
-        Promise.resolve(
-            TEST_CATALOG.subscriptionPlans.find((p) => p.code === code)
-        )
-    ),
-    getExecutionPack: jest.fn((code: string) =>
-        Promise.resolve(
-            TEST_CATALOG.executionPacks.find((p) => p.code === code)
-        )
-    ),
-    getPriceToPlanMap: jest.fn().mockResolvedValue({
-        price_test_starter: 'starter',
-        price_test_pro: 'pro',
-    }),
-};
-
-// ─── Stateful Redis mock ──────────────────────────────────────────────────────
-
-function createStatefulRedisMock() {
-    const store = new Map<string, string>();
-
-    function createPipeline() {
-        const ops: Array<() => void> = [];
-        const pipe = {
-            set(key: string, value: string) {
-                ops.push(() => store.set(key, value));
-                return pipe;
-            },
-            del(key: string) {
-                ops.push(() => store.delete(key));
-                return pipe;
-            },
-            incr(key: string) {
-                ops.push(() => {
-                    const val = store.get(key);
-                    store.set(key, String((parseInt(val ?? '0', 10) || 0) + 1));
-                });
-                return pipe;
-            },
-            expire(_key: string, _ttl: number) {
-                return pipe;
-            },
-            sadd(key: string, ...members: string[]) {
-                ops.push(() => {
-                    const existing = store.get(key);
-                    const set: Set<string> = existing
-                        ? new Set(JSON.parse(existing) as string[])
-                        : new Set<string>();
-                    for (const m of members) set.add(m);
-                    store.set(key, JSON.stringify([...set]));
-                });
-                return pipe;
-            },
-            srem(key: string, ...members: string[]) {
-                ops.push(() => {
-                    const existing = store.get(key);
-                    if (!existing) return;
-                    const set: Set<string> = new Set(
-                        JSON.parse(existing) as string[]
-                    );
-                    for (const m of members) set.delete(m);
-                    if (set.size === 0) store.delete(key);
-                    else store.set(key, JSON.stringify([...set]));
-                });
-                return pipe;
-            },
-            async exec() {
-                for (const op of ops) op();
-                return [];
-            },
-        };
-        return pipe;
-    }
-
-    return {
-        ping: jest.fn().mockResolvedValue('PONG'),
-        quit: jest.fn().mockResolvedValue('OK'),
-        on: jest.fn().mockReturnThis(),
-        async get(key: string) {
-            return store.get(key) ?? null;
-        },
-        async getdel(key: string) {
-            const val = store.get(key) ?? null;
-            if (val !== null) store.delete(key);
-            return val;
-        },
-        async set(key: string, value: string) {
-            store.set(key, value);
-            return 'OK';
-        },
-        async del(key: string) {
-            store.delete(key);
-            return 1;
-        },
-        async incr(key: string) {
-            const current = parseInt(store.get(key) ?? '0', 10) || 0;
-            const next = current + 1;
-            store.set(key, String(next));
-            return next;
-        },
-        async expire(_key: string, _ttl: number) {
-            return 1;
-        },
-        async smembers(key: string) {
-            const val = store.get(key);
-            if (!val) return [];
-            return JSON.parse(val) as string[];
-        },
-        async srem(key: string, ...members: string[]) {
-            const val = store.get(key);
-            if (!val) return 0;
-            const set = new Set(JSON.parse(val) as string[]);
-            let removed = 0;
-            for (const m of members) {
-                if (set.delete(m)) removed++;
-            }
-            if (set.size === 0) store.delete(key);
-            else store.set(key, JSON.stringify([...set]));
-            return removed;
-        },
-        pipeline() {
-            return createPipeline();
-        },
-        _store: store,
-        _clear() {
-            store.clear();
-        },
-    };
-}
+const mockCatalogService = createCatalogServiceMock();
 
 // ─── Mock dependencies ────────────────────────────────────────────────────────
 
@@ -277,6 +70,7 @@ describe('Payments E2E', () => {
     let mongoServer: MongoMemoryServer;
     let userModel: Model<UserDocument>;
     let webhookEventModel: Model<ProcessedWebhookEventDocument>;
+    let usersService: UsersService;
     let redisMock: ReturnType<typeof createStatefulRedisMock>;
 
     beforeAll(async () => {
@@ -290,6 +84,7 @@ describe('Payments E2E', () => {
                     throttlers: [{ ttl: 60000, limit: 600 }],
                 }),
                 MongooseModule.forRoot(mongoServer.getUri()),
+                RedisModule,
                 AuthModule,
                 EmailModule,
                 UsersModule,
@@ -300,7 +95,10 @@ describe('Payments E2E', () => {
             controllers: [AppController],
             providers: [
                 AppService,
+                // Mirrors AppModule: both global providers must be present, or
+                // e2e green-lights requests that production would reject.
                 { provide: APP_GUARD, useClass: ThrottlerGuard },
+                { provide: APP_INTERCEPTOR, useClass: OnboardingInterceptor },
             ],
         })
             .overrideProvider(REDIS_CLIENT)
@@ -319,6 +117,7 @@ describe('Payments E2E', () => {
         app.useGlobalPipes(new ZodValidationPipe());
         app.useGlobalFilters(new AllExceptionsFilter());
         await app.init();
+        await listenOnLoopback(app);
 
         userModel = moduleFixture.get<Model<UserDocument>>(
             getModelToken(User.name)
@@ -326,6 +125,7 @@ describe('Payments E2E', () => {
         webhookEventModel = moduleFixture.get<
             Model<ProcessedWebhookEventDocument>
         >(getModelToken(ProcessedWebhookEvent.name));
+        usersService = moduleFixture.get(UsersService);
     }, 60_000);
 
     afterAll(async () => {
@@ -339,8 +139,8 @@ describe('Payments E2E', () => {
         await webhookEventModel.deleteMany({});
 
         // Reset feature flags to defaults
-        envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
-        envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = true;
+        ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
+        ENV.PAYMENTS_ONE_OFF_ENABLED = true;
 
         // Default mock responses
         mockPaymentProvider.handleWebhookPayload.mockReturnValue(null);
@@ -367,7 +167,9 @@ describe('Payments E2E', () => {
         return userModel.create({
             email: email.toLowerCase(),
             passwordHash: hash,
-            profile: { name: 'Test User' },
+            // firstName is the onboarding-required field: without it the global
+            // OnboardingInterceptor rejects every billing call with 403.
+            profile: { firstName: 'Test', lastName: 'User' },
             executions: { balance: 0, freeReportUsed: false },
             billing: billingData ?? null,
         });
@@ -690,7 +492,7 @@ describe('Payments E2E', () => {
 
     describe('payment type toggles', () => {
         it('should return 400 PAYMENT_TYPE_DISABLED when one-off is disabled', async () => {
-            envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+            ENV.PAYMENTS_ONE_OFF_ENABLED = false;
 
             await createUser('toggle-oneoff@example.com', null);
             const { accessToken } = await loginAsUser(
@@ -710,7 +512,7 @@ describe('Payments E2E', () => {
         });
 
         it('should return 400 PAYMENT_TYPE_DISABLED when subscription is disabled', async () => {
-            envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+            ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
 
             await createUser('toggle-sub@example.com', null);
             const { accessToken } = await loginAsUser('toggle-sub@example.com');
@@ -807,14 +609,66 @@ describe('Payments E2E', () => {
                 executionsAmount: 10,
                 raw: {},
             };
-
-            // First attempt — addExecutions will fail because provider throws
             mockPaymentProvider.handleWebhookPayload.mockReturnValue(
                 oneOffEvent
             );
 
-            // Temporarily break the user to cause addExecutions to fail
-            // We do this by removing the user document before the webhook processes
+            // First delivery dies mid-processing (transient DB/network blip)
+            // *after* the 'pending' idempotency record was already inserted.
+            const addExecutionsSpy = jest
+                .spyOn(usersService, 'addExecutions')
+                .mockRejectedValueOnce(new Error('transient failure'));
+
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(500);
+
+            // Nothing credited, and — the point of the rollback — no leftover
+            // 'pending' record: it would make the retry look like a duplicate
+            // and the payment would be swallowed.
+            const afterFailure = await userModel.findById(userId).lean();
+            expect(afterFailure?.executions?.balance).toBe(0);
+            expect(
+                await webhookEventModel.countDocuments({
+                    providerEventId: 'evt_rollback_test_001',
+                })
+            ).toBe(0);
+
+            addExecutionsSpy.mockRestore();
+
+            // Stripe redelivers the same event — this time it must apply.
+            await supertest(app.getHttpServer())
+                .post('/api/payments/webhook/stripe')
+                .set('stripe-signature', 'test-sig')
+                .set('content-type', 'application/json')
+                .send('{}')
+                .expect(201);
+
+            const afterRetry = await userModel.findById(userId).lean();
+            expect(afterRetry?.executions?.balance).toBe(10);
+
+            const storedEvent = await webhookEventModel
+                .findOne({ providerEventId: 'evt_rollback_test_001' })
+                .lean();
+            expect(storedEvent?.status).toBe('applied');
+        });
+
+        it('should mark event as applied when the user no longer exists', async () => {
+            const user = await createUser('vanished@example.com', null);
+            const userId = user._id.toString();
+
+            mockPaymentProvider.handleWebhookPayload.mockReturnValue({
+                type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
+                providerEventId: 'evt_missing_user_001',
+                occurredAt: new Date(),
+                userId,
+                executionsAmount: 10,
+                raw: {},
+            } satisfies BillingWebhookEvent);
+
             await userModel.deleteOne({ _id: userId });
 
             await supertest(app.getHttpServer())
@@ -824,36 +678,12 @@ describe('Payments E2E', () => {
                 .send('{}')
                 .expect(201);
 
-            // Event should NOT be in the collection (user not found is a non-error skip)
-            // Let's test the real transient failure: re-create user and use a failing mock
-            const user2 = await createUser('rollback2@example.com', null);
-            const userId2 = user2._id.toString();
-
-            // Make handleWebhookPayload return event that will cause addExecutions to throw
-            const failEvent: BillingWebhookEvent = {
-                type: BILLING_EVENT_TYPE.ONE_OFF_PAYMENT_COMPLETED,
-                providerEventId: 'evt_rollback_test_002',
-                occurredAt: new Date(),
-                userId: userId2,
-                executionsAmount: -999, // Invalid amount — addExecutions will throw
-                raw: {},
-            };
-            mockPaymentProvider.handleWebhookPayload.mockReturnValue(failEvent);
-
-            // This should not leave a "pending" record blocking retries
-            // (executionsAmount <= 0 is caught by applyOneOffPayment and skipped, not thrown)
-            await supertest(app.getHttpServer())
-                .post('/api/payments/webhook/stripe')
-                .set('stripe-signature', 'test-sig')
-                .set('content-type', 'application/json')
-                .send('{}')
-                .expect(201);
-
-            // Event should be marked as applied (invalid executions is a graceful skip)
-            const storedEvent2 = await webhookEventModel
-                .findOne({ providerEventId: 'evt_rollback_test_002' })
+            // A missing user is a dead end, not a transient failure — the event
+            // is closed out so Stripe stops redelivering it.
+            const storedEvent = await webhookEventModel
+                .findOne({ providerEventId: 'evt_missing_user_001' })
                 .lean();
-            expect(storedEvent2?.status).toBe('applied');
+            expect(storedEvent?.status).toBe('applied');
         });
     });
 
@@ -1147,7 +977,7 @@ describe('Payments E2E', () => {
         });
 
         it('should return empty subscriptionPlans when subscription payments are disabled', async () => {
-            envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+            ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
 
             await supertest(app.getHttpServer())
                 .get('/api/payments/catalog')
@@ -1165,7 +995,7 @@ describe('Payments E2E', () => {
         });
 
         it('should return empty executionPacks when one-off payments are disabled', async () => {
-            envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+            ENV.PAYMENTS_ONE_OFF_ENABLED = false;
 
             await supertest(app.getHttpServer())
                 .get('/api/payments/catalog')
