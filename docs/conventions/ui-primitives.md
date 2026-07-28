@@ -38,7 +38,7 @@ Ui-компоненти інкапсулюють:
 | `UiConfirmDialog` | `window.confirm()`, кастомні confirmation modals | `default`, `destructive`; controlled (open/onOpenChange); Radix AlertDialog |
 | `UiTextarea` | `<textarea>` | `outlined`, `filled` |
 | `UiChipGroup` | Radio-style inline chip selector | -- (sizes: sm/md/lg); Headless UI RadioGroup |
-| `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet, desktop centered; hideOverlay, hideCloseButton; Radix Dialog |
+| `UiModal` | Centered modal / bottom sheet dialogs | controlled (open/onOpenChange); mobile bottom sheet (`<md`), desktop centered; автофокус вмісту лише на десктопі; hideOverlay, hideCloseButton; Radix Dialog |
 | `UiHeaderShell` | Структурна обгортка header-зони (`<header>` + container h-16) | -- ; className override |
 
 ## Rules

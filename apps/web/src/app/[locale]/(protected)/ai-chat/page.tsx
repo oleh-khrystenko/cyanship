@@ -71,6 +71,7 @@ export default function AiChatPage() {
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
+    const [inputError, setInputError] = useState<string | null>(null);
     const [isStreaming, setIsStreaming] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
     const [isLimitExhausted, setIsLimitExhausted] = useState(() =>
@@ -129,12 +130,15 @@ export default function AiChatPage() {
 
     const handleSubmit = useCallback(async () => {
         const trimmed = input.trim();
-        if (
-            !trimmed ||
-            isStreaming ||
-            trimmed.length > AI_CHAT_MESSAGE_MAX_LENGTH
-        )
+        if (!trimmed || isStreaming) return;
+
+        if (trimmed.length > AI_CHAT_MESSAGE_MAX_LENGTH) {
+            setInputError(
+                t('message_too_long', { max: AI_CHAT_MESSAGE_MAX_LENGTH }),
+            );
             return;
+        }
+        setInputError(null);
 
         if (!canAfford) {
             toast.error(
@@ -243,7 +247,7 @@ export default function AiChatPage() {
             abortRef.current = null;
             inputRef.current?.focus();
         }
-    }, [input, isStreaming, canAfford, tGlobal]);
+    }, [input, isStreaming, canAfford, t, tGlobal]);
 
     const handleClear = useCallback(async () => {
         setIsClearing(true);
@@ -438,11 +442,15 @@ export default function AiChatPage() {
                         <UiTextarea
                             ref={inputRef}
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                            onChange={(e) => {
+                                setInput(e.target.value);
+                                if (inputError) setInputError(null);
+                            }}
                             onKeyDown={handleKeyDown}
                             placeholder={t('placeholder')}
                             rows={1}
                             disabled={isStreaming}
+                            error={inputError ?? undefined}
                             size="sm"
                             autoGrow
                             suffix={
@@ -471,12 +479,7 @@ export default function AiChatPage() {
                                         variant="filled"
                                         size="sm"
                                         className="shrink-0"
-                                        disabled={
-                                            isStreaming ||
-                                            !input.trim() ||
-                                            input.length >
-                                                AI_CHAT_MESSAGE_MAX_LENGTH
-                                        }
+                                        disabled={isStreaming || !input.trim()}
                                         onClick={handleSubmit}
                                         aria-label={t('send')}
                                     >

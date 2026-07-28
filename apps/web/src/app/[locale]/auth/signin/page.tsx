@@ -388,6 +388,7 @@ function SigninContent() {
                         },
                     )}
                     required
+                    autoComplete="email"
                     IconLeft={<Mail />}
                     size="lg"
                 />
@@ -449,6 +450,7 @@ function SigninContent() {
                 required
                 size="lg"
                 autoFocus
+                autoComplete="current-password"
             />
 
             <div className="text-right">

@@ -2,14 +2,17 @@
 
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import {
     EXECUTION_ACTION,
     EXECUTION_ACTION_COST,
     type SpendableAction,
 } from '@cyanship/types';
-import { spendExecutions, getApiMessageKey } from '@/shared/api';
+import {
+    spendExecutions,
+    getApiMessageKey,
+    getApiErrorMessage,
+} from '@/shared/api';
 import { useAuthStore } from '@/entities/user';
 import { toIntlLocale } from '@/shared/lib';
 import UiButton from '@/shared/ui/UiButton';
@@ -50,6 +53,15 @@ export default function SpendExecutionButtons({
 
     const handleSpend = useCallback(
         async (action: SpendableAction) => {
+            if (balance < EXECUTION_ACTION_COST[action]) {
+                toast.error(
+                    tGlobal(
+                        getApiMessageKey('INSUFFICIENT_EXECUTIONS', 'users')
+                    )
+                );
+                return;
+            }
+
             setSpendingAction(action);
             try {
                 const result = await spendExecutions(action);
@@ -66,40 +78,13 @@ export default function SpendExecutionButtons({
 
                 onSpendSuccess?.();
             } catch (error) {
-                const code =
-                    error instanceof AxiosError
-                        ? error.response?.data?.error?.code
-                        : undefined;
-
-                if (code === 'RATE_LIMIT_EXCEEDED') {
-                    const retryAfter =
-                        error instanceof AxiosError
-                            ? error.response?.headers?.['retry-after']
-                            : undefined;
-                    const minutes = retryAfter
-                        ? Math.ceil(Number(retryAfter) / 60)
-                        : 15;
-                    toast.error(
-                        tGlobal(getApiMessageKey(code, 'generic'), { minutes })
-                    );
-                } else if (code === 'INSUFFICIENT_EXECUTIONS') {
-                    toast.error(
-                        tGlobal(getApiMessageKey(code, 'users'))
-                    );
-                } else if (code) {
-                    toast.error(
-                        tGlobal(getApiMessageKey(code))
-                    );
-                } else {
-                    toast.error(
-                        tGlobal('errors.generic.unknown')
-                    );
-                }
+                const { key, values } = getApiErrorMessage(error);
+                toast.error(tGlobal(key, values));
             } finally {
                 setSpendingAction(null);
             }
         },
-        [user, setUser, tGlobal, onSpendSuccess]
+        [user, setUser, tGlobal, onSpendSuccess, balance]
     );
 
     const isActionInProgress = spendingAction !== null;
@@ -118,7 +103,7 @@ export default function SpendExecutionButtons({
                             variant={canAfford ? 'filled' : 'outline'}
                             size="sm"
                             className="relative w-full justify-center"
-                            disabled={isActionInProgress || !canAfford}
+                            disabled={isActionInProgress}
                             onClick={() => handleSpend(action)}
                         >
                             <span

@@ -4,7 +4,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import {
@@ -16,7 +15,7 @@ import {
 import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { confirmDeleteAccount } from '@/shared/api';
+import { confirmDeleteAccount, getApiErrorCode } from '@/shared/api';
 import { useDeleteAccountDialogStore } from './deleteAccountDialogStore';
 
 const DeleteAccountFormSchema = z.object({
@@ -38,7 +37,6 @@ export default function DeleteAccountDialog() {
     });
 
     const { errors, isSubmitting } = form.formState;
-    const password = form.watch('password');
 
     const handleOpenChange = (open: boolean) => {
         if (!open && !isSubmitting) {
@@ -55,10 +53,7 @@ export default function DeleteAccountDialog() {
             toast.success(t('deleted'));
             router.push(`/${locale}/auth/signin`);
         } catch (err) {
-            const code =
-                err instanceof AxiosError
-                    ? err.response?.data?.error?.code
-                    : undefined;
+            const code = getApiErrorCode(err);
 
             if (code === 'UNAUTHORIZED') {
                 form.setError('password', {
@@ -103,10 +98,13 @@ export default function DeleteAccountDialog() {
                             error={
                                 errors.password?.type === 'server'
                                     ? errors.password.message
-                                    : undefined
+                                    : errors.password
+                                      ? t('password_required')
+                                      : undefined
                             }
                             required
                             size="lg"
+                            autoComplete="current-password"
                             autoFocus
                         />
 
@@ -124,7 +122,7 @@ export default function DeleteAccountDialog() {
                                 type="submit"
                                 variant="destructive-outline"
                                 size="md"
-                                disabled={isSubmitting || !password}
+                                disabled={isSubmitting}
                             >
                                 {isSubmitting ? (
                                     <UiSpinner size="sm" />

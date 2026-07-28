@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Pencil, ShieldCheck, ShieldOff } from 'lucide-react';
@@ -14,7 +13,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSectionCard from '@/shared/ui/UiSectionCard';
 import UiSpinner from '@/shared/ui/UiSpinner';
-import { setPassword, getMe } from '@/shared/api';
+import { setPassword, getMe, getApiErrorCode } from '@/shared/api';
 import { useAuthStore } from '@/entities/user';
 import ChangePasswordForm from './ChangePasswordForm';
 
@@ -68,7 +67,9 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
         if (!result.success) {
             form.setError('password', {
                 type: 'validate',
-                message: t('password_too_short'),
+                message: data.password
+                    ? t('password_too_short')
+                    : t('password_required'),
             });
             return;
         }
@@ -80,10 +81,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
             toast.success(t('password_set'));
             form.reset();
         } catch (err) {
-            const code =
-                err instanceof AxiosError
-                    ? err.response?.data?.error?.code
-                    : undefined;
+            const code = getApiErrorCode(err);
 
             if (code === 'RATE_LIMIT_EXCEEDED') {
                 toast.error(t('error_rate_limit'));
@@ -155,6 +153,7 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         error={errors.password?.message}
                         required={!isPasswordOptional}
                         size="lg"
+                        autoComplete="new-password"
                         showLabel={t('show_password')}
                         hideLabel={t('hide_password')}
                     />
@@ -162,9 +161,10 @@ const SecuritySection = ({ user, mode }: SecuritySectionProps) => {
                         type="submit"
                         variant="filled"
                         size="md"
+                        // Empty input in optional mode means "nothing to submit";
+                        // in required mode the click surfaces the reason instead.
                         disabled={
-                            isSubmitting ||
-                            (!isPasswordOptional && !password)
+                            isSubmitting || (isPasswordOptional && !password)
                         }
                     >
                         {isSubmitting ? (

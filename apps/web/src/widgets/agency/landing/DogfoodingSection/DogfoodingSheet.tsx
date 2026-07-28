@@ -42,7 +42,7 @@ export default function DogfoodingSheet() {
                 onInteractOutside={handleInteractOutside}
             >
                 <UiSheetHeader>
-                    <UiSheetTitle className="text-xl">
+                    <UiSheetTitle>
                         {activeTab && t(`proof_shell.sheet_title_${activeTab}`)}
                     </UiSheetTitle>
                 </UiSheetHeader>

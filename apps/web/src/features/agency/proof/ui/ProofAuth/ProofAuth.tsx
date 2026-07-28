@@ -362,6 +362,7 @@ const ProofAuth = () => {
                     }
                     required
                     size="lg"
+                    autoComplete="email"
                     IconLeft={<Mail />}
                 />
 

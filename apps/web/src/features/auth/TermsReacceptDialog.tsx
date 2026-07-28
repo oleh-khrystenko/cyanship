@@ -47,7 +47,7 @@ function TermsReacceptForm({ onClose }: { onClose: () => void }) {
     return (
         <>
             <UiModalHeader>
-                <UiModalTitle className="text-xl">{t('title')}</UiModalTitle>
+                <UiModalTitle>{t('title')}</UiModalTitle>
             </UiModalHeader>
             <div className="space-y-6 px-4 pb-6">
                 <p className="text-muted-foreground text-sm">

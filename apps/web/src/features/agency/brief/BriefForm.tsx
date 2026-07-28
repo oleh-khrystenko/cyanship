@@ -194,6 +194,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                         )}
                         disabled={isSubmitting}
                         required
+                        autoComplete="name"
                     />
                     <UiInput
                         {...register('email')}
@@ -211,6 +212,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                         )}
                         disabled={isSubmitting}
                         required
+                        autoComplete="email"
                     />
                 </>
             )}

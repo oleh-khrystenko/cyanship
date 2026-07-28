@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { passwordSchema } from '@cyanship/types';
@@ -11,7 +10,7 @@ import UiButton from '@/shared/ui/UiButton';
 import UiPasswordInput from '@/shared/ui/UiPasswordInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { getFieldError } from '@/shared/lib';
-import { changePassword, getMe } from '@/shared/api';
+import { changePassword, getMe, getApiErrorCode } from '@/shared/api';
 import { useAuthStore } from '@/entities/user';
 
 const ChangePasswordFormSchema = z.object({
@@ -38,7 +37,6 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
 
     const { errors, isSubmitting } = form.formState;
     const [currentPwd, newPwd] = form.watch(['currentPassword', 'newPassword']);
-    const canSubmit = !!currentPwd && !!newPwd;
 
     const onSubmit = async (data: ChangePasswordFormValues) => {
         if (data.currentPassword === data.newPassword) {
@@ -56,10 +54,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
             toast.success(t('password_changed'));
             onDone();
         } catch (err) {
-            const code =
-                err instanceof AxiosError
-                    ? err.response?.data?.error?.code
-                    : undefined;
+            const code = getApiErrorCode(err);
 
             if (code === 'UNAUTHORIZED') {
                 form.setError('currentPassword', {
@@ -95,10 +90,15 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     error={
                         errors.currentPassword?.type === 'server'
                             ? errors.currentPassword.message
-                            : undefined
+                            : getFieldError(
+                                  errors.currentPassword,
+                                  { required: t('password_required') },
+                                  currentPwd,
+                              )
                     }
                     required
                     size="lg"
+                    autoComplete="current-password"
                     showLabel={t('show_password')}
                     hideLabel={t('hide_password')}
                 />
@@ -131,6 +131,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     }
                     required
                     size="lg"
+                    autoComplete="new-password"
                     showLabel={t('show_password')}
                     hideLabel={t('hide_password')}
                 />
@@ -141,7 +142,7 @@ const ChangePasswordForm = ({ onDone, onCancel }: ChangePasswordFormProps) => {
                     type="submit"
                     variant="filled"
                     size="md"
-                    disabled={isSubmitting || !canSubmit}
+                    disabled={isSubmitting}
                 >
                     {isSubmitting ? (
                         <UiSpinner size="sm" />

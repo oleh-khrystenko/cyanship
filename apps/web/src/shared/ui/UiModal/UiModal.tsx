@@ -3,6 +3,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { composeClasses } from '@/shared/lib';
+import { useOverlayAutoFocusGuard } from '@/shared/lib/useOverlayAutoFocusGuard';
 import type {
     UiModalProps,
     UiModalTriggerProps,
@@ -42,12 +43,18 @@ function UiModalContent({
     children,
     hideOverlay = false,
     hideCloseButton = false,
+    onOpenAutoFocus,
     ...props
 }: UiModalContentProps) {
+    const { contentRef, handleOpenAutoFocus } =
+        useOverlayAutoFocusGuard(onOpenAutoFocus);
+
     return (
         <DialogPrimitive.Portal>
             {!hideOverlay && <UiModalOverlay />}
             <DialogPrimitive.Content
+                ref={contentRef}
+                onOpenAutoFocus={handleOpenAutoFocus}
                 className={composeClasses(
                     'bg-background fixed z-50 flex flex-col',
                     'transition ease-in-out',
@@ -97,7 +104,7 @@ function UiModalTitle({ className, ...props }: UiModalTitleProps) {
     return (
         <DialogPrimitive.Title
             className={composeClasses(
-                'text-foreground font-semibold',
+                'text-foreground text-xl font-semibold',
                 className,
             )}
             {...props}
