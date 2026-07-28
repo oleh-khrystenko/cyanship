@@ -102,4 +102,5 @@ Agency routes ізольовані через route group `(agency)` -- вида
 7. Прибрати agency-рядки з `middleware.ts` (позначені `// agency`)
 8. Видалити agency i18n ключі з `messages/uk.json`, `messages/en.json`
 9. Видалити agency env vars (якщо є)
-10. `pnpm build` -- повинен пройти без помилок
+10. Видалити `docs/vision/` -- це позиціонування та бізнес-модель самого CyanShip, а не клієнтського продукту
+11. `pnpm build` -- повинен пройти без помилок

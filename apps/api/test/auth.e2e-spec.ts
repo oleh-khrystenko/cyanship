@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -13,7 +13,9 @@ import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
 
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
-import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
+import { OnboardingInterceptor } from '../src/common/interceptors/onboarding.interceptor';
+import { REDIS_CLIENT } from '../src/common/modules/redis.constants';
+import { RedisModule } from '../src/common/modules/redis.module';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/modules/auth/auth.module';
@@ -24,160 +26,15 @@ import { StorageModule } from '../src/modules/storage/storage.module';
 import { PaymentsModule } from '../src/modules/payments/payments.module';
 import { User, UserDocument } from '../src/modules/users/schemas/user.schema';
 import { EmailService } from '../src/modules/email/email.service';
+import { CatalogService } from '../src/modules/payments/catalog.service';
 import { CURRENT_TERMS_VERSION } from '@cyanship/types';
+import { createStatefulRedisMock } from './utils/redis.mock';
+import { createCatalogServiceMock } from './utils/catalog.mock';
+import { listenOnLoopback, LOOPBACK_IP } from './utils/listen';
 
-// Mock ENV
-jest.mock('../src/config/env', () => ({
-    ENV: {
-        NODE_ENV: 'test',
-        PORT: '4000',
-        WEB_URL: 'http://localhost:3000',
-        MONGODB_URI: 'overridden-by-MongoMemoryServer',
-        REDIS_URL: 'redis://mock',
-        JWT_ACCESS_SECRET: 'e2e-test-access-secret-must-be-long-enough',
-        JWT_REFRESH_SECRET: 'e2e-test-refresh-secret-must-be-long-enough',
-        GOOGLE_CLIENT_ID: 'test-id.apps.googleusercontent.com',
-        GOOGLE_CLIENT_SECRET: 'GOCSPX-test-secret',
-        GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
-        RESEND_API_KEY: 're_test_key',
-        RESEND_FROM_EMAIL: 'CyanShip <test@test.com>',
-        STRIPE_SECRET_KEY: 'sk_test_xxx',
-        STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        AUTH_LOCKOUT_THRESHOLDS: '5:1,10:5,20:15',
-        AUTH_LOGIN_ATTEMPTS_TTL_MIN: 15,
-        AUTH_MAGIC_LINK_TTL_MIN: 15,
-        AUTH_MAGIC_LINK_RATE_LIMIT: 3,
-        AUTH_MAGIC_LINK_RATE_WINDOW_MIN: 15,
-        AUTH_MAGIC_LINK_DEDUP_SEC: 60,
-        ACCOUNT_DELETION_GRACE_DAYS: 30,
-        AUTH_PASSWORD_MIN_LENGTH: 8,
-    },
-    parseLockoutThresholds: (raw: string) =>
-        raw.split(',').map((entry: string) => {
-            const [attempts, blockMin] = entry.split(':').map(Number);
-            return { attempts, blockMin };
-        }),
-}));
-
-// ─── Stateful in-memory Redis mock ───
-
-function createStatefulRedisMock() {
-    const store = new Map<string, string>();
-
-    function createPipeline() {
-        const ops: Array<() => void> = [];
-        const pipe = {
-            set(key: string, value: string, _ex?: string, _ttl?: number) {
-                ops.push(() => store.set(key, value));
-                return pipe;
-            },
-            del(key: string) {
-                ops.push(() => store.delete(key));
-                return pipe;
-            },
-            incr(key: string) {
-                ops.push(() => {
-                    const val = store.get(key);
-                    store.set(key, String((parseInt(val ?? '0', 10) || 0) + 1));
-                });
-                return pipe;
-            },
-            expire(_key: string, _ttl: number) {
-                // TTL ignored in tests
-                return pipe;
-            },
-            sadd(key: string, ...members: string[]) {
-                ops.push(() => {
-                    const existing = store.get(key);
-                    const set: Set<string> = existing
-                        ? new Set(JSON.parse(existing) as string[])
-                        : new Set<string>();
-                    for (const m of members) set.add(m);
-                    store.set(key, JSON.stringify([...set]));
-                });
-                return pipe;
-            },
-            srem(key: string, ...members: string[]) {
-                ops.push(() => {
-                    const existing = store.get(key);
-                    if (!existing) return;
-                    const set: Set<string> = new Set(
-                        JSON.parse(existing) as string[]
-                    );
-                    for (const m of members) set.delete(m);
-                    if (set.size === 0) store.delete(key);
-                    else store.set(key, JSON.stringify([...set]));
-                });
-                return pipe;
-            },
-            async exec() {
-                for (const op of ops) op();
-                return [];
-            },
-        };
-        return pipe;
-    }
-
-    const redis = {
-        ping: jest.fn().mockResolvedValue('PONG'),
-        quit: jest.fn().mockResolvedValue('OK'),
-        on: jest.fn().mockReturnThis(),
-
-        async get(key: string) {
-            return store.get(key) ?? null;
-        },
-        async getdel(key: string) {
-            const val = store.get(key) ?? null;
-            if (val !== null) store.delete(key);
-            return val;
-        },
-        async set(key: string, value: string, _ex?: string, _ttl?: number) {
-            store.set(key, value);
-            return 'OK';
-        },
-        async del(key: string) {
-            store.delete(key);
-            return 1;
-        },
-        async incr(key: string) {
-            const current = parseInt(store.get(key) ?? '0', 10) || 0;
-            const next = current + 1;
-            store.set(key, String(next));
-            return next;
-        },
-        async expire(_key: string, _ttl: number) {
-            return 1;
-        },
-        async smembers(key: string) {
-            const val = store.get(key);
-            if (!val) return [];
-            return JSON.parse(val) as string[];
-        },
-        async srem(key: string, ...members: string[]) {
-            const val = store.get(key);
-            if (!val) return 0;
-            const set: Set<string> = new Set(JSON.parse(val) as string[]);
-            let removed = 0;
-            for (const m of members) {
-                if (set.delete(m)) removed++;
-            }
-            if (set.size === 0) store.delete(key);
-            else store.set(key, JSON.stringify([...set]));
-            return removed;
-        },
-        pipeline() {
-            return createPipeline();
-        },
-
-        // Test utilities
-        _store: store,
-        _clear() {
-            store.clear();
-        },
-    };
-
-    return redis;
-}
+// Env comes from src/test-setup.ts (jest-e2e.json setupFiles) — the real
+// fail-fast loader runs against placeholder values, so a newly required var
+// breaks the suite immediately instead of silently missing from a hand-written mock.
 
 // ─── Mock EmailService ───
 
@@ -216,6 +73,7 @@ describe('Auth E2E', () => {
                     throttlers: [{ ttl: 60000, limit: 600 }],
                 }),
                 MongooseModule.forRoot(mongoServer.getUri()),
+                RedisModule,
                 AuthModule,
                 EmailModule,
                 UsersModule,
@@ -226,13 +84,18 @@ describe('Auth E2E', () => {
             controllers: [AppController],
             providers: [
                 AppService,
+                // Mirrors AppModule: both global providers must be present, or
+                // e2e green-lights requests that production would reject.
                 { provide: APP_GUARD, useClass: ThrottlerGuard },
+                { provide: APP_INTERCEPTOR, useClass: OnboardingInterceptor },
             ],
         })
             .overrideProvider(REDIS_CLIENT)
             .useValue(redisMock)
             .overrideProvider(EmailService)
             .useValue(mockEmailService)
+            .overrideProvider(CatalogService)
+            .useValue(createCatalogServiceMock())
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -241,6 +104,7 @@ describe('Auth E2E', () => {
         app.useGlobalPipes(new ZodValidationPipe());
         app.useGlobalFilters(new AllExceptionsFilter());
         await app.init();
+        await listenOnLoopback(app);
 
         userModel = moduleFixture.get<Model<UserDocument>>(
             getModelToken(User.name)
@@ -271,7 +135,7 @@ describe('Auth E2E', () => {
             email: email.toLowerCase(),
             passwordHash: hash,
             profile: { firstName: 'Test', lastName: 'User' },
-            credits: { balance: 0, freeReportUsed: false },
+            executions: { balance: 0, freeReportUsed: false },
         });
     }
 
@@ -281,7 +145,7 @@ describe('Auth E2E', () => {
         return userModel.create({
             email: email.toLowerCase(),
             profile: { firstName: 'Test', lastName: 'User' },
-            credits: { balance: 0, freeReportUsed: false },
+            executions: { balance: 0, freeReportUsed: false },
         });
     }
 
@@ -395,7 +259,7 @@ describe('Auth E2E', () => {
             // First 10 should pass — but rate limit key increments each time
             // After checkEmailRateLimit sees count >= 10, it throws 429
             // We need to pre-seed the counter
-            redisMock._store.set('check_email:::ffff:127.0.0.1', '10');
+            redisMock._store.set(`check_email:${LOOPBACK_IP}`, '10');
 
             await supertest(app.getHttpServer())
                 .post('/api/auth/check-email')
@@ -476,7 +340,7 @@ describe('Auth E2E', () => {
         it('should return 429 after progressive lockout threshold', async () => {
             // Pre-seed 5 failed attempts
             redisMock._store.set(
-                'login_attempts:::ffff:127.0.0.1:user@example.com',
+                `login_attempts:${LOOPBACK_IP}:user@example.com`,
                 '5'
             );
 
@@ -492,7 +356,7 @@ describe('Auth E2E', () => {
         it('should clear login attempts on successful login', async () => {
             await createUserWithPassword('user@example.com', 'password123');
             redisMock._store.set(
-                'login_attempts:::ffff:127.0.0.1:user@example.com',
+                `login_attempts:${LOOPBACK_IP}:user@example.com`,
                 '3'
             );
 
@@ -503,7 +367,7 @@ describe('Auth E2E', () => {
 
             expect(
                 redisMock._store.has(
-                    'login_attempts:::ffff:127.0.0.1:user@example.com'
+                    `login_attempts:${LOOPBACK_IP}:user@example.com`
                 )
             ).toBe(false);
         });
@@ -536,13 +400,8 @@ describe('Auth E2E', () => {
             expect(mockEmailService.sendMagicLink).toHaveBeenCalled();
         });
 
-        it('should send with each purpose', async () => {
-            const purposes = [
-                'login',
-                'register',
-                'reset-password',
-                'delete-account',
-            ];
+        it('should send with each publicly allowed purpose', async () => {
+            const purposes = ['login', 'register', 'reset-password'];
             for (const purpose of purposes) {
                 redisMock._clear();
                 mockEmailService.sendMagicLink.mockClear();
@@ -554,6 +413,20 @@ describe('Auth E2E', () => {
 
                 expect(mockEmailService.sendMagicLink).toHaveBeenCalled();
             }
+        });
+
+        it('should reject delete-account purpose on the public endpoint', async () => {
+            // Deletion links are issued only by POST /users/account/delete,
+            // which authenticates the requester first.
+            await supertest(app.getHttpServer())
+                .post('/api/auth/magic-link/send')
+                .send({
+                    email: 'delete@example.com',
+                    purpose: 'delete-account',
+                })
+                .expect(400);
+
+            expect(mockEmailService.sendMagicLink).not.toHaveBeenCalled();
         });
 
         it('should rate limit after 3 requests for same email', async () => {
@@ -848,7 +721,7 @@ describe('Auth E2E', () => {
                     id: string;
                     email: string;
                     profile: object;
-                    credits: object;
+                    executions: object;
                     hasPassword: boolean;
                     preferredLang: string;
                     deletedAt: null;
@@ -859,7 +732,7 @@ describe('Auth E2E', () => {
             expect(body.data.preferredLang).toBeDefined();
             expect(body.data.id).toBeDefined();
             expect(body.data.profile).toBeDefined();
-            expect(body.data.credits).toBeDefined();
+            expect(body.data.executions).toBeDefined();
         });
 
         it('GET /api/users/me should return 401 without auth', async () => {
@@ -919,6 +792,74 @@ describe('Auth E2E', () => {
                 .patch('/api/users/me/lang')
                 .send({ lang: 'en' })
                 .expect(401);
+        });
+    });
+
+    // ─── E2. Onboarding gate ───
+
+    describe('Onboarding gate', () => {
+        async function createUserWithoutProfile(
+            email: string,
+            password: string
+        ): Promise<UserDocument> {
+            const hash = await bcrypt.hash(password, 10);
+            return userModel.create({
+                email: email.toLowerCase(),
+                passwordHash: hash,
+                profile: {},
+                executions: { balance: 100, freeReportUsed: false },
+            });
+        }
+
+        it('should block a guarded route until the profile is filled in', async () => {
+            await createUserWithoutProfile('empty@example.com', 'password123');
+            const { accessToken } = await loginWithPassword(
+                'empty@example.com',
+                'password123'
+            );
+
+            const res = await supertest(app.getHttpServer())
+                .get('/api/users/me/executions/transactions')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(403);
+
+            expect((res.body as { error: { code: string } }).error.code).toBe(
+                'ONBOARDING_INCOMPLETE'
+            );
+        });
+
+        it('should still allow routes marked with @SkipOnboarding', async () => {
+            await createUserWithoutProfile('skip@example.com', 'password123');
+            const { accessToken } = await loginWithPassword(
+                'skip@example.com',
+                'password123'
+            );
+
+            // GET /users/me is how the client learns the profile is incomplete —
+            // gating it would deadlock onboarding.
+            await supertest(app.getHttpServer())
+                .get('/api/users/me')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+        });
+
+        it('should let the same user through once firstName is set', async () => {
+            await createUserWithoutProfile('filled@example.com', 'password123');
+            const { accessToken } = await loginWithPassword(
+                'filled@example.com',
+                'password123'
+            );
+
+            await supertest(app.getHttpServer())
+                .patch('/api/users/me')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ firstName: 'Filled', lastName: 'In' })
+                .expect(200);
+
+            await supertest(app.getHttpServer())
+                .get('/api/users/me/executions/transactions')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
         });
     });
 
@@ -1063,8 +1004,10 @@ describe('Auth E2E', () => {
             const refreshCookie = extractRefreshCookie(cookies);
 
             const res = await supertest(app.getHttpServer())
+                // Body mirrors the web client: it always posts the browser timezone.
                 .post('/api/auth/refresh')
                 .set('Cookie', `bid_refresh=${refreshCookie}`)
+                .send({ timezone: 'Europe/Kyiv' })
                 .expect(201);
 
             const body = res.body as { data: { accessToken: string } };
@@ -1079,6 +1022,7 @@ describe('Auth E2E', () => {
         it('should return 401 on refresh without cookie', async () => {
             await supertest(app.getHttpServer())
                 .post('/api/auth/refresh')
+                .send({ timezone: 'Europe/Kyiv' })
                 .expect(401);
         });
 
@@ -1394,6 +1338,7 @@ describe('Auth E2E', () => {
             await supertest(app.getHttpServer())
                 .post('/api/auth/refresh')
                 .set('Cookie', `bid_refresh=${refreshToken}`)
+                .send({ timezone: 'Europe/Kyiv' })
                 .expect(401);
         });
 

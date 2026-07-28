@@ -28,31 +28,23 @@ const mockAiService = {
     clearHistory: jest.fn(),
 };
 
-const buildReq = () => {
-    const req = new EventEmitter() as EventEmitter & {
-        on: (
-            event: string,
-            listener: (...args: unknown[]) => void
-        ) => EventEmitter;
-        off: (
-            event: string,
-            listener: (...args: unknown[]) => void
-        ) => EventEmitter;
-    };
-    return req;
-};
-
+/**
+ * Response double. Client disconnects are delivered as `res.emit('close')`
+ * because that is the event Express/Node actually fires on a dropped
+ * connection — `req` emits 'close' once its body is read, long before.
+ */
 const buildRes = () => {
     const chunks: string[] = [];
-    return {
+    return Object.assign(new EventEmitter(), {
         setHeader: jest.fn(),
         flushHeaders: jest.fn(),
         write: jest.fn((data: string) => chunks.push(data)),
         end: jest.fn(),
         writableEnded: false,
+        destroyed: false,
         socket: { setNoDelay: jest.fn() },
         chunks,
-    };
+    });
 };
 
 const buildUser = () =>
@@ -88,13 +80,11 @@ describe('AiController', () => {
                 aiRequestsRemaining: 2,
             });
 
-            const req = buildReq();
             const res = buildRes();
 
             await controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -112,16 +102,10 @@ describe('AiController', () => {
                 new Error('Insufficient executions')
             );
 
-            const req = buildReq();
             const res = buildRes();
 
             await expect(
-                controller.chat(
-                    buildUser(),
-                    { message: 'hello' },
-                    req as never,
-                    res as never
-                )
+                controller.chat(buildUser(), { message: 'hello' }, res as never)
             ).rejects.toThrow('Insufficient executions');
 
             expect(res.flushHeaders).not.toHaveBeenCalled();
@@ -136,14 +120,12 @@ describe('AiController', () => {
             );
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
-            const req = buildReq();
             const res = buildRes();
 
             await expect(
                 controller.chat(
                     buildUser(),
                     { message: 'huge message' },
-                    req as never,
                     res as never
                 )
             ).rejects.toThrow('AI_MESSAGE_TOO_LONG');
@@ -168,21 +150,19 @@ describe('AiController', () => {
                     })
             );
 
-            const req = buildReq();
             const res = buildRes();
 
             const chatPromise = controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
-            // Let microtasks drain so req.on('close') is registered
+            // Let microtasks drain so res.on('close') is registered
             await new Promise((r) => setImmediate(r));
 
             // Client disconnects while buildChatMessages is pending
-            req.emit('close');
+            res.emit('close');
 
             await chatPromise;
 
@@ -201,13 +181,11 @@ describe('AiController', () => {
             );
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
-            const req = buildReq();
             const res = buildRes();
 
             await controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -233,13 +211,11 @@ describe('AiController', () => {
             mockAiService.streamChat.mockResolvedValue(errorStream);
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
-            const req = buildReq();
             const res = buildRes();
 
             await controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -256,13 +232,11 @@ describe('AiController', () => {
             mockAiService.streamChat.mockResolvedValue(slowStream);
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
-            const req = buildReq();
             const res = buildRes();
 
             const chatPromise = controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -270,7 +244,7 @@ describe('AiController', () => {
             await new Promise((r) => setImmediate(r));
 
             // Abort before any chunks, then end stream to unblock for-await
-            req.emit('close');
+            res.emit('close');
             slowStream.push(null);
 
             await chatPromise;
@@ -294,13 +268,11 @@ describe('AiController', () => {
             const controlledStream = new Readable({ read() {} });
             mockAiService.streamChat.mockResolvedValue(controlledStream);
 
-            const req = buildReq();
             const res = buildRes();
 
             const chatPromise = controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -309,7 +281,7 @@ describe('AiController', () => {
             await new Promise((r) => setImmediate(r));
 
             // Abort after first token received
-            req.emit('close');
+            res.emit('close');
             controlledStream.push(null);
 
             await chatPromise;
@@ -331,13 +303,11 @@ describe('AiController', () => {
             );
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
-            const req = buildReq();
             const res = buildRes();
 
             await controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -357,13 +327,11 @@ describe('AiController', () => {
             // refundChatRequest catches internally, so this just tests the finally block
             mockAiService.refundChatRequest.mockResolvedValue(undefined);
 
-            const req = buildReq();
             const res = buildRes();
 
             await controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -381,13 +349,11 @@ describe('AiController', () => {
             const abortStream = new Readable({ read() {} });
             mockAiService.streamChat.mockResolvedValue(abortStream);
 
-            const req = buildReq();
             const res = buildRes();
 
             const chatPromise = controller.chat(
                 buildUser(),
                 { message: 'hello' },
-                req as never,
                 res as never
             );
 
@@ -396,7 +362,7 @@ describe('AiController', () => {
             await new Promise((r) => setImmediate(r));
 
             // Client aborts → abort signal causes provider to throw
-            req.emit('close');
+            res.emit('close');
             abortStream.destroy(new Error('The operation was aborted'));
 
             await chatPromise;

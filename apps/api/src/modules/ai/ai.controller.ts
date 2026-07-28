@@ -6,12 +6,11 @@ import {
     HttpCode,
     HttpStatus,
     Logger,
-    Req,
     Res,
     Post,
     UseGuards,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import {
     AI_CHAT_EVENT,
     type AiChatDoneEvent,
@@ -38,7 +37,6 @@ export class AiController {
     async chat(
         @CurrentUser() user: UserDocument,
         @Body() dto: AiChatDto,
-        @Req() req: Request,
         @Res() res: Response
     ): Promise<void> {
         const userId = user._id.toString();
@@ -49,11 +47,18 @@ export class AiController {
         const abortController = new AbortController();
         let aborted = false;
 
+        // Client disconnect must be observed on the RESPONSE, not the request:
+        // `req` emits 'close' as soon as its body has been read (which already
+        // happened in the body parser before this handler runs), so a listener
+        // attached here would either never fire or fire immediately. `res`
+        // emits 'close' both on a premature disconnect and after a normal
+        // `res.end()` — `writableEnded` separates the two.
         const onClose = () => {
+            if (res.writableEnded) return;
             aborted = true;
             abortController.abort();
         };
-        req.on('close', onClose);
+        res.on('close', onClose);
 
         let messages;
         try {
@@ -62,13 +67,13 @@ export class AiController {
                 dto.message
             );
         } catch (err) {
-            req.off('close', onClose);
+            res.off('close', onClose);
             await this.aiService.refundChatRequest(reservation);
             throw err;
         }
 
         if (aborted) {
-            req.off('close', onClose);
+            res.off('close', onClose);
             await this.aiService.refundChatRequest(reservation);
             return;
         }
@@ -161,7 +166,7 @@ export class AiController {
                 });
             }
         } finally {
-            req.off('close', onClose);
+            res.off('close', onClose);
 
             if (!committed) {
                 await this.aiService.refundChatRequest(reservation);
@@ -193,6 +198,9 @@ export class AiController {
     }
 
     private writeSSE<T>(res: Response, data: T): void {
+        // Writing to a socket the client already dropped throws
+        // ERR_STREAM_DESTROYED; the disconnect is handled by the abort path.
+        if (res.writableEnded || res.destroyed) return;
         res.write(`data: ${JSON.stringify(data)}\n\n`);
     }
 }

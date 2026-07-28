@@ -89,3 +89,6 @@ packages/*/.tsbuildinfo
 # --- Repomix ---
 repomix-output.xml
 .repomixignore
+
+# --- Local scratch ---
+scratch/

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -11,55 +11,30 @@ import { App } from 'supertest/types';
 import { ZodValidationPipe } from 'nestjs-zod';
 
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
-import { REDIS_CLIENT } from '../src/common/providers/redis.provider';
+import { OnboardingInterceptor } from '../src/common/interceptors/onboarding.interceptor';
+import { REDIS_CLIENT } from '../src/common/modules/redis.constants';
+import { RedisModule } from '../src/common/modules/redis.module';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/modules/auth/auth.module';
+import { EmailModule } from '../src/modules/email/email.module';
 import { UsersModule } from '../src/modules/users/users.module';
 import { ReportsModule } from '../src/modules/reports/reports.module';
 import { StorageModule } from '../src/modules/storage/storage.module';
 import { PaymentsModule } from '../src/modules/payments/payments.module';
+import { EmailService } from '../src/modules/email/email.service';
+import { CatalogService } from '../src/modules/payments/catalog.service';
+import { createStatefulRedisMock } from './utils/redis.mock';
+import { createCatalogServiceMock } from './utils/catalog.mock';
+import { listenOnLoopback } from './utils/listen';
 
-// Mock ENV to prevent fail-fast crash on missing env vars
-jest.mock('../src/config/env', () => ({
-    ENV: {
-        NODE_ENV: 'test',
-        PORT: '4000',
-        WEB_URL: 'http://localhost:3000',
-        MONGODB_URI: 'overridden-by-MongoMemoryServer',
-        REDIS_URL: 'redis://mock',
-        JWT_ACCESS_SECRET: 'e2e-test-access-secret-must-be-long-enough',
-        JWT_REFRESH_SECRET: 'e2e-test-refresh-secret-must-be-long-enough',
-        GOOGLE_CLIENT_ID: 'test-id.apps.googleusercontent.com',
-        GOOGLE_CLIENT_SECRET: 'GOCSPX-test-secret',
-        GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/auth/google/callback',
-        RESEND_API_KEY: 're_test_key',
-        RESEND_FROM_EMAIL: 'CyanShip <test@test.com>',
-        STRIPE_SECRET_KEY: 'sk_test_xxx',
-        STRIPE_WEBHOOK_SECRET: 'whsec_test',
-    },
-}));
+// Env comes from src/test-setup.ts (jest-e2e.json setupFiles) — the real
+// fail-fast loader runs against placeholder values, so a newly required var
+// breaks the suite immediately instead of silently missing from a hand-written mock.
 
-const mockPipeline = {
-    set: jest.fn().mockReturnThis(),
-    del: jest.fn().mockReturnThis(),
-    incr: jest.fn().mockReturnThis(),
-    expire: jest.fn().mockReturnThis(),
-    sadd: jest.fn().mockReturnThis(),
-    srem: jest.fn().mockReturnThis(),
-    exec: jest.fn().mockResolvedValue([]),
-};
-
-const mockRedis = {
-    ping: jest.fn().mockResolvedValue('PONG'),
-    quit: jest.fn().mockResolvedValue('OK'),
-    get: jest.fn().mockResolvedValue(null),
-    getdel: jest.fn().mockResolvedValue(null),
-    set: jest.fn().mockResolvedValue('OK'),
-    del: jest.fn().mockResolvedValue(1),
-    smembers: jest.fn().mockResolvedValue([]),
-    pipeline: jest.fn().mockReturnValue(mockPipeline),
-    on: jest.fn().mockReturnThis(),
+const mockEmailService = {
+    sendMagicLink: jest.fn().mockResolvedValue(undefined),
+    sendDeletionConfirmation: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('App (e2e)', () => {
@@ -68,6 +43,7 @@ describe('App (e2e)', () => {
 
     beforeAll(async () => {
         mongoServer = await MongoMemoryServer.create();
+        const redisMock = createStatefulRedisMock();
 
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [
@@ -76,7 +52,9 @@ describe('App (e2e)', () => {
                     throttlers: [{ ttl: 60000, limit: 60 }],
                 }),
                 MongooseModule.forRoot(mongoServer.getUri()),
+                RedisModule,
                 AuthModule,
+                EmailModule,
                 UsersModule,
                 ReportsModule,
                 StorageModule,
@@ -85,11 +63,18 @@ describe('App (e2e)', () => {
             controllers: [AppController],
             providers: [
                 AppService,
+                // Mirrors AppModule: both global providers must be present, or
+                // e2e green-lights requests that production would reject.
                 { provide: APP_GUARD, useClass: ThrottlerGuard },
+                { provide: APP_INTERCEPTOR, useClass: OnboardingInterceptor },
             ],
         })
             .overrideProvider(REDIS_CLIENT)
-            .useValue(mockRedis)
+            .useValue(redisMock)
+            .overrideProvider(EmailService)
+            .useValue(mockEmailService)
+            .overrideProvider(CatalogService)
+            .useValue(createCatalogServiceMock())
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -98,6 +83,7 @@ describe('App (e2e)', () => {
         app.useGlobalPipes(new ZodValidationPipe());
         app.useGlobalFilters(new AllExceptionsFilter());
         await app.init();
+        await listenOnLoopback(app);
     }, 60_000);
 
     afterAll(async () => {
@@ -152,6 +138,7 @@ describe('App (e2e)', () => {
         it('POST /api/auth/refresh should reject when no cookie', () => {
             return request(app.getHttpServer())
                 .post('/api/auth/refresh')
+                .send({ timezone: 'Europe/Kyiv' })
                 .expect(401);
         });
 
