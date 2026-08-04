@@ -1,7 +1,7 @@
 // Set test-only env vars that are required by fail-fast policy
 // but not needed for unit tests (mocked at service level).
 process.env.NODE_ENV ??= 'test';
-process.env.PORT ??= '4000';
+process.env.API_PORT ??= '4000';
 process.env.WEB_URL ??= 'http://localhost:3000';
 process.env.MONGODB_URI ??= 'mongodb://localhost:27017/test';
 process.env.JWT_ACCESS_SECRET ??= 'test-access-secret';

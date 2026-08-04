@@ -23,7 +23,7 @@ const getEnvVar = (name: string): string => {
 
 export const ENV = {
     NODE_ENV: getEnvVar('NODE_ENV'),
-    PORT: getEnvVar('PORT'),
+    API_PORT: getEnvVar('API_PORT'),
     WEB_URL: getEnvVar('WEB_URL'),
 
     MONGODB_URI: getEnvVar('MONGODB_URI'),
@@ -47,8 +47,10 @@ export const ENV = {
     ANTHROPIC_API_KEY: getEnvVar('ANTHROPIC_API_KEY'),
 
     // Cloudflare R2 — media storage (presigned uploads, Google avatar re-upload).
-    // R2_PUBLIC_URL hostname MUST match NEXT_PUBLIC_STORAGE_HOSTNAME on the web
-    // side — otherwise next/image rejects uploaded photos at runtime.
+    // R2_PUBLIC_URL is also the web side's media base: `next.config.ts` derives
+    // the next/image hostname and the public asset base from this same value.
+    // It must be an origin only (no path, no trailing slash) — this service
+    // concatenates keys onto it verbatim, and the web build enforces the shape.
     R2_ACCOUNT_ID: getEnvVar('R2_ACCOUNT_ID'),
     R2_ACCESS_KEY_ID: getEnvVar('R2_ACCESS_KEY_ID'),
     R2_SECRET_ACCESS_KEY: getEnvVar('R2_SECRET_ACCESS_KEY'),

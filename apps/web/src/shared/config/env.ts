@@ -6,6 +6,10 @@
 // IMPORTANT: NEXT_PUBLIC_* vars MUST use direct process.env.VAR
 // access (not dynamic process.env[name]) so Next.js can inline
 // values into the client bundle at build time.
+//
+// NEXT_PUBLIC_BASE_URL and NEXT_PUBLIC_STORAGE_URL are absent from
+// `.env` on purpose: `next.config.ts` inlines them from WEB_URL and
+// R2_PUBLIC_URL, which the API already owns.
 // ============================================================
 
 function assertEnv(value: string | undefined, name: string): string {
@@ -15,21 +19,31 @@ function assertEnv(value: string | undefined, name: string): string {
     return value;
 }
 
-function parseOptionalAbsoluteUrl(
-    value: string | undefined,
+const STORAGE_URL = assertEnv(
+    process.env.NEXT_PUBLIC_STORAGE_URL,
+    'NEXT_PUBLIC_STORAGE_URL'
+);
+
+/**
+ * Builds an absolute media URL from a path relative to the storage bucket.
+ * `NEXT_PUBLIC_STORAGE_URL` is an origin without a trailing slash —
+ * `next.config.ts` fails the build otherwise.
+ */
+function resolveOptionalStorageAsset(
+    path: string | undefined,
     name: string
 ): string | null {
-    if (!value) {
+    if (!path) {
         return null;
     }
 
-    try {
-        return new URL(value).toString();
-    } catch {
+    if (!path.startsWith('/')) {
         throw new Error(
-            `❌ Environment variable "${name}" must be a valid absolute URL`
+            `❌ Environment variable "${name}" must be a path starting with "/"`
         );
     }
+
+    return `${STORAGE_URL}${path}`;
 }
 
 export const ENV = {
@@ -37,35 +51,24 @@ export const ENV = {
         process.env.NEXT_PUBLIC_BASE_URL,
         'NEXT_PUBLIC_BASE_URL'
     ),
-    NEXT_PUBLIC_API_URL: assertEnv(
-        process.env.NEXT_PUBLIC_API_URL,
-        'NEXT_PUBLIC_API_URL'
-    ),
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: assertEnv(
         process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
         'NEXT_PUBLIC_TURNSTILE_SITE_KEY'
     ),
-    // Hostname of the R2 public CDN. Used by next/image `remotePatterns`.
-    // MUST equal the hostname of `R2_PUBLIC_URL` on the API — otherwise
-    // next/image blocks uploaded photos at runtime.
-    NEXT_PUBLIC_STORAGE_HOSTNAME: assertEnv(
-        process.env.NEXT_PUBLIC_STORAGE_HOSTNAME,
-        'NEXT_PUBLIC_STORAGE_HOSTNAME'
-    ),
 } as const;
 
-const demoVideoSrc = parseOptionalAbsoluteUrl(
-    process.env.NEXT_PUBLIC_DEMO_VIDEO_URL,
-    'NEXT_PUBLIC_DEMO_VIDEO_URL'
+const demoVideoSrc = resolveOptionalStorageAsset(
+    process.env.NEXT_PUBLIC_DEMO_VIDEO_PATH,
+    'NEXT_PUBLIC_DEMO_VIDEO_PATH'
 );
-const demoVideoPoster = parseOptionalAbsoluteUrl(
-    process.env.NEXT_PUBLIC_DEMO_VIDEO_POSTER_URL,
-    'NEXT_PUBLIC_DEMO_VIDEO_POSTER_URL'
+const demoVideoPoster = resolveOptionalStorageAsset(
+    process.env.NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH,
+    'NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH'
 );
 
 if (!demoVideoSrc && demoVideoPoster) {
     throw new Error(
-        '❌ Environment variable "NEXT_PUBLIC_DEMO_VIDEO_POSTER_URL" requires "NEXT_PUBLIC_DEMO_VIDEO_URL"'
+        '❌ Environment variable "NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH" requires "NEXT_PUBLIC_DEMO_VIDEO_PATH"'
     );
 }
 

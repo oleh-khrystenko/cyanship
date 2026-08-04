@@ -1,13 +1,12 @@
 import type { ChatMessageItem, AiChatSSEEvent } from '@cyanship/types';
 
-import { apiClient, getAccessToken, setAccessToken } from './client';
-import { ENV } from '@/shared/config';
-import { getTimezone } from '@/shared/lib';
+import { apiClient, getAccessToken, refreshSession } from './client';
+import { API_BASE_PATH } from '@/shared/config';
 
 export class AiChatError extends Error {
     constructor(
         public readonly code: string,
-        public readonly status: number,
+        public readonly status: number
     ) {
         super(`AI Chat error: ${code} (${status})`);
         this.name = 'AiChatError';
@@ -16,11 +15,11 @@ export class AiChatError extends Error {
 
 async function doStreamRequest(
     message: string,
-    signal?: AbortSignal,
+    signal?: AbortSignal
 ): Promise<Response> {
     const token = getAccessToken();
 
-    return fetch(`${ENV.NEXT_PUBLIC_API_URL}/ai/chat`, {
+    return fetch(`${API_BASE_PATH}/ai/chat`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -30,31 +29,6 @@ async function doStreamRequest(
         signal,
         credentials: 'include',
     });
-}
-
-async function tryRefreshToken(): Promise<boolean> {
-    try {
-        const response = await fetch(
-            `${ENV.NEXT_PUBLIC_API_URL}/auth/refresh`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ timezone: getTimezone() }),
-                credentials: 'include',
-            },
-        );
-
-        if (!response.ok) return false;
-
-        const body = await response.json();
-        const newToken = body?.data?.accessToken;
-        if (!newToken) return false;
-
-        setAccessToken(newToken);
-        return true;
-    } catch {
-        return false;
-    }
 }
 
 async function parseErrorCode(response: Response): Promise<string> {
@@ -68,7 +42,7 @@ async function parseErrorCode(response: Response): Promise<string> {
 
 async function readSSEStream(
     response: Response,
-    onEvent: (event: AiChatSSEEvent) => void,
+    onEvent: (event: AiChatSSEEvent) => void
 ): Promise<void> {
     const reader = response.body?.getReader();
     if (!reader) return;
@@ -109,14 +83,16 @@ async function readSSEStream(
 export async function streamAiChat(
     message: string,
     onEvent: (event: AiChatSSEEvent) => void,
-    signal?: AbortSignal,
+    signal?: AbortSignal
 ): Promise<void> {
     let response = await doStreamRequest(message, signal);
 
-    // Handle expired access token: refresh once and retry
+    // Handle expired access token: refresh once and retry. Streaming bypasses
+    // axios, so it reuses the shared `refreshSession` instead of rolling its
+    // own — same deduplication, same `session-lost` handling on failure.
     if (response.status === 401) {
-        const refreshed = await tryRefreshToken();
-        if (!refreshed) {
+        const newToken = await refreshSession();
+        if (!newToken) {
             throw new AiChatError('UNAUTHORIZED', 401);
         }
         response = await doStreamRequest(message, signal);

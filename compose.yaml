@@ -21,7 +21,7 @@ services:
         restart: unless-stopped
         environment:
             - NODE_ENV=${NODE_ENV}
-            - PORT=${API_PORT}
+            - API_PORT=${API_PORT}
             - MONGODB_URI=${MONGODB_URI}
             - REDIS_URL=redis://redis:6379
             - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
@@ -59,20 +59,18 @@ services:
             dockerfile: ./apps/web/Dockerfile
             args:
                 API_INTERNAL_URL: http://api:${API_PORT}
-                NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
-                NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+                WEB_URL: ${WEB_URL}
+                R2_PUBLIC_URL: ${R2_PUBLIC_URL}
                 NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                NEXT_PUBLIC_STORAGE_HOSTNAME: ${NEXT_PUBLIC_STORAGE_HOSTNAME}
-                NEXT_PUBLIC_DEMO_VIDEO_URL: ${NEXT_PUBLIC_DEMO_VIDEO_URL}
-                NEXT_PUBLIC_DEMO_VIDEO_POSTER_URL: ${NEXT_PUBLIC_DEMO_VIDEO_POSTER_URL}
+                NEXT_PUBLIC_DEMO_VIDEO_PATH: ${NEXT_PUBLIC_DEMO_VIDEO_PATH}
+                NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH: ${NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH}
         restart: unless-stopped
         environment:
             - NODE_ENV=${NODE_ENV}
             - PORT=${WEB_PORT}
             - API_INTERNAL_URL=http://api:${API_PORT}
-            - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-            - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-            - NEXT_PUBLIC_STORAGE_HOSTNAME=${NEXT_PUBLIC_STORAGE_HOSTNAME}
+            - WEB_URL=${WEB_URL}
+            - R2_PUBLIC_URL=${R2_PUBLIC_URL}
         ports:
             - '127.0.0.1:${WEB_PORT}:${WEB_PORT}'
         depends_on:
