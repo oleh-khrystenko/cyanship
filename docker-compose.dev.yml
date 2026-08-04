@@ -6,6 +6,12 @@ services:
             - '6379:6379'
         volumes:
             - redis_data_dev:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
 
     api:
         image: node:20-alpine
@@ -44,7 +50,20 @@ services:
             - pnpm-store:/pnpm-store
             - /app/node_modules
         depends_on:
-            - redis
+            redis:
+                condition: service_healthy
+        # Readiness lags container start by the whole `pnpm install` + build +
+        # Nest compile chain, which runs at runtime here (no image layer to bake
+        # it into) — minutes on a cold pnpm store. The start period only bounds
+        # how long that may take: the first successful probe ends it immediately,
+        # and an env fail-fast crash exits the container, which compose reports
+        # to dependents without waiting this out.
+        healthcheck:
+            test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:${API_PORT}/api/health"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 600s
 
     web:
         image: node:20-alpine
@@ -74,8 +93,12 @@ services:
             - ./:/app
             - pnpm-store:/pnpm-store
             - /app/node_modules
+        # `service_started` is not enough: Next serves the first page in seconds
+        # while the API is still installing, and `AuthInitializer` proxies
+        # /api/auth/refresh into a closed port.
         depends_on:
-            - api
+            api:
+                condition: service_healthy
 
 volumes:
     redis_data_dev:
