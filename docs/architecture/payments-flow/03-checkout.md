@@ -1,4 +1,4 @@
-# Checkout — підписка та кредити
+# Checkout — підписка та пакети executions
 
 Файл: `apps/api/src/modules/payments/payments.service.ts` (createCheckoutSession)
 
@@ -9,42 +9,31 @@
 ### 1. Subscription (підписка)
 
 - `paymentType: 'subscription'`
-- `planCode: 'monthly_usd'` — єдиний план
+- `planCode: 'starter' | 'pro'` — `SUBSCRIPTION_PLAN_CODES` у `packages/types/src/contracts/payments.ts`
 - Stripe Checkout mode: `subscription`
-- Price ID: `STRIPE_PRICE_ID_SUBSCRIPTION` (env var)
-- **Валідація:** якщо `user.billing?.hasActiveSubscription === true` -> 409 ALREADY_SUBSCRIBED
+- Price ID: `CatalogService.getSubscriptionPlan(planCode).priceId` — зі Stripe, не з env
+- **Валідація:** якщо `user.billing?.hasActiveSubscription === true` -> 409 ALREADY_SUBSCRIBED; невідомий `planCode` (немає в каталозі) -> 400 `Invalid planCode`
 
-### 2. One-off (кредитні пакети)
+### 2. One-off (пакети executions)
 
 - `paymentType: 'one_off'`
-- `packCode: 'credits_5' | 'credits_10' | 'credits_20'`
+- `packCode: 'basic' | 'max'` — `EXECUTION_PACK_CODES` у `packages/types/src/contracts/payments.ts`
 - Stripe Checkout mode: `payment`
-- Price ID: з `STRIPE_CREDIT_PACKS[packCode].priceId` (env vars)
-- **Валідація:** packCode повинен існувати в `STRIPE_CREDIT_PACKS`
+- Price ID: `CatalogService.getExecutionPack(packCode).priceId` — зі Stripe, не з env
+- **Валідація:** packCode повинен існувати в каталозі, інакше 400 `Invalid packCode`
 
-## Конфігурація кредитних пакетів
+## Звідки беруться ціни і кількість executions
 
-Визначена в `packages/types/src/contracts/payments.ts`:
-
-```typescript
-CREDIT_PACK_CONFIG = {
-    credits_5: { credits: 5 },
-    credits_10: { credits: 10 },
-    credits_20: { credits: 20 },
-}
-```
-
-Runtime mapping packCode -> priceId в `apps/api/src/config/env.ts`:
+Ніяких `STRIPE_PRICE_ID_*` env vars немає. Коди планів і пакетів — це структурні ідентифікатори (i18n-ключі, зображення, записи в БД), а бізнес-дані читаються з metadata Stripe Products через `CatalogService` (Redis-кеш, TTL 5 хв):
 
 ```typescript
-STRIPE_CREDIT_PACKS = {
-    credits_5: { priceId: STRIPE_PRICE_ID_CREDITS_5, credits: 5 },
-    credits_10: { priceId: STRIPE_PRICE_ID_CREDITS_10, credits: 10 },
-    credits_20: { priceId: STRIPE_PRICE_ID_CREDITS_20, credits: 20 },
-}
+// CatalogService.getSubscriptionPlan('pro') / getExecutionPack('basic')
+{ code, priceId, priceAmount, currency, executions, displayOrder, featured }
 ```
 
-`STRIPE_CREDIT_PACKS` заповнюється тільки коли `PAYMENTS_ONE_OFF_ENABLED=true`. Інакше — порожній об'єкт.
+`PaymentsService` бере звідти `priceId` і `executions` та передає їх у `IPaymentProvider.createCheckoutSession()`. Деталі каталогу — [13-catalog.md](./13-catalog.md).
+
+Пакети доступні тільки коли константа `PAYMENTS_ONE_OFF_ENABLED` (`packages/types/src/constants/payments.ts`) = `true`.
 
 ## Stripe Checkout Session
 
@@ -55,17 +44,22 @@ STRIPE_CREDIT_PACKS = {
 | Параметр | Значення |
 |----------|----------|
 | mode | `subscription` або `payment` |
+| payment_method_types | `['card']` |
 | customer | `providerCustomerId` (якщо є) |
 | customer_email | `user.email` (якщо немає customer) |
 | line_items | `[{ price: priceId, quantity: 1 }]` |
-| metadata | `{ userId, planCode, credits }` |
+| metadata | `{ userId, planCode, executions }` (`executions` — рядок) |
 | client_reference_id | `userId` |
-| success_url | `BILLING_SUCCESS_URL` |
-| cancel_url | `BILLING_CANCEL_URL` |
+| success_url | `{WEB_URL}/{locale}/billing/success` |
+| cancel_url | `{WEB_URL}/{locale}/billing/cancel` |
+
+`locale` — `user.preferredLang`. Обидва URL збирає `PaymentsService`, а не провайдер; якщо в DTO прийшов `returnPath`, він додається як query-параметр (`?returnPath=...`), щоб після оплати повернути юзера туди, звідки він почав checkout.
 
 ## Post-checkout redirect
 
 Після оплати Stripe редіректить на:
 
-- **Success:** `/billing/success` -> `getMe()` -> оновлення store -> toast success -> redirect `/billing`
-- **Cancel:** `/billing/cancel` -> toast info -> redirect `/billing`
+- **Success:** `/{locale}/billing/success` -> `getMe()` -> оновлення store -> toast success -> redirect на `returnPath` або `/{locale}/billing`
+- **Cancel:** `/{locale}/billing/cancel` -> toast info -> redirect на `returnPath` або `/{locale}/billing`
+
+Обидві сторінки приймають `returnPath` тільки як відносний шлях (`/…`, але не `//…`) — інакше ігнорують його і ведуть на `/{locale}/billing`. Це захист від open redirect, бо значення приходить з URL.

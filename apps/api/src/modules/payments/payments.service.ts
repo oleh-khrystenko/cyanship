@@ -12,6 +12,8 @@ import {
     EXECUTION_ACTION,
     EXECUTION_TRANSACTION_TYPE,
     PAYMENT_TYPE,
+    PAYMENTS_ONE_OFF_ENABLED,
+    PAYMENTS_SUBSCRIPTION_ENABLED,
     RESPONSE_CODE,
     SUBSCRIPTION_STATUS,
     type BillingWebhookEvent,
@@ -68,17 +70,14 @@ export class PaymentsService {
         // Feature flag check
         if (
             paymentType === PAYMENT_TYPE.SUBSCRIPTION &&
-            !ENV.PAYMENTS_SUBSCRIPTION_ENABLED
+            !PAYMENTS_SUBSCRIPTION_ENABLED
         ) {
             throw new BadRequestException({
                 code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED,
                 message: 'Subscription payments are disabled',
             });
         }
-        if (
-            paymentType === PAYMENT_TYPE.ONE_OFF &&
-            !ENV.PAYMENTS_ONE_OFF_ENABLED
-        ) {
+        if (paymentType === PAYMENT_TYPE.ONE_OFF && !PAYMENTS_ONE_OFF_ENABLED) {
             throw new BadRequestException({
                 code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED,
                 message: 'One-off payments are disabled',

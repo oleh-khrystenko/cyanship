@@ -2,11 +2,14 @@
 
 import { useCallback, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { getFullName, getInitials } from '@cyanship/types';
+import {
+    getFullName,
+    getInitials,
+    PAYMENTS_SUBSCRIPTION_ENABLED,
+} from '@cyanship/types';
 import { useAuthStore } from '@/entities/user';
 import { toIntlLocale } from '@/shared/lib';
 import { UiAvatar } from '@/shared/ui/UiAvatar';
-import { PAYMENTS_SUBSCRIPTION_ENABLED } from '@/shared/config/env';
 import UiLink from '@/shared/ui/UiLink';
 import UiPageContainer from '@/shared/ui/UiPageContainer';
 import UiSectionCard from '@/shared/ui/UiSectionCard';

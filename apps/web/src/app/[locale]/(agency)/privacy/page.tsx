@@ -4,7 +4,7 @@ import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps, PageParams } from '@/shared/types/settings';
 import UiLink from '@/shared/ui/UiLink';
 import { LandingFooter } from '@/widgets/agency/landing';
-import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
+import { ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     const { locale } = await props.params;
@@ -136,7 +136,7 @@ export default async function PrivacyPage({ params }: PageParams) {
                                     intended. We keep this content as long as
                                     your account is active. If you delete your
                                     account, we&apos;ll delete the content within{' '}
-                                    {DEFAULT_ACCOUNT_DELETION_GRACE_DAYS} days.
+                                    {ACCOUNT_DELETION_GRACE_DAYS} days.
                                 </p>
 
                                 <h3>Website Analytics</h3>
@@ -370,7 +370,7 @@ export default async function PrivacyPage({ params }: PageParams) {
                                     If you choose to cancel your account, your
                                     content will become immediately inaccessible
                                     and will be purged from our systems within{' '}
-                                    {DEFAULT_ACCOUNT_DELETION_GRACE_DAYS} days.
+                                    {ACCOUNT_DELETION_GRACE_DAYS} days.
                                     This includes all active systems, logs, and
                                     backups.
                                 </p>

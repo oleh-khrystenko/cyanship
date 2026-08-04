@@ -9,7 +9,6 @@ jest.mock('../../config/env', () => ({
         RESEND_API_KEY: 'test-key',
         RESEND_FROM_EMAIL: 'CyanShip <test@resend.dev>',
         WEB_URL: 'http://localhost:3000',
-        ACCOUNT_DELETION_GRACE_DAYS: 2,
     },
 }));
 

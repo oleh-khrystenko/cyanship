@@ -4,7 +4,7 @@ import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps, PageParams } from '@/shared/types/settings';
 import UiLink from '@/shared/ui/UiLink';
 import { LandingFooter } from '@/widgets/agency/landing';
-import { DEFAULT_ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
+import { ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
     const { locale } = await props.params;
@@ -203,7 +203,7 @@ export default async function TermsPage({ params }: PageParams) {
                                         All of your content will be inaccessible
                                         from the Services immediately upon
                                         account cancellation. Within{' '}
-                                        {DEFAULT_ACCOUNT_DELETION_GRACE_DAYS}{' '}
+                                        {ACCOUNT_DELETION_GRACE_DAYS}{' '}
                                         days, all content will be permanently
                                         deleted from active systems, logs, and
                                         backups. We cannot recover this

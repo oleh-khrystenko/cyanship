@@ -4,7 +4,7 @@
 
 Комплексне тестування всієї платіжної підсистеми: automated (unit + e2e) та manual E2E тести. Всі автоматизовані тести реалізовані та проходять.
 
-Покриває всю payments підсистему: PaymentsService (checkout sub + one-off, portal, two-phase webhook idempotency, out-of-order protection, one-off credit flow), StripeService (adapter, event mapping, 4 event types), SubscriptionGuard, PaymentsController, frontend API client та billing page (subscription + credits sections).
+Покриває всю payments підсистему: PaymentsService (checkout sub + one-off, portal, two-phase webhook idempotency, out-of-order protection, one-off executions flow), StripeService (adapter, event mapping, 4 event types), SubscriptionGuard, PaymentsController, frontend API client та billing page (subscription + executions sections).
 
 ## Документи
 
@@ -41,9 +41,9 @@
 - **D. One-Off Payments** — credit pack purchase, accumulation, invalid pack, one-off with active subscription
 - **E. Feature Flags** — disabled subscription, disabled one-off
 - **F. SubscriptionGuard** — доступ з/без підписки, 403 response format
-- **G. Billing Page UI** — 3 subscription states + credits section + loading + error
+- **G. Billing Page UI** — 3 subscription states + executions section + loading + error
 - **H. Route Protection** — /billing protected, redirect
-- **I. Billing State** — getMe response (billing + credits)
+- **I. Billing State** — getMe response (billing + executions)
 - **J. i18n** — Ukrainian/English localization
 - **K. Security** — JWT, rate limiting bypass, rawBody
 

@@ -38,6 +38,7 @@ import {
     AI_PROVIDER,
     type IAiProvider,
 } from '../src/modules/ai/interfaces/ai-provider.interface';
+import { AiRateLimitGuard } from '../src/modules/ai/guards/ai-rate-limit.guard';
 import { ReservationReconcileService } from '../src/modules/users/reservation-reconcile.service';
 import { ENV } from '../src/config/env';
 import {
@@ -49,7 +50,10 @@ import { listenOnLoopback } from './utils/listen';
 // Env comes from src/test-setup.ts (jest-e2e.json setupFiles) — the real
 // fail-fast loader runs against placeholder values, so a newly required var
 // breaks the suite immediately instead of silently missing from a hand-written mock.
-// beforeAll raises AI_CHAT_IP_LIMIT in place; afterAll restores it.
+// The IP rate limit is a plain constant, so the suite overrides AiRateLimitGuard
+// with a pass-through: several tests fire parallel requests from one IP on
+// purpose, and the account-level guards are what they assert. The IP counter
+// itself is covered by ai-rate-limit.guard.spec.ts.
 
 // ─── Mock AI provider ────────────────────────────────────────────────────────
 
@@ -183,14 +187,8 @@ describe('AI Chat E2E', () => {
     let chatMessageModel: Model<ChatMessageDocument>;
     let reconcileService: ReservationReconcileService;
     let redisMock: StatefulRedisMock;
-    let originalIpLimit: number;
 
     beforeAll(async () => {
-        // Race tests fire several requests from the same IP on purpose — the
-        // account-level guards are what they assert, not the IP counter.
-        originalIpLimit = ENV.AI_CHAT_IP_LIMIT;
-        ENV.AI_CHAT_IP_LIMIT = 100;
-
         mongoServer = await MongoMemoryReplSet.create({
             replSet: { count: 1 },
         });
@@ -225,6 +223,8 @@ describe('AI Chat E2E', () => {
             .useValue(mockEmailService)
             .overrideProvider(AI_PROVIDER)
             .useValue(mockAiProvider)
+            .overrideProvider(AiRateLimitGuard)
+            .useValue({ canActivate: () => true })
             .compile();
 
         app = moduleFixture.createNestApplication({ rawBody: true });
@@ -248,7 +248,6 @@ describe('AI Chat E2E', () => {
     }, 120_000);
 
     afterAll(async () => {
-        ENV.AI_CHAT_IP_LIMIT = originalIpLimit;
         await app.close();
         await mongoServer.stop();
     });

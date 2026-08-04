@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
+    ACCOUNT_DELETION_GRACE_DAYS,
     LANG,
     MAGIC_LINK_PURPOSE,
     type MagicLinkPurpose,
@@ -21,7 +22,7 @@ import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '../../common/modules/redis.module';
 import { RedisCounterService } from '../../common/services/redis-counter.service';
-import { ENV, parseLockoutThresholds } from '../../config/env';
+import { ENV } from '../../config/env';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
@@ -41,6 +42,23 @@ interface JwtPayload {
 
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
 const ROTATION_GRACE_PERIOD = 10; // 10 seconds for concurrent tab requests
+
+const LOGIN_ATTEMPTS_TTL = 15 * 60; // 15 minutes
+const MAGIC_LINK_TTL = 15 * 60; // 15 minutes
+const MAGIC_LINK_RATE_LIMIT = 3;
+const MAGIC_LINK_RATE_WINDOW = 15 * 60; // 15 minutes
+const MAGIC_LINK_DEDUP_TTL = 60; // 1 minute
+
+// Progressive lockout: N failed attempts → block for `blockMin` minutes.
+// Ordered ascending — checkBruteForce picks the highest threshold reached.
+const LOCKOUT_THRESHOLDS: ReadonlyArray<{
+    attempts: number;
+    blockMin: number;
+}> = [
+    { attempts: 5, blockMin: 1 },
+    { attempts: 10, blockMin: 5 },
+    { attempts: 20, blockMin: 15 },
+];
 
 @Injectable()
 export class AuthService {
@@ -211,17 +229,16 @@ export class AuthService {
     ): Promise<void> {
         const normalizedEmail = email.trim().toLowerCase();
         const rateLimitKey = `ratelimit:magic:${normalizedEmail}`;
-        const rateLimitTtl = ENV.AUTH_MAGIC_LINK_RATE_WINDOW_MIN * 60;
 
         // Atomic INCR + first-call EXPIRE via Lua. Prevents permanent counter
         // retention if the process dies between INCR and EXPIRE — that bug would
         // permanently block magic link sends to the affected email.
         const count = await this.redisCounter.incrementFixedWindow(
             rateLimitKey,
-            rateLimitTtl
+            MAGIC_LINK_RATE_WINDOW
         );
 
-        if (count > ENV.AUTH_MAGIC_LINK_RATE_LIMIT) {
+        if (count > MAGIC_LINK_RATE_LIMIT) {
             throw new TooManyRequestsException();
         }
 
@@ -239,11 +256,10 @@ export class AuthService {
             lang: requestLang,
             ...(redirectTo && { redirectTo }),
         });
-        const magicLinkTtl = ENV.AUTH_MAGIC_LINK_TTL_MIN * 60;
 
         const pipeline = this.redis.pipeline();
-        pipeline.set(`magic:${token}`, payload, 'EX', magicLinkTtl);
-        pipeline.set(dedupKey, token, 'EX', ENV.AUTH_MAGIC_LINK_DEDUP_SEC);
+        pipeline.set(`magic:${token}`, payload, 'EX', MAGIC_LINK_TTL);
+        pipeline.set(dedupKey, token, 'EX', MAGIC_LINK_DEDUP_TTL);
         await pipeline.exec();
 
         const user = await this.usersService.findByEmail(normalizedEmail);
@@ -315,7 +331,7 @@ export class AuthService {
     ): Promise<void> {
         const deletionDate = new Date();
         deletionDate.setDate(
-            deletionDate.getDate() + ENV.ACCOUNT_DELETION_GRACE_DAYS
+            deletionDate.getDate() + ACCOUNT_DELETION_GRACE_DAYS
         );
         await this.emailService.sendDeletionConfirmation({
             email,
@@ -508,10 +524,9 @@ export class AuthService {
         if (!attemptsStr) return;
 
         const attempts = parseInt(attemptsStr, 10);
-        const thresholds = parseLockoutThresholds(ENV.AUTH_LOCKOUT_THRESHOLDS);
 
         // Find the highest threshold that has been exceeded
-        const activeThreshold = [...thresholds]
+        const activeThreshold = [...LOCKOUT_THRESHOLDS]
             .reverse()
             .find((t) => attempts >= t.attempts);
 
@@ -527,12 +542,11 @@ export class AuthService {
         email: string
     ): Promise<void> {
         const key = `login_attempts:${ip}:${email}`;
-        const ttl = ENV.AUTH_LOGIN_ATTEMPTS_TTL_MIN * 60;
         // Sliding window: every failed attempt refreshes the TTL so an ongoing
         // brute-force keeps the offender locked indefinitely. Atomic Lua avoids
         // the race where a process crash between INCR and EXPIRE leaves the
         // counter without TTL — that would permanently lock out the user.
-        await this.redisCounter.incrementSlidingWindow(key, ttl);
+        await this.redisCounter.incrementSlidingWindow(key, LOGIN_ATTEMPTS_TTL);
     }
 
     private async clearLoginAttempts(ip: string, email: string): Promise<void> {

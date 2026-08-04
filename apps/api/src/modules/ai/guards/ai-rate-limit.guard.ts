@@ -11,10 +11,12 @@ import { Request } from 'express';
 import { RESPONSE_CODE } from '@cyanship/types';
 
 import { RedisCounterService } from '../../../common/services/redis-counter.service';
-import { ENV } from '../../../config/env';
 
 const AI_IP_KEY_PREFIX = 'ai:ip:';
 const AI_IP_TTL_SECONDS = 86_400; // 24 hours
+
+/** Requests per IP per 24h window, across all accounts sharing that IP. */
+export const AI_CHAT_IP_LIMIT = 5;
 
 /**
  * IP-based rate limit guard for AI chat.
@@ -49,7 +51,7 @@ export class AiRateLimitGuard implements CanActivate {
                 AI_IP_TTL_SECONDS
             );
 
-            if (count > ENV.AI_CHAT_IP_LIMIT) {
+            if (count > AI_CHAT_IP_LIMIT) {
                 throw new HttpException(
                     {
                         code: RESPONSE_CODE.AI_RATE_LIMIT_EXCEEDED,
