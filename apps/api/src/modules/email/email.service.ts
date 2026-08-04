@@ -4,6 +4,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import {
+    ACCOUNT_DELETION_GRACE_DAYS,
     LANG,
     MAGIC_LINK_PURPOSE,
     RESPONSE_CODE,
@@ -71,7 +72,7 @@ export class EmailService {
                 translations: {
                     ...t.deletionConfirmation,
                     instruction: t.deletionConfirmation.instruction(
-                        ENV.ACCOUNT_DELETION_GRACE_DAYS
+                        ACCOUNT_DELETION_GRACE_DAYS
                     ),
                 },
                 formattedDate,

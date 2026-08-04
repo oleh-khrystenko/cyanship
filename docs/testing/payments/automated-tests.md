@@ -31,14 +31,15 @@ Unit та e2e тести для повного покриття платіжно
 
 1. **Імплементацію** — зрозумій реальні сигнатури методів, логіку, edge cases:
    - `apps/api/src/modules/payments/payments.service.ts` — основна логіка (createCheckoutSession, createPortalSession, handleWebhook + private методи)
-   - `apps/api/src/modules/payments/payments.controller.ts` — 3 endpoints, raw body, signature validation
+   - `apps/api/src/modules/payments/payments.controller.ts` — 5 endpoints (catalog, checkout-session, portal-session, reset, webhook), raw body, signature validation
+   - `apps/api/src/modules/payments/catalog.service.ts` — читання Products/Prices зі Stripe, Redis-кеш, валідація на старті
    - `apps/api/src/modules/payments/providers/stripe.service.ts` — Stripe adapter, event parsing, status mapping
    - `apps/api/src/modules/payments/interfaces/payment-provider.interface.ts` — IPaymentProvider інтерфейс, CreateCheckoutInput
    - `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts` — Mongoose schema для two-phase idempotency (status: 'pending' | 'applied')
    - `apps/api/src/common/guards/subscription.guard.ts` — SubscriptionGuard (вже покритий тестами)
    - `apps/api/src/modules/users/schemas/user.schema.ts` — User schema з billing subdocument
-   - `apps/api/src/modules/users/users.service.ts` — addCredits, deductCredit (для one-off)
-   - `apps/api/src/config/env.ts` — ENV, STRIPE_CREDIT_PACKS, feature flags
+   - `apps/api/src/modules/users/users.service.ts` — операції з балансом executions і ledger-транзакціями
+   - `apps/api/src/config/env.ts` — тільки `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `WEB_URL`; прапорці оплати — константи в `packages/types/src/constants/payments.ts`
 2. **Існуючі тести** — зрозумій patterns мокування, структуру, стиль assertions:
    - `apps/api/src/modules/auth/auth.service.spec.ts` — патерн мокування Mongoose Model + Redis
    - `apps/api/src/modules/auth/auth.controller.spec.ts` — патерн мокування Controller + Response object
@@ -47,10 +48,11 @@ Unit та e2e тести для повного покриття платіжно
    - `apps/api/src/common/guards/subscription.guard.spec.ts` — **ВЖЕ ПОВНІСТЮ ПОКРИТИЙ** — не дублювати
    - `apps/web/src/shared/api/payments.spec.ts` — **ВЖЕ ІСНУЄ** — покриває createSubscriptionCheckout, createOneOffCheckout, createPortalSession
 3. **Types з packages/types:**
-   - `packages/types/src/contracts/payments.ts` — PAYMENT_TYPE, SUBSCRIPTION_STATUS, BILLING_EVENT_TYPE (4 types: CHECKOUT_COMPLETED, SUBSCRIPTION_UPDATED, SUBSCRIPTION_DELETED, ONE_OFF_PAYMENT_COMPLETED), CreateCheckoutSessionSchema (discriminated union), BillingWebhookEventSchema, CREDIT_PACK_CONFIG
+   - `packages/types/src/contracts/payments.ts` — PAYMENT_TYPE, SUBSCRIPTION_STATUS, BILLING_EVENT_TYPE (4 types: CHECKOUT_COMPLETED, SUBSCRIPTION_UPDATED, SUBSCRIPTION_DELETED, ONE_OFF_PAYMENT_COMPLETED), SUBSCRIPTION_PLAN_CODES / EXECUTION_PACK_CODES, catalog-типи, CreateCheckoutSessionSchema (`.refine()`, не discriminated union), BillingWebhookEventSchema
+   - `packages/types/src/constants/payments.ts` — PAYMENTS_SUBSCRIPTION_ENABLED / PAYMENTS_ONE_OFF_ENABLED (константи, не env)
    - `packages/types/src/enums/response-code.ts` — ALREADY_SUBSCRIBED, NO_BILLING_ACCOUNT, SUBSCRIPTION_REQUIRED, PAYMENT_TYPE_DISABLED
 4. **Frontend:**
-   - `apps/web/src/shared/api/payments.ts` — createSubscriptionCheckout(planCode), createOneOffCheckout(packCode), createPortalSession()
+   - `apps/web/src/shared/api/payments.ts` — getCatalog(), createSubscriptionCheckout(planCode, returnPath?), createOneOffCheckout(packCode, returnPath?), createPortalSession(), resetBilling()
    - `apps/web/src/shared/api/client.ts` — apiClient instance
 
 ### Крок 2: Backend unit тести
@@ -82,27 +84,27 @@ Unit та e2e тести для повного покриття платіжно
 - `createCheckoutSession(userId: string, dto: CreateCheckoutSession)` — приймає повний DTO (НЕ planCode окремо)
 - `handleWebhook` використовує two-phase idempotency: insert 'pending' → process → mark 'applied', rollback на failure
 - Subscription billing update: atomic `findOneAndUpdate` з `$or` guard (НЕ findByIdAndUpdate) + two-phase (dot-notation для existing billing, full object для null billing)
-- One-off payments: `applyOneOffPayment` → `usersService.addCredits`
+- One-off payments: `applyOneOffPayment` → `usersService.addExecutions`
 
 **Мокування:**
 - `PAYMENT_PROVIDER` token — mock об'єкт з `createCheckoutSession`, `createPortalSession`, `handleWebhookPayload` як `jest.fn()`
 - `userModel` — через `getModelToken(User.name)`, methods: `findById`, `findOne`, `findOneAndUpdate` як `jest.fn()`. Для chainable: `findById().lean()`, `findById().maxTimeMS().lean()`
 - `webhookEventModel` — через `getModelToken(ProcessedWebhookEvent.name)`, methods: `create`, `findOne`, `updateOne`, `deleteOne` як `jest.fn()`. Для chainable: `findOne().lean()`
-- `usersService` — mock з `addCredits` як `jest.fn()`
+- `usersService` — mock з `addExecutions`, `recordTransaction`, `clearTransactions` як `jest.fn()`
 
 #### Subscription checkout (`createCheckoutSession` з `paymentType: 'subscription'`)
 
-- Юзер без підписки → викликає `paymentProvider.createCheckoutSession` з правильними аргументами (userId, userEmail, paymentType, planCode, priceId з ENV, successUrl, cancelUrl) → повертає `{ checkoutUrl }`
+- Юзер без підписки → викликає `paymentProvider.createCheckoutSession` з правильними аргументами (userId, userEmail, paymentType, planCode, priceId і executions з `CatalogService`, successUrl, cancelUrl з локаллю юзера) → повертає `{ checkoutUrl }`
 - Юзер з активною підпискою (`hasActiveSubscription: true`) → кидає `ConflictException` з `code: RESPONSE_CODE.ALREADY_SUBSCRIBED`
 - Юзер не знайдений → кидає `BadRequestException`
-- `PAYMENTS_SUBSCRIPTION_ENABLED = false` → кидає `BadRequestException` з `code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED`
+- `PAYMENTS_SUBSCRIPTION_ENABLED = false` (константа мокається через `jest.mock('@cyanship/types')`) → кидає `BadRequestException` з `code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED`
 - Юзер з existing `providerCustomerId` → передає його в `createCheckoutSession` input
 
 #### One-off checkout (`createCheckoutSession` з `paymentType: 'one_off'`)
 
-- Юзер + valid packCode ('credits_5') → викликає `paymentProvider.createCheckoutSession` з priceId з `STRIPE_CREDIT_PACKS`, credits з pack config → повертає `{ checkoutUrl }`
+- Юзер + valid packCode ('basic') → викликає `paymentProvider.createCheckoutSession` з priceId і executions з `CatalogService` (`planCode` = packCode) → повертає `{ checkoutUrl }`
 - Invalid packCode → кидає `BadRequestException('Invalid packCode')`
-- `PAYMENTS_ONE_OFF_ENABLED = false` → кидає `BadRequestException` з `code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED`
+- `PAYMENTS_ONE_OFF_ENABLED = false` (константа мокається через `jest.mock('@cyanship/types')`) → кидає `BadRequestException` з `code: RESPONSE_CODE.PAYMENT_TYPE_DISABLED`
 
 #### Portal (`createPortalSession`)
 
@@ -157,11 +159,11 @@ Unit та e2e тести для повного покриття платіжно
 
 #### Webhook — one-off payment (`applyOneOffPayment`)
 
-- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: 5` → `usersService.addCredits(userId, 5)` called
-- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: 0` → skip, addCredits NOT called, log warning
-- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: undefined` → skip (fallback to 0)
-- `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount: -5` → skip (not positive)
-- User not found for one-off event → log warning, return without calling addCredits
+- `ONE_OFF_PAYMENT_COMPLETED` з `executionsAmount: 5000` → `usersService.addExecutions(userId, 5000, …)` called
+- `ONE_OFF_PAYMENT_COMPLETED` з `executionsAmount: 0` → skip, addExecutions NOT called, log warning
+- `ONE_OFF_PAYMENT_COMPLETED` з `executionsAmount: undefined` → skip (fallback to 0)
+- `ONE_OFF_PAYMENT_COMPLETED` з `executionsAmount: -5` → skip (not positive)
+- User not found for one-off event → log warning, return without calling addExecutions
 
 ### 2.2 `apps/api/src/modules/payments/payments.controller.spec.ts` (8 тестів)
 
@@ -188,17 +190,17 @@ Unit та e2e тести для повного покриття платіжно
 
 **Метод `createCheckoutSession`:**
 - Subscription: mode='subscription', передає правильний `price`, `metadata.userId`, `metadata.planCode`, `client_reference_id`, `success_url`, `cancel_url`. З `providerCustomerId` → `customer`. Без → `customer_email`.
-- One-off: mode='payment', `metadata.credits` = String(credits), `metadata.planCode` = packCode
+- One-off: mode='payment', `metadata.executions` = String(executions), `metadata.planCode` = packCode
 - `session.url` є → повертає `{ checkoutUrl: session.url, providerSessionId: session.id }`
 - `session.url` відсутній → кидає Error('Stripe checkout session created without URL')
 
 **Метод `createPortalSession`:**
-- Передає `customer: providerCustomerId`, `return_url: ENV.BILLING_SUCCESS_URL`
+- Передає `customer: providerCustomerId`, `return_url` — аргумент від `PaymentsService` (`{WEB_URL}/{locale}/billing`)
 - Повертає `{ portalUrl: session.url }`
 
 **Метод `handleWebhookPayload`:**
 - `checkout.session.completed` mode=subscription → `type: CHECKOUT_COMPLETED`, `userId` з `metadata.userId`, `subscriptionStatus: ACTIVE`
-- `checkout.session.completed` mode=payment, paid → `type: ONE_OFF_PAYMENT_COMPLETED`, `creditsAmount` з metadata.credits, `packCode` з metadata.planCode
+- `checkout.session.completed` mode=payment, paid → `type: ONE_OFF_PAYMENT_COMPLETED`, `executionsAmount` з metadata.executions, `packCode` з metadata.planCode
 - `checkout.session.completed` mode=payment, unpaid → повертає `null`
 - `checkout.session.completed` без `metadata.userId` → fallback до `client_reference_id`
 - `checkout.session.async_payment_succeeded` → same handling as `checkout.session.completed`
@@ -241,7 +243,7 @@ Unit та e2e тести для повного покриття платіжно
 - B. `POST /api/payments/portal-session` — 4 тести (success + no billing + null customerId + auth)
 - C. `POST /api/payments/webhook/:provider` — 3 тести (valid + no signature + bad provider)
 - D. Response format — 3 тести
-- E. One-off checkout — 3 тести (success + bad pack + credits webhook)
+- E. One-off checkout — 3 тести (success + bad pack + executions webhook)
 - F. Feature flags — 2 тести (disabled subscription + disabled one-off)
 - G. Webhook idempotency — 2 тести (duplicate skip + rollback/retry)
 
@@ -249,7 +251,7 @@ Unit та e2e тести для повного покриття платіжно
 
 - **Out-of-order event handling:** два SUBSCRIPTION_UPDATED events — новіший, потім старіший. Старіший skip.
 - **Subscription lifecycle:** CHECKOUT_COMPLETED → SUBSCRIPTION_UPDATED(past_due) → SUBSCRIPTION_DELETED.
-- **One-off idempotency:** повторний ONE_OFF_PAYMENT_COMPLETED з тим самим providerEventId → credits НЕ додаються вдруге.
+- **One-off idempotency:** повторний ONE_OFF_PAYMENT_COMPLETED з тим самим providerEventId → executions НЕ додаються вдруге.
 - **userId resolution via subscription lookup:** SUBSCRIPTION_UPDATED з порожнім userId → resolved через `billing.providerSubscriptionId`.
 
 ---

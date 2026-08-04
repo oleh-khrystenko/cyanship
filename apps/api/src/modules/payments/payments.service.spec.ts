@@ -21,14 +21,21 @@ import { UsersService } from '../users/users.service';
 jest.mock('../../config/env', () => ({
     ENV: {
         WEB_URL: 'http://localhost:3000',
-        PAYMENTS_SUBSCRIPTION_ENABLED: true,
-        PAYMENTS_ONE_OFF_ENABLED: true,
     },
 }));
 
+// Feature-flag tests flip the toggles at runtime, so the constants module is
+// mocked with writable copies — the real exports are plain consts.
+jest.mock('@cyanship/types', () => ({
+    ...jest.requireActual<Record<string, unknown>>('@cyanship/types'),
+    PAYMENTS_SUBSCRIPTION_ENABLED: true,
+    PAYMENTS_ONE_OFF_ENABLED: true,
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
-const envModule = require('../../config/env') as {
-    ENV: Record<string, unknown>;
+const typesModule = require('@cyanship/types') as {
+    PAYMENTS_SUBSCRIPTION_ENABLED: boolean;
+    PAYMENTS_ONE_OFF_ENABLED: boolean;
 };
 
 // ─── Test catalog data ───────────────────────────────────────────────────────
@@ -187,8 +194,8 @@ describe('PaymentsService', () => {
         jest.clearAllMocks();
 
         // Reset feature flags to defaults
-        envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
-        envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = true;
+        typesModule.PAYMENTS_SUBSCRIPTION_ENABLED = true;
+        typesModule.PAYMENTS_ONE_OFF_ENABLED = true;
 
         // Default mocks for two-phase idempotency helpers
         mockWebhookEventModel.updateOne.mockResolvedValue({});
@@ -290,7 +297,7 @@ describe('PaymentsService', () => {
         });
 
         it('should throw when PAYMENTS_SUBSCRIPTION_ENABLED is false', async () => {
-            envModule.ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+            typesModule.PAYMENTS_SUBSCRIPTION_ENABLED = false;
 
             await expect(
                 service.createCheckoutSession(MOCK_USER_ID, {
@@ -356,7 +363,7 @@ describe('PaymentsService', () => {
         });
 
         it('should throw when PAYMENTS_ONE_OFF_ENABLED is false', async () => {
-            envModule.ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+            typesModule.PAYMENTS_ONE_OFF_ENABLED = false;
 
             await expect(
                 service.createCheckoutSession(MOCK_USER_ID, {

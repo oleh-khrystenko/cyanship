@@ -85,7 +85,7 @@ Soft-delete: акаунт деактивується (`deletedAt` = поточн
 
 ## Grace period — 30 днів для відновлення
 
-Після деактивації акаунт існує в системі ще 30 днів (`ACCOUNT_DELETION_GRACE_DAYS`).
+Після деактивації акаунт існує в системі ще 30 днів — константа `ACCOUNT_DELETION_GRACE_DAYS` у `packages/types/src/constants/account.ts`. Спільна для API (крон hard-delete, листи) і web (сторінки Terms/Privacy), тому строк у документах юзера завжди збігається з реальним.
 
 Зайти на платформу та користуватися нею неможливо — `JwtActiveGuard` відхиляє юзерів з `deletedAt !== null`.
 

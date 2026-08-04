@@ -1,6 +1,6 @@
 # Manual E2E Test Plan: повний payments flow
 
-> Покрокові сценарії для ручного тестування. Покриває всю платіжну підсистему: Stripe Checkout (subscription + one-off), Billing Portal, Webhook handling, SubscriptionGuard, Billing page UI (subscription + credits sections).
+> Покрокові сценарії для ручного тестування. Покриває всю платіжну підсистему: Stripe Checkout (subscription + one-off), Billing Portal, Webhook handling, SubscriptionGuard, Billing page UI (subscription + executions sections).
 
 Дата: 2026-03-04
 
@@ -48,7 +48,7 @@
 - [ ] Network: `POST /api/payments/checkout-session` → 201, `{ data: { checkoutUrl: 'https://checkout.stripe.com/...' } }`
 - [ ] Кнопка показує spinner під час API call
 - [ ] Browser переходить на `checkout.stripe.com`
-- [ ] Після успішної оплати → redirect на `{BILLING_SUCCESS_URL}` (напр. `/billing/success`)
+- [ ] Після успішної оплати → redirect на `/{locale}/billing/success`
 - [ ] Stripe CLI: видно події `checkout.session.completed` та `customer.subscription.updated`
 - [ ] Network: `POST /api/payments/webhook/stripe` → 201 двічі (для кожної події)
 - [ ] Stripe Dashboard: subscription зі статусом `active`
@@ -61,7 +61,7 @@
 
 **Steps:**
 1. Відкрити DevTools Console
-2. Виконати: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ paymentType: 'subscription', planCode: 'monthly_usd' }) }).then(r => r.json()).then(console.log)`
+2. Виконати: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ paymentType: 'subscription', planCode: 'pro' }) }).then(r => r.json()).then(console.log)`
 
 **Expected:**
 - [ ] Response: 409, `{ error: { code: 'ALREADY_SUBSCRIBED', message: '...' } }`
@@ -78,7 +78,7 @@
 2. На Stripe Checkout натиснути "Back" або закрити вкладку
 
 **Expected:**
-- [ ] Browser переходить на `{BILLING_CANCEL_URL}` (cancel URL)
+- [ ] Browser переходить на `/{locale}/billing/cancel`
 - [ ] Підписка НЕ активується
 - [ ] Billing page: досі стан "Оформіть підписку"
 
@@ -242,49 +242,49 @@
 
 ---
 
-## D. One-Off Payments (Credit Packs)
+## D. One-Off Payments (Executions Packs)
 
-### Тест D1: Успішна купівля кредитного пакету
+### Тест D1: Успішна купівля пакету executions
 
-**Precondition:** Авторизований юзер. Stripe CLI запущений. Початковий credits.balance = 0.
+**Precondition:** Авторизований юзер. Stripe CLI запущений. Початковий `executions.balance` = 0.
 
 **Steps:**
 1. Перейти на `/{locale}/billing`
-2. У секції "Кредити" натиснути кнопку купівлі для пакету 5 кредитів
+2. У секції executions натиснути кнопку купівлі пакету `basic`
 3. На Stripe Checkout заповнити картку `4242 4242 4242 4242`
 4. Підтвердити оплату
 
 **Expected:**
 - [ ] Network: `POST /api/payments/checkout-session` → 201 з `{ data: { checkoutUrl } }`
-- [ ] Request body: `{ paymentType: 'one_off', packCode: 'credits_5' }`
+- [ ] Request body: `{ paymentType: 'one_off', packCode: 'basic' }`
 - [ ] Browser переходить на Stripe Checkout (mode=payment)
-- [ ] Після оплати → redirect на `/billing/success`
+- [ ] Після оплати → redirect на `/{locale}/billing/success`
 - [ ] Stripe CLI: `checkout.session.completed` webhook → 201
-- [ ] MongoDB: `credits.balance` = 5 (was 0)
-- [ ] Header: credits badge показує 5
+- [ ] MongoDB: `executions.balance` = кількість з metadata Stripe-продукту `basic` (було 0)
+- [ ] Header: executions badge показує той самий баланс
 
 ---
 
-### Тест D2: Купівля кредитів — другий пакет (accumulation)
+### Тест D2: Купівля другого пакету (accumulation)
 
-**Precondition:** Юзер вже має 5 кредитів (після D1).
+**Precondition:** Юзер уже має баланс після D1.
 
 **Steps:**
-1. Купити ще один пакет (10 кредитів)
+1. Купити пакет `max`
 
 **Expected:**
-- [ ] MongoDB: `credits.balance` = 15 (5 + 10)
-- [ ] Credits accumulate, не перезаписуються
+- [ ] MongoDB: `executions.balance` = сума обох пакетів
+- [ ] Баланс накопичується, не перезаписується
 
 ---
 
 ### Тест D3: Невалідний packCode
 
 **Steps:**
-1. DevTools Console: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ paymentType: 'one_off', packCode: 'credits_999' }) }).then(r => r.json()).then(console.log)`
+1. DevTools Console: `fetch('/api/payments/checkout-session', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer TOKEN' }, body: JSON.stringify({ paymentType: 'one_off', packCode: 'nonexistent' }) }).then(r => r.json()).then(console.log)`
 
 **Expected:**
-- [ ] Response: 400 (validation error від Zod — packCode not in allowed enum)
+- [ ] Response: 400 `Invalid packCode` — коду немає в каталозі Stripe (Zod пропускає будь-який непорожній рядок, перевіряє `CatalogService`)
 
 ---
 
@@ -293,11 +293,11 @@
 **Precondition:** Юзер з активною підпискою.
 
 **Steps:**
-1. Купити кредитний пакет
+1. Купити пакет executions
 
 **Expected:**
 - [ ] Checkout створюється успішно (one-off не перевіряє hasActiveSubscription)
-- [ ] Кредити додаються нормально
+- [ ] Executions додаються нормально
 
 ---
 
@@ -305,27 +305,27 @@
 
 ### Тест E1: Subscription disabled
 
-**Precondition:** `PAYMENTS_SUBSCRIPTION_ENABLED=false` в env, `PAYMENTS_ONE_OFF_ENABLED=true`.
+**Precondition:** `PAYMENTS_SUBSCRIPTION_ENABLED = false`, `PAYMENTS_ONE_OFF_ENABLED = true` у `packages/types/src/constants/payments.ts` (потрібен ребілд пакета + рестарт обох застосунків).
 
 **Steps:**
 1. Перейти на `/{locale}/billing`
 
 **Expected:**
 - [ ] Subscription секція НЕ відображається (conditionally rendered via `PAYMENTS_SUBSCRIPTION_ENABLED`)
-- [ ] Credits секція відображається
+- [ ] Секція executions відображається
 - [ ] API: `POST /checkout-session` з `paymentType: 'subscription'` → 400, code `PAYMENT_TYPE_DISABLED`
 
 ---
 
 ### Тест E2: One-off disabled
 
-**Precondition:** `PAYMENTS_ONE_OFF_ENABLED=false`, `PAYMENTS_SUBSCRIPTION_ENABLED=true`.
+**Precondition:** `PAYMENTS_ONE_OFF_ENABLED = false`, `PAYMENTS_SUBSCRIPTION_ENABLED = true` у `packages/types/src/constants/payments.ts` (потрібен ребілд пакета + рестарт обох застосунків).
 
 **Steps:**
 1. Перейти на `/{locale}/billing`
 
 **Expected:**
-- [ ] Credits секція НЕ відображається
+- [ ] Секція executions НЕ відображається
 - [ ] Subscription секція відображається
 - [ ] API: `POST /checkout-session` з `paymentType: 'one_off'` → 400, code `PAYMENT_TYPE_DISABLED`
 
@@ -376,7 +376,7 @@
 **Expected:**
 - [ ] Subscription секція: заголовок `billing_page.subscribe.title`, опис, назва плану, кнопка "Оформити підписку"
 - [ ] НЕ відображається інформація про поточну підписку
-- [ ] Credits секція: заголовок, опис, поточний баланс (`credits.balance`), кнопки для кожного пакету (5, 10, 20 кредитів)
+- [ ] Секція executions: заголовок, опис, поточний баланс (`executions.balance`), картка на кожен пакет з каталогу (`basic`, `max`) з ціною і кількістю executions
 
 ---
 
@@ -394,7 +394,7 @@
 - [ ] Наступне списання (`active.next_billing` з датою)
 - [ ] Кнопка "Керувати підпискою" (`active.manage_button`)
 - [ ] НЕ відображається `cancel_notice`
-- [ ] Credits секція: також відображається (one-off незалежний від subscription)
+- [ ] Секція executions: також відображається (one-off незалежний від subscription)
 
 ---
 
@@ -413,23 +413,23 @@
 
 ---
 
-### Тест G4: Credits секція — відображення балансу
+### Тест G4: Секція executions — відображення балансу
 
-**Precondition:** Юзер з `credits.balance: 15`.
+**Precondition:** Юзер з ненульовим `executions.balance`.
 
 **Steps:**
 1. Перейти на `/{locale}/billing`
 
 **Expected:**
-- [ ] Credits секція показує "Баланс: 15 кредитів" (або відповідний i18n ключ `credits.balance`)
-- [ ] Три кнопки купівлі: 5, 10, 20 кредитів (з `CREDIT_PACK_CONFIG`)
+- [ ] Секція показує поточний баланс (i18n ключ `executions.balance`)
+- [ ] Кнопка купівлі на кожен пакет з `GET /payments/catalog` — назви й ціни приходять зі Stripe, у коді їх немає
 
 ---
 
 ### Тест G5: Loading state кнопок
 
 **Steps:**
-1. Натиснути "Оформити підписку" (або "Купити" кредитний пакет, або "Керувати підпискою")
+1. Натиснути "Оформити підписку" (або "Купити" пакет executions, або "Керувати підпискою")
 
 **Expected:**
 - [ ] Кнопка показує spinner (`UiSpinner`) замість тексту
@@ -505,7 +505,7 @@
   ```json
   {
     "hasActiveSubscription": true,
-    "planCode": "monthly_usd",
+    "planCode": "pro",
     "subscriptionStatus": "ACTIVE",
     "currentPeriodEnd": "2026-04-03T...",
     "cancelAtPeriodEnd": false
@@ -527,15 +527,15 @@
 
 ---
 
-### Тест I3: getMe — credits field після one-off
+### Тест I3: getMe — executions field після one-off
 
-**Precondition:** Юзер з `credits.balance: 10`.
+**Precondition:** Юзер з ненульовим `executions.balance`.
 
 **Steps:**
 1. `GET /api/users/me`
 
 **Expected:**
-- [ ] Response містить `credits: { balance: 10, freeReportUsed: false }`
+- [ ] Response містить `executions: { balance: <очікуваний>, freeReportUsed: false }`
 
 ---
 
@@ -545,12 +545,12 @@
 
 **Steps:**
 1. Перейти на `/uk/billing`
-2. Перевірити всі тексти (включно з credits секцією)
+2. Перевірити всі тексти (включно з секцією executions)
 
 **Expected:**
 - [ ] Заголовки, описи, кнопки — українською
 - [ ] Дати форматуються у форматі uk-UA (напр. "15 березня 2026")
-- [ ] Credits секція: "Кредити", баланс, кнопки купівлі — українською
+- [ ] Секція executions: заголовок, баланс, кнопки купівлі — українською
 
 ---
 
@@ -562,7 +562,7 @@
 **Expected:**
 - [ ] Заголовки, описи, кнопки — англійською
 - [ ] Дати у форматі en-US (напр. "March 15, 2026")
-- [ ] Credits секція: "Credits", balance, buy buttons — англійською
+- [ ] Секція executions: заголовок, баланс, кнопки купівлі — англійською
 
 ---
 
@@ -646,8 +646,8 @@
 | C5 | Webhook — невідомий provider | Webhook | [ ] |
 | C6 | Webhook — відсутній signature | Webhook | [ ] |
 | C7 | Webhook — неправильна signature | Webhook | [ ] |
-| D1 | Купівля кредитного пакету — повний flow | One-Off Payments | [ ] |
-| D2 | Купівля кредитів — accumulation | One-Off Payments | [ ] |
+| D1 | Купівля пакету executions — повний flow | One-Off Payments | [ ] |
+| D2 | Купівля другого пакету — accumulation | One-Off Payments | [ ] |
 | D3 | Невалідний packCode | One-Off Payments | [ ] |
 | D4 | One-off з активною підпискою | One-Off Payments | [ ] |
 | E1 | Subscription disabled (feature flag) | Feature Flags | [ ] |
@@ -658,7 +658,7 @@
 | G1 | Billing page — стан A (no subscription) | Billing Page UI | [ ] |
 | G2 | Billing page — стан B (active) | Billing Page UI | [ ] |
 | G3 | Billing page — стан C (canceling) | Billing Page UI | [ ] |
-| G4 | Credits секція — баланс та пакети | Billing Page UI | [ ] |
+| G4 | Секція executions — баланс та пакети | Billing Page UI | [ ] |
 | G5 | Loading state кнопок | Billing Page UI | [ ] |
 | G6 | Error handling (network error) | Billing Page UI | [ ] |
 | H1 | /billing — неавторизований | Route Protection | [ ] |
@@ -666,7 +666,7 @@
 | H3 | /billing/success та /billing/cancel | Route Protection | [ ] |
 | I1 | getMe — billing field після підписки | Billing State | [ ] |
 | I2 | getMe — billing field без підписки | Billing State | [ ] |
-| I3 | getMe — credits field після one-off | Billing State | [ ] |
+| I3 | getMe — executions field після one-off | Billing State | [ ] |
 | J1 | Billing page — Ukrainian | i18n | [ ] |
 | J2 | Billing page — English | i18n | [ ] |
 | J3 | Toast — payments errors | i18n | [ ] |

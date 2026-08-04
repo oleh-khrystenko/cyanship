@@ -36,7 +36,7 @@ cyanship/
 │       └── src/
 │           ├── modules/
 │           │   ├── auth/             # Google OAuth, Magic Link, Password, JWT
-│           │   ├── users/            # CRUD, profile, soft-delete, credits
+│           │   ├── users/            # CRUD, profile, soft-delete, executions
 │           │   ├── payments/         # Stripe subscriptions + one-off credit packs
 │           │   ├── agency/           # Agency module (scaffold)
 │           │   ├── reports/          # Skeleton
@@ -114,14 +114,10 @@ GOOGLE_CALLBACK_URL=http://localhost:4000/api/auth/google/callback
 RESEND_API_KEY=your-resend-api-key
 
 # Stripe
+# Price ID тут немає: ціни, кількість executions і порядок відображення
+# читаються з metadata Stripe Products через CatalogService
 STRIPE_SECRET_KEY=your-stripe-secret-key
 STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-STRIPE_PRICE_ID_SUBSCRIPTION=your-stripe-price-id
-
-# Stripe credit packs (потрібні при PAYMENTS_ONE_OFF_ENABLED=true)
-# STRIPE_PRICE_ID_CREDITS_5=price_xxx
-# STRIPE_PRICE_ID_CREDITS_10=price_xxx
-# STRIPE_PRICE_ID_CREDITS_20=price_xxx
 
 # Web
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -129,6 +125,8 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ```
 
 Повний список змінних: [apps/api/src/config/env.ts](apps/api/src/config/env.ts), [apps/web/src/shared/config/env.ts](apps/web/src/shared/config/env.ts).
+
+Ліміти, TTL, пороги і feature-прапорці змінними середовища **не є** — вони однакові в усіх середовищах і живуть у коді (`packages/types/src/constants/`, або локальна константа модуля). Правило: [docs/conventions/fail-fast.md](docs/conventions/fail-fast.md).
 
 ### 2. Запуск для розробки
 

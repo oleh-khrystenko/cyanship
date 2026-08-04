@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
+import { ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
 import { AuthService } from '../auth/auth.service';
 import { EmailService } from '../email/email.service';
 import { CleanupService } from './cleanup.service';
 import { User } from './schemas/user.schema';
 
-jest.mock('../../config/env', () => ({
-    ENV: {
-        ACCOUNT_DELETION_GRACE_DAYS: 2,
-    },
-}));
+const DAY_MS = 86_400_000;
+
+/** Deleted long enough ago to sit inside the reminder window (last 24h before purge). */
+const IN_REMINDER_WINDOW_MS = (ACCOUNT_DELETION_GRACE_DAYS - 0.5) * DAY_MS;
 
 const mockModel = {
     find: jest.fn(),
@@ -111,9 +111,13 @@ describe('CleanupService', () => {
                 .mockReturnValueOnce(mockFindChain([]))
                 .mockReturnValueOnce(mockFindChain([]));
 
-            const before = new Date(Date.now() - 2 * 86_400_000);
+            const before = new Date(
+                Date.now() - ACCOUNT_DELETION_GRACE_DAYS * DAY_MS
+            );
             await service.handleExpiredAccounts();
-            const after = new Date(Date.now() - 2 * 86_400_000);
+            const after = new Date(
+                Date.now() - ACCOUNT_DELETION_GRACE_DAYS * DAY_MS
+            );
 
             const cutoffArg = mockModel.find.mock.calls[1][0].deletedAt.$lte;
             expect(cutoffArg.getTime()).toBeGreaterThanOrEqual(
@@ -182,7 +186,7 @@ describe('CleanupService', () => {
 
     describe('handleExpiredAccounts — deletion reminders', () => {
         it('should send reminder to users in the reminder window', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
             const usersToRemind = [
                 {
                     _id: { toString: () => 'user-r1' },
@@ -225,7 +229,7 @@ describe('CleanupService', () => {
         });
 
         it('should continue sending reminders when one fails', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
             const usersToRemind = [
                 {
                     _id: { toString: () => 'user-r1' },
@@ -285,7 +289,9 @@ describe('CleanupService', () => {
 
             await service.handleExpiredAccounts();
 
-            const expectedDeletionDate = new Date('2026-03-22T10:00:00Z');
+            const expectedDeletionDate = new Date(
+                deletedAt.getTime() + ACCOUNT_DELETION_GRACE_DAYS * DAY_MS
+            );
             expect(mockEmailService.sendDeletionReminder).toHaveBeenCalledWith(
                 expect.objectContaining({
                     deletionDate: expectedDeletionDate,
@@ -298,13 +304,21 @@ describe('CleanupService', () => {
                 .mockReturnValueOnce(mockFindChain([]))
                 .mockReturnValueOnce(mockFindChain([]));
 
-            const beforeReminder = new Date(Date.now() - 1 * 86_400_000);
-            const beforeHardDelete = new Date(Date.now() - 2 * 86_400_000);
+            const beforeReminder = new Date(
+                Date.now() - (ACCOUNT_DELETION_GRACE_DAYS - 1) * DAY_MS
+            );
+            const beforeHardDelete = new Date(
+                Date.now() - ACCOUNT_DELETION_GRACE_DAYS * DAY_MS
+            );
 
             await service.handleExpiredAccounts();
 
-            const afterReminder = new Date(Date.now() - 1 * 86_400_000);
-            const afterHardDelete = new Date(Date.now() - 2 * 86_400_000);
+            const afterReminder = new Date(
+                Date.now() - (ACCOUNT_DELETION_GRACE_DAYS - 1) * DAY_MS
+            );
+            const afterHardDelete = new Date(
+                Date.now() - ACCOUNT_DELETION_GRACE_DAYS * DAY_MS
+            );
 
             const reminderQuery = mockModel.find.mock.calls[0][0];
             expect(reminderQuery.deletionReminderSentAt).toBeNull();
@@ -329,7 +343,7 @@ describe('CleanupService', () => {
 
     describe('handleExpiredAccounts — timezone delivery window', () => {
         it('should send reminder when user has no timezone (fallback)', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
 
             mockModel.find
                 .mockReturnValueOnce(
@@ -355,7 +369,7 @@ describe('CleanupService', () => {
         });
 
         it('should send reminder when user timezone is in daytime window', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
             const daytimeTimezone = timezoneWithLocalHour(12);
 
             mockModel.find
@@ -382,7 +396,7 @@ describe('CleanupService', () => {
         });
 
         it('should defer reminder when user timezone is in nighttime', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
             const nighttimeTimezone = timezoneWithLocalHour(3);
 
             mockModel.find
@@ -408,7 +422,7 @@ describe('CleanupService', () => {
         });
 
         it('should send reminder when user has invalid timezone (fallback)', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
 
             mockModel.find
                 .mockReturnValueOnce(
@@ -434,7 +448,7 @@ describe('CleanupService', () => {
         });
 
         it('should mix: send to daytime users, defer nighttime users', async () => {
-            const deletedAt = new Date(Date.now() - 1.5 * 86_400_000);
+            const deletedAt = new Date(Date.now() - IN_REMINDER_WINDOW_MS);
             const daytimeTimezone = timezoneWithLocalHour(10);
             const nighttimeTimezone = timezoneWithLocalHour(2);
 

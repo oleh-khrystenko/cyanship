@@ -24,7 +24,7 @@ Stripe event
     ▼
 4. processWebhookEvent
     │ subscription → atomic billing update
-    │ one-off → addCredits
+    │ one-off → addExecutions
     │
     ▼
 5. markWebhookEventApplied
@@ -73,8 +73,8 @@ Stripe event
 ### ONE_OFF_PAYMENT_COMPLETED
 
 - Не оновлює billing state
-- `usersService.addCredits(userId, creditsAmount)` — atomic `$inc` на `credits.balance`
-- Якщо `creditsAmount` <= 0 або не число — warn log, skip
+- `usersService.addExecutions(userId, executionsAmount, action)` — atomic `$inc` на `executions.balance` + запис у ledger
+- Якщо `executionsAmount` <= 0 або не число — warn log, skip
 
 ## Webhook always returns 200
 

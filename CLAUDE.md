@@ -258,14 +258,11 @@ Scaffold без ендпоінтів.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`
-- `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED` (хоча б один `true`)
-- Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
-- AI: `ANTHROPIC_API_KEY`, `AI_CHAT_MAX_TOKENS`, `AI_CHAT_IP_LIMIT`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`
+- AI: `ANTHROPIC_API_KEY`
 - Storage (R2): `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` (hostname частина мусить збігатись з `NEXT_PUBLIC_STORAGE_HOSTNAME` на web — див. Known Complexities)
 
 **Web — ALL required (crash if missing)**
 - `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`
-- `NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED`, `NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 - `NEXT_PUBLIC_STORAGE_HOSTNAME` — R2 CDN hostname (використовується `next/image` `remotePatterns`; `next.config.ts` fail-fast'ить при його відсутності)
 
@@ -275,6 +272,10 @@ Scaffold без ендпоінтів.
 
 **Infra**
 - `WEB_PORT`, `API_PORT` — Docker compose порти
+
+**Не env vars — продуктовий тюнінг живе в коді** (політика: `docs/conventions/fail-fast.md`, розділ «Що НЕ є env var»)
+- Спільні для API і web: `packages/types/src/constants/account.ts` (`ACCOUNT_DELETION_GRACE_DAYS`), `packages/types/src/constants/payments.ts` (`PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED` — хоча б один `true`, перевіряє `CatalogService.onModuleInit`), `packages/types/src/contracts/ai-chat.ts` (`AI_CHAT_COST`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`)
+- Локальні для модуля: `auth.service.ts` (`LOGIN_ATTEMPTS_TTL`, `MAGIC_LINK_TTL`, `MAGIC_LINK_RATE_LIMIT`, `MAGIC_LINK_RATE_WINDOW`, `MAGIC_LINK_DEDUP_TTL`, `LOCKOUT_THRESHOLDS`), `ai.service.ts` (`AI_CHAT_MAX_TOKENS`), `ai-rate-limit.guard.ts` (`AI_CHAT_IP_LIMIT`)
 
 ## Common Commands
 

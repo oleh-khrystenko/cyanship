@@ -44,7 +44,7 @@
 - [ ] Network: `GET /api/users/me` → `200`
 - [ ] Redirect на `/{locale}/profile`
 - [ ] `Application -> Cookies`: `bid_refresh` (httpOnly, path=/, sameSite=lax)
-- [ ] Header показує ім'я/email, avatar, кредити
+- [ ] Header показує ім'я/email, avatar, баланс executions
 
 ---
 

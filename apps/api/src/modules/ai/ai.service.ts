@@ -13,14 +13,15 @@ import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 
 import {
+    AI_CHAT_BONUS_AMOUNT,
     AI_CHAT_COST,
+    AI_CHAT_FREE_LIMIT,
     AI_CHAT_RESERVATION_TTL_MS,
     EXECUTION_ACTION,
     EXECUTION_TRANSACTION_TYPE,
     RESPONSE_CODE,
 } from '@cyanship/types';
 
-import { ENV } from '../../config/env';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import {
@@ -85,6 +86,9 @@ RESPONSE GUIDELINES
 
 const AI_CHAT_MAX_HISTORY_MESSAGES = 50;
 
+/** Hard output cap per answer. The system prompt targets 150-250 words. */
+export const AI_CHAT_MAX_TOKENS = 300;
+
 @Injectable()
 export class AiService {
     private readonly logger = new Logger(AiService.name);
@@ -128,8 +132,7 @@ export class AiService {
             content: m.content,
         }));
 
-        const inputBudget =
-            this.aiProvider.contextWindow - ENV.AI_CHAT_MAX_TOKENS;
+        const inputBudget = this.aiProvider.contextWindow - AI_CHAT_MAX_TOKENS;
 
         let messages = [...historyMessages, currentMessage];
         let inputTokens = await this.aiProvider.countTokens(
@@ -173,7 +176,7 @@ export class AiService {
         return this.aiProvider.streamChat(
             messages,
             SYSTEM_PROMPT,
-            ENV.AI_CHAT_MAX_TOKENS,
+            AI_CHAT_MAX_TOKENS,
             signal
         );
     }
@@ -182,9 +185,6 @@ export class AiService {
         const reservationId = randomUUID();
         const now = new Date();
         const expiresAt = new Date(now.getTime() + AI_CHAT_RESERVATION_TTL_MS);
-
-        const freeLimit = ENV.AI_CHAT_FREE_LIMIT;
-        const bonusAmount = ENV.AI_CHAT_BONUS_AMOUNT;
 
         const updated = await this.userModel.findOneAndUpdate(
             {
@@ -196,7 +196,7 @@ export class AiService {
                         { $ifNull: ['$ai.requestsUsed', 0] },
                         {
                             $add: [
-                                freeLimit,
+                                AI_CHAT_FREE_LIMIT,
                                 {
                                     $cond: [
                                         {
@@ -205,7 +205,7 @@ export class AiService {
                                                 false,
                                             ],
                                         },
-                                        bonusAmount,
+                                        AI_CHAT_BONUS_AMOUNT,
                                         0,
                                     ],
                                 },
@@ -271,7 +271,8 @@ export class AiService {
         }
 
         const ai = user.ai ?? { requestsUsed: 0, bonusGranted: false };
-        const limit = freeLimit + (ai.bonusGranted ? bonusAmount : 0);
+        const limit =
+            AI_CHAT_FREE_LIMIT + (ai.bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
 
         if (ai.requestsUsed >= limit) {
             throw new ForbiddenException({
@@ -319,8 +320,8 @@ export class AiService {
         });
 
         const limit =
-            ENV.AI_CHAT_FREE_LIMIT +
-            (ticket.bonusGranted ? ENV.AI_CHAT_BONUS_AMOUNT : 0);
+            AI_CHAT_FREE_LIMIT +
+            (ticket.bonusGranted ? AI_CHAT_BONUS_AMOUNT : 0);
         const aiRequestsRemaining = Math.max(
             0,
             limit - ticket.aiRequestsUsedAfterReserve

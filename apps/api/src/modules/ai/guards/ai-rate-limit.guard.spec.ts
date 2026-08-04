@@ -9,13 +9,7 @@ import { Request } from 'express';
 import { RESPONSE_CODE } from '@cyanship/types';
 
 import { RedisCounterService } from '../../../common/services/redis-counter.service';
-import { AiRateLimitGuard } from './ai-rate-limit.guard';
-
-jest.mock('../../../config/env', () => ({
-    ENV: {
-        AI_CHAT_IP_LIMIT: 20,
-    },
-}));
+import { AI_CHAT_IP_LIMIT, AiRateLimitGuard } from './ai-rate-limit.guard';
 
 const mockRedisCounter = {
     incrementFixedWindow: jest.fn(),
@@ -107,15 +101,19 @@ describe('AiRateLimitGuard', () => {
             );
         });
 
-        it('should pass when count is at the limit (20th request)', async () => {
-            mockRedisCounter.incrementFixedWindow.mockResolvedValue(20);
+        it('should pass when count is exactly at the limit', async () => {
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(
+                AI_CHAT_IP_LIMIT
+            );
             const ctx = buildContext();
 
             await expect(guard.canActivate(ctx)).resolves.toBe(true);
         });
 
-        it('should throw 429 with AI_RATE_LIMIT_EXCEEDED on the 21st request', async () => {
-            mockRedisCounter.incrementFixedWindow.mockResolvedValue(21);
+        it('should throw 429 with AI_RATE_LIMIT_EXCEEDED one request over the limit', async () => {
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(
+                AI_CHAT_IP_LIMIT + 1
+            );
             const ctx = buildContext();
 
             const error = await guard.canActivate(ctx).catch((e: unknown) => e);
@@ -141,7 +139,9 @@ describe('AiRateLimitGuard', () => {
         });
 
         it('should NOT wrap HttpException from limit check (passes through as 429)', async () => {
-            mockRedisCounter.incrementFixedWindow.mockResolvedValue(99);
+            mockRedisCounter.incrementFixedWindow.mockResolvedValue(
+                AI_CHAT_IP_LIMIT * 10
+            );
             const ctx = buildContext();
 
             const error = await guard.canActivate(ctx).catch((e: unknown) => e);

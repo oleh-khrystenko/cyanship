@@ -8,8 +8,6 @@ import { CatalogService } from './catalog.service';
 jest.mock('../../config/env', () => ({
     ENV: {
         WEB_URL: 'http://localhost:3000',
-        PAYMENTS_SUBSCRIPTION_ENABLED: true,
-        PAYMENTS_ONE_OFF_ENABLED: true,
     },
 }));
 

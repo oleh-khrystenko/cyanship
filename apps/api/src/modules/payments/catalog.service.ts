@@ -4,6 +4,8 @@ import Redis from 'ioredis';
 import {
     SUBSCRIPTION_PLAN_CODES,
     EXECUTION_PACK_CODES,
+    PAYMENTS_ONE_OFF_ENABLED,
+    PAYMENTS_SUBSCRIPTION_ENABLED,
     type PaymentsCatalog,
     type SubscriptionPlanItem,
     type ExecutionPackItem,
@@ -30,6 +32,14 @@ export class CatalogService implements OnModuleInit {
      * Validates that all expected plan/pack codes are present — catches metadata typos at deploy time.
      */
     async onModuleInit(): Promise<void> {
+        if (!PAYMENTS_SUBSCRIPTION_ENABLED && !PAYMENTS_ONE_OFF_ENABLED) {
+            throw new Error(
+                '❌ At least one payment type must be enabled. ' +
+                    'Set PAYMENTS_SUBSCRIPTION_ENABLED or PAYMENTS_ONE_OFF_ENABLED ' +
+                    'to true in packages/types/src/constants/payments.ts.'
+            );
+        }
+
         const catalog = await this.refreshCatalog();
         this.validateCatalog(catalog);
         this.logger.log('Catalog cache warmed from Stripe');
@@ -116,10 +126,10 @@ export class CatalogService implements OnModuleInit {
         const planCodes = new Set(catalog.subscriptionPlans.map((p) => p.code));
         const packCodes = new Set(catalog.executionPacks.map((p) => p.code));
 
-        const missingPlans = ENV.PAYMENTS_SUBSCRIPTION_ENABLED
+        const missingPlans = PAYMENTS_SUBSCRIPTION_ENABLED
             ? SUBSCRIPTION_PLAN_CODES.filter((c) => !planCodes.has(c))
             : [];
-        const missingPacks = ENV.PAYMENTS_ONE_OFF_ENABLED
+        const missingPacks = PAYMENTS_ONE_OFF_ENABLED
             ? EXECUTION_PACK_CODES.filter((c) => !packCodes.has(c))
             : [];
 

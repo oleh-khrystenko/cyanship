@@ -54,18 +54,6 @@ export const ENV = {
     ),
 } as const;
 
-export const PAYMENTS_SUBSCRIPTION_ENABLED =
-    assertEnv(
-        process.env.NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED,
-        'NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED'
-    ) === 'true';
-
-export const PAYMENTS_ONE_OFF_ENABLED =
-    assertEnv(
-        process.env.NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED,
-        'NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED'
-    ) === 'true';
-
 const demoVideoSrc = parseOptionalAbsoluteUrl(
     process.env.NEXT_PUBLIC_DEMO_VIDEO_URL,
     'NEXT_PUBLIC_DEMO_VIDEO_URL'

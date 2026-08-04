@@ -38,27 +38,39 @@ BILLING_EVENT_TYPE = {
 }
 ```
 
-### CREDIT_PACK_CONFIG
+## Plan/pack коди
 
 ```typescript
-CREDIT_PACK_CONFIG = {
-    credits_5: { credits: 5 },
-    credits_10: { credits: 10 },
-    credits_20: { credits: 20 },
-}
+SUBSCRIPTION_PLAN_CODES = ['starter', 'pro'] as const;
+EXECUTION_PACK_CODES = ['basic', 'max'] as const;
 ```
 
-`CreditPackCode = 'credits_5' | 'credits_10' | 'credits_20'`
+`SubscriptionPlanCode = 'starter' | 'pro'`, `ExecutionPackCode = 'basic' | 'max'`.
+
+Це структурні ідентифікатори — i18n-ключі, імена зображень, значення в БД. Ціни, кількість executions, порядок відображення і featured-позначка тут не зберігаються: вони живуть у metadata Stripe Products (див. [13-catalog.md](./13-catalog.md)). Новий план = код тут + i18n-ключі + зображення + Stripe Product.
+
+## Catalog types
+
+Заповнюються `CatalogService` під час читання зі Stripe:
+
+```typescript
+SubscriptionPlanItem = { code, priceId, priceAmount, currency, interval, executions, displayOrder, featured }
+ExecutionPackItem    = { code, priceId, priceAmount, currency, executions, displayOrder, featured }
+PaymentsCatalog      = { subscriptionPlans: SubscriptionPlanItem[], executionPacks: ExecutionPackItem[] }
+```
+
+`priceAmount` — у центах, `currency` — ISO-код зі Stripe.
 
 ## Schemas
 
 ### CreateCheckoutSessionSchema
 
-Discriminated union по `paymentType`:
-- `subscription` → `planCode` обов'язковий
-- `one_off` → `packCode` обов'язковий (enum з ключів CREDIT_PACK_CONFIG)
+Плоский об'єкт з `.refine()`, не discriminated union:
+- `paymentType: 'subscription' | 'one_off'`
+- `planCode?: string`, `packCode?: string` — обидва optional на рівні типу
+- `returnPath?: string` — мусить починатися з `/`, максимум 256 символів
 
-Zod `.refine()` валідує що відповідне поле присутнє.
+`.refine()` вимагає `planCode` для `subscription` і `packCode` для `one_off`. Самі коди валідуються не схемою, а наявністю в каталозі — `PaymentsService` кидає `Invalid planCode` / `Invalid packCode`, якщо `CatalogService` такого не знає.
 
 ### UserBillingSchema
 
@@ -75,9 +87,13 @@ Canonical model для webhook events:
 | occurredAt | Date | `stripeEvent.created * 1000` |
 | userId | string | З metadata або resolveUserId |
 | subscriptionStatus | SubscriptionStatus? | Для subscription events |
+| currentPeriodStart | Date? | Початок періоду |
 | currentPeriodEnd | Date? | Кінець періоду |
 | cancelAtPeriodEnd | boolean? | Скасування в кінці періоду |
-| creditsAmount | number? | Для one-off events |
+| previousPriceId | string? | Попередній priceId — база для proration при зміні плану |
+| scheduledPlanCode | string? | Код плану, на який заплановано перехід |
+| scheduledChangeDate | Date? | Дата запланованого переходу |
+| executionsAmount | number? | Для one-off events |
 | packCode | string? | Код пакету для one-off |
 | raw | Record<string, unknown> | Оригінальний Stripe payload |
 

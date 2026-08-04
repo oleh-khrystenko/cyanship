@@ -6,10 +6,10 @@
 
 - Token: `randomBytes(32).toString('hex')` — 32 байти рандому, 64 hex-символів
 - Зберігається в Redis як `magic:{token}` -> `{ email, purpose }` (JSON)
-- TTL: 15 хвилин (конфігурується через `AUTH_MAGIC_LINK_TTL_MIN`)
+- TTL: 15 хвилин (константа `MAGIC_LINK_TTL` в `auth.service.ts`)
 - Rate limit: 3 запити на email за 15 хвилин (ключ: `ratelimit:magic:{email}`)
 - Одноразовий: після використання видаляється з Redis через GETDEL (атомарно)
-- **Anti-spam dedup:** Перед генерацією нового токену перевіряється ключ `magic_dedup:{email}:{purpose}`. Якщо є — новий лист не відправляється, фронту повертається успішна відповідь (silent dedup). TTL dedup: 60 секунд (конфігурується через `AUTH_MAGIC_LINK_DEDUP_SEC`).
+- **Anti-spam dedup:** Перед генерацією нового токену перевіряється ключ `magic_dedup:{email}:{purpose}`. Якщо є — новий лист не відправляється, фронту повертається успішна відповідь (silent dedup). TTL dedup: 60 секунд (константа `MAGIC_LINK_DEDUP_TTL` в `auth.service.ts`).
 
 ## Верифікація
 

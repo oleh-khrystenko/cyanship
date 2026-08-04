@@ -185,20 +185,25 @@ Backend повертає machine-readable `code` через `apps/api/src/common
 - Runtime/data: `NODE_ENV`, `PORT`, `WEB_URL`, `MONGODB_URI`, `REDIS_URL`
 - Auth: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
 - OAuth/email: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
-- Payments: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED`
+- Payments: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - Agency/security: `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`
-- Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
-- AI: `ANTHROPIC_API_KEY`, `AI_CHAT_MAX_TOKENS`, `AI_CHAT_IP_LIMIT`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`
+- AI: `ANTHROPIC_API_KEY`
+- Storage (R2): `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`
+
+**Не env vars — продуктовий тюнінг у коді**
+- Ліміти, TTL, пороги і feature-прапорці env vars не є: вони однакові в усіх середовищах. Правило — `docs/conventions/fail-fast.md`, розділ «Що НЕ є env var»
+- Спільні для API і web: `packages/types/src/constants/account.ts` (`ACCOUNT_DELETION_GRACE_DAYS`), `packages/types/src/constants/payments.ts` (`PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED`), `packages/types/src/contracts/ai-chat.ts` (`AI_CHAT_COST`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`)
+- Локальні для модуля: `auth.service.ts` (`LOGIN_ATTEMPTS_TTL`, `MAGIC_LINK_TTL`, `MAGIC_LINK_RATE_LIMIT`, `MAGIC_LINK_RATE_WINDOW`, `MAGIC_LINK_DEDUP_TTL`, `LOCKOUT_THRESHOLDS`), `ai.service.ts` (`AI_CHAT_MAX_TOKENS`), `ai-rate-limit.guard.ts` (`AI_CHAT_IP_LIMIT`)
 
 **API env invariants**
-- `PAYMENTS_SUBSCRIPTION_ENABLED` і `PAYMENTS_ONE_OFF_ENABLED` є required booleans; якщо обидва `false`, API падає на старті
 - `GOOGLE_CALLBACK_URL` має вказувати на web-origin `/api/auth/google/callback`, щоб OAuth callback проходив через Next rewrite і refresh cookie лишався на web domain
-- `AUTH_LOCKOUT_THRESHOLDS` парситься з рядка виду `5:1,10:5,20:15`
+- `R2_PUBLIC_URL` hostname мусить дорівнювати `NEXT_PUBLIC_STORAGE_HOSTNAME` на web
+- Хоча б один з `PAYMENTS_SUBSCRIPTION_ENABLED` / `PAYMENTS_ONE_OFF_ENABLED` мусить бути `true` — інакше `CatalogService.onModuleInit` валить старт API
 
 **Web env: required**
 - Public base/API: `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`
-- Payments flags: `NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED`, `NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED`
 - Agency captcha: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+- Storage: `NEXT_PUBLIC_STORAGE_HOSTNAME`
 
 **Web env: optional**
 - `NEXT_PUBLIC_DEMO_VIDEO_URL` — вмикає demo video section; `DEMO_VIDEO_ENABLED` вираховується з його наявності

@@ -6,10 +6,6 @@ import { toast } from 'sonner';
 import { ExternalLink } from 'lucide-react';
 
 import {
-    PAYMENTS_SUBSCRIPTION_ENABLED,
-    PAYMENTS_ONE_OFF_ENABLED,
-} from '@/shared/config/env';
-import {
     getCatalog,
     createSubscriptionCheckout,
     createOneOffCheckout,
@@ -17,7 +13,12 @@ import {
 } from '@/shared/api/payments';
 import { useAuthStore } from '@/entities/user';
 import { formatLocalDate } from '@/shared/lib';
-import { formatPrice, type PaymentsCatalog } from '@cyanship/types';
+import {
+    formatPrice,
+    PAYMENTS_ONE_OFF_ENABLED,
+    PAYMENTS_SUBSCRIPTION_ENABLED,
+    type PaymentsCatalog,
+} from '@cyanship/types';
 import UiButton from '@/shared/ui/UiButton';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { DemoBanner } from '@/features/billing';

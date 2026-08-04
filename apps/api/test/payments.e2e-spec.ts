@@ -38,7 +38,6 @@ import { EmailService } from '../src/modules/email/email.service';
 import { UsersService } from '../src/modules/users/users.service';
 import { PAYMENT_PROVIDER } from '../src/modules/payments/interfaces/payment-provider.interface';
 import { CatalogService } from '../src/modules/payments/catalog.service';
-import { ENV } from '../src/config/env';
 import { createStatefulRedisMock } from './utils/redis.mock';
 import { createCatalogServiceMock } from './utils/catalog.mock';
 import { listenOnLoopback } from './utils/listen';
@@ -46,7 +45,21 @@ import { listenOnLoopback } from './utils/listen';
 // Env comes from src/test-setup.ts (jest-e2e.json setupFiles) — the real
 // fail-fast loader runs against placeholder values, so a newly required var
 // breaks the suite immediately instead of silently missing from a hand-written mock.
-// Feature-flag tests mutate ENV in place; beforeEach restores both toggles.
+
+// Payment toggles are plain constants in the shared package. Feature-flag tests
+// flip them at runtime, so the module is mocked with writable copies of the
+// real exports; beforeEach restores both toggles.
+jest.mock('@cyanship/types', () => ({
+    ...jest.requireActual<Record<string, unknown>>('@cyanship/types'),
+    PAYMENTS_SUBSCRIPTION_ENABLED: true,
+    PAYMENTS_ONE_OFF_ENABLED: true,
+}));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock() requires runtime require()
+const typesModule = require('@cyanship/types') as {
+    PAYMENTS_SUBSCRIPTION_ENABLED: boolean;
+    PAYMENTS_ONE_OFF_ENABLED: boolean;
+};
 
 const mockCatalogService = createCatalogServiceMock();
 
@@ -139,8 +152,8 @@ describe('Payments E2E', () => {
         await webhookEventModel.deleteMany({});
 
         // Reset feature flags to defaults
-        ENV.PAYMENTS_SUBSCRIPTION_ENABLED = true;
-        ENV.PAYMENTS_ONE_OFF_ENABLED = true;
+        typesModule.PAYMENTS_SUBSCRIPTION_ENABLED = true;
+        typesModule.PAYMENTS_ONE_OFF_ENABLED = true;
 
         // Default mock responses
         mockPaymentProvider.handleWebhookPayload.mockReturnValue(null);
@@ -492,7 +505,7 @@ describe('Payments E2E', () => {
 
     describe('payment type toggles', () => {
         it('should return 400 PAYMENT_TYPE_DISABLED when one-off is disabled', async () => {
-            ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+            typesModule.PAYMENTS_ONE_OFF_ENABLED = false;
 
             await createUser('toggle-oneoff@example.com', null);
             const { accessToken } = await loginAsUser(
@@ -512,7 +525,7 @@ describe('Payments E2E', () => {
         });
 
         it('should return 400 PAYMENT_TYPE_DISABLED when subscription is disabled', async () => {
-            ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+            typesModule.PAYMENTS_SUBSCRIPTION_ENABLED = false;
 
             await createUser('toggle-sub@example.com', null);
             const { accessToken } = await loginAsUser('toggle-sub@example.com');
@@ -977,7 +990,7 @@ describe('Payments E2E', () => {
         });
 
         it('should return empty subscriptionPlans when subscription payments are disabled', async () => {
-            ENV.PAYMENTS_SUBSCRIPTION_ENABLED = false;
+            typesModule.PAYMENTS_SUBSCRIPTION_ENABLED = false;
 
             await supertest(app.getHttpServer())
                 .get('/api/payments/catalog')
@@ -995,7 +1008,7 @@ describe('Payments E2E', () => {
         });
 
         it('should return empty executionPacks when one-off payments are disabled', async () => {
-            ENV.PAYMENTS_ONE_OFF_ENABLED = false;
+            typesModule.PAYMENTS_ONE_OFF_ENABLED = false;
 
             await supertest(app.getHttpServer())
                 .get('/api/payments/catalog')
