@@ -59,6 +59,14 @@ jobs:
                   key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
                   restore-keys: pnpm-
 
+            # Keeps the ~120 MB mongod download out of every run; the e2e
+            # globalSetup still warms it from scratch whenever this cache misses.
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.cache/mongodb-binaries
+                  key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+                  restore-keys: mongodb-binaries-${{ runner.os }}-
+
             - run: pnpm install --frozen-lockfile
 
             - run: pnpm --filter api test
