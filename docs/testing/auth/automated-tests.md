@@ -81,7 +81,7 @@ Unit, integration (e2e) та frontend unit тести для повного по
 
 **Метод `sendDeletionConfirmationEmail`:**
 - Виклик `emailService.sendDeletionConfirmation` з правильними аргументами (email, дата = now + grace period, lang)
-- Перевір обчислення дати: `now + ACCOUNT_DELETION_GRACE_DAYS` днів
+- Перевір обчислення дати: `now + ACCOUNT_DELETION_GRACE_DAYS` днів (константа з `@cyanship/types`, не env)
 - Fallback мови до 'uk' якщо не передано
 
 **Метод `loginWithPassword`:**
@@ -157,7 +157,7 @@ Unit, integration (e2e) та frontend unit тести для повного по
 
 | Endpoint | Що тестувати |
 |---|---|
-| `GET /users/me` | Response format: id, email, profile, credits, hasPassword, deletedAt, preferredLang |
+| `GET /users/me` | Response format: id, email, profile, executions, hasPassword, deletedAt, preferredLang |
 | `PATCH /users/me` | Виклик `usersService.updateProfile`, response з оновленим user |
 | `PATCH /users/me/lang` | Виклик `usersService.updateLang`, response з `RESPONSE_CODE.LANG_UPDATED` |
 | `POST /users/account/delete` | З паролем → `{ requiresPassword: true }`. Без пароля → `{ requiresMagicLink: true }` + виклик `authService.sendMagicLink` з purpose `delete-account` |
@@ -226,7 +226,7 @@ createMagicLinkToken(email, purpose) → зберігає token в mocked Redis,
 - `POST /auth/password/verify` — вірний → `{ isValid: true }`; невірний → `{ isValid: false }`; без auth → 401
 
 **Д. User Profile (потребує JWT):**
-- `GET /users/me` — авторизований → повний профіль (id, email, profile, credits, hasPassword, preferredLang); без auth → 401
+- `GET /users/me` — авторизований → повний профіль (id, email, profile, executions, hasPassword, preferredLang); без auth → 401
 - `PATCH /users/me` — оновлення name, avatar, preferredLang; partial update; без auth → 401
 - `PATCH /users/me/lang` — оновлення мови; без auth → 401
 

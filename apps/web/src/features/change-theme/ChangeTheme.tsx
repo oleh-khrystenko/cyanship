@@ -24,6 +24,7 @@ const THEME_KEYS: { value: Theme; key: string }[] = [
 interface ChangeThemeProps {
     trigger?: ReactNode;
     align?: 'start' | 'end';
+    onSelected?: () => void;
 }
 
 const subscribe = () => () => {};
@@ -44,6 +45,7 @@ const getActiveTheme = (theme: string | undefined, isHydrated: boolean): Theme =
 const ChangeTheme: FC<ChangeThemeProps> = ({
     trigger: customTrigger,
     align = 'end',
+    onSelected,
 }) => {
     const { theme, setTheme } = useTheme();
     const isHydrated = useIsHydrated();
@@ -51,6 +53,11 @@ const ChangeTheme: FC<ChangeThemeProps> = ({
 
     const activeTheme = getActiveTheme(theme, isHydrated);
     const TriggerIcon = THEME_ICONS[activeTheme];
+
+    const handleChangeTheme = (value: string) => {
+        setTheme(value);
+        onSelected?.();
+    };
 
     const items: UiDropdownMenuItem[] = THEME_KEYS.map(({ value, key }) => {
         const Icon = THEME_ICONS[value];
@@ -74,7 +81,7 @@ const ChangeTheme: FC<ChangeThemeProps> = ({
     return (
         <UiDropdownMenu
             items={items}
-            onSelect={setTheme}
+            onSelect={handleChangeTheme}
             activeValue={activeTheme}
             align={align}
             size="sm"

@@ -35,7 +35,7 @@ RUN pnpm deploy --filter ./apps/api --prod --legacy /out
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV API_PORT=4000
 RUN corepack enable
 
 # Копіюємо вже “обрізаний” пакет

@@ -21,13 +21,9 @@ const getEnvVar = (name: string): string => {
     return value;
 };
 
-const subscriptionEnabled =
-    getEnvVar('PAYMENTS_SUBSCRIPTION_ENABLED') === 'true';
-const oneOffEnabled = getEnvVar('PAYMENTS_ONE_OFF_ENABLED') === 'true';
-
 export const ENV = {
     NODE_ENV: getEnvVar('NODE_ENV'),
-    PORT: getEnvVar('PORT'),
+    API_PORT: getEnvVar('API_PORT'),
     WEB_URL: getEnvVar('WEB_URL'),
 
     MONGODB_URI: getEnvVar('MONGODB_URI'),
@@ -48,66 +44,16 @@ export const ENV = {
     TURNSTILE_SECRET_KEY: getEnvVar('TURNSTILE_SECRET_KEY'),
     BRIEF_NOTIFICATION_EMAIL: getEnvVar('BRIEF_NOTIFICATION_EMAIL'),
 
-    PAYMENTS_SUBSCRIPTION_ENABLED: subscriptionEnabled,
-    PAYMENTS_ONE_OFF_ENABLED: oneOffEnabled,
-
-    AUTH_PASSWORD_MIN_LENGTH: parseInt(
-        getEnvVar('AUTH_PASSWORD_MIN_LENGTH'),
-        10
-    ),
-    AUTH_LOCKOUT_THRESHOLDS: getEnvVar('AUTH_LOCKOUT_THRESHOLDS'),
-    AUTH_LOGIN_ATTEMPTS_TTL_MIN: parseInt(
-        getEnvVar('AUTH_LOGIN_ATTEMPTS_TTL_MIN'),
-        10
-    ),
-    AUTH_MAGIC_LINK_TTL_MIN: parseInt(getEnvVar('AUTH_MAGIC_LINK_TTL_MIN'), 10),
-    AUTH_MAGIC_LINK_RATE_LIMIT: parseInt(
-        getEnvVar('AUTH_MAGIC_LINK_RATE_LIMIT'),
-        10
-    ),
-    AUTH_MAGIC_LINK_RATE_WINDOW_MIN: parseInt(
-        getEnvVar('AUTH_MAGIC_LINK_RATE_WINDOW_MIN'),
-        10
-    ),
-    AUTH_MAGIC_LINK_DEDUP_SEC: parseInt(
-        getEnvVar('AUTH_MAGIC_LINK_DEDUP_SEC'),
-        10
-    ),
-    ACCOUNT_DELETION_GRACE_DAYS: parseInt(
-        getEnvVar('ACCOUNT_DELETION_GRACE_DAYS'),
-        10
-    ),
-
     ANTHROPIC_API_KEY: getEnvVar('ANTHROPIC_API_KEY'),
-    AI_CHAT_MAX_TOKENS: parseInt(getEnvVar('AI_CHAT_MAX_TOKENS'), 10),
-    AI_CHAT_IP_LIMIT: parseInt(getEnvVar('AI_CHAT_IP_LIMIT'), 10),
-    AI_CHAT_FREE_LIMIT: parseInt(getEnvVar('AI_CHAT_FREE_LIMIT'), 10),
-    AI_CHAT_BONUS_AMOUNT: parseInt(getEnvVar('AI_CHAT_BONUS_AMOUNT'), 10),
 
     // Cloudflare R2 — media storage (presigned uploads, Google avatar re-upload).
-    // R2_PUBLIC_URL hostname MUST match NEXT_PUBLIC_STORAGE_HOSTNAME on the web
-    // side — otherwise next/image rejects uploaded photos at runtime.
+    // R2_PUBLIC_URL is also the web side's media base: `next.config.ts` derives
+    // the next/image hostname and the public asset base from this same value.
+    // It must be an origin only (no path, no trailing slash) — this service
+    // concatenates keys onto it verbatim, and the web build enforces the shape.
     R2_ACCOUNT_ID: getEnvVar('R2_ACCOUNT_ID'),
     R2_ACCESS_KEY_ID: getEnvVar('R2_ACCESS_KEY_ID'),
     R2_SECRET_ACCESS_KEY: getEnvVar('R2_SECRET_ACCESS_KEY'),
     R2_BUCKET_NAME: getEnvVar('R2_BUCKET_NAME'),
     R2_PUBLIC_URL: getEnvVar('R2_PUBLIC_URL'),
 };
-
-// Validate payment toggles
-if (!ENV.PAYMENTS_SUBSCRIPTION_ENABLED && !ENV.PAYMENTS_ONE_OFF_ENABLED) {
-    throw new Error(
-        '❌ At least one payment type must be enabled. ' +
-            'Set PAYMENTS_SUBSCRIPTION_ENABLED or PAYMENTS_ONE_OFF_ENABLED to "true".'
-    );
-}
-
-// Парсинг AUTH_LOCKOUT_THRESHOLDS="5:1,10:5,20:15" → [{ attempts: 5, blockMin: 1 }, ...]
-export function parseLockoutThresholds(
-    raw: string
-): Array<{ attempts: number; blockMin: number }> {
-    return raw.split(',').map((entry) => {
-        const [attempts, blockMin] = entry.split(':').map(Number);
-        return { attempts, blockMin };
-    });
-}

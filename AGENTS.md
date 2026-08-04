@@ -1,21 +1,26 @@
 # CyanShip
 
-> Модульний monorepo-monolith на Next.js 16 + NestJS 11, де API керує auth/session lifecycle, billing, AI quota та agency lead intake, а web споживає це через спільні Zod/TypeScript контракти.
+> SaaS-ядро та живий сайт агенції для швидкого запуску web-продуктів з готовими auth, billing, AI chat, i18n і media storage.
 
 ## Tech Stack
 
-| Layer | Technology | Version / Role |
-|---|---|---|
-| Core | TypeScript, Node.js | TS 5.9, Node 20 |
-| Web | Next.js, React, next-intl, Zustand, Tailwind CSS | Next 16 App Router, locale segments, client auth/bootstrap, shared UI |
-| API | NestJS, Passport, nestjs-zod | Nest 11, JWT + Google OAuth, global ZodValidationPipe |
-| Data | MongoDB, Mongoose, Redis, ioredis | schema-first documents, runtime token/rate-limit state, reservations |
-| Integrations | Stripe, Resend, Cloudflare Turnstile, Anthropic | billing, email, captcha, AI chat |
-| Tooling | pnpm workspaces, Turborepo, Jest, Docker Compose | monorepo orchestration, unit/e2e tests, local/dev containers |
+| Шар | Технологія | Версія |
+| --- | --- | --- |
+| Runtime і monorepo | Node.js, TypeScript, pnpm, Turborepo | Node 20, TS 5.9, pnpm 10.30, Turbo 2.5 |
+| Web | Next.js App Router, React | Next 16.0, React 19.2 |
+| UI і стан | Tailwind CSS, Zustand, React Hook Form | Tailwind 4, Zustand 5, RHF 7 |
+| i18n | next-intl | 4.4 |
+| API | NestJS | 11.1 |
+| Дані | MongoDB, Mongoose, Redis/ioredis | Mongoose 8, Redis 7 |
+| Auth | Passport, JWT, Google OAuth | Passport 0.7 |
+| Контракти | Zod, nestjs-zod | Zod 4.3 |
+| Платежі | Stripe | SDK 20.4 |
+| AI | Anthropic SDK, SSE | SDK 0.80 |
+| Тести | Jest, Testing Library, Supertest, MongoMemoryServer | Jest 30.2 |
 
 ## Architecture Overview
 
-CyanShip поділений на три головні зони: `apps/api`, `apps/web`, `packages/types`. API є system of record для auth, refresh rotation, billing, execution ledger, AI chat reservations, brief intake й email delivery; web лишається thin Next.js shell з locale-aware routing, auth bootstrap, overlay registry та shared API clients. `packages/types` містить спільні Zod contracts, entities, enums і agency-specific types, які використовують обидва apps. `agency` та `ai` вже реалізовані як повноцінні модулі, тоді як `reports` і `storage` поки що scaffolds без бізнес-флоу. Core/agency boundary формалізований у `docs/conventions/modular-boundaries.md` і частково enforce-иться через ESLint.
+Це pnpm/Turborepo monorepo з трьома workspace: NestJS API, Next.js web і спільні Zod/TypeScript контракти. API є джерелом правди для користувачів, сесій, billing, executions, AI chat, briefs і storage; web залишається клієнтом через same-origin `/api`. Frontend дотримується Feature-Sliced Design, backend — modular monolith. Core не може залежати від Agency; межі перевіряє ESLint. `reports` лишається scaffold без endpoint-логіки, решта зареєстрованих модулів реалізована.
 
 ## Project Structure
 
@@ -24,247 +29,209 @@ apps/
 ├── api/src/
 │   ├── main.ts, app.module.ts
 │   ├── config/          # env loader
-│   ├── common/          # decorators, filters, guards, interceptors, redis
-│   └── modules/         # auth, users, payments, email, agency, ai, reports, storage
-├── web/src/
-│   ├── app/[locale]/    # (agency), (protected), auth
-│   ├── entities/        # user, navigation, brand, agency
-│   ├── features/        # auth, billing, profile, agency, theme/lang
-│   ├── widgets/         # header, agency landing
-│   └── shared/          # api, config, lib, seo, styles, ui
+│   ├── common/          # guards, filters, Redis
+│   └── modules/         # auth, users, payments, AI
+├── api/test/            # API e2e
+└── web/src/
+    ├── app/[locale]/    # routes and layouts
+    ├── entities/        # domain state
+    ├── features/        # user actions
+    ├── widgets/         # composed UI
+    ├── shared/          # API, UI, config
+    └── i18n/            # locale routing
 packages/
-└── types/src/           # contracts, entities, enums, constants, agency
+└── types/src/           # shared contracts
 docs/
-├── architecture/        # auth-flow, payments-flow
+├── architecture/        # auth and payments
 ├── conventions/         # source-of-truth rules
-└── testing/             # auth, payments test plans
+├── testing/             # test plans
+└── vision/              # agency product context
 ```
 
 ## Domain Model
 
 ### User
+
 Файл: `apps/api/src/modules/users/schemas/user.schema.ts` | Zod: `packages/types/src/entities/user.ts`
-- `profile`, `executions`, `ai`, `billing` зберігаються як embedded subdocuments; billing shape одразу шариться у web через `UserBillingSchema`.
-- Soft-delete трекається через `deletedAt`; recovery flow додатково використовує `accountDeletionRequestedAt` і `deletionReminderSentAt`.
-- Є sparse indexes на `provider.id`, billing provider IDs і `executions.activeReservation.expiresAt`.
+
+- Містить embedded `profile`, `executions`, `ai` і nullable `billing`; видалення — soft-delete з відкладеним очищенням.
+- `activeReservation` зберігає компенсаційні `$inc`-операції для безпечного refund.
+- Sparse indexes покривають provider/billing IDs та строк завершення reservation.
 
 ### ExecutionTransaction
-Файл: `apps/api/src/modules/users/schemas/execution-transaction.schema.ts` | Contract: `packages/types/src/contracts/executions.ts`
-- Це append-only ledger для execution credit/debit операцій з `balanceAfter` і необов'язковим `reservationId`.
-- Unique sparse index на `reservationId` страхує commit reservation від дублювання.
-- Dashboard history читається через індекс `userId + createdAt`.
 
-### ProcessedWebhookEvent
-Файл: `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts`
-- Idempotency ledger для Stripe webhook-ів із unique `(provider, providerEventId)`.
-- Має двофазний статус `pending -> applied`; при handler failure pending-запис відкочується.
-- Зберігає `occurredAt`, `userId`, `packCode` для replay-safe billing updates.
+Файл: `apps/api/src/modules/users/schemas/execution-transaction.schema.ts` | Контракт: `packages/types/src/contracts/executions.ts`
 
-### OrphanedProviderCustomer
-Файл: `apps/api/src/modules/payments/schemas/orphaned-provider-customer.schema.ts`
-- Черга повторної очистки Stripe customer після збоїв під час billing reset.
-- Unique `(provider, providerCustomerId)` не дає дублювати orphan retry items.
-- Тримає `attempts` і `lastAttemptAt` для cron cleanup.
+- Ledger для credit/debit змін executions; історія читається через compound index `(userId, createdAt desc)`.
+- `reservationId` має unique sparse index і захищає commit від повтору.
 
 ### ChatMessage
-Файл: `apps/api/src/modules/ai/schemas/chat-message.schema.ts` | Contract: `packages/types/src/contracts/ai-chat.ts`
-- AI transcript зберігається в окремій колекції `chat_messages`, по два записи на успішний exchange.
-- Індекс `userId + createdAt` гарантує стабільне відтворення історії.
-- Повідомлення вставляються всередині reservation commit transaction, а не окремим post-write.
+
+Файл: `apps/api/src/modules/ai/schemas/chat-message.schema.ts` | Zod: `packages/types/src/contracts/ai-chat.ts`
+
+- Повідомлення належать користувачу; історія впорядковується compound index `(userId, createdAt)`.
+- Пара user/assistant записується в тій самій MongoDB transaction, що й commit execution reservation.
 
 ### Brief
+
 Файл: `apps/api/src/modules/agency/schemas/brief.schema.ts` | Zod: `packages/types/src/agency/brief.ts`
-- Зберігає public/authenticated agency lead intake в колекції `briefs`.
-- `requestAiBonus` і опційний `userId` зв'язують brief із one-time AI bonus grant.
-- Індексований `status`; локалізовані `budget`, `deadline`, `lang`, `source` потрібні для ops/email флоу.
+
+- Може бути анонімним або прив'язаним до `userId`; authenticated flow одноразово надає AI bonus.
+- `status` індексований; source і locale зберігаються разом із заявкою.
+
+### ProcessedWebhookEvent
+
+Файл: `apps/api/src/modules/payments/schemas/processed-webhook-event.schema.ts`
+
+- Unique `(provider, providerEventId)` забезпечує idempotency.
+- Двофазний стан `pending → applied`; невдала обробка видаляє `pending` для безпечного retry.
+
+### OrphanedProviderCustomer
+
+Файл: `apps/api/src/modules/payments/schemas/orphaned-provider-customer.schema.ts`
+
+- Черга повторного видалення provider customer після невдалого account cleanup.
+- Unique provider/customer index; cron припиняє спроби після п'яти помилок.
 
 ## Module Dependency Map
 
-- `AppModule` → `RedisModule`, `AuthModule`, `EmailModule`, `UsersModule`, `PaymentsModule`, `AgencyModule`, `AiModule`, `ReportsModule`, `StorageModule`
-- `AuthModule` ↔ `UsersModule` (`forwardRef`, circular dependency)
-- `PaymentsModule` → `UsersModule` + `PAYMENT_PROVIDER` abstraction (`StripeService`)
-- `AiModule` → `UsersModule` + `AI_PROVIDER` abstraction (`AnthropicService`)
-- `AgencyModule` → `Brief` + `User` models; використовує глобальний `EmailService` і `TurnstileService`
-- `EmailModule` є `@Global()`, тому email sending інжектиться в інші модулі без локального `imports`
-- `app/[locale]/layout.tsx` → `Providers` + `NextIntlClientProvider` + `AuthInitializer` + `Overlays`
-- `app/[locale]/(protected)/layout.tsx` → `Header` + `AuthGuard`
-- `shared/api/client.ts` → axios interceptors + refresh dedupe + `authEvents`; `entities/user/authStore.ts` підписується на подію й володіє session state
-- `app/overlays.tsx` динамічно монтує overlay components; це єдиний санкціонований core → agency dynamic-import виняток
+- `AuthModule ↔ UsersModule` через `forwardRef`; `AuthModule → StorageModule → UsersModule` розширює цей цикл.
+- `PaymentsModule → UsersModule`.
+- `AiModule → UsersModule`.
+- `AgencyModule → UsersModule`; email доступний через global `EmailModule`.
+- `StorageModule → UsersModule` і експортує `StorageService` для OAuth avatar flow.
+- `RedisModule` та `EmailModule` — global; `ReportsModule` ізольований.
+- Web: `app → widgets/features/entities → shared`; `shared` не імпортує вищі FSD-шари.
+- Agency може імпортувати Core, але не навпаки; виняток лише `apps/web/src/app/overlays.tsx`.
 
 ## Key Patterns
 
-### Створення endpoint
-Controller + guard + DTO wrapper + service; відповідь іде через `{ data: ... }` envelope. Приклади: `apps/api/src/modules/auth/auth.controller.ts`, `apps/api/src/modules/users/users.controller.ts`, `apps/api/src/modules/payments/payments.controller.ts`, `apps/api/src/modules/ai/ai.controller.ts`.
+### Endpoint і відповіді
 
-### Валідація
-Zod schemas живуть у `packages/types/src/contracts/*` та `packages/types/src/agency/*`, після чого Nest DTO обгортають їх через `createZodDto()`. Приклади: `apps/api/src/modules/**/dto/*.ts`.
+Controller використовує DTO, guard, `@CurrentUser()` і service; успішна відповідь зазвичай має `{ data: ... }`. Приклад: `apps/api/src/modules/payments/payments.controller.ts`. Помилки нормалізує `apps/api/src/common/filters/all-exceptions.filter.ts`.
 
-### Auth/session lifecycle
-Access JWT зберігається лише in-memory у web (`apps/web/src/shared/api/client.ts`), refresh JWT живе в `bid_refresh` httpOnly cookie, rotation/rate limits/magic links трекаються Redis-ключами в `apps/api/src/modules/auth/auth.service.ts`. Bootstrap сесії робить `apps/web/src/features/auth/AuthInitializer.tsx`, а session-loss між слоями передається через `apps/web/src/shared/lib/authEvents.ts`. Повний опис: `docs/architecture/auth-flow/README.md`.
+### Shared validation
 
-### Onboarding gate
-`apps/api/src/common/interceptors/onboarding.interceptor.ts` глобально блокує authenticated requests, якщо profile onboarding не завершений, якщо endpoint не позначений `@SkipOnboarding()`. Web дублює це UX-рівнем через `apps/web/src/features/auth/AuthGuard.tsx`, який редиректить на `/profile?mode=new`.
+Zod schema живе в `packages/types`, API DTO обгортає її через `createZodDto()`, web-форми використовують `zodResolver`. Приклад: `apps/api/src/modules/payments/dto/create-checkout-session.dto.ts`.
 
-### Billing/webhook processing
-Payments йдуть через provider abstraction; Stripe webhook-и потребують Nest `rawBody`, після чого `PaymentsService` вставляє `ProcessedWebhookEvent` як `pending`, застосовує бізнес-логіку і тільки тоді маркує його `applied`. Subscription ordering захищається через `billing.lastProviderEventAt`. Приклади: `apps/api/src/modules/payments/payments.service.ts`, `apps/api/src/modules/payments/providers/stripe.service.ts`. Повний опис: `docs/architecture/payments-flow/README.md`.
+### Auth і onboarding
 
-### AI chat reservations
-`POST /api/ai/chat` працює як SSE: API спочатку резервує execution + AI request, потім стрімить відповіді провайдера, а успішний exchange комітить transcript і ledger entry транзакційно через `UsersService.commitReservation()`. Файли: `apps/api/src/modules/ai/ai.controller.ts`, `apps/api/src/modules/ai/ai.service.ts`, `apps/api/src/modules/users/users.service.ts`.
+Основний guard — `JwtActiveGuard`; `JwtAuthGuard` дозволений для restore soft-deleted account, `SubscriptionGuard` — для платного доступу. Глобальний `OnboardingInterceptor` пропускають лише через `@SkipOnboarding()`. Повний flow: `docs/architecture/auth-flow/`.
 
-### Agency brief intake
-Brief submission завжди верифікує Turnstile перед записом; authenticated path може поставити `requestAiBonus` і видати одноразовий AI bonus у user document. Confirmation/notification emails відправляються fire-and-forget через `EmailService`. Файли: `apps/api/src/modules/agency/brief.controller.ts`, `apps/api/src/modules/agency/services/brief.service.ts`, `apps/api/src/modules/agency/services/turnstile.service.ts`.
+### Payments
 
-### Overlay architecture
-Overlay state живе у in-slice Zustand stores, сам UI рендериться через `shared/ui` primitives, а глобальний mount відбувається один раз у `apps/web/src/app/overlays.tsx`. Cross-slice open intents проходять через `apps/web/src/shared/lib/uiIntents.ts`. Правило: `docs/conventions/overlays.md`.
+Stripe адаптований через provider token; catalog читається зі Stripe, перевіряється на старті й кешується в Redis на 5 хвилин. Webhook idempotency та out-of-order правила: `docs/architecture/payments-flow/`.
 
-### Error handling and i18n mapping
-Backend повертає machine-readable `code` через `apps/api/src/common/filters/all-exceptions.filter.ts`; frontend мапить цей код на locale keys через `apps/web/src/shared/api/mapApiCode.ts` і не повинен показувати backend `message` користувачу. Правило: `docs/conventions/i18n.md`.
+### Executions і reservation
+
+Мутації балансу атомарні. Довгі операції спочатку reserve, потім викликають generic `UsersService.commitReservation()` або `refundReservation()`; expired reservations повертає cron. Приклад: `apps/api/src/modules/ai/ai.service.ts`.
+
+### Frontend auth
+
+Access token зберігається в пам'яті, refresh token — у `bid_refresh` httpOnly cookie. Axios дедуплікує паралельний refresh; `authEvents` розриває залежність `shared/api → entities`. Файли: `apps/web/src/shared/api/client.ts`, `apps/web/src/entities/user/authStore.ts`.
+
+### Cross-slice UI
+
+Overlay state живе в owning slice, усі overlay монтуються один раз у `apps/web/src/app/overlays.tsx`. Cross-module команди передаються через `apps/web/src/shared/lib/uiIntents.ts`. Деталі: `docs/conventions/overlays.md`.
+
+### Storage
+
+Avatar flow: presigned PUT напряму в R2, потім server-side commit з `HeadObject`; API не проксує upload. Контракти: `packages/types/src/contracts/storage.ts`, реалізація: `apps/api/src/modules/storage/storage.service.ts`.
+
+### Локалізація помилок
+
+API повертає англомовний developer message і machine-readable code; web мапить code на `messages/{locale}.json`. Джерела: `docs/conventions/i18n.md`, `apps/web/src/shared/api/mapApiCode.ts`.
 
 ## API Overview
 
-Глобальний prefix: `/api`.
+Global prefix: `/api`. `JAA` = `JwtActiveGuard`, `JA` = `JwtAuthGuard`, `ARL` = `AiRateLimitGuard`.
 
-**AppController** (`apps/api/src/app.controller.ts`)
-- `GET /api` — public — hello probe
-- `GET /api/health` — public — health snapshot
+| Модуль | Метод і шлях | Guard | Призначення |
+| --- | --- | --- | --- |
+| App | `GET /`, `GET /health` | — | root і healthcheck |
+| Auth | `GET /auth/google`, `GET /auth/google/callback` | Google Passport | OAuth redirect/callback |
+| Auth | `POST /auth/check-email` | — | визначити login flow |
+| Auth | `POST /auth/login/password` | — | password login |
+| Auth | `POST /auth/magic-link/send`, `/verify` | — | magic-link lifecycle |
+| Auth | `POST /auth/password/reset` | — | reset за token |
+| Auth | `POST /auth/password/set`, `/change`, `/verify` | JAA | password management |
+| Auth | `POST /auth/refresh`, `/logout` | cookie | rotate/revoke refresh token |
+| Users | `GET/PATCH /users/me` | JAA | profile state/update |
+| Users | `PATCH /users/me/lang` | JAA | preferred locale |
+| Users | `POST /users/me/accept-terms` | JAA | terms acceptance |
+| Users | `POST /users/me/executions/spend` | JAA | atomic debit |
+| Users | `GET /users/me/executions/transactions` | JAA | paginated ledger |
+| Users | `POST /users/account/delete` | JAA | start deletion |
+| Users | `POST /users/account/delete/confirm` | JAA | soft-delete account |
+| Users | `POST /users/account/restore` | JA | restore account |
+| Payments | `GET /payments/catalog` | — | public catalog |
+| Payments | `POST /payments/checkout-session` | JAA | Stripe checkout |
+| Payments | `POST /payments/portal-session` | JAA | billing portal |
+| Payments | `POST /payments/reset` | JAA | clear billing state |
+| Payments | `POST /payments/webhook/:provider` | signature | provider webhook |
+| AI | `POST /ai/chat` | JAA + ARL | SSE chat stream |
+| AI | `GET/DELETE /ai/chat/history` | JAA | read/clear history |
+| Storage | `POST /storage/avatar/upload-url` | JAA | presigned upload URL |
+| Storage | `POST /storage/avatar/commit` | JAA | verify and attach |
+| Storage | `DELETE /storage/avatar` | JAA | remove avatar |
+| Agency | `POST /agency/brief` | Turnstile | anonymous brief |
+| Agency | `POST /agency/brief/authenticated` | JAA + Turnstile | brief with AI bonus |
 
-**AuthController** (`apps/api/src/modules/auth/auth.controller.ts`)
-- `GET /api/auth/google` — `AuthGuard('google')` + `SkipOnboarding` — start Google OAuth
-- `GET /api/auth/google/callback` — `AuthGuard('google')` + `SkipOnboarding` — set refresh cookie, redirect to web callback
-- `POST /api/auth/check-email` — public — detect account / password availability
-- `POST /api/auth/login/password` — public — password login + token pair
-- `POST /api/auth/magic-link/send` — public — send login/reset magic link
-- `POST /api/auth/magic-link/verify` — public — consume magic link
-- `POST /api/auth/password/reset` — public — reset password by token
-- `POST /api/auth/password/set` — `JwtActiveGuard` + `SkipOnboarding` — set initial password
-- `POST /api/auth/password/change` — `JwtActiveGuard` + `SkipOnboarding` — rotate password and session
-- `POST /api/auth/password/verify` — `JwtActiveGuard` + `SkipOnboarding` — confirm password for sensitive action
-- `POST /api/auth/refresh` — cookie-based — rotate refresh token
-- `POST /api/auth/logout` — cookie-based — revoke refresh token best-effort
-
-**UsersController** (`apps/api/src/modules/users/users.controller.ts`)
-- `GET /api/users/me` — `JwtActiveGuard` + `SkipOnboarding` — current profile, billing, AI state
-- `PATCH /api/users/me` — `JwtActiveGuard` + `SkipOnboarding` — update profile fields
-- `PATCH /api/users/me/lang` — `JwtActiveGuard` + `SkipOnboarding` — change preferred language
-- `POST /api/users/me/accept-terms` — `JwtActiveGuard` + `SkipOnboarding` — persist terms version
-- `POST /api/users/me/executions/spend` — `JwtActiveGuard` — debit execution balance
-- `GET /api/users/me/executions/transactions` — `JwtActiveGuard` — paginated execution ledger
-- `POST /api/users/account/delete` — `JwtActiveGuard` + `SkipOnboarding` — choose password vs magic-link deletion path
-- `POST /api/users/account/delete/confirm` — `JwtActiveGuard` + `SkipOnboarding` — soft-delete with password confirmation
-- `POST /api/users/account/restore` — `JwtAuthGuard` — restore soft-deleted account
-
-**PaymentsController** (`apps/api/src/modules/payments/payments.controller.ts`)
-- `GET /api/payments/catalog` — public + `SkipThrottle` + `SkipOnboarding` — public pricing/catalog payload
-- `POST /api/payments/checkout-session` — `JwtActiveGuard` — create Stripe checkout session
-- `POST /api/payments/portal-session` — `JwtActiveGuard` — create Stripe billing portal session
-- `POST /api/payments/reset` — `JwtActiveGuard` — clear billing state and execution history
-- `POST /api/payments/webhook/:provider` — public + `SkipThrottle` — ingest provider webhook with raw body
-
-**AgencyController** (`apps/api/src/modules/agency/brief.controller.ts`)
-- `POST /api/agency/brief` — public + Turnstile — submit public agency brief
-- `POST /api/agency/brief/authenticated` — `JwtActiveGuard` + Turnstile — submit brief and request AI bonus
-
-**AiController** (`apps/api/src/modules/ai/ai.controller.ts`)
-- `POST /api/ai/chat` — `JwtActiveGuard` + `AiRateLimitGuard` — SSE chat stream
-- `GET /api/ai/chat/history` — `JwtActiveGuard` — load chat transcript
-- `DELETE /api/ai/chat/history` — `JwtActiveGuard` — clear chat transcript
-
-**Reports / Storage**
-- `apps/api/src/modules/reports/reports.controller.ts` exists but has no route methods yet
-- `apps/api/src/modules/storage/` exports a service only; controller/business flow is absent
+`ReportsController` не має endpoint. Global throttling — 60 requests/60s; catalog і webhook його пропускають.
 
 ## Configuration & Environment
 
-**Loaders and source files**
-- API fail-fast loader: `apps/api/src/config/env.ts`
-- Web fail-fast loader: `apps/web/src/shared/config/env.ts`
-- Next build/proxy config: `apps/web/next.config.ts`
-- Shared sample: `.env.example`
+Єдине локальне джерело — root `.env`; приклад — `.env.example`. API читає його через `apps/api/src/config/env.ts`, web build — через `apps/web/next.config.ts` і `apps/web/src/shared/config/env.ts`.
 
-**API env: required**
-- Runtime/data: `NODE_ENV`, `PORT`, `WEB_URL`, `MONGODB_URI`, `REDIS_URL`
-- Auth: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
-- OAuth/email: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
-- Payments: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED`
-- Agency/security: `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`
-- Auth tuning: `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_LOCKOUT_THRESHOLDS`, `AUTH_LOGIN_ATTEMPTS_TTL_MIN`, `AUTH_MAGIC_LINK_TTL_MIN`, `AUTH_MAGIC_LINK_RATE_LIMIT`, `AUTH_MAGIC_LINK_RATE_WINDOW_MIN`, `AUTH_MAGIC_LINK_DEDUP_SEC`, `ACCOUNT_DELETION_GRACE_DAYS`
-- AI: `ANTHROPIC_API_KEY`, `AI_CHAT_MAX_TOKENS`, `AI_CHAT_IP_LIMIT`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`
+**API required, старт падає без значення:** `NODE_ENV`, `API_PORT`, `WEB_URL`, `MONGODB_URI`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`, `ANTHROPIC_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`.
 
-**API env invariants**
-- `PAYMENTS_SUBSCRIPTION_ENABLED` і `PAYMENTS_ONE_OFF_ENABLED` є required booleans; якщо обидва `false`, API падає на старті
-- `GOOGLE_CALLBACK_URL` має вказувати на web-origin `/api/auth/google/callback`, щоб OAuth callback проходив через Next rewrite і refresh cookie лишався на web domain
-- `AUTH_LOCKOUT_THRESHOLDS` парситься з рядка виду `5:1,10:5,20:15`
+**Web/Compose:** `WEB_PORT` потрібен Compose; `NEXT_PUBLIC_TURNSTILE_SITE_KEY` обов'язковий для web build. `WEB_URL`, `R2_PUBLIC_URL` і `API_INTERNAL_URL` обов'язкові; перші два інлайняться як `NEXT_PUBLIC_BASE_URL` і `NEXT_PUBLIC_STORAGE_URL` — не додавай їх дублікати в `.env`. Усі три мусять бути HTTP(S) origin без path і trailing slash (`requireOrigin` у `next.config.ts` валить build інакше).
 
-**Web env: required**
-- Public base/API: `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_API_URL`
-- Payments flags: `NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED`, `NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED`
-- Agency captcha: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+**Optional:** `NEXT_PUBLIC_DEMO_VIDEO_PATH` і `NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH` вмикають demo video; poster без video зупиняє build.
 
-**Web env: optional**
-- `NEXT_PUBLIC_DEMO_VIDEO_URL` — вмикає demo video section; `DEMO_VIDEO_ENABLED` вираховується з його наявності
-- `API_INTERNAL_URL` — server-side rewrite target для `/api`; rewrite додається лише коли змінна задана
-
-**Infra / orchestration**
-- `docker-compose.dev.yml` піднімає `redis`, `api`, `web`; MongoDB у compose немає, він приходить з зовнішнього `MONGODB_URI`
-- `compose.yaml` також очікує зовнішній MongoDB і передає env у build/runtime
-- Dev compose збирає `@cyanship/types` перед запуском apps
-
-**Policy**
-- Rule source: `docs/conventions/fail-fast.md`
-- Для будь-якої нової env var потрібно синхронно оновити `env.ts`, `.env.example`, `.env`; тестовий виняток з `??=` дозволений лише в `apps/api/src/test-setup.ts`
-- У web `NEXT_PUBLIC_*` vars мають читатися через прямий `process.env.VAR`, а не динамічний lookup, щоб Next зміг inline-ити їх у client bundle
+Feature flags і продуктові ліміти не є env: спільні значення живуть у `packages/types/src/constants/`, локальні — біля модуля. Payment toggles: `packages/types/src/constants/payments.ts`. Будь-яку нову env синхронізуй між loader, `.env.example`, test setup і Docker за `docs/conventions/fail-fast.md`; fallback для required env заборонений.
 
 ## Common Commands
 
-- `pnpm dev` — run all workspace dev tasks через Turbo
-- `pnpm build` — build all apps/packages
-- `pnpm lint` — lint workspace
-- `pnpm format` — run Prettier over repo
-- `pnpm test` — run workspace tests
-- `pnpm --filter api dev|build|test|test:e2e|test:cov|email:dev` — API-only workflow
-- `pnpm --filter web dev|build|test|lint` — web-only workflow
-- `pnpm --filter @cyanship/types build|dev` — build/watch shared contracts
-- `docker compose -f docker-compose.dev.yml up --build` — local dev stack with Redis + apps
-- `docker compose up --build -d` — production-like container stack
+- `pnpm dev` — усі dev tasks через Turborepo.
+- `pnpm build` — повна збірка з dependency order.
+- `pnpm lint` — ESLint усіх workspace.
+- `pnpm format` — Prettier для репозиторію.
+- `pnpm test` — workspace unit tests.
+- `pnpm --filter api test` — API unit tests.
+- `pnpm --filter api test:e2e` — API e2e.
+- `pnpm --filter api test:cov` — API coverage.
+- `pnpm --filter web test` — web unit tests.
+- `pnpm --filter @cyanship/types build` — shared package.
+- `docker compose -f docker-compose.dev.yml up --build` — local stack.
+- `docker compose -f docker-compose.dev.yml down` — зупинити local stack.
 
 ## Testing Strategy
 
-- API unit specs живуть поруч із кодом у `apps/api/src/**/*.spec.ts`
-- API e2e лежать у `apps/api/test/*.e2e-spec.ts`; вони використовують `MongoMemoryServer`, mocked Redis/provider dependencies і окремий `jest-e2e.json`
-- Web використовує Jest + jsdom; specs лежать поруч із source, особливо навколо middleware, auth bootstrap/guards, shared API clients, overlay stores
-
-<!-- MANUAL:START -->
-# Rules
-
-- Before making ANY code changes, read the relevant module's files to understand current implementation
-- Always check prisma/schema.prisma before modifying data layer
-- Always check existing patterns in similar modules before creating new ones
-
-## Project Conventions (MANDATORY)
-
-All AI agents MUST read and follow rules in `docs/conventions/`:
-
-- **[Tone & Style](docs/conventions/tone.md)** — tone and style for all user-facing messages (toasts, errors, confirmations)
-- **[Fail Fast](docs/conventions/fail-fast.md)** — required env vars policy, no silent fallbacks
-
-Full index: [docs/conventions/README.md](docs/conventions/README.md)
-  <!-- MANUAL:END -->
+Jest unit tests лежать поруч із кодом як `*.spec.ts(x)`; API e2e — у `apps/api/test/*.e2e-spec.ts`. Unit tests ізолюють services/providers, e2e піднімають реальний Nest graph на MongoMemoryServer; AI e2e використовує `MongoMemoryReplSet` через transactions. CI (`.github/workflows/ci.yml`) на `main` виконує lint, build, API unit та e2e. Детальні матриці: `docs/testing/auth/` і `docs/testing/payments/`.
 
 ## Rules & Conventions
 
-- Source of truth for repo-wide rules: `docs/conventions/README.md`
-- Перед змінами у user-facing copy, env/config, language sync, modular boundaries, overlays або shared UI перечитуй відповідні rules: `tone.md`, `fail-fast.md`, `i18n.md`, `modular-boundaries.md`, `overlays.md`, `ui-primitives.md`, `design-tokens.md`
-- Boundary rules реально enforce-яться в `apps/web/eslint.config.mjs` і `apps/api/eslint.config.mjs`: немає глобального `src/stores/`, core не імпортує agency, `shared/` не імпортує вищі FSD layers, `app/overlays.tsx` є єдиним dynamic-import винятком
-- Якщо додаєш нові user-facing поля у `User`, онови privacy policy в `apps/web/src/app/[locale]/(agency)/privacy/page.tsx`
-- Runtime data layer зараз повністю на Mongoose schemas під `apps/api/src/modules/**/schemas`; `prisma/schema.prisma` у репозиторії відсутній
-- Детальні auth/billing flows не дублюються тут: дивись `docs/architecture/auth-flow/README.md` і `docs/architecture/payments-flow/README.md`
+<!-- MANUAL:START -->
+- `docs/conventions/` — єдине джерело правил; не дублюй деталі в agent-файлах.
+- Зберігай напрям залежностей `Agency → Core`; Core не імпортує Agency. `shared` — найнижчий FSD-шар, глобального `src/stores/` немає. Межі описані в `docs/conventions/modular-boundaries.md` і enforced ESLint.
+- Shared API shapes і validation живуть у `packages/types`; не дублюй backend/frontend типи. Нові response codes реєструй і локалізуй за `docs/conventions/i18n.md`.
+- У frontend використовуй наявні `Ui*` primitives, design tokens і mobile-first layout. Правила: `docs/conventions/ui-primitives.md`, `design-tokens.md`, `responsive.md`.
+- Overlay керується Zustand store у owning slice і монтується в `app/overlays.tsx`; вкладені overlay заборонені. Форми не блокують submit через невалідність — показують причину. Дивись `overlays.md` і `forms.md`.
+- User-facing тексти завжди через `messages/uk.json` та `messages/en.json`, формальне «ви», без emoji й окликів у success. Дивись `docs/conventions/tone.md`.
+- Пиши strict TypeScript; уникай `any`, подвійних cast, `@ts-ignore`, неатомарних read-then-write і проковтнутих помилок.
+- При додаванні user-facing поля в `User` онови privacy policy: `apps/web/src/app/[locale]/(agency)/privacy/page.tsx`.
+- Тести називай `*.spec.ts(x)`; API e2e — `*.e2e-spec.ts`. Перед PR запускай тести й lint зміненого workspace; для UI додай screenshots і перевір mobile/tablet/desktop.
+- Commit subjects зазвичай використовують Conventional Commits: `feat(web): ...`, `fix(api): ...`, `refactor: ...`, `chore(infra): ...`.
+<!-- MANUAL:END -->
 
 ## Known Complexities
 
-- `apps/web/src/middleware.ts` приймає рішення про auth переважно за наявністю cookies `bid_refresh` і `bid_account_deleted`, а не за валідністю токена; stale cookies можуть дати хибний redirect до того, як client flow очистить state
-- Soft-deleted recovery розщеплений між backend redirect `?account_deleted=true` (`apps/api/src/modules/auth/auth.controller.ts`) і frontend cookie `bid_account_deleted` (`apps/web/src/app/[locale]/auth/callback/page.tsx`, `apps/web/src/middleware.ts`); якщо змінити лише одну сторону, restore flow зламається
-- `apps/web/src/shared/api/mapApiCode.ts` будує ключі виду `errors.generic.<code>`, але сам не робить runtime fallback до `errors.generic.unknown`; caller або словники мають це покривати
-- AI chat списує запит як non-refundable після першого успішно отриманого токена; abort до першого токена повертається одразу або через `apps/api/src/modules/users/reservation-reconcile.service.ts` кожні 5 хвилин
-- `apps/api/src/modules/payments/payments.service.ts` при billing reset спочатку чистить Mongo billing state і execution history, а cleanup Stripe customer у разі збою відкладає в `OrphanedProviderCustomer` для cron retry
-- `@cyanship/types` резолвиться через `dist` entry; при app-only запуску з чистого checkout часто треба спочатку зібрати або watch-ити `packages/types`
-- `apps/api/src/modules/reports/` і `apps/api/src/modules/storage/` залишаються scaffold-модулями без реального route/business flow
+- Stripe signature перевіряється лише по сирому body. Не прибирай `rawBody: true` з `apps/api/src/main.ts` і не парсь webhook body до `StripeService`.
+- MongoDB transactions потрібні для atomic reservation commit і запису chat history. Production MongoDB мусить працювати як replica set; AI e2e тому використовує `MongoMemoryReplSet`.
+- `packages/types` має бути зібраний раніше за API/web у Docker. Turborepo робить це через `dependsOn: ["^build"]`; Dockerfile викликає build shared package явно.
+- Refresh cookie вимагає same-origin `/api`. `API_BASE_PATH` навмисно константа, а `API_INTERNAL_URL` задає внутрішній Next.js proxy target — і тому обов'язковий: без rewrite браузер не має жодного шляху до API.
+- AI stream слухає `close` на response, не request. До першого token disconnect повертає reservation; після першого token запит оплачується і commit виконується без відповіді клієнту. Файл: `apps/api/src/modules/ai/ai.controller.ts`.
+- Presigned R2 PUT не обмежує максимальний розмір; size/type перевіряються під час commit через metadata, а не довірою до клієнта. HEIC свідомо не підтримується через ліцензійну залежність libheif; причина в `packages/types/src/constants/storage.ts`.
+- `CatalogService` прогріває Stripe catalog на старті й падає при недоступному або некоректному catalog. Це навмисний fail-fast, а не необов'язковий warm-up.
+- `AuthModule ↔ UsersModule` — свідомий circular dependency через `forwardRef`; зміни imports перевіряй повною Nest build/e2e, а не лише unit mocks.

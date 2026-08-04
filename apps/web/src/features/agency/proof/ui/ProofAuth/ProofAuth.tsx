@@ -18,7 +18,7 @@ import UiInput from '@/shared/ui/UiInput';
 import UiSpinner from '@/shared/ui/UiSpinner';
 import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { GoogleIcon } from '@/shared/icons';
-import { ENV } from '@/shared/config';
+import { API_BASE_PATH } from '@/shared/config';
 import { checkEmail, sendMagicLink, logout } from '@/shared/api';
 import { saveRedirect, getFieldError } from '@/shared/lib';
 import { useAuthStore } from '@/entities/user';
@@ -88,7 +88,7 @@ const ProofAuth = () => {
             return;
         }
         saveRedirect(redirectPath);
-        window.location.href = `${ENV.NEXT_PUBLIC_API_URL}/auth/google`;
+        window.location.href = `${API_BASE_PATH}/auth/google`;
     };
 
     const onEmailSubmit = async (data: EmailFormValues) => {

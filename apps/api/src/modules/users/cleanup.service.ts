@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Model } from 'mongoose';
+import { ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
-import { ENV } from '../../config/env';
 import { AuthService } from '../auth/auth.service';
 import { EmailService } from '../email/email.service';
 import { User, UserDocument } from './schemas/user.schema';
@@ -28,7 +28,7 @@ export class CleanupService {
     }
 
     private async sendDeletionReminders(): Promise<void> {
-        const graceDays = ENV.ACCOUNT_DELETION_GRACE_DAYS;
+        const graceDays = ACCOUNT_DELETION_GRACE_DAYS;
 
         if (graceDays < 2) return;
 
@@ -88,7 +88,7 @@ export class CleanupService {
 
     private async hardDeleteExpiredAccounts(): Promise<void> {
         const cutoff = new Date(
-            Date.now() - ENV.ACCOUNT_DELETION_GRACE_DAYS * 86_400_000
+            Date.now() - ACCOUNT_DELETION_GRACE_DAYS * 86_400_000
         );
 
         const expiredUsers = await this.userModel

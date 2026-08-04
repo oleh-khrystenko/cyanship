@@ -149,6 +149,7 @@ export default function MobileMenuSheet() {
 
                             <ChangeLang
                                 align="start"
+                                onSelected={close}
                                 trigger={
                                     <button
                                         type="button"
@@ -166,6 +167,7 @@ export default function MobileMenuSheet() {
                             />
                             <ChangeTheme
                                 align="start"
+                                onSelected={close}
                                 trigger={
                                     <button
                                         type="button"
@@ -202,6 +204,7 @@ export default function MobileMenuSheet() {
                             </span>
                             <ChangeLang
                                 align="start"
+                                onSelected={close}
                                 trigger={
                                     <button
                                         type="button"
@@ -219,6 +222,7 @@ export default function MobileMenuSheet() {
                             />
                             <ChangeTheme
                                 align="start"
+                                onSelected={close}
                                 trigger={
                                     <button
                                         type="button"

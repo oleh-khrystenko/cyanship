@@ -14,12 +14,15 @@ import {
 import { SkipThrottle } from '@nestjs/throttler';
 import { RawBodyRequest } from '@nestjs/common/interfaces';
 import { Request } from 'express';
-import type { PaymentsCatalog } from '@cyanship/types';
+import {
+    PAYMENTS_ONE_OFF_ENABLED,
+    PAYMENTS_SUBSCRIPTION_ENABLED,
+    type PaymentsCatalog,
+} from '@cyanship/types';
 import { JwtActiveGuard } from '../../common/guards/jwt-active.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SkipOnboarding } from '../../common/decorators/skip-onboarding.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
-import { ENV } from '../../config/env';
 import { PaymentsService } from './payments.service';
 import { CatalogService } from './catalog.service';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
@@ -38,10 +41,10 @@ export class PaymentsController {
         const catalog = await this.catalogService.getCatalog();
         return {
             data: {
-                subscriptionPlans: ENV.PAYMENTS_SUBSCRIPTION_ENABLED
+                subscriptionPlans: PAYMENTS_SUBSCRIPTION_ENABLED
                     ? catalog.subscriptionPlans
                     : [],
-                executionPacks: ENV.PAYMENTS_ONE_OFF_ENABLED
+                executionPacks: PAYMENTS_ONE_OFF_ENABLED
                     ? catalog.executionPacks
                     : [],
             },

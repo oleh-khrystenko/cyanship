@@ -1,10 +1,7 @@
 import axios, { AxiosHeaders } from 'axios';
 
 jest.mock('@/shared/config', () => ({
-    ENV: {
-        NEXT_PUBLIC_API_URL: 'http://localhost:4000/api',
-        NEXT_PUBLIC_BASE_URL: 'http://localhost:3000',
-    },
+    API_BASE_PATH: '/api',
 }));
 
 import { authEvents } from '@/shared/lib';
@@ -83,9 +80,7 @@ describe('client', () => {
 
     describe('apiClient instance', () => {
         it('is created with correct baseURL', () => {
-            expect(apiClient.defaults.baseURL).toBe(
-                'http://localhost:4000/api'
-            );
+            expect(apiClient.defaults.baseURL).toBe('/api');
         });
 
         it('has withCredentials enabled', () => {
@@ -197,7 +192,7 @@ describe('client', () => {
             await apiClient.get('/users/me');
 
             expect(mockAxiosPost).toHaveBeenCalledWith(
-                'http://localhost:4000/api/auth/refresh',
+                '/api/auth/refresh',
                 { timezone: expect.any(String) },
                 { withCredentials: true }
             );

@@ -12,16 +12,7 @@ import { User } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { ChatMessage } from './schemas/chat-message.schema';
 import { AI_PROVIDER } from './interfaces/ai-provider.interface';
-import { AiService } from './ai.service';
-
-jest.mock('../../config/env', () => ({
-    ENV: {
-        AI_CHAT_MAX_TOKENS: 800,
-        AI_CHAT_FREE_LIMIT: 5,
-        AI_CHAT_BONUS_AMOUNT: 5,
-        AI_CHAT_IP_LIMIT: 20,
-    },
-}));
+import { AI_CHAT_MAX_TOKENS, AiService } from './ai.service';
 
 const mockUserModel = {
     findOneAndUpdate: jest.fn(),
@@ -437,7 +428,8 @@ describe('AiService', () => {
             ];
             mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const inputBudget = mockAiProvider.contextWindow - 800;
+            const inputBudget =
+                mockAiProvider.contextWindow - AI_CHAT_MAX_TOKENS;
             mockAiProvider.countTokens
                 .mockResolvedValueOnce(inputBudget + 5000)
                 .mockResolvedValueOnce(inputBudget - 100);
@@ -474,7 +466,8 @@ describe('AiService', () => {
             ];
             mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const inputBudget = mockAiProvider.contextWindow - 800;
+            const inputBudget =
+                mockAiProvider.contextWindow - AI_CHAT_MAX_TOKENS;
             mockAiProvider.countTokens
                 .mockResolvedValueOnce(inputBudget + 1000)
                 .mockResolvedValueOnce(inputBudget - 100);
@@ -492,7 +485,8 @@ describe('AiService', () => {
             ];
             mockChatMessageModel.find.mockReturnValue(createFindChain(history));
 
-            const inputBudget = mockAiProvider.contextWindow - 800;
+            const inputBudget =
+                mockAiProvider.contextWindow - AI_CHAT_MAX_TOKENS;
             mockAiProvider.countTokens
                 .mockResolvedValueOnce(inputBudget + 5000)
                 .mockResolvedValueOnce(inputBudget + 2000)
@@ -510,7 +504,8 @@ describe('AiService', () => {
         it('should throw AI_MESSAGE_TOO_LONG when single message exceeds budget', async () => {
             mockChatMessageModel.find.mockReturnValue(createFindChain([]));
 
-            const inputBudget = mockAiProvider.contextWindow - 800;
+            const inputBudget =
+                mockAiProvider.contextWindow - AI_CHAT_MAX_TOKENS;
             mockAiProvider.countTokens.mockResolvedValue(inputBudget + 1000);
 
             await expect(
@@ -533,7 +528,7 @@ describe('AiService', () => {
             expect(mockAiProvider.streamChat).toHaveBeenCalledWith(
                 messages,
                 expect.any(String),
-                800,
+                AI_CHAT_MAX_TOKENS,
                 signal
             );
         });

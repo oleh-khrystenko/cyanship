@@ -26,9 +26,9 @@ interface CreateCheckoutInput {
     userEmail: string;
     providerCustomerId?: string;  // reuse existing Stripe customer
     paymentType: PaymentType;
-    planCode: string;
+    planCode: string;              // для one-off сюди йде packCode
     priceId: string;
-    credits?: number;              // для one-off
+    executions?: number;
     successUrl: string;
     cancelUrl: string;
 }
@@ -38,13 +38,14 @@ interface CreateCheckoutInput {
 
 - Mode: `payment` для one-off, `subscription` для subscription
 - Customer: використовує існуючий `providerCustomerId` якщо є, інакше `customer_email`
-- Metadata: `{ userId, planCode, credits }` — критично для webhook mapping
+- Metadata: `{ userId, planCode, executions }` — критично для webhook mapping; `executions` пишеться рядком (Stripe metadata приймає лише рядки)
 - `client_reference_id: userId` — backup для resolveUserId
+- Якщо Stripe повернув session без `url` — кидає помилку, а не віддає порожнє посилання
 
 ## createPortalSession
 
 - Створює Stripe Billing Portal session для self-service управління підпискою
-- `return_url: BILLING_SUCCESS_URL` — куди повертається юзер після порталу
+- `return_url` приходить аргументом від `PaymentsService` — це `{WEB_URL}/{locale}/billing`, не env var
 
 ## handleWebhookPayload
 
@@ -75,7 +76,7 @@ paused              → UNKNOWN
 Розрізняє subscription checkout та one-off payment:
 
 - `session.mode === 'subscription'` → `CHECKOUT_COMPLETED` event з `subscriptionStatus: ACTIVE`
-- `session.mode === 'payment' && payment_status === 'paid'` → `ONE_OFF_PAYMENT_COMPLETED` з `creditsAmount` з metadata
+- `session.mode === 'payment' && payment_status === 'paid'` → `ONE_OFF_PAYMENT_COMPLETED` з `executionsAmount` з metadata
 - Інші комбінації mode/status → `null` (debug log)
 
 ## handleSubscriptionEvent

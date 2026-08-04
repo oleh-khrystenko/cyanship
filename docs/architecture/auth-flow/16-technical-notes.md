@@ -32,11 +32,11 @@ MAGIC_LINK_PURPOSE = {
 ## Redis keys
 
 ```
-magic:{token64hex}                    -> { email, purpose } JSON    TTL = AUTH_MAGIC_LINK_TTL_MIN (15 min)
-magic_dedup:{email}:{purpose}         -> token                      TTL = AUTH_MAGIC_LINK_DEDUP_SEC (60s)
-ratelimit:magic:{email}               -> count                      TTL = AUTH_MAGIC_LINK_RATE_WINDOW_MIN (15 min)
+magic:{token64hex}                    -> { email, purpose } JSON    TTL = MAGIC_LINK_TTL (15 min)
+magic_dedup:{email}:{purpose}         -> token                      TTL = MAGIC_LINK_DEDUP_TTL (60s)
+ratelimit:magic:{email}               -> count                      TTL = MAGIC_LINK_RATE_WINDOW (15 min)
 check_email:{ip}                      -> count                      TTL = 60s
-login_attempts:{ip}:{email}           -> count                      TTL = AUTH_LOGIN_ATTEMPTS_TTL_MIN (15 min)
+login_attempts:{ip}:{email}           -> count                      TTL = LOGIN_ATTEMPTS_TTL (15 min)
 refresh:{jti}                         -> userId / "rotated"          TTL = 7d / 10s (grace)
 refresh_family:{userId}               -> Set[jti]                   TTL = 7d
 ```

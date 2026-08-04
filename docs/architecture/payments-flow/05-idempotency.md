@@ -21,7 +21,7 @@ insertWebhookEvent(provider, event, userId)
 
 ### Phase 2: Process event
 
-Виконується бізнес-логіка (billing update або addCredits).
+Виконується бізнес-логіка (billing update або addExecutions).
 
 ### Phase 3: Mark applied або rollback
 

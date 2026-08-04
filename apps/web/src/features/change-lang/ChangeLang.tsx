@@ -29,6 +29,7 @@ const LANG_ITEMS: UiDropdownMenuItem[] = [
 const ChangeLang: FC<ChangeLangProps> = ({
     trigger: customTrigger,
     align = 'end',
+    onSelected,
 }) => {
     const router = useRouter();
     const pathname = usePathname();
@@ -37,6 +38,10 @@ const ChangeLang: FC<ChangeLangProps> = ({
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
     const handleChangeLang = (value: string) => {
+        // Fires even when the locale is unchanged: the click is a completed
+        // choice, so a host surface like the mobile sheet must close either way.
+        onSelected?.();
+
         if (value === activeLocale) return;
 
         // Read the query string off the location rather than via

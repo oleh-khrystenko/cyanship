@@ -44,7 +44,7 @@
 ```
 PaymentsModule
 ├── MongooseModule.forFeature(ProcessedWebhookEvent)
-├── UsersModule (для addCredits, findById)
+├── UsersModule (для addExecutions, findById)
 ├── Providers:
 │   ├── PaymentsService
 │   ├── StripeService

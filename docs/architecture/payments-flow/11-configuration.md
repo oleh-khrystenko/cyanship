@@ -1,49 +1,30 @@
-# Конфігурація (env vars)
+# Конфігурація
+
+## Env vars (required, crash if missing)
 
 Файл: `apps/api/src/config/env.ts`
 
-## Required (crash if missing)
-
 | Змінна | Опис |
 |--------|------|
-| `STRIPE_SECRET_KEY` | Stripe API secret key |
+| `STRIPE_SECRET_KEY` | Stripe API secret key (використовують `StripeService` і `CatalogService`) |
 | `STRIPE_WEBHOOK_SECRET` | Webhook endpoint signing secret |
-| `STRIPE_PRICE_ID_SUBSCRIPTION` | Stripe Price ID для subscription plan |
+| `WEB_URL` | База для success/cancel URL checkout-сесії та return URL білінг-порталу |
 
-## Required when one-off enabled
+Інших payments env vars немає. Ціни, кількість executions, порядок відображення і featured-позначка живуть у metadata Stripe Products і читаються `CatalogService` — див. [13-catalog.md](./13-catalog.md).
 
-| Змінна | Опис |
-|--------|------|
-| `STRIPE_PRICE_ID_CREDITS_5` | Stripe Price ID для пакету 5 кредитів |
-| `STRIPE_PRICE_ID_CREDITS_10` | Stripe Price ID для пакету 10 кредитів |
-| `STRIPE_PRICE_ID_CREDITS_20` | Stripe Price ID для пакету 20 кредитів |
+## Константи (не env)
 
-Ці змінні обов'язкові тільки коли `PAYMENTS_ONE_OFF_ENABLED=true`. При `false` мають fallback на порожній рядок.
+| Константа | Файл | Значення |
+|-----------|------|----------|
+| `PAYMENTS_SUBSCRIPTION_ENABLED` | `packages/types/src/constants/payments.ts` | `true` |
+| `PAYMENTS_ONE_OFF_ENABLED` | `packages/types/src/constants/payments.ts` | `true` |
+| `SUBSCRIPTION_PLAN_CODES` | `packages/types/src/contracts/payments.ts` | `['starter', 'pro']` |
+| `EXECUTION_PACK_CODES` | `packages/types/src/contracts/payments.ts` | `['basic', 'max']` |
 
-## Optional (мають defaults)
-
-| Змінна | Default | Опис |
-|--------|---------|------|
-| `BILLING_SUCCESS_URL` | `{WEB_URL}/billing/success` | URL після успішної оплати |
-| `BILLING_CANCEL_URL` | `{WEB_URL}/billing/cancel` | URL після скасування checkout |
-| `PAYMENTS_SUBSCRIPTION_ENABLED` | `'true'` | Feature flag для subscription |
-| `PAYMENTS_ONE_OFF_ENABLED` | `'true'` | Feature flag для one-off |
-
-## Frontend env vars
-
-Файл: `apps/web/src/shared/config/env.ts`
-
-| Змінна | Default | Опис |
-|--------|---------|------|
-| `NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED` | `'true'` | Видимість subscription секції |
-| `NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED` | `'true'` | Видимість credits секції |
-
-## STRIPE_CREDIT_PACKS (computed)
-
-Runtime об'єкт, що маппить `packCode` -> `{ priceId, credits }`. Заповнюється тільки коли `PAYMENTS_ONE_OFF_ENABLED=true`. Використовується в `PaymentsService.createCheckoutSession()` для визначення priceId по packCode.
+Прапорці — спільні для API і web, деталі в `09-feature-flags.md`.
 
 ## test-setup.ts
 
 Файл: `apps/api/src/test-setup.ts`
 
-Встановлює placeholder Stripe env vars (`sk_test_placeholder`, `whsec_test_placeholder`, `price_test_placeholder`) для unit test runs. Без цього fail-fast policy крашить тести при імпорті `env.ts`.
+Встановлює placeholder Stripe env vars (`sk_test_placeholder`, `whsec_test_placeholder`) для тестів. Без цього fail-fast policy крашить тести при імпорті `env.ts`. Прапорці оплати в test-setup відсутні — це константи, тести за потреби мокають `@cyanship/types`.

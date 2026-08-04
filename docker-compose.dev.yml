@@ -6,6 +6,12 @@ services:
             - '6379:6379'
         volumes:
             - redis_data_dev:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
 
     api:
         image: node:20-alpine
@@ -22,7 +28,7 @@ services:
             - PNPM_STORE_DIR=/pnpm-store
             - CI=true
             - NODE_ENV=development
-            - PORT=${API_PORT}
+            - API_PORT=${API_PORT}
             - MONGODB_URI=${MONGODB_URI}
             - REDIS_URL=redis://redis:6379
             - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
@@ -35,16 +41,6 @@ services:
             - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
             - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
             - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-            - PAYMENTS_SUBSCRIPTION_ENABLED=${PAYMENTS_SUBSCRIPTION_ENABLED}
-            - PAYMENTS_ONE_OFF_ENABLED=${PAYMENTS_ONE_OFF_ENABLED}
-            - AUTH_PASSWORD_MIN_LENGTH=${AUTH_PASSWORD_MIN_LENGTH}
-            - AUTH_LOCKOUT_THRESHOLDS=${AUTH_LOCKOUT_THRESHOLDS}
-            - AUTH_LOGIN_ATTEMPTS_TTL_MIN=${AUTH_LOGIN_ATTEMPTS_TTL_MIN}
-            - AUTH_MAGIC_LINK_TTL_MIN=${AUTH_MAGIC_LINK_TTL_MIN}
-            - AUTH_MAGIC_LINK_RATE_LIMIT=${AUTH_MAGIC_LINK_RATE_LIMIT}
-            - AUTH_MAGIC_LINK_RATE_WINDOW_MIN=${AUTH_MAGIC_LINK_RATE_WINDOW_MIN}
-            - AUTH_MAGIC_LINK_DEDUP_SEC=${AUTH_MAGIC_LINK_DEDUP_SEC}
-            - ACCOUNT_DELETION_GRACE_DAYS=${ACCOUNT_DELETION_GRACE_DAYS}
             - TSC_WATCHFILE=UsePolling
             - TSC_WATCHDIRECTORY=UsePolling
         ports:
@@ -54,7 +50,20 @@ services:
             - pnpm-store:/pnpm-store
             - /app/node_modules
         depends_on:
-            - redis
+            redis:
+                condition: service_healthy
+        # Readiness lags container start by the whole `pnpm install` + build +
+        # Nest compile chain, which runs at runtime here (no image layer to bake
+        # it into) — minutes on a cold pnpm store. The start period only bounds
+        # how long that may take: the first successful probe ends it immediately,
+        # and an env fail-fast crash exits the container, which compose reports
+        # to dependents without waiting this out.
+        healthcheck:
+            test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:${API_PORT}/api/health"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 600s
 
     web:
         image: node:20-alpine
@@ -74,10 +83,8 @@ services:
             - PNPM_STORE_DIR=/pnpm-store
             - PORT=${WEB_PORT}
             - API_INTERNAL_URL=http://api:${API_PORT}
-            - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-            - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT}/api
-            - NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED=${NEXT_PUBLIC_PAYMENTS_SUBSCRIPTION_ENABLED}
-            - NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED=${NEXT_PUBLIC_PAYMENTS_ONE_OFF_ENABLED}
+            - WEB_URL=http://localhost:${WEB_PORT}
+            - R2_PUBLIC_URL=${R2_PUBLIC_URL}
             - WATCHPACK_POLLING=true
             - CHOKIDAR_USEPOLLING=true
         ports:
@@ -86,8 +93,12 @@ services:
             - ./:/app
             - pnpm-store:/pnpm-store
             - /app/node_modules
+        # `service_started` is not enough: Next serves the first page in seconds
+        # while the API is still installing, and `AuthInitializer` proxies
+        # /api/auth/refresh into a closed port.
         depends_on:
-            - api
+            api:
+                condition: service_healthy
 
 volumes:
     redis_data_dev:
