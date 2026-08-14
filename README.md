@@ -111,7 +111,6 @@ REDIS_URL=redis://redis:6379
 # Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 
 # Resend
 RESEND_API_KEY=your-resend-api-key

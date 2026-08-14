@@ -9,8 +9,6 @@ process.env.JWT_REFRESH_SECRET ??= 'test-refresh-secret';
 process.env.REDIS_URL ??= 'redis://localhost:6379';
 process.env.GOOGLE_CLIENT_ID ??= 'google-client-id-placeholder';
 process.env.GOOGLE_CLIENT_SECRET ??= 'google-client-secret-placeholder';
-process.env.GOOGLE_CALLBACK_URL ??=
-    'http://localhost:4000/api/auth/google/callback';
 process.env.RESEND_API_KEY ??= 're_test_placeholder';
 process.env.RESEND_FROM_EMAIL ??= 'CyanShip <test@test.dev>';
 process.env.STRIPE_SECRET_KEY ??= 'sk_test_placeholder';

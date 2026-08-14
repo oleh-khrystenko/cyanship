@@ -254,7 +254,7 @@ Scaffold без ендпоінтів.
 - `NODE_ENV`, `API_PORT`, `WEB_URL`
 - `MONGODB_URI`, `REDIS_URL`
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`
@@ -274,7 +274,8 @@ Scaffold без ендпоінтів.
 - `NEXT_PUBLIC_DEMO_VIDEO_PATH`, `NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH` — шляхи в R2-бакеті (мусять починатись з `/`, склеюються з `NEXT_PUBLIC_STORAGE_URL`). Постер без відео = помилка збірки; відео вмикає demo-секцію на landing.
 
 **Не env vars**
-- Шлях до API — константа `API_BASE_PATH = '/api'` (`apps/web/src/shared/config/api.ts`), бо `bid_refresh` cookie вимагає same-origin проксі. `NEXT_PUBLIC_API_URL` більше не існує.
+- Шлях до API — константа `API_BASE_PATH = '/api'` (`apps/web/src/shared/config/api.ts`), бо `bid_refresh` cookie вимагає same-origin проксі. `NEXT_PUBLIC_API_URL` більше не існує. Той самий префікс на боці API — `API_GLOBAL_PREFIX` (`apps/api/src/config/api.ts`), який споживає `main.ts`.
+- Google OAuth callback — не змінна: `google.strategy.ts` виводить його як `${WEB_URL}/${API_GLOBAL_PREFIX}/auth/google/callback`. `GOOGLE_CALLBACK_URL` більше не існує; при зміні `WEB_URL` треба вручну оновити redirect URI у Google Cloud Console.
 - Продуктовий тюнінг живе в коді (`docs/conventions/fail-fast.md`, розділ «Що НЕ є env var»): `packages/types/src/constants/account.ts` (`ACCOUNT_DELETION_GRACE_DAYS`), `constants/payments.ts` (`PAYMENTS_SUBSCRIPTION_ENABLED`, `PAYMENTS_ONE_OFF_ENABLED` — хоча б один `true`, перевіряє `CatalogService.onModuleInit`), `contracts/ai-chat.ts` (`AI_CHAT_COST`, `AI_CHAT_FREE_LIMIT`, `AI_CHAT_BONUS_AMOUNT`). Локальні: `auth.service.ts` (`LOGIN_ATTEMPTS_TTL`, `MAGIC_LINK_*`, `LOCKOUT_THRESHOLDS`), `ai.service.ts` (`AI_CHAT_MAX_TOKENS`), `ai-rate-limit.guard.ts` (`AI_CHAT_IP_LIMIT`).
 
 **Infra**
