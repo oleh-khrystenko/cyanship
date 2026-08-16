@@ -1,46 +1,130 @@
-import Image from 'next/image';
+import { getImageProps } from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
-import ambientGlow from '../../../../../public/images/ambient-glow.webp';
+import heroShipDarkTall from '../../../../../public/images/hero/ship-dark-tall.webp';
+import heroShipDarkWide from '../../../../../public/images/hero/ship-dark-wide.webp';
+import heroShipLightTall from '../../../../../public/images/hero/ship-light-tall.webp';
+import heroShipLightWide from '../../../../../public/images/hero/ship-light-wide.webp';
 import StartBriefButton from '../StartBriefButton';
+import HeroShipVideo from './HeroShipVideo';
+import { WIDE_MEDIA } from './heroMedia';
+
+// `getImageProps` yields the optimizer's srcset without the <Image> component, so the
+// crop can be chosen by `<source media>` instead of CSS. A CSS-hidden <Image> still
+// downloads — and with `priority` even preloads — both crops; a `<source media>` is
+// resolved by the browser, so only the matching crop is fetched, and it is re-resolved
+// on rotation, which is the one moment the other crop is genuinely needed.
+// Theme stays CSS-driven: `.dark` is a manual toggle, not a media query, so both
+// palettes must remain in the DOM.
+//
+// DELIBERATE, PLEASE DON'T "FIX": the hidden palette is downloaded too. Measured
+// waste is 24 KB at 828px, 38 KB at 1200px, 53 KB at 1920px — the optimizer's
+// srcset keeps it to that, the source files never ship whole. Two cures have been
+// weighed and rejected:
+//
+//   – Moving the ship to a CSS `background-image` (one rule per theme). Kills the
+//     width-based srcset, because backgrounds can only branch on pixel density via
+//     `image-set()`, never on viewport width. Recovering it needs width media
+//     queries — the one thing this section is deliberately built without — and
+//     skipping it means phones fetch the desktop rendition, losing more than the
+//     24 KB saved. It also hides the LCP element's URL from the preload scanner,
+//     and forces a hand-written `aspect-ratio` per theme (the light and dark wide
+//     crops are 2368×1080 and 2520×1080), where any slip becomes layout shift.
+//
+//   – Collapsing both palettes into one <picture> keyed on `prefers-color-scheme`.
+//     Correct on bytes, wrong on output: the still would follow the OS instead of
+//     the in-app switch, so anyone who overrode the theme sees the wrong palette
+//     until the video covers it — and permanently under `prefers-reduced-motion`.
+const shipProps = (src: typeof heroShipLightTall, quality: number) =>
+    getImageProps({
+        src,
+        alt: '',
+        sizes: '100vw',
+        quality,
+        priority: true,
+    }).props;
+
+const tallLight = shipProps(heroShipLightTall, 85);
+const tallDark = shipProps(heroShipDarkTall, 85);
+const wideLight = shipProps(heroShipLightWide, 90);
+const wideDark = shipProps(heroShipDarkWide, 90);
+
+type ShipProps = ReturnType<typeof shipProps>;
+
+// One component for both palettes: the markup is identical and only the crops and
+// the visibility class differ, so keeping two hand-written copies would let the
+// themes drift apart — and a divergence is invisible in whichever theme the author
+// is currently looking at.
+const HeroShipPicture = ({
+    tall,
+    wide,
+    className,
+}: {
+    tall: ShipProps;
+    wide: ShipProps;
+    className: string;
+}) => (
+    <picture className={className}>
+        <source
+            media={WIDE_MEDIA}
+            srcSet={wide.srcSet}
+            sizes={wide.sizes}
+            width={wide.width}
+            height={wide.height}
+        />
+        <img {...tall} alt="" aria-hidden="true" className="h-auto w-full" />
+    </picture>
+);
 
 const HeroSection = () => {
     const t = useTranslations('landing_page.hero');
     const tBrand = useTranslations('brand');
 
     return (
-        <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
-            <div className="relative container px-6">
-                <div className="mx-auto max-w-3xl text-center">
-                    <div className="relative">
-                        <p className="text-primary text-sm font-medium tracking-widest uppercase">
-                            {tBrand('slogan')}
-                        </p>
+        <section className="wide:grid wide:grid-rows-1 relative -mt-16 flex min-h-svh flex-col overflow-hidden">
+            {/* Ship — full width, intrinsic height, never cropped. Which crop runs is decided
+                by viewport shape (see WIDE_MEDIA), never by a width breakpoint. */}
+            <div className="wide:col-start-1 wide:row-start-1 wide:self-center wide:mask-fade-y relative w-full">
+                <HeroShipPicture
+                    tall={tallLight}
+                    wide={wideLight}
+                    className="block dark:hidden"
+                />
 
-                        {/* Ambient glow — pre-baked image for consistent cross-browser rendering */}
-                        <Image
-                            src={ambientGlow}
-                            alt=""
-                            aria-hidden="true"
-                            priority
-                            quality={75}
-                            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50 dark:opacity-100"
-                            sizes="1088px"
-                        />
-                    </div>
+                <HeroShipPicture
+                    tall={tallDark}
+                    wide={wideDark}
+                    className="hidden dark:block"
+                />
 
-                    <h1 className="mt-6 text-3xl font-bold tracking-tight min-[412px]:text-4xl md:text-5xl lg:text-6xl">
+                <HeroShipVideo />
+
+                {/* Seam blend into the copy below — tall composition only, where the ship hugs
+                    the top of the viewport and only its bottom edge meets the page. In the wide
+                    composition the centred ship is dissolved on both edges by `mask-fade-y`. */}
+                <div className="from-background wide:hidden pointer-events-none absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t to-transparent" />
+            </div>
+
+            <div className="wide:relative wide:col-start-1 wide:row-start-1 wide:py-20 container flex flex-1 items-center px-6 py-10">
+                <div className="wide:mx-0 wide:max-w-hero-copy wide:text-left mx-auto max-w-2xl text-center">
+                    <p className="text-foreground dark:text-primary wide:static wide:px-0 wide:pt-0 wide:text-left absolute inset-x-0 top-0 px-6 pt-20 text-center text-sm font-medium tracking-widest uppercase">
+                        {tBrand('slogan')}
+                    </p>
+
+                    <h1 className="text-hero wide:text-hero-wide wide:mt-6 font-bold tracking-tight">
                         {t('heading_line1')}
                         <br />
                         {t('heading_line2')}
                     </h1>
 
-                    <p className="text-muted-foreground mx-auto mt-6 max-w-3xl text-lg leading-relaxed md:text-xl">
+                    <p className="text-muted-foreground dark:text-foreground/80 text-hero-lead wide:text-hero-lead-wide mx-auto mt-6 max-w-3xl leading-relaxed">
                         {t('description')}
                     </p>
 
-                    <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+                    {/* `wide:w-max` keeps the pair on one line even when the copy column is
+                        narrower than the two buttons — it may overhang the column, never the hull. */}
+                    <div className="wide:w-max wide:flex-row wide:justify-start mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
                         <StartBriefButton
                             variant="filled"
                             size="lg"

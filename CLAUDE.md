@@ -272,6 +272,7 @@ Scaffold без ендпоінтів.
 
 **Web — optional**
 - `NEXT_PUBLIC_DEMO_VIDEO_PATH`, `NEXT_PUBLIC_DEMO_VIDEO_POSTER_PATH` — шляхи в R2-бакеті (мусять починатись з `/`, склеюються з `NEXT_PUBLIC_STORAGE_URL`). Постер без відео = помилка збірки; відео вмикає demo-секцію на landing.
+- `NEXT_PUBLIC_HERO_VIDEO_BASE_PATH` — тека в R2-бакеті з петлями корабля для landing hero (мусить починатись з `/`, без слеша в кінці, склеюється з `NEXT_PUBLIC_STORAGE_URL`). Імена файлів усередині теки виводить код: `ship-{light|dark}-{tall|wide}.{av1|h264}.mp4`. Не задано — герой лишається на статичних картинках.
 
 **Не env vars**
 - Шлях до API — константа `API_BASE_PATH = '/api'` (`apps/web/src/shared/config/api.ts`), бо `bid_refresh` cookie вимагає same-origin проксі. `NEXT_PUBLIC_API_URL` більше не існує. Той самий префікс на боці API — `API_GLOBAL_PREFIX` (`apps/api/src/config/api.ts`), який споживає `main.ts`.

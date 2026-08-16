@@ -80,3 +80,23 @@ export const DEMO_VIDEO = demoVideoSrc
     : null;
 
 export const DEMO_VIDEO_ENABLED = DEMO_VIDEO !== null;
+
+/**
+ * Hero ship loops. A directory rather than a file list: there are four crops
+ * (light/dark × tall/wide) and two codecs each, and spelling all eight out in
+ * `.env` would duplicate a naming scheme that belongs in code. File names are
+ * derived by the hero widget; unset the variable and the hero falls back to
+ * its stills, which is also what happens while the bucket is still empty.
+ */
+const heroVideoBasePath = process.env.NEXT_PUBLIC_HERO_VIDEO_BASE_PATH;
+
+if (heroVideoBasePath?.endsWith('/')) {
+    throw new Error(
+        '❌ Environment variable "NEXT_PUBLIC_HERO_VIDEO_BASE_PATH" must not end with "/"'
+    );
+}
+
+export const HERO_VIDEO_BASE_URL = resolveOptionalStorageAsset(
+    heroVideoBasePath,
+    'NEXT_PUBLIC_HERO_VIDEO_BASE_PATH'
+);
