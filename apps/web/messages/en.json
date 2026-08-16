@@ -278,6 +278,7 @@
     },
     "errors": {
         "auth": {
+            "logout_failed": "Failed to sign out. Please try again",
             "unauthorized": "Your session has expired. Please sign in again"
         },
         "payments": {
@@ -640,6 +641,7 @@
             "description": "Our Terms of Service or Privacy Policy have been updated. Please review and accept the changes to continue.",
             "agree": "I agree to the updated <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
             "button": "Accept and continue",
+            "decline_button": "Decline and sign out",
             "required": "You must accept the updated terms to continue.",
             "error": "Something went wrong. Please try again."
         }

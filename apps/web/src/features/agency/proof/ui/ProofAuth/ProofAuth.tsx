@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { CheckEmailSchema, getFullName } from '@cyanship/types';
 import type { MagicLinkPurpose } from '@cyanship/types';
@@ -19,9 +20,9 @@ import UiSpinner from '@/shared/ui/UiSpinner';
 import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { GoogleIcon } from '@/shared/icons';
 import { API_BASE_PATH } from '@/shared/config';
-import { checkEmail, sendMagicLink, logout } from '@/shared/api';
+import { checkEmail, sendMagicLink } from '@/shared/api';
 import { saveRedirect, getFieldError } from '@/shared/lib';
-import { useAuthStore } from '@/entities/user';
+import { signOut, useAuthStore } from '@/entities/user';
 
 const EmailFormSchema = CheckEmailSchema;
 type EmailFormValues = z.input<typeof EmailFormSchema>;
@@ -30,13 +31,13 @@ type ProofAuthState = 'idle' | 'loading' | 'magic-link-sent';
 
 const ProofAuth = () => {
     const t = useTranslations('landing_page.dogfooding.proof_auth');
+    const tGlobal = useTranslations();
     const locale = useLocale();
     const router = useRouter();
 
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
-    const clearUser = useAuthStore((s) => s.clearUser);
 
     const emailForm = useForm<EmailFormValues>({
         resolver: zodResolver(EmailFormSchema),
@@ -150,12 +151,14 @@ const ProofAuth = () => {
 
     const handleLogout = async () => {
         setLoggingOut(true);
-        try {
-            await logout();
-        } catch {
-            // silent — token expires naturally
+        // On success this view is replaced by the idle sign-in form, so no
+        // navigation is needed. On failure the session is still alive — stay
+        // put, restore the button and say what happened.
+        const ok = await signOut();
+        if (!ok) {
+            toast.error(tGlobal('errors.auth.logout_failed'));
+            setLoggingOut(false);
         }
-        clearUser();
     };
 
     const goBackToIdle = () => {

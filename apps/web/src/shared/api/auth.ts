@@ -138,8 +138,28 @@ export async function refreshToken(): Promise<string> {
     return data.data.accessToken;
 }
 
+/**
+ * Upper bound on how long the client waits for the server to revoke the
+ * session. Callers block the UI on this request (the terms re-accept dialog
+ * cannot be dismissed any other way), so an unanswered request must fail
+ * instead of hanging forever. Giving up is not free: only the server response
+ * clears the httpOnly `bid_refresh` cookie, so a timed-out logout leaves the
+ * session alive — which is why a failure is reported, not swallowed.
+ */
+const LOGOUT_TIMEOUT_MS = 5000;
+
+/**
+ * Revokes the session server-side and drops the in-memory access token.
+ *
+ * The token is cleared only on success. A failed logout leaves the server
+ * session intact, so clearing it here would desynchronise client and server:
+ * the user would look signed out while still holding a live refresh cookie.
+ * Callers are expected to surface the rejection instead.
+ */
 export async function logout(): Promise<void> {
-    await apiClient.post('/auth/logout');
+    await apiClient.post('/auth/logout', undefined, {
+        timeout: LOGOUT_TIMEOUT_MS,
+    });
     setAccessToken(null);
 }
 
