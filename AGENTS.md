@@ -183,7 +183,7 @@ Global prefix: `/api`. `JAA` = `JwtActiveGuard`, `JA` = `JwtAuthGuard`, `ARL` = 
 
 Єдине локальне джерело — root `.env`; приклад — `.env.example`. API читає його через `apps/api/src/config/env.ts`, web build — через `apps/web/next.config.ts` і `apps/web/src/shared/config/env.ts`.
 
-**API required, старт падає без значення:** `NODE_ENV`, `API_PORT`, `WEB_URL`, `MONGODB_URI`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`, `ANTHROPIC_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`.
+**API required, старт падає без значення:** `NODE_ENV`, `API_PORT`, `WEB_URL`, `MONGODB_URI`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TURNSTILE_SECRET_KEY`, `BRIEF_NOTIFICATION_EMAIL`, `ANTHROPIC_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`.
 
 **Web/Compose:** `WEB_PORT` потрібен Compose; `NEXT_PUBLIC_TURNSTILE_SITE_KEY` обов'язковий для web build. `WEB_URL`, `R2_PUBLIC_URL` і `API_INTERNAL_URL` обов'язкові; перші два інлайняться як `NEXT_PUBLIC_BASE_URL` і `NEXT_PUBLIC_STORAGE_URL` — не додавай їх дублікати в `.env`. Усі три мусять бути HTTP(S) origin без path і trailing slash (`requireOrigin` у `next.config.ts` валить build інакше).
 

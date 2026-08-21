@@ -37,7 +37,11 @@ Env var — це те, що **відрізняється між середови
 
 `NEXT_PUBLIC_*` без запису в `.env` — це нормально: значення приходить із мапінгу в `next.config.ts`, а `assertEnv` у web все одно впаде на збірці, якщо мапінг зламали.
 
-Так само не є змінною те, що архітектурно не може відрізнятись: шлях до API — константа `API_BASE_PATH = '/api'` (`apps/web/src/shared/config/api.ts`), бо `bid_refresh` cookie вимагає same-origin проксі. Наслідок: `API_INTERNAL_URL` (ціль цього проксі) — required, а не optional. Без нього браузер не має жодного шляху до бекенду, тому `next.config.ts` валить збірку, а не будує мовчки мертвий фронт.
+Так само не є змінною те, що архітектурно не може відрізнятись: шлях до API — константа `API_BASE_PATH = '/api'` (`apps/web/src/shared/config/api.ts`), бо `bid_refresh` cookie вимагає same-origin проксі. Той самий префікс на боці API — `API_GLOBAL_PREFIX` (`apps/api/src/config/api.ts`), який споживає `main.ts`.
+
+Наслідок: `API_INTERNAL_URL` (ціль цього проксі) — required, а не optional. Без нього браузер не має жодного шляху до бекенду, тому `next.config.ts` валить збірку, а не будує мовчки мертвий фронт.
+
+Звідси ж відсутність `GOOGLE_CALLBACK_URL`: OAuth-callback — це `WEB_URL` + той самий `/api` + фіксований роут контролера, тобто жодної власної свободи він не має. Значення виводиться в `google.strategy.ts`; окрема змінна дала б лише шанс розійтися з реальним роутом. Зміна `WEB_URL` вимагає оновити redirect URI у Google Cloud Console — це єдине, що лишилось ручним.
 
 `WEB_URL`, `R2_PUBLIC_URL` і `API_INTERNAL_URL` проходять `requireOrigin` у `next.config.ts`: HTTP(S) origin без path і без trailing slash. Причина — всі три склеюються з хвостами (`${WEB_URL}/${locale}`, `${R2_PUBLIC_URL}/${key}`), і зайвий слеш дає `//` у canonical, листах і Stripe return URLs.
 

@@ -1,9 +1,9 @@
 import { type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
 import { getFullName, getInitials } from '@cyanship/types';
-import { logout } from '@/shared/api';
-import { useAuthStore } from '@/entities/user';
+import { signOut, useAuthStore } from '@/entities/user';
 
 interface UserMenuItem {
     value: string;
@@ -21,11 +21,11 @@ export function useUserMenu(icons: {
     logout: ReactNode;
 }) {
     const t = useTranslations('components.header');
+    const tGlobal = useTranslations();
     const locale = useLocale();
     const router = useRouter();
     const pathname = usePathname();
     const user = useAuthStore((s) => s.user);
-    const clearUser = useAuthStore((s) => s.clearUser);
 
     const formattedExecutions = (user?.executions.balance ?? 0).toLocaleString('en-US');
 
@@ -72,11 +72,11 @@ export function useUserMenu(icons: {
         if (item?.route) {
             router.push(item.route);
         } else if (value === 'logout') {
-            void (async () => {
-                await logout();
-                clearUser();
-                window.location.assign(`/${locale}`);
-            })();
+            void signOut({ redirectTo: `/${locale}` }).then((ok) => {
+                // A failed sign-out leaves the session alive server-side, so
+                // the user must know the click did not take effect.
+                if (!ok) toast.error(tGlobal('errors.auth.logout_failed'));
+            });
         }
     };
 

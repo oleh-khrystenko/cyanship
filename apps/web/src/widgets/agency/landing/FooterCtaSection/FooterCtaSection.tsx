@@ -7,7 +7,7 @@ import {
     CheckCircle2,
     LucideIcon,
 } from 'lucide-react';
-import StartBriefButton from '../StartBriefButton';
+import { StartBriefButton } from '../../start-brief';
 
 const steps: { key: number; icon: LucideIcon; primary?: boolean }[] = [
     { key: 1, icon: Send, primary: true },

@@ -3,6 +3,7 @@ import * as cookieParser from 'cookie-parser';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AppModule } from './app.module';
+import { API_GLOBAL_PREFIX } from './config/api';
 import { ENV } from './config/env';
 
 async function bootstrap() {
@@ -17,7 +18,7 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix(API_GLOBAL_PREFIX);
 
     app.enableCors({
         origin: ENV.WEB_URL,

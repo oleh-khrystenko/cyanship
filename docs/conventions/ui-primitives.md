@@ -27,7 +27,7 @@ Ui-компоненти інкапсулюють:
 
 | Ui-компонент | Замінює нативний елемент | Варіанти |
 |---|---|---|
-| `UiButton` | `<button>`, `<a>`, Next.js `<Link>` | `filled`, `outline`, `soft`, `text`, `icon`, `icon-compact`; polymorphic: `as="button"` / `as="link"` / `as="a"` |
+| `UiButton` | `<button>`, `<a>`, Next.js `<Link>` | `filled`, `outline`, `soft`, `text`, `icon`, `icon-compact`, `bare`; polymorphic: `as="button"` / `as="link"` / `as="a"` |
 | `UiInput` | `<input>` (text, email, number, etc.) | `outlined`, `filled` |
 | `UiPasswordInput` | `<input type="password">` + show/hide toggle | композиція UiInput + UiButton; внутрішній стан visibility |
 | `UiSelect` | `<select>` | `outlined`, `filled` |
@@ -71,6 +71,8 @@ Ui-компоненти інкапсулюють:
 2. **className prop** -- для контекстно-специфічних override-ів (позиціонування, кольори)
 
 Заборонено дублювати базові стилі примітивів (padding, transition, cursor, disabled state) у className. Якщо стандартних варіантів недостатньо -- додай новий variant до компонента.
+
+Так само заборонено цілитися у внутрішню розмітку примітиву через child-селектори (`[&>span]:...`): обгортки всередині `Ui*` -- implementation detail, і callsite, який на них спирається, зламається мовчки при першій же зміні примітиву. Коли поверхню (фон, padding, hover) має малювати сам вміст -- бери `UiButton variant="bare"`: він не оголошує жодного оформлення, не додає padding і сам розтягує обгортку вмісту на всю кнопку. Типові споживачі -- ряди табів, рядки списку, картка з єдиною зоною натискання.
 
 ### 3. Розширення реєстру
 

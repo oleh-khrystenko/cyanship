@@ -19,12 +19,16 @@ export async function fetchMetadata({
         if (!locale) throw new Error('Locale is missing in params');
     } catch (error) {
         console.error('❌ Failed to resolve locale from params:', error);
-        locale = LANG.UK;
+        locale = LANG.EN;
     }
 
-    let title = 'CyanShip – Запустіть SaaS MVP за 4 тижні';
+    // Last resort for a page that ships without its own `head` keys. English,
+    // because that is the language the copy is written in first; and it names
+    // the current offer, because a stale default is exactly how a retired one
+    // creeps back in front of a customer.
+    let title = 'CyanShip – From Idea to Revenue in 4 Weeks';
     let description =
-        'Розробка production-ready B2B платформ на Next.js та NestJS. Швидкий вихід на ринок без агенційних витрат.';
+        'B2B platform development with AI, payments, and auth built in. Next.js + NestJS. Fast time-to-market, zero agency overhead.';
 
     if (page === null) {
         if (meta) {
@@ -33,7 +37,7 @@ export async function fetchMetadata({
         }
     } else {
         const raw = String(locale ?? '').toLowerCase();
-        const normalized = /^[a-z]{2}(-[a-z]{2})?$/i.test(raw) ? raw : LANG.UK;
+        const normalized = /^[a-z]{2}(-[a-z]{2})?$/i.test(raw) ? raw : LANG.EN;
 
         interface PageMessages {
             head?: { title?: string; description?: string };
@@ -46,11 +50,13 @@ export async function fetchMetadata({
                 const mod = await import(`../../../messages/${loc}.json`);
                 return mod.default ?? mod;
             } catch {
-                if (loc !== LANG.UK) {
-                    const modUk = await import(
-                        `../../../messages/${LANG.UK}.json`
+                // Same fallback language as everything else in this function:
+                // an English URL must never come back with Ukrainian head copy.
+                if (loc !== LANG.EN) {
+                    const fallback = await import(
+                        `../../../messages/${LANG.EN}.json`
                     );
-                    return modUk.default ?? modUk;
+                    return fallback.default ?? fallback;
                 }
                 return {};
             }
@@ -72,10 +78,15 @@ export async function fetchMetadata({
         description,
         alternates: {
             canonical: canonicalUrl,
+            // Plain language codes, no region: the offer is sold in England,
+            // Austria and the United States, so pinning English to a single
+            // country would leave every other English-speaking market matched
+            // by nothing. `x-default` follows `routing.defaultLocale`, which is
+            // English — the language the copy is written in first.
             languages: {
-                'x-default': `${BASE_URL}/uk${path}`,
-                'uk-ua': `${BASE_URL}/uk${path}`,
-                'en-ua': `${BASE_URL}/en${path}`,
+                'x-default': `${BASE_URL}/${LANG.EN}${path}`,
+                [LANG.EN]: `${BASE_URL}/${LANG.EN}${path}`,
+                [LANG.UK]: `${BASE_URL}/${LANG.UK}${path}`,
             },
         },
         openGraph: {
@@ -85,11 +96,17 @@ export async function fetchMetadata({
             siteName: 'CyanShip',
             locale: locale === 'uk' ? 'uk_UA' : 'en_US',
             type: 'website',
+            // JPEG, not PNG: the banner is a photograph with no transparency,
+            // and several scrapers — WhatsApp most visibly — skip the preview
+            // entirely once the image passes a few hundred kilobytes. The same
+            // artwork as PNG weighed a megabyte, so every share fetched that
+            // and half of them showed nothing.
             images: [
                 {
-                    url: `${BASE_URL}/images/og-banner-v2.png`,
+                    url: `${BASE_URL}/images/og-banner.jpg`,
                     width: 1200,
                     height: 630,
+                    type: 'image/jpeg',
                     alt: title,
                 },
             ],
@@ -98,7 +115,7 @@ export async function fetchMetadata({
             card: 'summary_large_image',
             title,
             description,
-            images: [`${BASE_URL}/images/og-banner-v2.png`],
+            images: [`${BASE_URL}/images/og-banner.jpg`],
         },
     };
 }

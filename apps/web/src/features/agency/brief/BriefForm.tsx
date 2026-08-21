@@ -76,7 +76,11 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
         'description',
     ]);
 
-    const { containerRef, execute: executeTurnstile, reset: resetTurnstile } = useTurnstile();
+    const {
+        containerRef,
+        execute: executeTurnstile,
+        reset: resetTurnstile,
+    } = useTurnstile();
 
     const budgetOptions = useMemo(
         () => [
@@ -91,7 +95,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             },
             { value: BRIEF_BUDGET.OVER_10000, label: t('budget_over_10000') },
         ],
-        [t],
+        [t]
     );
 
     const deadlineOptions = useMemo(
@@ -103,7 +107,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             },
             { value: BRIEF_DEADLINE.FLEXIBLE, label: t('deadline_flexible') },
         ],
-        [t],
+        [t]
     );
 
     const onSubmit = async (data: BriefFormValues) => {
@@ -160,18 +164,18 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
             {isAuthenticated ? (
                 <>
                     <div>
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-foreground text-sm font-medium">
                             {t('name_label')}
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="text-muted-foreground mt-1 text-sm">
                             {nameValue}
                         </p>
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-foreground text-sm font-medium">
                             {t('email_label')}
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="text-muted-foreground mt-1 text-sm">
                             {emailValue}
                         </p>
                     </div>
@@ -190,7 +194,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                                 too_big: t('validation_name_max'),
                                 invalid_string: t('validation_name_format'),
                             },
-                            nameValue,
+                            nameValue
                         )}
                         disabled={isSubmitting}
                         required
@@ -208,7 +212,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                                 too_big: t('validation_email_max'),
                                 invalid_string: t('validation_email_format'),
                             },
-                            emailValue,
+                            emailValue
                         )}
                         disabled={isSubmitting}
                         required
@@ -228,7 +232,7 @@ export default function BriefForm({ onSuccess }: BriefFormProps) {
                         too_small: t('validation_description_min'),
                         too_big: t('validation_description_max'),
                     },
-                    descriptionValue,
+                    descriptionValue
                 )}
                 disabled={isSubmitting}
                 required

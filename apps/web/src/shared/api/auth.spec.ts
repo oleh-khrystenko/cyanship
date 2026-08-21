@@ -231,8 +231,29 @@ describe('auth API functions', () => {
 
             await logout();
 
-            expect(mockPost).toHaveBeenCalledWith('/auth/logout');
+            expect(mockPost).toHaveBeenCalledWith('/auth/logout', undefined, {
+                timeout: expect.any(Number),
+            });
             expect(mockSetAccessToken).toHaveBeenCalledWith(null);
+        });
+
+        it('keeps the token when the request fails', async () => {
+            mockPost.mockRejectedValue(new Error('timeout'));
+
+            await expect(logout()).rejects.toThrow('timeout');
+
+            // The server session survives a failed logout, so dropping the
+            // token here would leave client and server disagreeing.
+            expect(mockSetAccessToken).not.toHaveBeenCalled();
+        });
+
+        it('caps how long it waits for the server', async () => {
+            mockPost.mockResolvedValue({});
+
+            await logout();
+
+            const [, , config] = mockPost.mock.calls[0];
+            expect(config.timeout).toBeGreaterThan(0);
         });
     });
 

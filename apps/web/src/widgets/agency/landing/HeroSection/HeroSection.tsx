@@ -1,46 +1,40 @@
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import UiButton from '@/shared/ui/UiButton';
-import ambientGlow from '../../../../../public/images/ambient-glow.webp';
-import StartBriefButton from '../StartBriefButton';
+import { HeroShipStage } from '../../hero-ship';
+import { StartBriefButton } from '../../start-brief';
 
 const HeroSection = () => {
     const t = useTranslations('landing_page.hero');
     const tBrand = useTranslations('brand');
 
     return (
-        <section className="relative -mt-16 flex min-h-svh items-center overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
-            <div className="relative container px-6">
-                <div className="mx-auto max-w-3xl text-center">
-                    <div className="relative">
-                        <p className="text-primary text-sm font-medium tracking-widest uppercase">
-                            {tBrand('slogan')}
-                        </p>
+        <section className="wide:grid wide:grid-rows-1 relative -mt-16 flex min-h-svh flex-col overflow-hidden">
+            <HeroShipStage />
 
-                        {/* Ambient glow — pre-baked image for consistent cross-browser rendering */}
-                        <Image
-                            src={ambientGlow}
-                            alt=""
-                            aria-hidden="true"
-                            priority
-                            quality={75}
-                            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50 dark:opacity-100"
-                            sizes="1088px"
-                        />
-                    </div>
+            <div className="wide:relative wide:col-start-1 wide:row-start-1 wide:py-20 container flex flex-1 items-center px-6 py-10">
+                <div className="wide:mx-0 wide:max-w-hero-copy wide:text-left mx-auto max-w-2xl text-center">
+                    <p className="text-foreground dark:text-primary wide:static wide:px-0 wide:pt-0 wide:text-left absolute inset-x-0 top-0 px-6 pt-20 text-center text-sm font-medium tracking-widest uppercase">
+                        {tBrand('slogan')}
+                    </p>
 
-                    <h1 className="mt-6 text-3xl font-bold tracking-tight min-[412px]:text-4xl md:text-5xl lg:text-6xl">
-                        {t('heading_line1')}
-                        <br />
-                        {t('heading_line2')}
+                    {/* Three deliberate lines, not a wrap: each is a whole step of the
+                        promise — idea, revenue, deadline. `text-hero-stack` is the ramp
+                        sized for exactly this shape, so no line ever breaks again and the
+                        type can be large enough to fill the copy column. */}
+                    <h1 className="text-hero-stack wide:text-hero-stack-wide wide:mt-6 font-bold tracking-tight">
+                        <span className="block">{t('heading_line1')}</span>
+                        <span className="block">{t('heading_line2')}</span>
+                        <span className="block">{t('heading_line3')}</span>
                     </h1>
 
-                    <p className="text-muted-foreground mx-auto mt-6 max-w-3xl text-lg leading-relaxed md:text-xl">
+                    <p className="text-muted-foreground dark:text-foreground/80 text-hero-lead wide:text-hero-lead-wide mx-auto mt-6 max-w-3xl leading-relaxed">
                         {t('description')}
                     </p>
 
-                    <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+                    {/* `wide:w-max` keeps the pair on one line even when the copy column is
+                        narrower than the two buttons — it may overhang the column, never the hull. */}
+                    <div className="wide:w-max wide:flex-row wide:justify-start mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
                         <StartBriefButton
                             variant="filled"
                             size="lg"

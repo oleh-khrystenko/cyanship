@@ -84,6 +84,11 @@ const nextConfig: NextConfig = {
         NEXT_PUBLIC_STORAGE_URL: storageUrl,
     },
     images: {
+        // Next allows only the qualities listed here; anything else makes the
+        // optimizer answer 400. Default is [75] — the landing hero re-encodes its
+        // wide gradients at 85/90, so both have to be declared or the hero fails
+        // to load in production.
+        qualities: [75, 85, 90],
         remotePatterns: [
             {
                 protocol: 'https',
