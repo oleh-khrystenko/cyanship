@@ -84,13 +84,13 @@ describe('BriefForm', () => {
         render(<BriefForm onSuccess={mockOnSuccess} />);
 
         expect(
-            screen.getByPlaceholderText('name_placeholder'),
+            screen.getByPlaceholderText('name_placeholder')
         ).toBeInTheDocument();
         expect(
-            screen.getByPlaceholderText('email_placeholder'),
+            screen.getByPlaceholderText('email_placeholder')
         ).toBeInTheDocument();
         expect(
-            screen.getByPlaceholderText('description_placeholder'),
+            screen.getByPlaceholderText('description_placeholder')
         ).toBeInTheDocument();
         expect(screen.getByText('submit')).toBeInTheDocument();
     });
@@ -112,7 +112,7 @@ describe('BriefForm', () => {
                 target: {
                     value: 'A project description that is long enough for validation',
                 },
-            },
+            }
         );
 
         const budgetSelect = screen.getByText('budget_placeholder');
@@ -135,7 +135,9 @@ describe('BriefForm', () => {
 
         // Zod validation should catch empty name, email, description, budget
         await waitFor(() => {
-            expect(screen.getByText('validation_name_required')).toBeInTheDocument();
+            expect(
+                screen.getByText('validation_name_required')
+            ).toBeInTheDocument();
         });
 
         expect(mockSubmitBrief).not.toHaveBeenCalled();
@@ -156,7 +158,7 @@ describe('BriefForm', () => {
                 target: {
                     value: 'A project description that is long enough for validation',
                 },
-            },
+            }
         );
 
         // Select budget via UiSelect — click to open, then select option
@@ -175,7 +177,7 @@ describe('BriefForm', () => {
                     budget: 'under_2500',
                     captchaToken: 'test-captcha-token',
                     source: 'direct',
-                }),
+                })
             );
         });
 

@@ -56,6 +56,8 @@ Feature / Page / Widget / shared/ui/
 |-------|---------------|-------------|
 | `--text-hero` | `text-hero` | H1 лендінгу у портретній композиції. Плавний `clamp` 30px → 56px, без width-breakpoint-ів |
 | `--text-hero-wide` | `text-hero-wide` | H1 лендінгу у `wide:`-композиції. Плавний `clamp` 28px → 60px |
+| `--text-hero-stack` | `text-hero-stack` | H1 лендінгу, розбитий на короткі окремі рядки, портретна композиція. Крутіший `clamp` 38px → 64px і тісніший leading, бо жоден рядок не переноситься |
+| `--text-hero-stack-wide` | `text-hero-stack-wide` | Той самий stacked-H1 у `wide:`-композиції. Плавний `clamp` 39px → 76px |
 | `--text-hero-lead` | `text-hero-lead` | Підзаголовок під H1, портретна композиція (17px → 20px) |
 | `--text-hero-lead-wide` | `text-hero-lead-wide` | Підзаголовок під H1, `wide:`-композиція (16px → 20px) |
 | `--container-hero-copy` | `max-w-hero-copy` | Ширина текстової колонки поруч з кораблем у `wide:`-композиції |

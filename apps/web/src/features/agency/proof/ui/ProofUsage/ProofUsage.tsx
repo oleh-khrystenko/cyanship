@@ -30,7 +30,7 @@ const ACTION_BUTTONS: { action: SpendableAction; labelKey: string }[] = [
 ];
 
 const ProofUsage = ({ onRequestAuth }: ProofUsageProps) => {
-    const t = useTranslations('landing_page.dogfooding.proof_usage');
+    const t = useTranslations('proof_window.usage');
     const tGlobal = useTranslations();
 
     const user = useAuthStore((s) => s.user);

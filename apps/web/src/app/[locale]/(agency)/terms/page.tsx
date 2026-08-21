@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { fetchMetadata } from '@/shared/seo/metadata';
 import { MetaProps, PageParams } from '@/shared/types/settings';
 import UiLink from '@/shared/ui/UiLink';
-import { LandingFooter } from '@/widgets/agency/landing';
+import { SiteFooter } from '@/widgets/agency/site-footer';
 import { ACCOUNT_DELETION_GRACE_DAYS } from '@cyanship/types';
 
 export async function generateMetadata(props: MetaProps): Promise<Metadata> {
@@ -430,7 +430,7 @@ export default async function TermsPage({ params }: PageParams) {
                     </div>
                 </article>
             </main>
-            <LandingFooter />
+            <SiteFooter />
         </>
     );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,11 +29,22 @@ type EmailFormValues = z.input<typeof EmailFormSchema>;
 
 type ProofAuthState = 'idle' | 'loading' | 'magic-link-sent';
 
-const ProofAuth = () => {
-    const t = useTranslations('landing_page.dogfooding.proof_auth');
+interface ProofAuthProps {
+    /**
+     * Anchor of the section this panel is mounted in. Together with the current
+     * path it forms the address a magic link or an OAuth round trip returns to,
+     * so the visitor lands back on the page they started from — the live home
+     * page and the archived landing carry this widget under different anchors.
+     */
+    sectionId: string;
+}
+
+const ProofAuth = ({ sectionId }: ProofAuthProps) => {
+    const t = useTranslations('proof_window.auth');
     const tGlobal = useTranslations();
     const locale = useLocale();
     const router = useRouter();
+    const pathname = usePathname();
 
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -56,7 +67,7 @@ const ProofAuth = () => {
     const lastPurposeRef = useRef<MagicLinkPurpose>('login');
     const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
-    const redirectPath = `/${locale}#dogfooding`;
+    const redirectPath = `${pathname}#${sectionId}`;
 
     const startResendTimer = useCallback(() => {
         setResendCountdown(60);

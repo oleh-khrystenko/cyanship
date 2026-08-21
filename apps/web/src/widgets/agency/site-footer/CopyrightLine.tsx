@@ -23,7 +23,7 @@ const getCurrentYear = () => new Date().getFullYear();
  * clock — no cascading render, no hydration mismatch.
  */
 const CopyrightLine: FC<CopyrightLineProps> = ({ prerenderedYear }) => {
-    const t = useTranslations('landing_page.footer');
+    const t = useTranslations('site_footer');
     const year = useSyncExternalStore(
         subscribe,
         getCurrentYear,

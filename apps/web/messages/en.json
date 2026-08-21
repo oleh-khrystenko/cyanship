@@ -12,6 +12,123 @@
             "description": "Terms and conditions for using CyanShip products and services."
         }
     },
+    "home_page": {
+        "head": {
+            "title": "Your website, rebuilt — CyanShip",
+            "description": "Your first screen decides whether a customer calls you or closes the tab. I rebuild the site of a business that already has one. From $1,000."
+        },
+        "nav": {
+            "work": "Work",
+            "process": "Process",
+            "pricing": "Price",
+            "proof": "Proof"
+        },
+        "hero": {
+            "heading_line1": "You're better at this",
+            "heading_line2": "than your website makes you look.",
+            "description": "Your site fell behind you. I bring it back up to your level.",
+            "cta_primary": "Send me your website",
+            "cta_secondary": "See the work"
+        },
+        "how_it_works": {
+            "label": "Process",
+            "heading": "What happens after you send the address.",
+            "description": "No call, no discovery workshop, no questionnaire about where you see your business in five years.",
+            "step_1_title": "You send the link",
+            "step_1_sub": "Name, email, your website. Thirty seconds.",
+            "step_2_title": "You get a rewritten first screen",
+            "step_2_sub": "Built on your own material. Free, no conditions attached.",
+            "step_3_title": "You see the price",
+            "step_3_sub": "An exact number for your site, not a range.",
+            "step_4_title": "You decide",
+            "step_4_sub": "The first screen stays yours either way."
+        },
+        "pricing": {
+            "label": "Price",
+            "heading": "From $1,000. Said out loud.",
+            "description": "A hidden price makes a person write in to ask for it — and that is exactly why they never write. So here it is.",
+            "price": "from $1,000",
+            "price_note": "There is no upper bound, because scope has none: more pages, custom features and integrations move the number. The exact one comes after I have seen your site.",
+            "includes_label": "What the lower number covers",
+            "include_1": "Every screen your site has today, rebuilt: structure, text, design.",
+            "include_2": "Built for the phone first — that is where your customer opens it.",
+            "include_3": "Speed treated as a build requirement, not a fix for later.",
+            "include_4": "One clear action per screen: call, message, or a form that reaches your inbox.",
+            "include_5": "Launched on your own domain. All of it belongs to you.",
+            "cta": "Send me your website"
+        },
+        "ladder": {
+            "label": "After launch",
+            "heading": "The site is the first step, not the whole road.",
+            "description": "Each step is a separate decision, taken once the previous one has paid for itself. No package, nothing bundled in.",
+            "step_1_title": "The site",
+            "step_1_description": "Rebuilt, live, yours.",
+            "step_2_title": "Support and analytics",
+            "step_2_description": "Someone keeps it running, and you get to see what visitors actually do on it.",
+            "step_3_title": "An AI assistant on your site",
+            "step_3_description": "Answers your customers around the clock, in their own language. The chat on this page is one.",
+            "note": "Prices for the second and third steps are quoted when you get there. Naming a number now would be a guess."
+        },
+        "proof": {
+            "label": "Level",
+            "heading": "This page is not a screenshot of a portfolio.",
+            "description": "Sign-in, a live Stripe checkout, a metered balance — all of it runs on this page right now, and all of it was built here. It is not an invitation to open an account. It is the shortest way to check what the person rebuilding your site can actually build."
+        },
+        "final_cta": {
+            "label": "Start",
+            "heading": "Send the address. That is the whole first step.",
+            "description": "Name, email, your website, and optionally what already bothers you about it. No call, no meeting, no brief to fill in.",
+            "cta": "Send me your website"
+        }
+    },
+    "portfolio": {
+        "label": "Work",
+        "heading": "Products that are running right now.",
+        "description": "Not concepts. Every one of these went live with real users, real money and real staff behind it. Open any card to see the screens.",
+        "reel_label": "Work reel",
+        "previous": "Previous work",
+        "next": "Next work",
+        "pause": "Pause scrolling",
+        "resume": "Resume scrolling",
+        "open": "View case",
+        "visit": "Open {site} in a new tab",
+        "close": "Close",
+        "screens": "{count, plural, one {# screen} other {# screens}}",
+        "nda_note": "Internal screens recreated for this case. Originals under NDA.",
+        "before": "Before",
+        "after": "After",
+        "slider_label": "Drag to compare before and after",
+        "cases": {
+            "status": {
+                "title": "STATUS English School",
+                "summary": "A speaking-first English school ran on a legacy site and a hand-kept list of leads. Now: 12 pages across two languages, one inbox where every trial request lands, and staff who publish prices and news without asking a developer. 53 redirects carried the old search rankings over; pages deliver in 0.1 to 0.3 seconds."
+            },
+            "finly": {
+                "title": "Finly",
+                "summary": "A fintech product for small businesses: payment QR codes and payment links generated to the national banking standard in seconds, so a customer scans instead of typing bank details by hand. Subscription billing, local acquiring, branded payment pages. Live in production, running its own payment infrastructure."
+            },
+            "wish-hub": {
+                "title": "Wish Hub",
+                "summary": "A social wishlist where people create, share and reserve gifts, so nobody buys the same present twice. Three privacy levels per wish, automated product import from a store link, three languages, web push. Live at wish-hub.net: 575 commits, 116,000 lines of code."
+            },
+            "buildup-school": {
+                "title": "BuildUp School",
+                "summary": "One product instead of three: a landing page that sells, a learning platform for students, and admin tooling for staff. Five roles with their own dashboards, drag-and-drop scheduling across groups, teachers and rooms, and a course editor that non-technical staff run on their own."
+            },
+            "knockai": {
+                "title": "KnockAI",
+                "summary": "A field operations platform for door-to-door teams: GPS check-ins with distance validation, dwell tracking on timed tasks, and earnings that turn into payout requests. Every state stays consistent across the mobile app, the backend and the database."
+            },
+            "split": {
+                "title": "Split Ticketing",
+                "summary": "A nightclub sold tickets on paper and checked guests in by hand. Now guests buy online and get a QR ticket instantly, while door staff scan on a dedicated screen that catches used and duplicate tickets in real time. Revenue per event is visible as it comes in."
+            },
+            "cycle8": {
+                "title": "Cycle8",
+                "summary": "The frontend of an enterprise B2B trading platform, where business users run trade workflows through dense data screens. Filterable, sortable tables with live status, role-based access per user type, and a legacy codebase moved to a modern frontend without breaking the workflows people were in the middle of."
+            }
+        }
+    },
     "landing_page": {
         "head": {
             "title": "CyanShip – From Idea to Revenue in 4 Weeks",
@@ -19,6 +136,7 @@
         },
         "nav": {
             "approach": "Approach",
+            "work": "Work",
             "proof": "Proof",
             "demo": "Demo",
             "workflow": "Workflow",
@@ -26,8 +144,9 @@
             "get_started": "Contact"
         },
         "hero": {
-            "heading_line1": "From Idea to Revenue",
-            "heading_line2": "in 4 Weeks.",
+            "heading_line1": "From Idea",
+            "heading_line2": "to Revenue",
+            "heading_line3": "in 4 Weeks.",
             "description": "Production-ready B2B platforms — AI, payments, and auth baked in from day one. Built on a battle-tested Next.js & NestJS core. Zero agency overhead.",
             "cta_primary": "Request a Technical Estimate",
             "cta_secondary": "Try Live Demo"
@@ -47,68 +166,7 @@
         "dogfooding": {
             "label": "Proof",
             "heading": "You Are Looking at the Code Right Now",
-            "description": "I don't just sell this architecture; I run my business on it. This site — including its AI chat, Stripe billing, and auth — is built on the exact same CyanShip core your product will use.",
-            "step_1": "Create an account to test the auth flow",
-            "step_2": "Click the Stripe checkout to see the payment integration",
-            "step_3": "Test the usage-based billing logic",
-            "proof_shell": {
-                "sheet_title_auth": "One-Click Auth",
-                "sheet_title_billing": "Stripe-Powered Checkout",
-                "sheet_title_usage": "Usage Demo",
-                "try_it": "Try it"
-            },
-            "proof_auth": {
-                "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
-                "terms_required": "Please accept the Terms to continue",
-                "google_button": "Sign in with Google",
-                "or_divider": "or",
-                "email_placeholder": "your@email.com",
-                "continue_button": "Continue",
-                "magic_link_sent_title": "Check your email",
-                "magic_link_sent_description": "We sent a link to <bold>{email}</bold>.",
-                "resend_button": "Resend",
-                "resend_countdown": "Resend in {seconds}s",
-                "other_email": "Use different email",
-                "authenticated_greeting": "Signed in as",
-                "logout_button": "Log out",
-                "error_generic": "Something went wrong. Please try again",
-                "error_rate_limit": "Too many attempts. Please try again later",
-                "validation_email_required": "Please enter your email address",
-                "validation_email_format": "Enter a valid email address"
-            },
-            "proof_billing": {
-                "plans_tab": "Plans",
-                "packs_tab": "Packs",
-                "subscribe_button": "Subscribe",
-                "buy_button": "Purchase",
-                "error": "Could not load pricing"
-            },
-            "proof_usage": {
-                "balance_label": "Your Balance",
-                "balance_executions": "{count} executions",
-                "generate_report": "Generate Report",
-                "run_analysis": "Run AI Analysis",
-                "cost_label": "-{cost} exec",
-                "insufficient_balance": "Not enough executions",
-                "transactions_title": "Recent Activity",
-                "no_transactions": "No activity yet. Purchase executions in the Billing tab to get started.",
-                "not_authenticated": "Sign in to test the usage-based billing",
-                "sign_in_button": "Sign in",
-                "actions": {
-                    "standard_report": "Report generated",
-                    "ai_analysis": "AI analysis completed",
-                    "deep_analysis": "Deep analysis completed",
-                    "full_audit": "Full audit completed",
-                    "subscription_activation": "Subscription activated",
-                    "pack_purchase": "Execution pack purchased",
-                    "plan_change": "Plan changed",
-                    "billing_reset": "Billing reset",
-                    "ai_chat": "AI Chat"
-                },
-                "time_just_now": "Just now",
-                "time_minutes_ago": "{count}m ago",
-                "time_hours_ago": "{count}h ago"
-            }
+            "description": "I don't just sell this architecture; I run my business on it. This site — including its AI chat, Stripe billing, and auth — is built on the exact same CyanShip core your product will use."
         },
         "demo_video": {
             "label": "Demo",
@@ -172,21 +230,85 @@
             "step_3_sub": "Clear scope and estimate",
             "step_4_title": "Decide with confidence",
             "step_4_sub": "No pressure, no sales calls"
-        },
-        "footer": {
-            "col_product": "Product",
-            "col_legal": "Legal",
-            "col_connect": "Connect",
-            "nav_pricing": "Pricing",
-            "nav_demo": "Demo",
-            "nav_proof": "Proof",
-            "legal_terms": "Terms of Service",
-            "legal_privacy": "Privacy Policy",
-            "email": "oleg@cyanship.com",
-            "social_linkedin": "LinkedIn",
-            "social_github": "GitHub",
-            "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
         }
+    },
+    "proof_window": {
+        "step_1": "Create an account to test the auth flow",
+        "step_2": "Click the Stripe checkout to see the payment integration",
+        "step_3": "Test the usage-based billing logic",
+        "shell": {
+            "sheet_title_auth": "One-Click Auth",
+            "sheet_title_billing": "Stripe-Powered Checkout",
+            "sheet_title_usage": "Usage Demo",
+            "try_it": "Try it"
+        },
+        "auth": {
+            "terms_agree": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+            "terms_required": "Please accept the Terms to continue",
+            "google_button": "Sign in with Google",
+            "or_divider": "or",
+            "email_placeholder": "your@email.com",
+            "continue_button": "Continue",
+            "magic_link_sent_title": "Check your email",
+            "magic_link_sent_description": "We sent a link to <bold>{email}</bold>.",
+            "resend_button": "Resend",
+            "resend_countdown": "Resend in {seconds}s",
+            "other_email": "Use different email",
+            "authenticated_greeting": "Signed in as",
+            "logout_button": "Log out",
+            "error_generic": "Something went wrong. Please try again",
+            "error_rate_limit": "Too many attempts. Please try again later",
+            "validation_email_required": "Please enter your email address",
+            "validation_email_format": "Enter a valid email address"
+        },
+        "billing": {
+            "plans_tab": "Plans",
+            "packs_tab": "Packs",
+            "subscribe_button": "Subscribe",
+            "buy_button": "Purchase",
+            "error": "Could not load pricing"
+        },
+        "usage": {
+            "balance_label": "Your Balance",
+            "balance_executions": "{count} executions",
+            "generate_report": "Generate Report",
+            "run_analysis": "Run AI Analysis",
+            "cost_label": "-{cost} exec",
+            "insufficient_balance": "Not enough executions",
+            "transactions_title": "Recent Activity",
+            "no_transactions": "No activity yet. Purchase executions in the Billing tab to get started.",
+            "not_authenticated": "Sign in to test the usage-based billing",
+            "sign_in_button": "Sign in",
+            "actions": {
+                "standard_report": "Report generated",
+                "ai_analysis": "AI analysis completed",
+                "deep_analysis": "Deep analysis completed",
+                "full_audit": "Full audit completed",
+                "subscription_activation": "Subscription activated",
+                "pack_purchase": "Execution pack purchased",
+                "plan_change": "Plan changed",
+                "billing_reset": "Billing reset",
+                "ai_chat": "AI Chat"
+            },
+            "time_just_now": "Just now",
+            "time_minutes_ago": "{count}m ago",
+            "time_hours_ago": "{count}h ago"
+        }
+    },
+    "site_footer": {
+        "col_product": "Product",
+        "col_legal": "Legal",
+        "col_connect": "Connect",
+        "nav_work": "Work",
+        "nav_pricing": "Price",
+        "nav_demo": "Demo",
+        "nav_proof": "Proof",
+        "legal_terms": "Terms of Service",
+        "legal_privacy": "Privacy Policy",
+        "email": "oleg@cyanship.com",
+        "social_linkedin": "LinkedIn",
+        "social_github": "GitHub",
+        "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
     },
     "auth_page": {
         "signin": {
@@ -269,7 +391,7 @@
             "onboarding_required": "Please complete your profile to continue"
         },
         "agency": {
-            "brief_submitted": "Request submitted. We will respond within 24 hours."
+            "brief_submitted": "Request submitted. You will receive a reply within 24 hours."
         },
         "storage": {
             "avatar_updated": "Photo updated",

@@ -31,13 +31,17 @@ const iconSizeStyles: Record<UiButtonSize, string> = {
 };
 
 /**
- * Compact icon buttons without padding (size only affects icon scale)
+ * No padding at all — `icon-compact` (size only affects icon scale) and `bare`
+ * (the content owns the whole surface, so the button must add nothing).
  */
 const iconCompactSizeStyles: Record<UiButtonSize, string> = {
     sm: 'p-0',
     md: 'p-0',
     lg: 'p-0',
 };
+
+/** Variants that add no padding of their own. */
+const UNPADDED_VARIANTS: UiButtonVariant[] = ['icon-compact', 'bare'];
 
 /**
  * Theme-agnostic variant styles using neutral colors
@@ -51,10 +55,20 @@ const variantStyles: Record<UiButtonVariant, string> = {
     'destructive-outline':
         'border border-destructive bg-transparent text-destructive hover:bg-destructive/10 active:bg-destructive/20',
     text: 'bg-transparent text-muted-foreground hover:text-foreground',
-    'destructive-text': 'bg-transparent text-destructive hover:text-destructive/80',
+    'destructive-text':
+        'bg-transparent text-destructive hover:text-destructive/80',
     icon: 'bg-transparent text-muted-foreground hover:text-foreground',
     'icon-compact':
         'bg-transparent text-muted-foreground hover:text-foreground',
+    // For rows whose surface — background, padding, hover — belongs to the
+    // content: tab strips, list rows, cards behind a single hit area. Every
+    // other variant declares its own background and colour, and `composeClasses`
+    // only concatenates, so a surface handed over in `className` would be
+    // resolved by the order Tailwind happened to emit the rules in. `bare`
+    // declares none, keeps what a primitive must own (the element, the type,
+    // the cursor, the disabled handling) and stretches its content wrapper to
+    // the full button — so callers never have to reach into the markup.
+    bare: 'bg-transparent',
 };
 
 interface RenderContentProps {
@@ -62,6 +76,13 @@ interface RenderContentProps {
     IconRight?: ReactNode;
     children?: ReactNode;
     size: UiButtonSize;
+    /**
+     * `bare` hands its whole surface to the content, so the wrapper has to fill
+     * the button. Kept here rather than left to the caller: the wrapper is this
+     * component's own markup, and a caller reaching in for it with a child
+     * selector would break silently the day the markup changes.
+     */
+    stretchContent?: boolean;
 }
 
 const renderContent = ({
@@ -69,6 +90,7 @@ const renderContent = ({
     IconRight,
     children,
     size,
+    stretchContent,
 }: RenderContentProps) => {
     const sizeClass = iconSizeStyles_svg[size];
     return (
@@ -78,7 +100,11 @@ const renderContent = ({
                     {IconLeft}
                 </span>
             )}
-            {children && <span>{children}</span>}
+            {children && (
+                <span className={stretchContent ? 'w-full' : undefined}>
+                    {children}
+                </span>
+            )}
             {IconRight && (
                 <span className={sizeClass} aria-hidden>
                     {IconRight}
@@ -127,21 +153,27 @@ const UiButton = forwardRef<
 
     const classes = composeClasses(
         'inline-flex items-center justify-center rounded-lg',
-        variant !== 'icon' && variant !== 'icon-compact' && 'gap-2',
+        variant !== 'icon' && !UNPADDED_VARIANTS.includes(variant) && 'gap-2',
         'cursor-pointer disabled:cursor-not-allowed',
         'focus:outline-none',
         'transition-colors',
         disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         variant === 'icon'
             ? iconSizeStyles[size]
-            : variant === 'icon-compact'
+            : UNPADDED_VARIANTS.includes(variant)
               ? iconCompactSizeStyles[size]
               : sizeStyles[size],
         variantStyles[variant],
         className
     );
 
-    const content = renderContent({ IconLeft, IconRight, children, size });
+    const content = renderContent({
+        IconLeft,
+        IconRight,
+        children,
+        size,
+        stretchContent: variant === 'bare',
+    });
     const commonProps = getCommonProps({ className: classes, variant, size });
     const accessibilityProps = getLinkAccessibilityProps(disabled);
 

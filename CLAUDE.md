@@ -35,7 +35,7 @@ apps/
 │   ├── app/[locale]/    # pages: auth, (protected), (agency)
 │   ├── entities/        # user (authStore), navigation (headerNavStore), brand (Logo), agency (placeholder)
 │   ├── features/        # auth, billing, agency, profile, change-lang, change-theme — own their dialog/state stores in-slice
-│   ├── widgets/         # header (mobileMenuSheetStore), agency/landing (dogfoodingSheetStore)
+│   ├── widgets/         # header (mobileMenuSheetStore), agency/{landing,home,portfolio,hero-ship,proof-window,site-footer,start-brief}
 │   ├── shared/          # api, ui, config, styles, icons, seo, lib (authEvents + uiIntents buses), fonts, types
 │   └── i18n/            # routing, request config
 packages/
@@ -156,6 +156,16 @@ API повертає machine-readable `code` через `AllExceptionsFilter`; w
 
 ### Frontend auth flow
 `AuthInitializer` (client effect) → `refreshToken()` → `getMe()` → hydrate `authStore`. Перевіряє terms version, показує modal при outdated. `AuthGuard` компонент в protected layout перевіряє auth + onboarding. Middleware (`middleware.ts`) перевіряє `bid_refresh` cookie для server-side redirects.
+
+### Портфоліо
+Бази під кейси немає. Форма запису — типізований union у `widgets/agency/portfolio/cases.ts` (`work` — готова робота, `comparison` — пара до/після), тексти — у неймспейсі `portfolio.cases.<slug>` обох локалей (окремому від обох оферів, бо секція рендериться на обох сторінках), зображення — статичні `apps/web/public/images/portfolio/<slug>/<n>.webp` (1448×1086, WebP q78). Картка тягне лише перший знімок, решта вантажиться при відкритті кейсу в діалозі — інакше сім кейсів по пʼять екранів топлять швидкість, якою офер і торгує. Живе посилання ставиться тільки там, де дозвіл підтверджено.
+
+### Публічна головна vs відкладений офер
+Головна (`/`) продає діючий офер — MVP Launch Package — і збирається з `widgets/agency/landing` (ключі `landing_page.*`). Офер переробки сайтів діючому бізнесу відкладено: він реалізований повністю і живе на `/rebuild` з `widgets/agency/home` (ключі `home_page.*`), заборонений до індексації через `robots` у власній `generateMetadata`, і на нього немає жодного посилання — ні в шапці, ні в підвалі, ні на головній. Дістатись можна лише набравши адресу; це навмисно — напрямок припаркований, а не видалений.
+
+Обидві сторінки — окремі набори секцій. Спільними лишаються нейтральні віджети: `hero-ship` (візуал корабля), `proof-window` (живі вставки ядра), `portfolio` (кейси), `site-footer`, `start-brief`. Правити спільний віджет — значить правити обидві сторінки одночасно; перевіряти треба обидві.
+
+Форма заявки (`features/agency/brief`) обслуговує діючий офер головної: імʼя, пошта, опис проєкту, бюджет, терміни. Відкладений офер потребує іншого складу полів (адреса наявного сайту + скарга) — коли `/rebuild` вийде на головну, форма мусить отримати режим під нього, а не бути перемкнута глобально: той самий діалог відкривається і з ядра, з AI-чата, по `uiIntents` для нарахування AI-бонусу.
 
 ### Overlay management
 Zustand store → `UiModal`/`UiSheet`/`UiConfirmDialog` → реєстрація в `app/overlays.tsx` (єдиний global mount + єдиний санкціонований core→agency dynamic-import exception). Конвенція: `docs/conventions/overlays.md`. Кожен dialog store живе **усередині свого slice** — глобального `src/stores/` шару не існує (enforced ESLint). **In-module trigger**: прямий import store з барелю slice. **Cross-module trigger** (core ↔ agency): через `uiIntents` bus.
