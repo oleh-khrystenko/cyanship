@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
-import StartBriefButton from '../StartBriefButton';
+import { StartBriefButton } from '../../start-brief';
 
 const includeKeys = [
     'include_1',

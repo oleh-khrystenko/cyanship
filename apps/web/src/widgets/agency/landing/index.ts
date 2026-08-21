@@ -5,4 +5,3 @@ export { DemoVideoSection } from './DemoVideoSection';
 export { WorkflowSection } from './WorkflowSection';
 export { PricingSection } from './PricingSection';
 export { FooterCtaSection } from './FooterCtaSection';
-export { LandingFooter } from './LandingFooter';

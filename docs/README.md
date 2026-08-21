@@ -13,6 +13,7 @@
 ## Поточне наповнення
 
 - `docs/vision/product.md` — повний опис проекту CyanShip
+- `docs/vision/first-screen-offer.md` — офер «перший екран» для локального бізнесу
 - `docs/architecture/auth-flow/` — опис реалізації авторизації (16 документів)
 - `docs/architecture/payments-flow/` — опис реалізації платіжної системи (12 документів)
 - `docs/testing/auth/` — unit + integration + manual E2E тести для auth
@@ -23,5 +24,5 @@
 
 ## Спринти
 
-Планування спринтів живе в `docs/sprints/NN-slug/` і створюється по ходу роботи.
+Планування спринтів живе в `docs/sprints/NN-slug/` і створюється по ходу роботи. Індекс зі статусами: [docs/sprints/README.md](sprints/README.md).
 У бойлерплейті цієї папки немає навмисно — історія розробки ядра не потрібна новому проекту.

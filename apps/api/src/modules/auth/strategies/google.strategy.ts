@@ -2,7 +2,16 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 
+import { API_GLOBAL_PREFIX } from '../../../config/api';
 import { ENV } from '../../../config/env';
+
+// Google returns the browser to the web origin, never to the API origin:
+// `bid_refresh` is a web-origin cookie and `next.config.ts` proxies `/api/*`
+// here. Everything but the origin is fixed by the route, so the URL is derived
+// from WEB_URL instead of being a second variable that can drift per
+// environment. Must stay identical to the redirect URI registered in Google
+// Cloud Console.
+const GOOGLE_CALLBACK_URL = `${ENV.WEB_URL}/${API_GLOBAL_PREFIX}/auth/google/callback`;
 
 export interface GoogleValidatedUser {
     email: string;
@@ -18,7 +27,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         super({
             clientID: ENV.GOOGLE_CLIENT_ID,
             clientSecret: ENV.GOOGLE_CLIENT_SECRET,
-            callbackURL: ENV.GOOGLE_CALLBACK_URL,
+            callbackURL: GOOGLE_CALLBACK_URL,
             scope: ['email', 'profile'],
             state: false,
         });

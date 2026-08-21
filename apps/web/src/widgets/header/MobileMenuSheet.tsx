@@ -60,13 +60,13 @@ export default function MobileMenuSheet() {
     return (
         <UiSheet open={isOpen} onOpenChange={(open) => !open && close()}>
             <UiSheetContent side="right">
-                <UiSheetHeader className="pt-3">
+                <UiSheetHeader className="shrink-0 pt-3">
                     <UiSheetTitle className="text-left">
                         <Logo />
                     </UiSheetTitle>
                 </UiSheetHeader>
 
-                <div className="flex flex-col gap-6 px-5 pb-6">
+                <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-5 pb-6">
                     {/* Navigation */}
                     {hasNav && (
                         <nav className="flex flex-col gap-1">

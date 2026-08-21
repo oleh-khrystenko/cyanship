@@ -96,3 +96,27 @@
         @apply text-xs px-1 py-0.5 rounded bg-muted;
     }
 }
+
+/* Vertical edge fade for full-bleed imagery that no longer touches the viewport edges:
+   the picture dissolves into the page background instead of ending on a hard line.
+   Eased multi-stop ramp on purpose — a plain two-stop `from-background → transparent`
+   overlay leaves a visible Mach band over light backgrounds. */
+@utility mask-fade-y {
+    --mask-fade-y: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgb(0 0 0 / 0.08) 7%,
+        rgb(0 0 0 / 0.3) 15%,
+        rgb(0 0 0 / 0.65) 23%,
+        rgb(0 0 0 / 0.9) 30%,
+        rgb(0 0 0 / 1) 36%,
+        rgb(0 0 0 / 1) 66%,
+        rgb(0 0 0 / 0.9) 72%,
+        rgb(0 0 0 / 0.65) 79%,
+        rgb(0 0 0 / 0.3) 87%,
+        rgb(0 0 0 / 0.08) 94%,
+        transparent 100%
+    );
+    -webkit-mask-image: var(--mask-fade-y);
+    mask-image: var(--mask-fade-y);
+}

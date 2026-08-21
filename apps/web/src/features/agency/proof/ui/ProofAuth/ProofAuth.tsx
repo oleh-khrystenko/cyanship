@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail } from 'lucide-react';
 import { AxiosError } from 'axios';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { CheckEmailSchema, getFullName } from '@cyanship/types';
 import type { MagicLinkPurpose } from '@cyanship/types';
@@ -19,24 +20,35 @@ import UiSpinner from '@/shared/ui/UiSpinner';
 import { UiAvatar } from '@/shared/ui/UiAvatar';
 import { GoogleIcon } from '@/shared/icons';
 import { API_BASE_PATH } from '@/shared/config';
-import { checkEmail, sendMagicLink, logout } from '@/shared/api';
+import { checkEmail, sendMagicLink } from '@/shared/api';
 import { saveRedirect, getFieldError } from '@/shared/lib';
-import { useAuthStore } from '@/entities/user';
+import { signOut, useAuthStore } from '@/entities/user';
 
 const EmailFormSchema = CheckEmailSchema;
 type EmailFormValues = z.input<typeof EmailFormSchema>;
 
 type ProofAuthState = 'idle' | 'loading' | 'magic-link-sent';
 
-const ProofAuth = () => {
-    const t = useTranslations('landing_page.dogfooding.proof_auth');
+interface ProofAuthProps {
+    /**
+     * Anchor of the section this panel is mounted in. Together with the current
+     * path it forms the address a magic link or an OAuth round trip returns to,
+     * so the visitor lands back on the page they started from — the live home
+     * page and the archived landing carry this widget under different anchors.
+     */
+    sectionId: string;
+}
+
+const ProofAuth = ({ sectionId }: ProofAuthProps) => {
+    const t = useTranslations('proof_window.auth');
+    const tGlobal = useTranslations();
     const locale = useLocale();
     const router = useRouter();
+    const pathname = usePathname();
 
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isLoading = useAuthStore((s) => s.isLoading);
-    const clearUser = useAuthStore((s) => s.clearUser);
 
     const emailForm = useForm<EmailFormValues>({
         resolver: zodResolver(EmailFormSchema),
@@ -55,7 +67,7 @@ const ProofAuth = () => {
     const lastPurposeRef = useRef<MagicLinkPurpose>('login');
     const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
-    const redirectPath = `/${locale}#dogfooding`;
+    const redirectPath = `${pathname}#${sectionId}`;
 
     const startResendTimer = useCallback(() => {
         setResendCountdown(60);
@@ -150,12 +162,14 @@ const ProofAuth = () => {
 
     const handleLogout = async () => {
         setLoggingOut(true);
-        try {
-            await logout();
-        } catch {
-            // silent — token expires naturally
+        // On success this view is replaced by the idle sign-in form, so no
+        // navigation is needed. On failure the session is still alive — stay
+        // put, restore the button and say what happened.
+        const ok = await signOut();
+        if (!ok) {
+            toast.error(tGlobal('errors.auth.logout_failed'));
+            setLoggingOut(false);
         }
-        clearUser();
     };
 
     const goBackToIdle = () => {
