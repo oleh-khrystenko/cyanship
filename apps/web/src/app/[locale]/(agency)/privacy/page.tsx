@@ -337,8 +337,8 @@ export default async function PrivacyPage({ params }: PageParams) {
                                     If you have questions about exercising these
                                     rights or need assistance, please contact us
                                     at{' '}
-                                    <a href="mailto:privacy@cyanship.com">
-                                        privacy@cyanship.com
+                                    <a href="mailto:cyanshiphq@gmail.com">
+                                        cyanshiphq@gmail.com
                                     </a>
                                     .
                                 </p>
@@ -447,8 +447,8 @@ export default async function PrivacyPage({ params }: PageParams) {
                                     Have any questions, comments, or concerns
                                     about this privacy policy, your data, or your
                                     rights? Please get in touch by emailing us at{' '}
-                                    <a href="mailto:privacy@cyanship.com">
-                                        privacy@cyanship.com
+                                    <a href="mailto:cyanshiphq@gmail.com">
+                                        cyanshiphq@gmail.com
                                     </a>
                                     .
                                 </p>

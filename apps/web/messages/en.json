@@ -305,7 +305,7 @@
         "nav_proof": "Proof",
         "legal_terms": "Terms of Service",
         "legal_privacy": "Privacy Policy",
-        "email": "oleg@cyanship.com",
+        "email": "cyanshiphq@gmail.com",
         "social_linkedin": "LinkedIn",
         "social_github": "GitHub",
         "copyright": "© {year} CyanShip. Built by Oleh Khrystenko."
@@ -457,7 +457,8 @@
         "non_refundable_warning": "Once AI starts responding, executions are not refunded if you cancel.",
         "limit_exhausted": "Free tries exhausted. Tell us about your project to unlock 5 more.",
         "all_tries_exhausted_line1": "All AI tries have been used. Still have questions?",
-        "all_tries_exhausted_line2": "Drop me a line at <email>oleg@cyanship.com</email>",
+        "contact_email": "cyanshiphq@gmail.com",
+        "all_tries_exhausted_line2": "Drop me a line at <email>{address}</email>",
         "request_bonus": "Get 5 more tries",
         "clear_dialog": {
             "title": "Clear chat history?",

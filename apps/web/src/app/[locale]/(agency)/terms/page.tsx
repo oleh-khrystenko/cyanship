@@ -176,8 +176,8 @@ export default async function TermsPage({ params }: PageParams) {
                                         Refunds are handled on a case-by-case
                                         basis. If you are unhappy with the
                                         service, please contact us at{' '}
-                                        <a href="mailto:support@cyanship.com">
-                                            support@cyanship.com
+                                        <a href="mailto:cyanshiphq@gmail.com">
+                                            cyanshiphq@gmail.com
                                         </a>{' '}
                                         and we will do our best to find a fair
                                         resolution.
@@ -395,8 +395,8 @@ export default async function TermsPage({ params }: PageParams) {
                                 <p className="mt-4">
                                     If you have a question about any of these
                                     Terms, please contact us at{' '}
-                                    <a href="mailto:support@cyanship.com">
-                                        support@cyanship.com
+                                    <a href="mailto:cyanshiphq@gmail.com">
+                                        cyanshiphq@gmail.com
                                     </a>
                                     .
                                 </p>

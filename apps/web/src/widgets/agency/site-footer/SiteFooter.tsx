@@ -99,8 +99,14 @@ const SiteFooter = ({ sectionAnchors = {} }: SiteFooterProps) => {
                             <h4 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                                 {t('col_connect')}
                             </h4>
+                            {/* Label and href read the same `email` key, so the
+                                address exists once. It stays out of a shared
+                                constant on purpose: the project's addresses
+                                (general contact, legal in privacy, support in
+                                terms) are separate roles that only happen to
+                                point at one inbox right now. */}
                             <UiLink
-                                href="mailto:oleg@cyanship.com"
+                                href={`mailto:${t('email')}`}
                                 variant="muted"
                                 className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm"
                             >
