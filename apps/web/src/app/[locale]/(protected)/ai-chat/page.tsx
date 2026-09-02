@@ -423,10 +423,19 @@ export default function AiChatPage() {
                             <div className="flex flex-wrap justify-center gap-x-1 text-sm text-muted-foreground">
                                 <span>{t('all_tries_exhausted_line1')}</span>
                                 <span>
+                                    {/* Visible text and href both come from the
+                                        `contact_email` key, so the address
+                                        exists once. It stays out of a shared
+                                        constant on purpose: the project's
+                                        addresses (general contact, legal in
+                                        privacy, support in terms) are separate
+                                        roles that merely coincide on one inbox
+                                        today. */}
                                     {t.rich('all_tries_exhausted_line2', {
+                                        address: t('contact_email'),
                                         email: (chunks) => (
                                             <UiLink
-                                                href="mailto:oleg@cyanship.com"
+                                                href={`mailto:${t('contact_email')}`}
                                                 className="font-medium"
                                             >
                                                 {chunks}

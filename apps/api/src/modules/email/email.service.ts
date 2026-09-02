@@ -25,6 +25,13 @@ const DATE_LOCALE: Record<string, string> = {
     [LANG.EN]: 'en-US',
 };
 
+// Default address a recipient's "Reply" lands on. Not an env var: it is the same
+// public contact address in every environment, and the sending domain has no
+// inbox — RESEND_FROM_EMAIL is a no-reply sender, so without this header every
+// reply would bounce into nothing. Callers override it when the useful reply
+// target is someone else (see sendBriefNotification).
+const REPLY_TO_EMAIL = 'cyanshiphq@gmail.com';
+
 @Injectable()
 export class EmailService {
     private readonly logger = new Logger(EmailService.name);
@@ -142,6 +149,9 @@ export class EmailService {
             to: ENV.BRIEF_NOTIFICATION_EMAIL,
             subject: `New brief: ${params.name} — ${params.budgetLabel}`,
             react: BriefNotificationEmail(params),
+            // This one goes to us, so the useful reply target is the lead, not
+            // our own inbox — "Reply" opens a message straight to them.
+            replyTo: params.email,
         });
 
         this.logger.log(`Brief notification sent for ${params.email}`);
@@ -158,10 +168,14 @@ export class EmailService {
         to: string;
         subject: string;
         react: React.JSX.Element;
+        replyTo?: string;
     }): Promise<void> {
+        const { replyTo, ...message } = options;
+
         const { error } = await this.resend.emails.send({
             from: ENV.RESEND_FROM_EMAIL,
-            ...options,
+            replyTo: replyTo ?? REPLY_TO_EMAIL,
+            ...message,
         });
 
         if (error) {

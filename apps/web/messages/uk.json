@@ -305,7 +305,7 @@
         "nav_proof": "Доказ",
         "legal_terms": "Умови використання",
         "legal_privacy": "Політика конфіденційності",
-        "email": "oleg@cyanship.com",
+        "email": "cyanshiphq@gmail.com",
         "social_linkedin": "LinkedIn",
         "social_github": "GitHub",
         "copyright": "© {year} CyanShip. Розробник — Олег Христенко."
@@ -457,7 +457,8 @@
         "non_refundable_warning": "Якщо AI почав відповідати, кошти не повертаються при перериванні.",
         "limit_exhausted": "Безкоштовні спроби вичерпано. Розкажіть про свій проєкт і отримайте ще 5.",
         "all_tries_exhausted_line1": "Всі спроби AI використано. Залишились питання?",
-        "all_tries_exhausted_line2": "Напишіть мені на <email>oleg@cyanship.com</email>",
+        "contact_email": "cyanshiphq@gmail.com",
+        "all_tries_exhausted_line2": "Напишіть мені на <email>{address}</email>",
         "request_bonus": "Отримати ще 5 спроб",
         "clear_dialog": {
             "title": "Очистити історію чату?",
