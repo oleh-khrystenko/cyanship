@@ -16,7 +16,15 @@ export const PORTFOLIO_ITEM_TYPE = {
     COMPARISON: 'comparison',
 } as const;
 
-interface PortfolioWork {
+interface PortfolioEntry {
+    /**
+     * Kept in the catalog but left off the page — copy and images stay in the
+     * repo, so bringing a case back is deleting this flag.
+     */
+    hidden?: boolean;
+}
+
+interface PortfolioWork extends PortfolioEntry {
     type: typeof PORTFOLIO_ITEM_TYPE.WORK;
     /** i18n key under `portfolio.cases` and the image folder name. */
     slug: string;
@@ -28,7 +36,7 @@ interface PortfolioWork {
     ndaNote?: boolean;
 }
 
-interface PortfolioComparison {
+interface PortfolioComparison extends PortfolioEntry {
     type: typeof PORTFOLIO_ITEM_TYPE.COMPARISON;
     slug: string;
     beforeSrc: string;
@@ -59,7 +67,7 @@ export const siteLabel = (href: string) =>
 export const screenSrc = (slug: string, index: number) =>
     `/images/portfolio/${slug}/${index}.webp`;
 
-export const PORTFOLIO_ITEMS: PortfolioItem[] = [
+const PORTFOLIO_CATALOG: PortfolioItem[] = [
     {
         type: PORTFOLIO_ITEM_TYPE.WORK,
         slug: 'status',
@@ -84,8 +92,17 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
         slug: 'buildup-school',
         screens: 5,
         ndaNote: true,
+        hidden: true,
     },
-    { type: PORTFOLIO_ITEM_TYPE.WORK, slug: 'knockai', screens: 5 },
-    { type: PORTFOLIO_ITEM_TYPE.WORK, slug: 'split', screens: 5 },
+    {
+        type: PORTFOLIO_ITEM_TYPE.WORK,
+        slug: 'knockai',
+        screens: 5,
+        hidden: true,
+    },
+    { type: PORTFOLIO_ITEM_TYPE.WORK, slug: 'split', screens: 5, hidden: true },
     { type: PORTFOLIO_ITEM_TYPE.WORK, slug: 'cycle8', screens: 5 },
 ];
+
+/** What the page renders: the catalog without the cases parked via `hidden`. */
+export const PORTFOLIO_ITEMS = PORTFOLIO_CATALOG.filter((item) => !item.hidden);
